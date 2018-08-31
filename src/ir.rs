@@ -46,6 +46,7 @@ pub mod builtin_type {
     pub const UNKNOWN: usize = 0;
     pub const VOID: usize = 1;
     pub const I32: usize = 2;
+    pub const STRING: usize = 3;
     pub const ERROR: usize = 100;
 }
 
@@ -57,6 +58,8 @@ pub enum Definition {
     Builtin,
     BuiltinFn(BuiltinFn),
     Fn(Function),
+    Borrow(DefId),
+    Move(DefId),
 }
 
 pub enum Command {
@@ -65,6 +68,8 @@ pub enum Command {
     ConstInt(i32),
     ConstString(String),
     Call(DefId, usize), //(target, num_args)
+    Borrow,
+    Move,
     Add,
     Sub,
     ReturnLastStackValue,
@@ -86,5 +91,10 @@ impl Context {
         definitions.push(Definition::BuiltinFn(BuiltinFn::StringInterpolate));
 
         Context { definitions }
+    }
+
+    pub fn add_definition(&mut self, def: Definition) -> usize {
+        self.definitions.push(def);
+        self.definitions.len() - 1
     }
 }

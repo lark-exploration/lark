@@ -30,7 +30,15 @@ fn codegen_type(c: &Context, ty: DefId) -> String {
     match ty {
         builtin_type::I32 => "i32".into(),
         builtin_type::VOID => "()".into(),
-        _ => unimplemented!("Unsupported type"),
+        builtin_type::STRING => "String".into(),
+        x => {
+            let definition = &c.definitions[ty];
+            match definition {
+                Definition::Borrow(builtin_type::STRING) => "&str".into(),
+                Definition::Borrow(x) => format!("&{}", codegen_type(c, *x)),
+                _ => unimplemented!("Cannot codegen type"),
+            }
+        }
     }
 }
 
@@ -75,6 +83,10 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                 let lhs_expr = rust.expression_stack.pop().unwrap();
                 rust.delay_expr(format!("({})-({})", lhs_expr, rhs_expr));
             }
+            Command::Borrow => {
+                //FIXME: add call to coerce magic
+            }
+            Command::Move => {}
             Command::Call(def_id, num_args) => {
                 if let Definition::Fn(target) = &c.definitions[*def_id] {
                     let mut args_expr = String::new();
@@ -124,6 +136,13 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
             }
         }
     }
+
+    if rust.expression_stack.len() > 0 {
+        let final_expr = rust.expression_stack.pop().unwrap();
+        rust.output_raw(&format!("{};\n", final_expr));
+    }
+
+    assert_eq!(rust.expression_stack.len(), 0);
     rust.output_raw("}\n");
 }
 
