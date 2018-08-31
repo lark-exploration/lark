@@ -4,15 +4,42 @@ type VarId = usize;
 struct Variable {
     ty: DefId,
     name: String,
+}
+
+struct Param {
+    ty: DefId,
+    name: String,
     var_id: VarId,
 }
 
 struct Function {
-    params: Vec<Variable>,
+    params: Vec<Param>,
     body: Vec<Command>,
     ret_ty: DefId,
     name: String,
     vars: Vec<Variable>,
+}
+
+impl Function {
+    pub fn param(mut self, name: String, ty: DefId) -> Self {
+        self.vars.push(Variable {
+            ty,
+            name: name.clone(),
+        });
+        let var_id = self.vars.len() - 1;
+        self.params.push(Param { ty, name, var_id });
+        self
+    }
+
+    pub fn new(name: String, ret_ty: DefId) -> Function {
+        Function {
+            params: vec![],
+            body: vec![],
+            ret_ty,
+            name,
+            vars: vec![],
+        }
+    }
 }
 
 mod builtin_type {
@@ -79,19 +106,19 @@ fn codegen_type(c: &Context, ty: DefId) -> String {
     }
 }
 
-fn codegen_vardecl(c: &Context, v: &Variable) -> String {
-    let mut output = String::new();
-
-    output += &(v.name.clone() + ": " + &codegen_type(c, v.ty));
-
-    output
-}
-
 //FIXME: there are more efficient ways to build strings than this
 fn codegen(rust: &mut RustFile, c: &Context, f: &Function) {
     rust.output_raw(&("fn ".to_string() + &f.name + "("));
+    let mut after_first = false;
     for param in &f.params {
-        rust.output_raw(&codegen_vardecl(c, &param));
+        if after_first {
+            rust.output_raw(", ");
+        } else {
+            after_first = true;
+        }
+        rust.output_raw(&param.name);
+        rust.output_raw(": ");
+        rust.output_raw(&codegen_type(c, param.ty));
     }
     rust.output_raw(") -> ");
     rust.output_raw(&codegen_type(c, f.ret_ty));
@@ -120,22 +147,12 @@ fn codegen(rust: &mut RustFile, c: &Context, f: &Function) {
 }
 
 fn main() {
-    let f = Function {
-        name: "bob".to_string(),
-        params: vec![Variable {
-            name: "foo".into(),
-            ty: builtin_type::I32,
-            var_id: 0,
-        }],
-        ret_ty: builtin_type::I32,
-        vars: vec![],
-        body: vec![
-            Command::VarUse(0),
-            Command::VarUse(0),
-            Command::Add,
-            Command::ReturnLastStackValue,
-        ],
-    };
+    let mut f = Function::new("bob".into(), builtin_type::I32).param("x".into(), builtin_type::I32);
+
+    f.body.push(Command::VarUse(0));
+    f.body.push(Command::VarUse(0));
+    f.body.push(Command::Add);
+    f.body.push(Command::ReturnLastStackValue);
 
     let c = Context::new();
     let mut rust = RustFile::new();
