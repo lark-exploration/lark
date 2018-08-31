@@ -1,4 +1,4 @@
-use ir::{builtin_type, Command, Context, DefId, Definition, Function};
+use ir::{builtin_type, BuiltinFn, Command, Context, DefId, Definition, Function};
 
 pub struct RustFile {
     output_src: String,
@@ -64,10 +64,16 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                 rust.output_raw(&format!("let v{} = {};\n", id, init_expr));
             }
             Command::ConstInt(i) => rust.delay_expr(format!("{}", i)),
+            Command::ConstString(s) => rust.delay_expr(format!("\"{}\"", s)),
             Command::Add => {
                 let rhs_expr = rust.expression_stack.pop().unwrap();
                 let lhs_expr = rust.expression_stack.pop().unwrap();
                 rust.delay_expr(format!("({})+({})", lhs_expr, rhs_expr));
+            }
+            Command::Sub => {
+                let rhs_expr = rust.expression_stack.pop().unwrap();
+                let lhs_expr = rust.expression_stack.pop().unwrap();
+                rust.delay_expr(format!("({})-({})", lhs_expr, rhs_expr));
             }
             Command::Call(def_id, num_args) => {
                 if let Definition::Fn(target) = &c.definitions[*def_id] {
@@ -85,6 +91,25 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                     }
 
                     rust.delay_expr(format!("{}({})", target.name, args_expr));
+                } else if let Definition::BuiltinFn(builtin_fn) = &c.definitions[*def_id] {
+                    match builtin_fn {
+                        BuiltinFn::StringInterpolate => {
+                            let format_string = rust.expression_stack.pop().unwrap();
+                            let mut args_expr = String::new();
+                            let mut after_first = false;
+                            for _ in 0..*num_args {
+                                if after_first {
+                                    args_expr = ", ".to_string() + &args_expr;
+                                } else {
+                                    after_first = true;
+                                }
+
+                                let arg_expr = rust.expression_stack.pop().unwrap();
+                                args_expr = arg_expr + &args_expr;
+                            }
+                            rust.delay_expr(format!("format!({}, {})", format_string, args_expr));
+                        }
+                    }
                 } else {
                     unimplemented!("Only calls to functions are currently supported)");
                 }

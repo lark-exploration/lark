@@ -5,12 +5,13 @@ use codegen::{codegen, RustFile};
 use ir::{builtin_type, Command, Context, Definition, Function};
 
 fn main() {
-    let mut bob =
-        Function::new("bob".into(), builtin_type::I32).param("x".into(), builtin_type::I32);
+    let mut bob = Function::new("bob".into(), builtin_type::I32)
+        .param("x".into(), builtin_type::I32)
+        .param("y".into(), builtin_type::I32);
 
     bob.body.push(Command::VarUse(0));
-    bob.body.push(Command::VarUse(0));
-    bob.body.push(Command::Add);
+    bob.body.push(Command::VarUse(1));
+    bob.body.push(Command::Sub);
     bob.body.push(Command::VarDeclWithInit(1));
     bob.body.push(Command::VarUse(1));
     bob.body.push(Command::ReturnLastStackValue);
@@ -22,7 +23,10 @@ fn main() {
 
     let mut m = Function::new("main".into(), builtin_type::VOID);
     m.body.push(Command::ConstInt(11));
-    m.body.push(Command::Call(bob_def_id, 1));
+    m.body.push(Command::ConstInt(8));
+    m.body.push(Command::Call(bob_def_id, 2));
+    m.body.push(Command::ConstString("Hello, world {}".into()));
+    m.body.push(Command::Call(101, 1));
     m.body.push(Command::DebugPrint);
     c.definitions.push(Definition::Fn(m));
 

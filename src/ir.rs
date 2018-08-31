@@ -49,8 +49,13 @@ pub mod builtin_type {
     pub const ERROR: usize = 100;
 }
 
+pub enum BuiltinFn {
+    StringInterpolate,
+}
+
 pub enum Definition {
     Builtin,
+    BuiltinFn(BuiltinFn),
     Fn(Function),
 }
 
@@ -58,8 +63,10 @@ pub enum Command {
     VarUse(VarId),
     VarDeclWithInit(VarId),
     ConstInt(i32),
+    ConstString(String),
     Call(DefId, usize), //(target, num_args)
     Add,
+    Sub,
     ReturnLastStackValue,
     DebugPrint,
 }
@@ -75,6 +82,8 @@ impl Context {
         for _ in 0..(builtin_type::ERROR + 1) {
             definitions.push(Definition::Builtin); // UNKNOWN
         }
+
+        definitions.push(Definition::BuiltinFn(BuiltinFn::StringInterpolate));
 
         Context { definitions }
     }
