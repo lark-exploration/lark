@@ -1,8 +1,10 @@
+#![deny(rust_2018_idioms)]
+
 mod codegen;
 mod ir;
 
-use codegen::{codegen, RustFile};
-use ir::{builtin_type, Command, Context, Definition, Function};
+use crate::codegen::{codegen, RustFile};
+use crate::ir::{builtin_type, Command, Context, Definition, Function};
 
 fn main() {
     let mut c = Context::new();

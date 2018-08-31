@@ -1,0 +1,10 @@
+[*]
+end_of_line = lf
+
+[*.{rs,lalrpop}]
+tab_width = 4
+indent_style = space
+
+[*.lark]
+tab_width = 2
+indent_size = space

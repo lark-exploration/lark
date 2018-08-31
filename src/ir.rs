@@ -43,6 +43,7 @@ impl Function {
 }
 
 pub mod builtin_type {
+    #[allow(unused)]
     pub const UNKNOWN: usize = 0;
     pub const VOID: usize = 1;
     pub const I32: usize = 2;
@@ -59,6 +60,7 @@ pub enum Definition {
     BuiltinFn(BuiltinFn),
     Fn(Function),
     Borrow(DefId),
+    #[allow(unused)]
     Move(DefId),
 }
 
@@ -68,8 +70,11 @@ pub enum Command {
     ConstInt(i32),
     ConstString(String),
     Call(DefId, usize), //(target, num_args)
+    #[allow(unused)]
     Borrow,
+    #[allow(unused)]
     Move,
+    #[allow(unused)]
     Add,
     Sub,
     ReturnLastStackValue,
