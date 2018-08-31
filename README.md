@@ -1,1 +1,1 @@
-This is an early experiment. Just playing with some ideas.
+This is an experiment. Just playing with some ideas.
