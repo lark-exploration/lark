@@ -1,0 +1,6 @@
+[package]
+name = "larkc"
+version = "0.1.0"
+authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
+
+[dependencies]
