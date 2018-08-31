@@ -1,4 +1,4 @@
-use ir::{builtin_type, BuiltinFn, Command, Context, DefId, Definition, Function};
+use crate::ir::{builtin_type, BuiltinFn, Command, Context, DefId, Definition, Function};
 
 pub struct RustFile {
     output_src: String,
@@ -31,7 +31,7 @@ fn codegen_type(c: &Context, ty: DefId) -> String {
         builtin_type::I32 => "i32".into(),
         builtin_type::VOID => "()".into(),
         builtin_type::STRING => "String".into(),
-        x => {
+        _ => {
             let definition = &c.definitions[ty];
             match definition {
                 Definition::Borrow(builtin_type::STRING) => "&str".into(),
