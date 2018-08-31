@@ -56,12 +56,16 @@ pub enum Definition {
 
 pub enum Command {
     VarUse(VarId),
+    VarDeclWithInit(VarId),
+    ConstInt(i32),
+    Call(DefId, usize), //(target, num_args)
     Add,
     ReturnLastStackValue,
+    DebugPrint,
 }
 
 pub struct Context {
-    definitions: Vec<Definition>,
+    pub definitions: Vec<Definition>,
 }
 
 impl Context {
