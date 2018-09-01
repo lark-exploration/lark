@@ -83,6 +83,10 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                 let lhs_expr = rust.expression_stack.pop().unwrap();
                 rust.delay_expr(format!("({})-({})", lhs_expr, rhs_expr));
             }
+            Command::Dot(rhs_field) => {
+                let lhs_expr = rust.expression_stack.pop().unwrap();
+                rust.delay_expr(format!("({}).{}", lhs_expr, rhs_field));
+            }
             Command::Borrow => {
                 //FIXME: add call to coerce magic
             }

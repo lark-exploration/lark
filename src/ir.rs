@@ -98,6 +98,7 @@ pub enum Command {
     #[allow(unused)]
     Add,
     Sub,
+    Dot(String),
     ReturnLastStackValue,
     DebugPrint,
 }
