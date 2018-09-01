@@ -1,0 +1,26 @@
+{
+    "name": "lark",
+    "displayName": "lark",
+    "description": "",
+    "version": "0.0.1",
+    "publisher": "wycats",
+    "engines": {
+        "vscode": "^1.26.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "lark",
+            "aliases": ["Lark", "lark"],
+            "extensions": ["lark"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "lark",
+            "scopeName": "source.lark",
+            "path": "./syntaxes/lark.tmLanguage.json"
+        }]
+    }
+}

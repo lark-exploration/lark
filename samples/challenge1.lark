@@ -1,0 +1,14 @@
+struct Diagnostic {
+  msg: own String,
+  level: String
+}
+
+def new(msg: own String, level: String) -> Diagnostic {
+  Diagnostic { mgs, level }
+}
+
+def main() {
+  let var_name = "variable"
+  let s = "variable is unused {{var_name}}"
+  new(s, "warning")
+}
