@@ -4,7 +4,7 @@ mod codegen;
 mod ir;
 
 use crate::codegen::{codegen, RustFile};
-use crate::ir::{builtin_type, Command, Context, Definition, Function};
+use crate::ir::{builtin_type, Command, Context, Definition, Function, Struct};
 
 fn main() {
     let mut c = Context::new();
@@ -24,6 +24,12 @@ fn main() {
 
     let bob_def_id = c.add_definition(Definition::Fn(bob));
 
+    let person = Struct::new("Person".into())
+        .field("height".into(), builtin_type::I32)
+        .field("id".into(), builtin_type::I32);
+
+    let person_def_id = c.add_definition(Definition::Struct(person));
+
     let mut greet =
         Function::new("greet".into(), builtin_type::VOID).param("name".into(), borrow_str_id);
 
@@ -35,12 +41,17 @@ fn main() {
     let mut m = Function::new("main".into(), builtin_type::VOID);
     m.body.push(Command::ConstInt(11));
     m.body.push(Command::ConstInt(8));
-    m.body.push(Command::Call(bob_def_id, 2));
+    m.body.push(Command::Call(bob_def_id));
     m.body.push(Command::ConstString("Hello, world {}".into()));
-    m.body.push(Command::Call(101, 1)); //built-in string interpolation
+    m.body.push(Command::Call(101)); //built-in string interpolation
     m.body.push(Command::DebugPrint);
     m.body.push(Command::ConstString("Samwell".into()));
-    m.body.push(Command::Call(greet_def_id, 1));
+    m.body.push(Command::Call(greet_def_id));
+    m.body.push(Command::DebugPrint);
+    m.body.push(Command::ConstInt(17));
+    m.body.push(Command::ConstInt(18));
+    m.body.push(Command::CreateStruct(person_def_id));
+    m.body.push(Command::DebugPrint);
 
     c.definitions.push(Definition::Fn(m));
 

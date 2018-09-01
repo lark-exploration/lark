@@ -12,6 +12,25 @@ pub struct Param {
     pub var_id: VarId,
 }
 
+pub struct Struct {
+    pub fields: Vec<Variable>,
+    pub name: String,
+}
+
+impl Struct {
+    pub fn field(mut self, name: String, ty: DefId) -> Self {
+        self.fields.push(Variable { ty, name });
+        self
+    }
+
+    pub fn new(name: String) -> Self {
+        Struct {
+            name,
+            fields: vec![],
+        }
+    }
+}
+
 pub struct Function {
     pub params: Vec<Param>,
     pub body: Vec<Command>,
@@ -59,6 +78,7 @@ pub enum Definition {
     Builtin,
     BuiltinFn(BuiltinFn),
     Fn(Function),
+    Struct(Struct),
     Borrow(DefId),
     #[allow(unused)]
     Move(DefId),
@@ -69,7 +89,8 @@ pub enum Command {
     VarDeclWithInit(VarId),
     ConstInt(i32),
     ConstString(String),
-    Call(DefId, usize), //(target, num_args)
+    Call(DefId),
+    CreateStruct(DefId),
     #[allow(unused)]
     Borrow,
     #[allow(unused)]

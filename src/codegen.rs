@@ -1,4 +1,4 @@
-use crate::ir::{builtin_type, BuiltinFn, Command, Context, DefId, Definition, Function};
+use crate::ir::{builtin_type, BuiltinFn, Command, Context, DefId, Definition, Function, Struct};
 
 pub struct RustFile {
     output_src: String,
@@ -86,12 +86,14 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
             Command::Borrow => {
                 //FIXME: add call to coerce magic
             }
-            Command::Move => {}
-            Command::Call(def_id, num_args) => {
+            Command::Move => {
+                //FIXME: Do the real functionality/coerce magic
+            }
+            Command::Call(def_id) => {
                 if let Definition::Fn(target) = &c.definitions[*def_id] {
                     let mut args_expr = String::new();
                     let mut after_first = false;
-                    for _ in 0..*num_args {
+                    for _ in 0..target.params.len() {
                         if after_first {
                             args_expr = ", ".to_string() + &args_expr;
                         } else {
@@ -107,9 +109,12 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                     match builtin_fn {
                         BuiltinFn::StringInterpolate => {
                             let format_string = rust.expression_stack.pop().unwrap();
+
+                            let num_args = format_string.matches("{}").count();
+
                             let mut args_expr = String::new();
                             let mut after_first = false;
-                            for _ in 0..*num_args {
+                            for _ in 0..num_args {
                                 if after_first {
                                     args_expr = ", ".to_string() + &args_expr;
                                 } else {
@@ -126,13 +131,32 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                     unimplemented!("Only calls to functions are currently supported)");
                 }
             }
+            Command::CreateStruct(def_id) => {
+                if let Definition::Struct(s) = &c.definitions[*def_id] {
+                    let mut field_values = vec![];
+                    for _ in 0..s.fields.len() {
+                        field_values.push(rust.expression_stack.pop().unwrap());
+                    }
+
+                    let mut struct_expr = String::new();
+
+                    struct_expr += &format!("{} {{", s.name);
+                    for field in &s.fields {
+                        struct_expr += &format!("{}: {},", field.name, field_values.pop().unwrap());
+                    }
+                    struct_expr += "} ";
+                    rust.delay_expr(struct_expr);
+                } else {
+                    unimplemented!("Attempt to create struct with non-struct definition");
+                }
+            }
             Command::ReturnLastStackValue => {
                 let ret_val = rust.expression_stack.pop().unwrap();
                 rust.output_raw(&format!("return {};\n", ret_val));
             }
             Command::DebugPrint => {
                 let print_val = rust.expression_stack.pop().unwrap();
-                rust.output_raw(&format!("println!(\"{{}}\", {});\n", print_val));
+                rust.output_raw(&format!("println!(\"{{:?}}\", {});\n", print_val));
             }
         }
     }
@@ -146,12 +170,24 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
     rust.output_raw("}\n");
 }
 
+fn codegen_struct(rust: &mut RustFile, c: &Context, s: &Struct) {
+    rust.output_raw(&format!("#[derive(Debug)]\n"));
+    rust.output_raw(&format!("struct {} {{\n", s.name));
+    for field in &s.fields {
+        rust.output_raw(&format!("{}: {},\n", field.name, codegen_type(c, field.ty)));
+    }
+    rust.output_raw("}\n");
+}
+
 //FIXME: there are more efficient ways to build strings than this
 pub fn codegen(rust: &mut RustFile, c: &Context) {
     for definition in &c.definitions {
         match definition {
             Definition::Fn(f) => {
                 codegen_fn(rust, c, f);
+            }
+            Definition::Struct(s) => {
+                codegen_struct(rust, c, s);
             }
             _ => {}
         }
