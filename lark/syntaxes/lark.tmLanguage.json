@@ -1,0 +1,678 @@
+{
+  "information_for_contributors": [
+    "This file has been converted from https://github.com/zargony/atom-language-rust/blob/master/grammars/rust.cson",
+    "If you want to provide a fix or improvement, please create a pull request against the original repository.",
+    "Once accepted there, we are happy to receive an update request."
+  ],
+  "version": "https://github.com/zargony/atom-language-rust/commit/179f449a69182cae4fcdf644d59d842b7e445f89",
+  "name": "Lark",
+  "scopeName": "source.lark",
+  "patterns": [
+    {
+      "comment": "Implementation",
+      "begin": "\\b(impl)\\b",
+      "end": "\\{",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.lark"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#block_comment"
+        },
+        {
+          "include": "#line_comment"
+        },
+        {
+          "include": "#sigils"
+        },
+        {
+          "include": "#storage"
+        },
+        {
+          "include": "#ref_lifetime"
+        },
+        {
+          "include": "#core_types"
+        },
+        {
+          "include": "#core_marker"
+        },
+        {
+          "include": "#core_traits"
+        },
+        {
+          "include": "#std_types"
+        },
+        {
+          "include": "#std_traits"
+        },
+        {
+          "include": "#type_params"
+        },
+        {
+          "include": "#where"
+        },
+        {
+          "name": "storage.type.lark",
+          "match": "\\bfor\\b"
+        },
+        {
+          "include": "#type"
+        }
+      ]
+    },
+    {
+      "include": "#block_doc_comment"
+    },
+    {
+      "include": "#block_comment"
+    },
+    {
+      "include": "#line_doc_comment"
+    },
+    {
+      "include": "#line_comment"
+    },
+    {
+      "comment": "Attribute",
+      "name": "meta.attribute.lark",
+      "begin": "#\\!?\\[",
+      "end": "\\]",
+      "patterns": [
+        {
+          "include": "#string_literal"
+        },
+        {
+          "include": "#block_doc_comment"
+        },
+        {
+          "include": "#block_comment"
+        },
+        {
+          "include": "#line_doc_comment"
+        },
+        {
+          "include": "#line_comment"
+        }
+      ]
+    },
+    {
+      "comment": "Single-quote string literal (character)",
+      "name": "string.quoted.single.lark",
+      "match": "b?'([^'\\\\]|\\\\(x[0-9A-Fa-f]{2}|[0-2][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.))'"
+    },
+    {
+      "include": "#string_literal"
+    },
+    {
+      "include": "#raw_string_literal"
+    },
+    {
+      "comment": "Floating point literal (fraction)",
+      "name": "constant.numeric.float.lark",
+      "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*([eE][+-]?[0-9_]+)?(f32|f64)?\\b"
+    },
+    {
+      "comment": "Floating point literal (exponent)",
+      "name": "constant.numeric.float.lark",
+      "match": "\\b[0-9][0-9_]*(\\.[0-9][0-9_]*)?[eE][+-]?[0-9_]+(f32|f64)?\\b"
+    },
+    {
+      "comment": "Floating point literal (typed)",
+      "name": "constant.numeric.float.lark",
+      "match": "\\b[0-9][0-9_]*(\\.[0-9][0-9_]*)?([eE][+-]?[0-9_]+)?(f32|f64)\\b"
+    },
+    {
+      "comment": "Integer literal (decimal)",
+      "name": "constant.numeric.integer.decimal.lark",
+      "match": "\\b[0-9][0-9_]*([ui](8|16|32|64|128|s|size))?\\b"
+    },
+    {
+      "comment": "Integer literal (hexadecimal)",
+      "name": "constant.numeric.integer.hexadecimal.lark",
+      "match": "\\b0x[a-fA-F0-9_]+([ui](8|16|32|64|128|s|size))?\\b"
+    },
+    {
+      "comment": "Integer literal (octal)",
+      "name": "constant.numeric.integer.octal.lark",
+      "match": "\\b0o[0-7_]+([ui](8|16|32|64|128|s|size))?\\b"
+    },
+    {
+      "comment": "Integer literal (binary)",
+      "name": "constant.numeric.integer.binary.lark",
+      "match": "\\b0b[01_]+([ui](8|16|32|64|128|s|size))?\\b"
+    },
+    {
+      "comment": "Static storage modifier",
+      "name": "storage.modifier.static.lark",
+      "match": "\\bstatic\\b"
+    },
+    {
+      "comment": "Boolean constant",
+      "name": "constant.language.boolean.lark",
+      "match": "\\b(true|false)\\b"
+    },
+    {
+      "comment": "Control keyword",
+      "name": "keyword.control.lark",
+      "match": "\\b(break|continue|else|if|in|for|loop|match|return|while)\\b"
+    },
+    {
+      "comment": "Keyword",
+      "name": "keyword.other.lark",
+      "match": "\\b(crate|extern|mod|let|ref|use|super|move)\\b"
+    },
+    {
+      "comment": "Reserved keyword",
+      "name": "invalid.deprecated.lark",
+      "match": "\\b(abstract|alignof|become|do|final|macro|offsetof|override|priv|proc|pure|sizeof|typeof|virtual|yield)\\b"
+    },
+    {
+      "include": "#unsafe"
+    },
+    {
+      "include": "#sigils"
+    },
+    {
+      "include": "#self"
+    },
+    {
+      "include": "#storage"
+    },
+    {
+      "include": "#box"
+    },
+    {
+      "include": "#lifetime"
+    },
+    {
+      "include": "#ref_lifetime"
+    },
+    {
+      "include": "#const"
+    },
+    {
+      "include": "#pub"
+    },
+    {
+      "comment": "Miscellaneous operator",
+      "name": "keyword.operator.misc.lark",
+      "match": "(=>|::|\\bas\\b)"
+    },
+    {
+      "comment": "Comparison operator",
+      "name": "keyword.operator.comparison.lark",
+      "match": "(&&|\\|\\||==|!=)"
+    },
+    {
+      "comment": "Assignment operator",
+      "name": "keyword.operator.assignment.lark",
+      "match": "(\\+=|-=|/=|\\*=|%=|\\^=|&=|\\|=|<<=|>>=|=)"
+    },
+    {
+      "comment": "Arithmetic operator",
+      "name": "keyword.operator.arithmetic.lark",
+      "match": "(!|\\+|-|/|\\*|%|\\^|&|\\||<<|>>)"
+    },
+    {
+      "comment": "Comparison operator (second group because of regex precedence)",
+      "name": "keyword.operator.comparison.lark",
+      "match": "(<=|>=|<|>)"
+    },
+    {
+      "include": "#core_types"
+    },
+    {
+      "include": "#core_vars"
+    },
+    {
+      "include": "#core_marker"
+    },
+    {
+      "include": "#core_traits"
+    },
+    {
+      "include": "#std_types"
+    },
+    {
+      "include": "#std_traits"
+    },
+    {
+      "comment": "Built-in macro",
+      "name": "support.function.builtin.lark",
+      "match": "\\b(macro_rules|compile_error|format_args|env|option_env|concat_idents|concat|line|column|file|stringify|include|include_str|include_bytes|module_path|cfg)!"
+    },
+    {
+      "comment": "Core macro",
+      "name": "support.function.core.lark",
+      "match": "\\b(panic|assert|assert_eq|assert_ne|debug_assert|debug_assert_eq|debug_assert_ne|try|write|writeln|unreachable|unimplemented)!"
+    },
+    {
+      "comment": "Standard library macro",
+      "name": "support.function.std.lark",
+      "match": "\\b(format|print|println|eprint|eprintln|select|vec)!"
+    },
+    {
+      "comment": "Logging macro",
+      "name": "support.function.log.lark",
+      "match": "\\b(log|error|warn|info|debug|trace|log_enabled)!"
+    },
+    {
+      "comment": "Invokation of a macro",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*\\!)\\s*[({\\[]",
+      "captures": {
+        "1": {
+          "name": "entity.name.function.macro.lark"
+        }
+      }
+    },
+    {
+      "comment": "Function call",
+      "match": "\\b([A-Za-z][A-Za-z0-9_]*|_[A-Za-z0-9_]+)\\s*\\(",
+      "captures": {
+        "1": {
+          "name": "entity.name.function.lark"
+        }
+      }
+    },
+    {
+      "comment": "Function call with type parameters",
+      "begin": "\\b([A-Za-z][A-Za-z0-9_]*|_[A-Za-z0-9_]+)\\s*(::)(?=\\s*<.*>\\s*\\()",
+      "end": "\\(",
+      "captures": {
+        "1": {
+          "name": "entity.name.function.lark"
+        },
+        "2": {
+          "name": "keyword.operator.misc.lark"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#type_params"
+        }
+      ]
+    },
+    {
+      "comment": "Function definition",
+      "begin": "\\b(def)\\s+([A-Za-z][A-Za-z0-9_]*|_[A-Za-z0-9_]+)",
+      "end": "[\\{;]",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.def.lark"
+        },
+        "2": {
+          "name": "entity.name.function.lark"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#block_comment"
+        },
+        {
+          "include": "#line_comment"
+        },
+        {
+          "include": "#sigils"
+        },
+        {
+          "include": "#self"
+        },
+        {
+          "include": "#storage"
+        },
+        {
+          "include": "#ref_lifetime"
+        },
+        {
+          "include": "#core_types"
+        },
+        {
+          "include": "#core_marker"
+        },
+        {
+          "include": "#core_traits"
+        },
+        {
+          "include": "#std_types"
+        },
+        {
+          "include": "#std_traits"
+        },
+        {
+          "include": "#type_params"
+        },
+        {
+          "include": "#const"
+        },
+        {
+          "include": "#where"
+        },
+        {
+          "include": "#unsafe"
+        },
+        {
+          "comment": "Function arguments",
+          "match": "\bdef\b",
+          "name": "keyword.other.def.lark"
+        }
+      ]
+    },
+    {
+      "comment": "Type declaration",
+      "begin": "\\b(enum|struct|value|trait|union)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "end": "[\\{\\(;]",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.lark"
+        },
+        "2": {
+          "name": "entity.name.type.lark"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#block_comment"
+        },
+        {
+          "include": "#line_comment"
+        },
+        {
+          "include": "#core_traits"
+        },
+        {
+          "include": "#std_traits"
+        },
+        {
+          "include": "#type_params"
+        },
+        {
+          "include": "#core_types"
+        },
+        {
+          "include": "#pub"
+        },
+        {
+          "include": "#where"
+        }
+      ]
+    },
+    {
+      "comment": "Type alias",
+      "begin": "\\b(type)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "end": ";",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.lark"
+        },
+        "2": {
+          "name": "entity.name.type.lark"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#block_comment"
+        },
+        {
+          "include": "#line_comment"
+        },
+        {
+          "include": "#sigils"
+        },
+        {
+          "include": "#storage"
+        },
+        {
+          "include": "#lifetime"
+        },
+        {
+          "include": "#ref_lifetime"
+        },
+        {
+          "include": "#core_types"
+        },
+        {
+          "include": "#core_marker"
+        },
+        {
+          "include": "#core_traits"
+        },
+        {
+          "include": "#std_types"
+        },
+        {
+          "include": "#std_traits"
+        },
+        {
+          "include": "#type_params"
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "block_doc_comment": {
+      "comment": "Block documentation comment",
+      "name": "comment.block.documentation.lark",
+      "begin": "/\\*[\\*!](?![\\*/])",
+      "end": "\\*/",
+      "patterns": [
+        {
+          "include": "#block_doc_comment"
+        },
+        {
+          "include": "#block_comment"
+        }
+      ]
+    },
+    "block_comment": {
+      "comment": "Block comment",
+      "name": "comment.block.lark",
+      "begin": "/\\*",
+      "end": "\\*/",
+      "patterns": [
+        {
+          "include": "#block_doc_comment"
+        },
+        {
+          "include": "#block_comment"
+        }
+      ]
+    },
+    "line_doc_comment": {
+      "comment": "Single-line documentation comment",
+      "name": "comment.line.documentation.lark",
+      "begin": "//[!/](?=[^/])",
+      "end": "$"
+    },
+    "line_comment": {
+      "comment": "Single-line comment",
+      "name": "comment.line.double-slash.lark",
+      "begin": "//",
+      "end": "$"
+    },
+    "escaped_character": {
+      "name": "constant.character.escape.lark",
+      "match": "\\\\(x[0-9A-Fa-f]{2}|[0-2][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)"
+    },
+    "interpolation": {
+      "begin": "(\\{\\{)",
+      "beginCaptures": {
+        "1": { "name": "keyword.operator.sigil.lark" }
+      },
+      "end": "(\\}\\})",
+      "endCaptures": {
+        "1": { "name": "keyword.operator.sigil.lark" }
+      },
+      "include": "#Lark",
+      "contentName": "source.lark"
+    },
+    "string_literal": {
+      "comment": "Double-quote string literal",
+      "name": "string.quoted.double.lark",
+      "begin": "b?\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "include": "#escaped_character"
+        },
+        {
+          "include": "#interpolation"
+        }
+      ]
+    },
+    "raw_string_literal": {
+      "comment": "Raw double-quote string literal",
+      "name": "string.quoted.double.raw.lark",
+      "begin": "b?r(#*)\"",
+      "end": "\"\\1"
+    },
+    "sigils": {
+      "comment": "Sigil",
+      "name": "keyword.operator.sigil.lark",
+      "match": "[&*](?=[a-zA-Z0-9_\\(\\[\\|\\\"]+)"
+    },
+    "self": {
+      "comment": "Self variable",
+      "name": "variable.language.lark",
+      "match": "\\bself\\b"
+    },
+    "storage": {
+      "comment": "Mutable storage modifier",
+      "patterns": [
+        {
+          "name": "storage.modifier.mut.lark",
+          "match": "\\bmut\\b"
+        },
+        {
+          "name": "storage.modifier.own.lark",
+          "match": "\\bown\\b"
+        }
+      ]
+    },
+    "box": {
+      "comment": "Box storage modifier",
+      "name": "storage.modifier.box.lark",
+      "match": "\\bbox\\b"
+    },
+    "const": {
+      "comment": "Const storage modifier",
+      "name": "storage.modifier.const.lark",
+      "match": "\\bconst\\b"
+    },
+    "pub": {
+      "comment": "Visibility modifier",
+      "name": "storage.modifier.visibility.lark",
+      "match": "\\bpub\\b"
+    },
+    "unsafe": {
+      "comment": "Unsafe code keyword",
+      "name": "keyword.other.unsafe.lark",
+      "match": "\\bunsafe\\b"
+    },
+    "where": {
+      "comment": "Generic where clause",
+      "name": "keyword.other.where.lark",
+      "match": "\\bwhere\\b"
+    },
+    "lifetime": {
+      "comment": "Named lifetime",
+      "name": "storage.modifier.lifetime.lark",
+      "match": "'([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+      "captures": {
+        "1": {
+          "name": "entity.name.lifetime.lark"
+        }
+      }
+    },
+    "ref_lifetime": {
+      "comment": "Reference with named lifetime",
+      "match": "&('([a-zA-Z_][a-zA-Z0-9_]*))\\b",
+      "captures": {
+        "1": {
+          "name": "storage.modifier.lifetime.lark"
+        },
+        "2": {
+          "name": "entity.name.lifetime.lark"
+        }
+      }
+    },
+    "core_types": {
+      "comment": "Built-in/core type",
+      "name": "storage.type.core.lark",
+      "match": "\\b(bool|char|usize|isize|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f32|f64|str|Self|Option|Result)\\b"
+    },
+    "core_vars": {
+      "comment": "Core type variant",
+      "name": "support.constant.core.lark",
+      "match": "\\b(Some|None|Ok|Err)\\b"
+    },
+    "core_marker": {
+      "comment": "Core trait (marker)",
+      "name": "support.type.marker.lark",
+      "match": "\\b(Copy|Send|Sized|Sync)\\b"
+    },
+    "core_traits": {
+      "comment": "Core trait",
+      "name": "support.type.core.lark",
+      "match": "\\b(Drop|Fn|FnMut|FnOnce|Clone|PartialEq|PartialOrd|Eq|Ord|AsRef|AsMut|Into|From|Default|Iterator|Extend|IntoIterator|DoubleEndedIterator|ExactSizeIterator)\\b"
+    },
+    "std_types": {
+      "comment": "Standard library type",
+      "name": "storage.class.std.lark",
+      "match": "\\b(Box|String|Vec|Path|PathBuf)\\b"
+    },
+    "std_traits": {
+      "comment": "Standard library trait",
+      "name": "support.type.std.lark",
+      "match": "\\b(ToOwned|ToString)\\b"
+    },
+    "type": {
+      "comment": "A type",
+      "name": "entity.name.type.lark",
+      "match": "\\b([A-Za-z][_A-Za-z0-9]*|_[_A-Za-z0-9]+)\\b"
+    },
+    "type_params": {
+      "comment": "Type parameters",
+      "name": "meta.type_params.lark",
+      "begin": "<(?![=<])",
+      "end": "(?<![-])>",
+      "patterns": [
+        {
+          "include": "#block_comment"
+        },
+        {
+          "include": "#line_comment"
+        },
+        {
+          "include": "#sigils"
+        },
+        {
+          "include": "#storage"
+        },
+        {
+          "include": "#lifetime"
+        },
+        {
+          "include": "#core_types"
+        },
+        {
+          "include": "#core_marker"
+        },
+        {
+          "include": "#core_traits"
+        },
+        {
+          "include": "#std_types"
+        },
+        {
+          "include": "#std_traits"
+        },
+        {
+          "include": "#type_params"
+        }
+      ]
+    }
+  }
+}

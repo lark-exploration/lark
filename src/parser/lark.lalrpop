@@ -1,0 +1,24 @@
+grammar;
+
+pub Program: Program = {
+    Item*
+}
+
+Item: Item = {
+    BlockItem
+}
+
+BlockItem: BlockItem = {
+    Struct,
+    Def
+}
+
+Def: Def = {
+    "def" Identifier FnDecl Block
+}
+
+extern {
+    enum Token {
+        Identifier => Token::Identifier
+    }
+}
