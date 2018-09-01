@@ -51,6 +51,11 @@ fn main() {
     m.body.push(Command::ConstInt(17));
     m.body.push(Command::ConstInt(18));
     m.body.push(Command::CreateStruct(person_def_id));
+    m.body.push(Command::VarDeclWithInit(0));
+    m.body.push(Command::VarUse(0));
+    m.body.push(Command::DebugPrint);
+    m.body.push(Command::VarUse(0));
+    m.body.push(Command::Dot("id".into()));
     m.body.push(Command::DebugPrint);
 
     c.definitions.push(Definition::Fn(m));
