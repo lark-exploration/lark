@@ -1,7 +1,12 @@
 #![deny(rust_2018_idioms)]
+#![feature(in_band_lifetimes)]
+#![feature(box_patterns)]
+#![feature(nll)]
+#![allow(unused)]
 
 mod codegen;
 mod ir;
+mod parser;
 
 use crate::codegen::{codegen, RustFile};
 use crate::ir::{builtin_type, Command, Context, Definition, Function, Struct};

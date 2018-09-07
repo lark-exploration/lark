@@ -1,24 +1,183 @@
+use crate::parser::{Token, ParseError};
+use crate::parser::grammar_helpers::*;
+use crate::parser::ast::*;
+use crate::parser::pos::{Span, Spanned};
+use crate::parser::program::StringId;
+use codespan::ByteIndex;
+
 grammar;
 
-pub Program: Program = {
-    Item*
+pub Program: Module = {
+    Item => Module::new(vec![<>])
 }
 
 Item: Item = {
     BlockItem
 }
 
-BlockItem: BlockItem = {
-    Struct,
-    Def
+BlockItem: Item = {
+    Struct => Item::Struct(<>),
+    Def => unimplemented!()
+}
+
+Struct: Struct = {
+    <l: @L> "struct" <name: Identifier> "{" <fields: Fields> "}" <r: @R> => 
+        Struct::new(name, fields, Span::from(l, r))
+}
+
+Fields: Vec<Field> = {
+    <fields: Comma<Field>> => fields
+}
+
+Field: Field = {
+    Identifier ":" Pat => unimplemented!("Field")
 }
 
 Def: Def = {
-    "def" Identifier FnDecl Block
+    "def" Identifier FnDecl Block => unimplemented!("Def")
+}
+
+FnDecl: () = {
+    FnParams RetTy? => unimplemented!("FnDecl")
+}
+
+FnParams: () = {
+    "unimpl" => unimplemented!("FnParams")
+}
+
+RetTy: () = {
+    "->" Type => unimplemented!("RetTy")
+}
+
+Type: Type = {
+    Identifier => unimplemented!("Type"),
+    "own" Identifier => unimplemented!("own Type")
+}
+
+Block: Block = {
+    "{" PrefixDelim<Statement, SEP> "}" => unimplemented!("Block")
+}
+
+BlockOrIf: BlockOrIf = {
+    Block => unimplemented!("BlockOrIf::Block"),
+    ExprIf => unimplemented!("BlockOrIf::ExprIf"),
+    ExprIfLet => unimplemented!("BlockOrIf::ExprIfLet")
+}
+
+Statement: Statement = {
+    Let => unimplemented!("Statement::Let"),
+    Block => unimplemented!("Statement::Block"),
+}
+
+Let: Let = {
+    "let" Pat MaybeTypeAscription MaybeInitExpr => unimplemented!("Let")
+}
+
+MaybeTypeAscription: () = {
+    (":" <Type>)? => unimplemented!("MaybeTypeAscription")
+}
+
+MaybeInitExpr: () = {
+    ("=" Expr)? => unimplemented!("MaybeInitExpr")
+}
+
+Pat: Pattern = {
+    "_" => unimplemented!("Pat::_"),
+    Identifier => unimplemented!("Pat::Identifier"),
+    "own" Identifier => unimplemented!("Pat::own Identifier")
+}
+
+Expr: Expression = {
+    ExprIf => unimplemented!("Expr::ExprIf"),
+    ExprIfLet => unimplemented!("Expr::ExprIfLet")
+}
+
+ExprIf: Expression = {
+    "if" Expr Block => unimplemented!("ExprIf::NoElse"),
+    "if" Expr Block "else" BlockOrIf => unimplemented!("ExprIf::Else")
+}
+
+ExprIfLet: If = {
+    "if" "let" Pat "=" Expr Block => unimplemented!("ExprIfLet::NoElse"),
+    "if" "let" Pat "=" Expr Block "else" BlockOrIf => unimplemented!("ExprIfLet::Else")
+}
+
+ExprAtom: Atom = {
+    Lit => unimplemented!("ExprAtom::Lit"),
+    PathExpr => unimplemented!("ExprAtom::PathExpr"),
+    "self" => unimplemented!("ExprAtom::Self"),
+}
+
+Lit: () = {
+    "unimpl" => unimplemented!("Lit")
+}
+
+PathExpr: Path = {
+    Path<"."> => unimplemented!("PathExpr::Dot"),
+    Path<"::"> => unimplemented!("PathExpr::DoubleColon")
+}
+
+Identifier: Spanned<StringId> = {
+    <l: @L> <id: "id"> <r: @R> => Spanned::from(id, l, r)
+}
+
+Path<SEP>: Path = {
+    PrefixDelim<Identifier, "::"> => Path::new(<>),
+    Delim<Identifier, "::"> => Path::new(<>)
+}
+
+// Delimeted list of E with optional trailing delimeter. Potentially
+// empty.
+Delim<T, SEP>: Vec<T> = {
+    <v:(<T> SEP)*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+
+PrefixDelim<T, SEP>: Vec<T> = {
+    <d: Delim<T, SEP>> => d,
+    SEP <d: Delim<T, SEP>> => d
+}
+
+Comma<E> = Delim<E, ",">;
+
+SEP = {
+    ";",
+    NL
 }
 
 extern {
+    type Location = ByteIndex;
+    type Error = ParseError;
+
     enum Token {
-        Identifier => Token::Identifier
+        "_" => Token::Underscore,
+        "{" => Token::CurlyBraceOpen,
+        "}" => Token::CurlyBraceClose,
+        ":" => Token::Colon,
+        ";" => Token::Semicolon,
+        "," => Token::Comma,
+        "=" => Token::Equals,
+        "->" => Token::ThinArrow,
+        "::" => Token::DoubleColon,
+        "." => Token::Period,
+        "def" => Token::KeywordDef,
+        "let" => Token::KeywordLet,
+        "struct" => Token::KeywordStruct,
+        "if" => Token::KeywordIf,
+        "else" => Token::KeywordElse,
+        "own" => Token::KeywordOwn,
+        "self" => Token::KeywordSelf,
+        "while" => Token::KeywordWhile,
+        "loop" => Token::KeywordLoop,
+        "for" => Token::KeywordFor,
+        "unimpl" => Token::Unimplemented,
+        "id" => Token::Identifier(<StringId>),
+        NL => Token::Newline
     }
 }
