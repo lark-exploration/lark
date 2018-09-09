@@ -2,7 +2,7 @@ use codespan::ByteIndex;
 use crate::parser::pos::HasSpan;
 use crate::parser::pos::Span;
 use crate::parser::pos::Spanned;
-use crate::parser::{interned, Environment, Program, StringId, Token};
+use crate::parser::{Environment, Program, StringId, Token};
 use derive_new::new;
 use std::fmt;
 
@@ -145,38 +145,31 @@ impl Struct {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Field {
-    name: StringId,
-    modifiers: Modifiers,
-    ty: Type,
+    name: Spanned<StringId>,
+    ty: Spanned<Type>,
 }
 
 struct DebugField<'a> {
     name: &'a str,
-    modifiers: Modifiers,
     ty: DebugType<'a>,
 }
 
 #[cfg(test)]
 impl Field {
-    crate fn build(
-        name: &'input str,
-        ty: Type,
-        modifiers: Modifiers,
-        program: &mut Program,
-    ) -> Field {
+    crate fn build(name: &'input str, ty: Type, program: &mut Program) -> Field {
         Field {
-            name: program.intern(name),
-            ty,
-            modifiers,
+            name: Spanned::synthetic(program.intern(name)),
+            ty: Spanned::synthetic(ty),
         }
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Type {
-    name: StringId,
+    mode: Option<Spanned<Mode>>,
+    name: Spanned<StringId>,
 }
 
 struct DebugType<'a> {
@@ -185,23 +178,19 @@ struct DebugType<'a> {
 
 #[cfg(test)]
 impl Type {
-    crate fn build(name: &'input str, program: &mut Program) -> Type {
+    crate fn build(name: &'input str, mode: Mode, program: &mut Program) -> Type {
         Type {
-            name: program.intern(name),
+            mode: Some(Spanned::synthetic(mode)),
+            name: Spanned::synthetic(program.intern(name)),
         }
     }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Modifiers {
-    own: bool,
-}
-
-#[cfg(test)]
-impl Modifiers {
-    crate fn none() -> Modifiers {
-        Modifiers { own: false }
-    }
+pub enum Mode {
+    Owned,
+    Shared,
+    Borrowed,
 }
 
 pub struct Pattern {}

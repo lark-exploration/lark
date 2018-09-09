@@ -1,13 +1,15 @@
 crate mod ast;
 crate mod grammar;
 crate mod grammar_helpers;
-crate mod interned;
 crate mod keywords;
 crate mod lexer_helpers;
 crate mod pos;
 crate mod program;
 crate mod token;
 crate mod tokenizer;
+
+#[cfg(test)]
+pub mod test_helpers;
 
 crate use self::ast::Ast;
 crate use self::grammar::ProgramParser;
@@ -35,19 +37,28 @@ mod test {
     use codespan::ByteIndex;
     use crate::parser::ast::Debuggable;
     use crate::parser::pos::Span;
+    use crate::parser::test_helpers;
+    use crate::parser::test_helpers::ModuleBuilder;
     use crate::parser::{self, ast, Ast};
+    use unindent::unindent;
 
     #[test]
     fn test_struct() -> Result<(), Box<dyn std::error::Error>> {
-        let source = "struct Diagnostic {}";
+        let source = unindent(
+            "
+            struct Diagnostic {
+              msg: own String,
+              level: String,
+            }
+            ",
+        );
         let mut program = parser::Program::new();
 
-        let actual = parse(source, &mut program)?;
-        let expected = ast::Module::build().add_struct(
-            ast::Struct::build("Diagnostic", &mut program)
-                .name_spanned(7, 17)
-                .spanned(0, 20),
-        );
+        let actual = parse(&source[..], &mut program)?;
+
+        let expected = ModuleBuilder::new(&mut program)
+            .build_struct("Diagnostic", |_| {})
+            .finish();
 
         let debug_actual = Debuggable::from(&actual, &program);
         let debug_expected = Debuggable::from(&expected, &program);

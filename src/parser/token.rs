@@ -23,6 +23,7 @@ pub enum Token {
     KeywordIf,
     KeywordElse,
     KeywordOwn,
+    KeywordBorrow,
     KeywordSelf,
     Identifier(StringId),
     Newline,

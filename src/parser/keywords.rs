@@ -3,9 +3,15 @@ use lazy_static::lazy_static;
 
 lazy_static! {
     pub(crate) static ref KEYWORDS: Matchers =
-        { Matchers::keywords(&[("struct", Token::KeywordStruct),]) };
-    pub(crate) static ref SIGILS: Matchers =
-        { Matchers::keywords(&[("{", Token::CurlyBraceOpen), ("}", Token::CurlyBraceClose),]) };
+        { Matchers::keywords(&[("struct", Token::KeywordStruct), ("own", Token::KeywordOwn)]) };
+    pub(crate) static ref SIGILS: Matchers = {
+        Matchers::keywords(&[
+            ("{", Token::CurlyBraceOpen),
+            ("}", Token::CurlyBraceClose),
+            (":", Token::Colon),
+            (",", Token::Comma),
+        ])
+    };
 }
 
 crate struct Matchers {

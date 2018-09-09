@@ -21,16 +21,20 @@ BlockItem: Item = {
 }
 
 Struct: Struct = {
-    <l: @L> "struct" <name: Identifier> "{" <fields: Fields> "}" <r: @R> => 
+    <l: @L> "struct" <name: Identifier> "{" NL* <fields: Fields> "}" <r: @R> => 
         Struct::new(name, fields, Span::from(l, r))
 }
 
 Fields: Vec<Field> = {
-    <fields: Comma<Field>> => fields
+    <fields: Delim<Field, COMMA>> => fields
+}
+
+COMMA = {
+    NL* "," NL*
 }
 
 Field: Field = {
-    Identifier ":" Pat => unimplemented!("Field")
+    <id: Identifier> ":" <ty: Type> => Field::new(id, ty)
 }
 
 Def: Def = {
@@ -49,9 +53,14 @@ RetTy: () = {
     "->" Type => unimplemented!("RetTy")
 }
 
-Type: Type = {
-    Identifier => unimplemented!("Type"),
-    "own" Identifier => unimplemented!("own Type")
+Type: Spanned<Type> = {
+    <l: @L> <id: Identifier> <r: @R> => Spanned::from(Type::new(None, id), l, r),
+    <l: @L> <mode: Mode> <id: Identifier> <r: @R> => Spanned::from(Type::new(Some(mode), id), l, r)
+}
+
+Mode: Spanned<Mode> = {
+    <l: @L> "own" <r: @R> => Spanned::from(Mode::Owned, l, r),
+    <l: @L> "borrow" <r: @R> => Spanned::from(Mode::Borrowed, l, r)
 }
 
 Block: Block = {
@@ -148,7 +157,11 @@ Comma<E> = Delim<E, ",">;
 
 SEP = {
     ";",
-    NL
+    Newlines
+}
+
+Newlines = {
+    NL+
 }
 
 extern {
@@ -172,6 +185,7 @@ extern {
         "if" => Token::KeywordIf,
         "else" => Token::KeywordElse,
         "own" => Token::KeywordOwn,
+        "borrow" => Token::KeywordBorrow,
         "self" => Token::KeywordSelf,
         "while" => Token::KeywordWhile,
         "loop" => Token::KeywordLoop,
