@@ -2,7 +2,7 @@ use codespan::ByteIndex;
 use crate::parser::pos::HasSpan;
 use crate::parser::pos::Span;
 use crate::parser::pos::Spanned;
-use crate::parser::{Environment, Program, StringId, Token};
+use crate::parser::{Environment, ModuleTable, StringId, Token};
 use derive_new::new;
 use std::fmt;
 
@@ -27,25 +27,25 @@ impl Ast<'input> {
     }
 }
 
-pub struct Debuggable<'owner, T: DebugProgram + 'owner> {
+pub struct Debuggable<'owner, T: DebugModuleTable + 'owner> {
     inner: &'owner T,
-    program: &'owner Program,
+    table: &'owner ModuleTable,
 }
 
-impl<T: DebugProgram + 'owner> Debuggable<'owner, T> {
-    pub fn from(inner: &'owner T, program: &'owner Program) -> Debuggable<'owner, T> {
-        Debuggable { inner, program }
+impl<T: DebugModuleTable + 'owner> Debuggable<'owner, T> {
+    pub fn from(inner: &'owner T, table: &'owner ModuleTable) -> Debuggable<'owner, T> {
+        Debuggable { inner, table }
     }
 }
 
-impl<T: DebugProgram> fmt::Debug for Debuggable<'program, T> {
+impl<T: DebugModuleTable> fmt::Debug for Debuggable<'table, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.inner.debug(f, &self.program)
+        self.inner.debug(f, &self.table)
     }
 }
 
-pub trait DebugProgram {
-    fn debug(&self, f: &mut fmt::Formatter<'_>, program: &'program Program) -> fmt::Result;
+pub trait DebugModuleTable {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result;
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -53,10 +53,10 @@ pub enum Item {
     Struct(Struct),
 }
 
-impl DebugProgram for Item {
-    fn debug(&self, f: &mut fmt::Formatter<'_>, program: &'program Program) -> fmt::Result {
+impl DebugModuleTable for Item {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         match self {
-            Item::Struct(s) => write!(f, "{:?}", Debuggable::from(s, program)),
+            Item::Struct(s) => write!(f, "{:?}", Debuggable::from(s, table)),
         }
     }
 }
@@ -66,12 +66,12 @@ pub struct Module {
     items: Vec<Item>,
 }
 
-impl DebugProgram for Module {
-    fn debug(&self, f: &mut fmt::Formatter<'_>, program: &'program Program) -> fmt::Result {
+impl DebugModuleTable for Module {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         let entries: Vec<_> = self
             .items
             .iter()
-            .map(|i| Debuggable::from(i, program))
+            .map(|i| Debuggable::from(i, table))
             .collect();
 
         write!(f, "{:?}", entries)
@@ -102,12 +102,20 @@ struct DebugStruct<'a> {
     fields: Vec<DebugField<'a>>,
 }
 
-impl DebugProgram for Struct {
-    fn debug(&self, f: &mut fmt::Formatter<'_>, program: &'program Program) -> fmt::Result {
+impl DebugModuleTable for Struct {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         f.debug_struct("Struct")
-            .field("name", &program.lookup(self.name.node))
-            .field("fields", &format_args!("{:?}", self.fields))
-            .finish()
+            .field("name", &table.lookup(self.name.node))
+            .field(
+                "fields",
+                &format_args!(
+                    "{:?}",
+                    self.fields
+                        .iter()
+                        .map(|f| Debuggable::from(f, table))
+                        .collect::<Vec<_>>()
+                ),
+            ).finish()
     }
 }
 
@@ -121,9 +129,9 @@ impl HasSpan for Struct {
 
 #[cfg(test)]
 impl Struct {
-    crate fn build(name: &'input str, program: &mut Program) -> Struct {
+    crate fn build(name: &'input str, table: &mut ModuleTable) -> Struct {
         Struct {
-            name: Spanned::synthetic(program.intern(name)),
+            name: Spanned::synthetic(table.intern(name)),
             fields: vec![],
             span: Span::Synthetic,
         }
@@ -151,6 +159,14 @@ pub struct Field {
     ty: Spanned<Type>,
 }
 
+impl DebugModuleTable for Field {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        f.debug_struct("Field")
+            .field("name", &table.lookup(self.name.node))
+            .finish()
+    }
+}
+
 struct DebugField<'a> {
     name: &'a str,
     ty: DebugType<'a>,
@@ -158,9 +174,9 @@ struct DebugField<'a> {
 
 #[cfg(test)]
 impl Field {
-    crate fn build(name: &'input str, ty: Type, program: &mut Program) -> Field {
+    crate fn build(name: &'input str, ty: Type, table: &mut ModuleTable) -> Field {
         Field {
-            name: Spanned::synthetic(program.intern(name)),
+            name: Spanned::synthetic(table.intern(name)),
             ty: Spanned::synthetic(ty),
         }
     }
@@ -178,10 +194,10 @@ struct DebugType<'a> {
 
 #[cfg(test)]
 impl Type {
-    crate fn build(name: &'input str, mode: Mode, program: &mut Program) -> Type {
+    crate fn build(name: &'input str, mode: Mode, table: &mut ModuleTable) -> Type {
         Type {
             mode: Some(Spanned::synthetic(mode)),
-            name: Spanned::synthetic(program.intern(name)),
+            name: Spanned::synthetic(table.intern(name)),
         }
     }
 }

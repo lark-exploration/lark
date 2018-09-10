@@ -1,11 +1,19 @@
+use codespan::CodeMap;
 use crate::parser::Spanned;
 use derive_new::new;
 use smart_default::SmartDefault;
 use std::collections::BTreeMap;
+use std::fmt;
 
-#[derive(Copy, Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct StringId {
     position: usize,
+}
+
+impl fmt::Debug for StringId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "<{}>", self.position)
+    }
 }
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -45,12 +53,12 @@ impl Strings {
 }
 
 #[derive(Debug, Clone, Default, new)]
-pub struct Program {
+pub struct ModuleTable {
     #[new(default)]
     strings: Strings,
 }
 
-impl Program {
+impl ModuleTable {
     fn get(&self, hashable: impl Seahash) -> Option<StringId> {
         self.strings.get(&hashable)
     }
@@ -91,7 +99,7 @@ impl Environment<'parent> {
         self.to_name.get(&name).map(|id| *id)
     }
 
-    crate fn get_str(&self, program: &Program, key: impl Seahash) -> Option<NameId> {
+    crate fn get_str(&self, program: &ModuleTable, key: impl Seahash) -> Option<NameId> {
         let id = program.get(key)?;
 
         self.get(id)
@@ -137,7 +145,7 @@ impl Seahash for Spanned<String> {
     }
 }
 
-pub struct Module<'program> {
-    program: &'program mut Program,
+pub struct Module<'table> {
+    table: &'table mut ModuleTable,
     names: BTreeMap<NameId, StringId>,
 }

@@ -8,7 +8,7 @@ use codespan::ByteIndex;
 grammar;
 
 pub Program: Module = {
-    Item => Module::new(vec![<>])
+    <Item> NL* => Module::new(vec![<>])
 }
 
 Item: Item = {
@@ -155,12 +155,12 @@ PrefixDelim<T, SEP>: Vec<T> = {
 
 Comma<E> = Delim<E, ",">;
 
-SEP = {
+SEP: () = {
     ";",
     Newlines
 }
 
-Newlines = {
+Newlines: () = {
     NL+
 }
 

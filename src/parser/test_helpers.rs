@@ -1,30 +1,33 @@
-use codespan::ByteIndex;
-use codespan::ByteSpan;
-use crate::parser::ast;
+use codespan::{ByteIndex, ByteSpan};
+use crate::parser::ast::{self, Field, Mode, Type};
 use crate::parser::keywords::{KEYWORDS, SIGILS};
 use crate::parser::pos::Span;
 use crate::parser::pos::Spanned;
-use crate::parser::program::Program;
+use crate::parser::program::ModuleTable;
 use crate::parser::program::StringId;
 use crate::parser::token::Token;
 
 pub struct ModuleBuilder<'program> {
-    program: &'program mut Program,
+    program: &'program mut ModuleTable,
     module: ast::Module,
     pos: u32,
 }
 
 impl ModuleBuilder<'program> {
-    pub fn new(program: &mut Program) -> ModuleBuilder<'_> {
+    pub fn new(program: &mut ModuleTable, start: u32) -> ModuleBuilder<'_> {
         ModuleBuilder {
             program,
             module: ast::Module::new(vec![]),
-            pos: 0,
+            pos: start,
         }
     }
 
-    pub fn build_struct(mut self, name: &str, f: impl FnOnce(StructBuilder<'_>)) -> Self {
-        let start = self.pos;
+    pub fn build_struct(
+        mut self,
+        name: &str,
+        f: impl FnOnce(StructBuilder<'_>) -> StructBuilder<'_>,
+    ) -> Self {
+        let struct_start = self.pos;
         let keyword = self.keyword("struct");
         self.ws();
         let name = self.add(name);
@@ -32,21 +35,23 @@ impl ModuleBuilder<'program> {
         self.sigil("{");
         self.lf();
 
-        let s = {
-            let module = &mut self;
+        let start_pos = self.pos;
+
+        let (s, mut builder) = {
             let struct_builder = StructBuilder {
-                module,
-                start,
+                module: self,
+                struct_start,
+                start_pos,
                 s: ast::Struct::new(name, vec![], Span::Synthetic),
             };
 
-            f(struct_builder);
+            let struct_builder = f(struct_builder);
             struct_builder.finish()
         };
 
-        self.module = self.module.add_struct(s);
+        builder.module = builder.module.add_struct(s);
 
-        self
+        builder
     }
 
     pub fn finish(self) -> ast::Module {
@@ -55,6 +60,10 @@ impl ModuleBuilder<'program> {
 
     pub fn ws(&mut self) {
         self.pos += 1;
+    }
+
+    pub fn indent(&mut self) {
+        self.pos += 2;
     }
 
     pub fn lf(&mut self) {
@@ -96,16 +105,60 @@ impl ModuleBuilder<'program> {
 }
 
 pub struct StructBuilder<'a> {
-    module: &'a mut ModuleBuilder<'a>,
-    start: u32,
+    module: ModuleBuilder<'a>,
+    struct_start: u32,
+    start_pos: u32,
     s: ast::Struct,
 }
 
 impl StructBuilder<'a> {
-    pub fn finish(self) -> ast::Struct {
+    pub fn field(mut self, name: &str, mode: Option<Mode>, id: &str) -> Self {
+        self.module.indent();
+        let name = self.module.add(name);
+        self.module.sigil(":");
+        self.module.ws();
+
+        let mode: Option<Spanned<Mode>> = match mode {
+            None => None,
+            Some(Mode::Owned) => {
+                let keyword = self.module.keyword("own");
+                self.module.ws();
+
+                Some(Spanned::wrap_span(Mode::Owned, keyword.span))
+            }
+
+            Some(Mode::Shared) => None,
+
+            Some(Mode::Borrowed) => {
+                let keyword = self.module.keyword("borrowed");
+                self.module.ws();
+
+                Some(Spanned::wrap_span(Mode::Borrowed, keyword.span))
+            }
+        };
+
+        let type_name = self.module.add(id);
+        let ty_span = match mode {
+            None => type_name.span,
+            Some(mode) => mode.span.to(type_name.span),
+        };
+
+        let ty = Spanned::wrap_span(Type::new(mode, type_name), ty_span);
+
+        self.module.sigil(",");
         self.module.lf();
+
+        self.s = self.s.field(Field::new(name, ty));
+
+        self
+    }
+
+    pub fn finish(mut self) -> (ast::Struct, ModuleBuilder<'a>) {
         self.module.sigil("}");
 
-        self.s.spanned(self.start, self.module.pos)
+        (
+            self.s.spanned(self.struct_start, self.module.pos),
+            self.module,
+        )
     }
 }

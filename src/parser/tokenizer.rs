@@ -3,14 +3,14 @@ use crate::parser::keywords::{KEYWORDS, SIGILS};
 use crate::parser::lexer_helpers::LexerStateTrait;
 use crate::parser::lexer_helpers::{LexerNext, ParseError, Tokenizer as GenericTokenizer};
 use crate::parser::program::StringId;
-use crate::parser::{Program, Span, Token};
+use crate::parser::{ModuleTable, Span, Token};
 use derive_new::new;
 use lazy_static::lazy_static;
 use log::trace;
 use std::fmt;
 use unicode_xid::UnicodeXID;
 
-pub type Tokenizer<'program> = GenericTokenizer<'program, LexerState>;
+pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
 
 #[derive(Debug)]
 pub enum LexerState {
