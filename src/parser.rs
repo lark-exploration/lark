@@ -18,9 +18,14 @@ crate use self::pos::{Span, Spanned};
 crate use self::program::{Environment, Module, ModuleTable, NameId, StringId};
 crate use self::token::Token;
 crate use self::tokenizer::Tokenizer;
+
+use self::keywords::KeywordList;
+
 use codespan::ByteIndex;
+use derive_new::new;
 use std::borrow::{Borrow, Cow};
 use std::error::Error;
+use std::fmt;
 
 pub fn parse(
     source: impl Into<Cow<'source, str>>,
@@ -30,11 +35,16 @@ pub fn parse(
     let cow = source.into();
     let tokenizer = Tokenizer::new(table, cow.borrow(), start);
     let parser = ProgramParser::new();
-    let module = parser.parse(tokenizer).map_err(lalrpop_err);
+    let module = parser
+        .parse(tokenizer)
+        .map_err(|err| lalrpop_err(err, table));
     Ok(module?)
 }
 
-pub fn lalrpop_err(err: lalrpop_util::ParseError<ByteIndex, Token, ParseError>) -> ParseError {
+pub fn lalrpop_err(
+    err: lalrpop_util::ParseError<ByteIndex, Token, ParseError>,
+    table: &ModuleTable,
+) -> ParseError {
     use lalrpop_util::ParseError::*;
 
     match err {
@@ -43,7 +53,11 @@ pub fn lalrpop_err(err: lalrpop_util::ParseError<ByteIndex, Token, ParseError>) 
             token: Some((left, token, right)),
             expected,
         } => ParseError::from(
-            format!("Unrecognized token {:?}, expected: {:?}", token, expected),
+            format!(
+                "Unexpected token {}, expected: {}",
+                token.source(table),
+                KeywordList::new(expected)
+            ),
             left,
             right,
         ),
@@ -51,11 +65,14 @@ pub fn lalrpop_err(err: lalrpop_util::ParseError<ByteIndex, Token, ParseError>) 
         UnrecognizedToken {
             token: None,
             expected,
-        } => ParseError::from_eof(format!("Unrecognized EOF, expected: {:?}", expected)),
+        } => ParseError::from_eof(format!(
+            "Unrecognized EOF, expected: {}",
+            KeywordList::new(expected)
+        )),
 
         ExtraToken {
             token: (left, token, right),
-        } => ParseError::from(format!("Extra Token {:?}", token), left, right),
+        } => ParseError::from(format!("Extra Token {}", token.source(table)), left, right),
 
         User { error } => error,
     }
@@ -103,6 +120,10 @@ mod test {
             struct Diagnostic {
               msg: own String,
               level: String,
+            }
+
+            def new(msg: own String, level: String) -> Diagnostic {
+              Diagnostic { mgs, level }
             }
             ",
         );

@@ -1,9 +1,17 @@
 use crate::parser::Token;
 use lazy_static::lazy_static;
+use std::fmt;
+
+use derive_new::new;
 
 lazy_static! {
-    pub(crate) static ref KEYWORDS: Matchers =
-        { Matchers::keywords(&[("struct", Token::KeywordStruct), ("own", Token::KeywordOwn)]) };
+    pub(crate) static ref KEYWORDS: Matchers = {
+        Matchers::keywords(&[
+            ("struct", Token::KeywordStruct),
+            ("own", Token::KeywordOwn),
+            ("def", Token::KeywordDef),
+        ])
+    };
     pub(crate) static ref SIGILS: Matchers = {
         Matchers::keywords(&[
             ("{", Token::CurlyBraceOpen),
@@ -51,5 +59,33 @@ impl Keywords {
         }
 
         None
+    }
+}
+
+#[derive(Debug, new)]
+crate struct KeywordList {
+    vec: Vec<String>,
+}
+
+impl fmt::Display for KeywordList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_set()
+            .entries(self.vec.iter().map(|i| match i {
+                s if s == "\"if\"" => DisplayAdapter::new("if"),
+                s if s == "\"else\"" => DisplayAdapter::new("else"),
+                s if s == "\"for\"" => DisplayAdapter::new("for"),
+                other => DisplayAdapter::new(&i[..]),
+            })).finish()
+    }
+}
+
+#[derive(new)]
+crate struct DisplayAdapter<T: fmt::Display> {
+    inner: T,
+}
+
+impl<T: fmt::Display> fmt::Debug for DisplayAdapter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", &self.inner)
     }
 }

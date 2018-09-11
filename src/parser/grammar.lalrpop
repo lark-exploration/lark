@@ -8,7 +8,7 @@ use codespan::ByteIndex;
 grammar;
 
 pub Program: Module = {
-    <Item> NL* => Module::new(vec![<>])
+    <Item> newline* => Module::new(vec![<>])
 }
 
 Item: Item = {
@@ -21,7 +21,7 @@ BlockItem: Item = {
 }
 
 Struct: Struct = {
-    <l: @L> "struct" <name: Identifier> "{" NL* <fields: Fields> "}" <r: @R> => 
+    <l: @L> struct <name: Identifier> "{" newline* <fields: Fields> "}" <r: @R> => 
         Struct::new(name, fields, Span::from(l, r))
 }
 
@@ -30,7 +30,7 @@ Fields: Vec<Field> = {
 }
 
 COMMA = {
-    NL* "," NL*
+    newline* "," newline*
 }
 
 Field: Field = {
@@ -38,7 +38,7 @@ Field: Field = {
 }
 
 Def: Def = {
-    "def" Identifier FnDecl Block => unimplemented!("Def")
+    def Identifier FnDecl Block => unimplemented!("Def")
 }
 
 FnDecl: () = {
@@ -59,8 +59,8 @@ Type: Spanned<Type> = {
 }
 
 Mode: Spanned<Mode> = {
-    <l: @L> "own" <r: @R> => Spanned::from(Mode::Owned, l, r),
-    <l: @L> "borrow" <r: @R> => Spanned::from(Mode::Borrowed, l, r)
+    <l: @L> own <r: @R> => Spanned::from(Mode::Owned, l, r),
+    <l: @L> borrow <r: @R> => Spanned::from(Mode::Borrowed, l, r)
 }
 
 Block: Block = {
@@ -79,7 +79,7 @@ Statement: Statement = {
 }
 
 Let: Let = {
-    "let" Pat MaybeTypeAscription MaybeInitExpr => unimplemented!("Let")
+    let Pat MaybeTypeAscription MaybeInitExpr => unimplemented!("Let")
 }
 
 MaybeTypeAscription: () = {
@@ -93,7 +93,7 @@ MaybeInitExpr: () = {
 Pat: Pattern = {
     "_" => unimplemented!("Pat::_"),
     Identifier => unimplemented!("Pat::Identifier"),
-    "own" Identifier => unimplemented!("Pat::own Identifier")
+    own Identifier => unimplemented!("Pat::own Identifier")
 }
 
 Expr: Expression = {
@@ -107,14 +107,14 @@ ExprIf: Expression = {
 }
 
 ExprIfLet: If = {
-    "if" "let" Pat "=" Expr Block => unimplemented!("ExprIfLet::NoElse"),
-    "if" "let" Pat "=" Expr Block "else" BlockOrIf => unimplemented!("ExprIfLet::Else")
+    "if" let Pat "=" Expr Block => unimplemented!("ExprIfLet::NoElse"),
+    "if" let Pat "=" Expr Block "else" BlockOrIf => unimplemented!("ExprIfLet::Else")
 }
 
 ExprAtom: Atom = {
     Lit => unimplemented!("ExprAtom::Lit"),
     PathExpr => unimplemented!("ExprAtom::PathExpr"),
-    "self" => unimplemented!("ExprAtom::Self"),
+    self => unimplemented!("ExprAtom::Self"),
 }
 
 Lit: () = {
@@ -127,7 +127,7 @@ PathExpr: Path = {
 }
 
 Identifier: Spanned<StringId> = {
-    <l: @L> <id: "id"> <r: @R> => Spanned::from(id, l, r)
+    <l: @L> <id: identifier> <r: @R> => Spanned::from(id, l, r)
 }
 
 Path<SEP>: Path = {
@@ -161,7 +161,7 @@ SEP: () = {
 }
 
 Newlines: () = {
-    NL+
+    newline+
 }
 
 extern {
@@ -179,19 +179,19 @@ extern {
         "->" => Token::ThinArrow,
         "::" => Token::DoubleColon,
         "." => Token::Period,
-        "def" => Token::KeywordDef,
-        "let" => Token::KeywordLet,
-        "struct" => Token::KeywordStruct,
+        def => Token::KeywordDef,
+        let => Token::KeywordLet,
+        struct => Token::KeywordStruct,
         "if" => Token::KeywordIf,
         "else" => Token::KeywordElse,
-        "own" => Token::KeywordOwn,
-        "borrow" => Token::KeywordBorrow,
-        "self" => Token::KeywordSelf,
-        "while" => Token::KeywordWhile,
-        "loop" => Token::KeywordLoop,
+        own => Token::KeywordOwn,
+        borrow => Token::KeywordBorrow,
+        self => Token::KeywordSelf,
+        while => Token::KeywordWhile,
+        loop => Token::KeywordLoop,
         "for" => Token::KeywordFor,
         "unimpl" => Token::Unimplemented,
-        "id" => Token::Identifier(<StringId>),
-        NL => Token::Newline
+        identifier => Token::Identifier(<StringId>),
+        newline => Token::Newline
     }
 }
