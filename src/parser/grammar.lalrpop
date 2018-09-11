@@ -8,7 +8,7 @@ use codespan::ByteIndex;
 grammar;
 
 pub Program: Module = {
-    <Item> newline* => Module::new(vec![<>])
+    PrefixDelim<Item, SEP> => Module::new(<>)
 }
 
 Item: Item = {
@@ -17,7 +17,7 @@ Item: Item = {
 
 BlockItem: Item = {
     Struct => Item::Struct(<>),
-    Def => unimplemented!()
+    Def => Item::Def(<>)
 }
 
 Struct: Struct = {
@@ -38,19 +38,20 @@ Field: Field = {
 }
 
 Def: Def = {
-    def Identifier FnDecl Block => unimplemented!("Def")
+    <l: @L> def <name: Identifier> <decl: FnDecl> <block: Block> <r: @R> =>
+        Def::new(name, decl.0, decl.1, block, Span::from(l, r))
 }
 
-FnDecl: () = {
-    FnParams RetTy? => unimplemented!("FnDecl")
+FnDecl: (Vec<Field>, Option<Spanned<Type>>) = {
+    <params: FnParams> <ty: RetTy?> => (params, ty)
 }
 
-FnParams: () = {
-    "unimpl" => unimplemented!("FnParams")
+FnParams: Vec<Field> = {
+    "(" <Delim<Field, COMMA>> ")"
 }
 
-RetTy: () = {
-    "->" Type => unimplemented!("RetTy")
+RetTy: Spanned<Type> = {
+    "->" <Type>
 }
 
 Type: Spanned<Type> = {
@@ -172,6 +173,8 @@ extern {
         "_" => Token::Underscore,
         "{" => Token::CurlyBraceOpen,
         "}" => Token::CurlyBraceClose,
+        "(" => Token::ParenOpen,
+        ")" => Token::ParenClose,
         ":" => Token::Colon,
         ";" => Token::Semicolon,
         "," => Token::Comma,

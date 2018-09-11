@@ -51,12 +51,14 @@ pub trait DebugModuleTable {
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Item {
     Struct(Struct),
+    Def(Def),
 }
 
 impl DebugModuleTable for Item {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         match self {
             Item::Struct(s) => write!(f, "{:?}", Debuggable::from(s, table)),
+            Item::Def(d) => write!(f, "{:?}", Debuggable::from(d, table)),
         }
     }
 }
@@ -213,13 +215,27 @@ pub struct Pattern {}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Path {
-    components: Vec<Spanned<StringId>>,
+    components: Vec<Identifier>,
 }
 
 pub enum Statement {}
 
-pub struct Def {}
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
+pub struct Def {
+    name: Identifier,
+    parameters: Vec<Field>,
+    ret: Option<Spanned<Type>>,
+    body: Block,
+    span: Span,
+}
 
+impl DebugModuleTable for Def {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        f.debug_struct("Def").finish()
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Expression {
     Block(Block),
 }
@@ -240,6 +256,7 @@ pub enum ChainedElse {
     If(Box<If>),
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Block {
     expressions: Vec<Expression>,
 }

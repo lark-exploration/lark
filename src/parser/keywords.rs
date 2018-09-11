@@ -16,8 +16,12 @@ lazy_static! {
         Matchers::keywords(&[
             ("{", Token::CurlyBraceOpen),
             ("}", Token::CurlyBraceClose),
+            ("(", Token::ParenOpen),
+            (":", Token::Colon),
+            (")", Token::ParenClose),
             (":", Token::Colon),
             (",", Token::Comma),
+            ("->", Token::ThinArrow),
         ])
     };
 }
