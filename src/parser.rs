@@ -110,7 +110,7 @@ mod test {
         let (actual, mut table, start) = parse_string(source);
 
         let expected = ModuleBuilder::new(&mut table, start)
-            .build_struct("Diagnostic", |b| {
+            .add_struct("Diagnostic", |b| {
                 b.field("msg", Some(Mode::Owned), "String")
                     .field("level", None, "String")
             }).finish();

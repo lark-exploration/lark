@@ -22,7 +22,7 @@ impl ModuleBuilder<'program> {
         }
     }
 
-    pub fn build_struct(
+    pub fn add_struct(
         mut self,
         name: &str,
         f: impl FnOnce(StructBuilder<'_>) -> StructBuilder<'_>,
