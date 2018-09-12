@@ -1,6 +1,7 @@
 #![deny(rust_2018_idioms)]
 #![feature(in_band_lifetimes)]
 #![feature(box_patterns)]
+#![feature(crate_visibility_modifier)]
 #![feature(nll)]
 #![allow(unused)]
 
