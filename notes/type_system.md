@@ -10,14 +10,16 @@ type: i.e., a shared owned thing is shared, not owned.
 ```
 T  = share(r) T
    | borrow(r) C<{T}>
-   | C<{T}> // "classes", e.g. Vec<T> or String
-   | S<{T}> // "structs", including things like u32
+   | N<{T}, {N=T}>
+   
+N = C // "classes", e.g., `Vec`
+  | S // "structs", e.g., `u32` or `Option`
 ```
 
 As in Rust, there is a basic "well-formedness" (WF) predicate that
 requires that e.g. `share(a) share(b) T` is only possible if `b: a`.
 
-# Structs vs classes
+## Structs vs classes
 
 I am assuming that there is a distinction of a struct vs a class.  A
 struct is (sort of) a "value type". Structs are special because a
@@ -53,9 +55,28 @@ directly embedded in structs is exactly that we cannot propagate the
 "shared" notion into the interior of the struct if there is no
 generic.
 
-# Representation of shares and borrows
+## Positional vs associated types
 
-## share and own are represented the same way at runtime
+You'll note that structs/classes have two sorts of arguments:
+
+```
+Vec<u32>
+Mutex<Data = u32>
+```
+
+Positional arguments are expected to be more common, but they play a
+very specific role: they always refer to types that are **owned** by
+the containing type, and in particular owned outside of any "shared
+mutability" cell. This also allows us to do ergonomic transformations
+on them; it also means they can be covariant.
+
+Associated arguments (`Data = u32`) are more flexible. They can play
+many roles; however, as a result, we are more limited in what we can
+do there. Such types are invariant.
+
+## Representation of shares and borrows
+
+### share and own are represented the same way at runtime
 
 `own T` and `share T` share a representation: the difference is just
 in what destructors the compiler will run, essentially, and what
@@ -79,7 +100,14 @@ This has a few notable advantages:
 The first one is the clincher for me: the latter could theoretically
 be overcome by arenas, though at unknown runtime cost.
 
-## borrow is not
+### optimizing shared representation
+
+Whenever a `share Foo` is stored directly on the stack, we can likely
+convert it into a pointer representation. This is not intended to be
+visible to the end user. We should work out the rules for such
+optimizations.
+
+### borrow is not
 
 The arguments above cannot apply to borrow, unless we want to require
 that all primitive types have the same size as a pointer (hint: I
@@ -99,7 +127,7 @@ struct Foo {
 How can you represent `borrow Foo`? There has to be a pointer to a
 byte, which will not be 1 byte in size.
 
-# Mutability
+## Mutability
 
 The general rule in Lark is that local variables cannot be
 'reassigned' but fields can. That is, one cannot do `x = 3` but one
@@ -142,132 +170,128 @@ impl Foo<T> {
 Not a complete solution to the "which fields do you modify" problem,
 but should reduce its incidence.
 
-# Variant 1: Strong normalization
+## Normalization of sharing
 
-This "strong normalization" variant is my preferred variant, but it
-requires us to make "shared mutable" more *visible* to end
-users. We'll come to that.
+`share T` types are "normalized" according to the following rules. If
+T1 normalizes to the type T2, that means that T1 and T2 are considered
+to be **the same type** by the system.
 
-The basic idea is that a `share T` can be normalized according to the following
-rules:
+- `share(r1) share(r2) T` becomes `share(r2) T`
+  - Note that "well formedness" requires that `r2: r1`
+- `share(r1) S<{T}, {N=U}>` becomes `S<{share(r1) T}, {N=U}>`
+  - Structs are eagerly cloned
+  - Simple case: `share(r1) u32 = u32`
+  - Medium case: `share(r1) Option<u32> = Option<u32>`
+  - Complex case: `share(r1) Option<own Vec<u32>> = Option<share Vec<u32>>`
+  - Associated case: `share(r1) Foo<T = Bar> = Foo<T = Bar>` (`Bar` is unchanged)
+- `share(r1) C<{T}, {N=U}>` becomes `share(r1) C<{share(r1) T}, {U=T}>`
+  - Classes retain the "shared" modifier (but still propagate it inward)
+  - Simple case: `share(r1) String` is fully normalized
+  - Medium case: `share Vec<own u32>` is fully normalized
+    - Alternative: it becomes `share Vec<share u32>` which then becomes `share Vec<own u32>` again =)
+  - Complex case: `share Vec<own Vec<u32>>` becomes `share Vec<share Vec<u32>>`
+  - `share Mutex<Data = own Vec<u32>>` becomes `share Mutex<Data = own Vec<u32>>`
 
-- `share(r1) share(r2) T => share(r2) T` (WF requires then that `r2: r1`)
-- `share(r1) C<{T}> => share(r1) C<{share(r1) T}>`
-- `share(r1) S<{T}> => S<{share(r1) T}>`
+### Interaction with contra-variance and cells
 
-Some examples:
+The normalization rules above work because we require that `Foo<Bar>`
+implies that the `Foo` owns a copy of `Bar` and that -- if `Foo` is
+shared -- that `Bar` is also to be considered shared. This means that
+the "fundamental capabilities" offered by `share Foo<own Bar>` are
+equivalent to those offered by `share Foo<share Bar>` (also, the
+memory layout is the same).
 
-- `share(r1) Vec<own Foo> => share(r1) Vec<share(r1) Foo>`
-- `share(r1) Option<own Foo> => Option<share(r1) Foo>`
-  - because `Option` is a "struct" (value type)
-- `share(r1) borrow(r2) Foo` -- no change here.  
+These things are not true when you have contra-variance or cells. We
+enforce this rule by forbidding positional type parameters from
+appearing in a contra-variant or in-variant position.
 
-## Interaction with shared mutability
-
-"shared" propagation doesn't work if you have things like `Mutex<T>`
-that permit mutation even when shared. To accomodate that, I think we should
-declare type parameters that appear in a shared mutabile context somewhat
-different. Let's adopt for now the `cell` term from Rust. In that case,
-we might have:
+Consider this example:
 
 ```
-class Foo<cell T> {
-  mutex: MutexCell<T>
+class FnPtr {
+  type Arg;
+  
+  f: fn(own Arg)
 }
 ```
 
-Alternatively, a "cell" -- something that has shared mutation interior to it --
-might another kind of class.
-
-Alternatively, we might just not do downward propagation through
-classes, but that seems unfortunate, since now there is a difference
-between `shared Vec<shared S>` and `shared Vec<own S>`.
-
-# Variant 2: Weak normalization
-
-One could adopt a "weak normalization" variant in which we only
-propagate sharing through structs, not classes:
-
-- `share(r1) share(r2) T => share(r2) T` (WF requires then that `r2: r1`)
-- `share(r1) S<{T}> => S<{share(r1) T}>`
-
-In this model, then, shared mutability can be incorporated freely.
-However, the downside is that `shared Vec<String>` and `shared
-Vec<shared String>` are distinct types, despite the fact that there is
-no operation you can do with the former that you cannot do with the
-latter.
-
-# Reflects on variant 1 vs variant 2
-
-The example of `shared Vec<String>` normalizing to `shared Vec<shared
-String>` gets at the heart of the issue: because we know that `Vec`
-will never have shared mutation, there is no reason **not** to do this
-normalization. But in Variant 2 we still cannot do it, because we have
-adopted a more conservative rule that allows any type to add shared
-mutation without it affecting the "public interface".
-
-In practice, though, the "semver compatibility" *is* still affected,
-so this is something of a lie. In Rust, shared mutation doesn't affect
-any of the "visible" public interface, but it is typically a breaking
-change anyway: it affects variance, for example, and -- unless one
-uses `Mutex` -- can affect thread safety as well. This breaking
-change, however, is "silent" in that it is not marked in the struct
-syntax. The main reason this has not become a problem is that shared
-mutation is so rare.
-
-In principle, we can infer the `cell` annotation, but we also want to
-think about what to do with traits. e.g., if you have
-
-```rust
-trait Foo<T> { ... }
-```
-
-then can we transform a `shared Foo<T>` to a `shared Foo<shared T>`?
-I would like the answer to be yes, but then we have to move the `cell`
-declaration into the trait, and it will in turn restrict the types
-that implement the trait.
-
-# Connection between cell and variance
-
-Hmm, there is obviously a connection between cell and variance. The
-"cell" is basically a kind of invariance annotation. Maybe, indeed, it
-is useful to think of it as a variance annotation -- and perhaps
-(then) not to use `cell` but some other term. Let's think a bit about
-variance.
-
-(Also a note: We are making a pretty deep assertion here that is using
-the **fundamental capabilities provided by the underlying type** to
-say that all methods must be legal to transform in this way. For
-example, consider something like `contains`.)
-
-# Variance
-
-We may or may not want a strict notion of *subtyping* but we are going
-to want at minimum "recursive coercions" that permit `share(r1) T` to
-be "upcast" to `share(r2) T` where `r1: r2`. This would be useful for
-example in code like this:
+If we had a value of type T where T is
 
 ```
-def foo(x: share(a) Foo, y: share(b) Foo) {
-  let v: Vec<share(c) Foo> = [x, y]; // where a: c, b: c
+own FnPtr<Arg = own Vec<u32>>
+```
+
+and we shared it to `share T`, it would be wrong to normalize `share T` to
+
+```
+share FnPtr<Arg = share Vec<u32>>
+```
+
+In particular, that would allow us to call the function `f` with a
+`share Vec<u32>` even though it expects an `own Vec<u32>`. Seems bad.
+
+#### Cells and shared mutability 
+
+Note that the fundamental cell type (`UnsafeCell`, in Rust) is modeled
+using an associated type, forcing it too to be invariant:
+
+```
+class UnsafeCell {
+  type Data;
+  
+  data: Self::Data
 }
 ```
 
-Similarly, we probably want this to propagate deeply, so that e.g. one could also do:
+This is because `UnsafeCell` affords a capability -- the ability to
+mutate `self.data` even when shared -- that ordinary types do not
+have.
+
+#### Reflection on semver, shared mutation, and Rust
+
+This design makes invariance and shared mutability very present in the
+"external interface" offered by a class. It means that one cannot
+causally add a `Mutex<T>` to a type definition if `T` is a generic
+defined on the class: that would require you to convert `T` from a
+positional type into an associated type.
+
+Rust does not require the same gyrations. However, this does not imply
+that adding a `Mutex<T>` in Rust is not a "breaking change" (in the
+sense that your clients may stop compiling): it still makes `T`
+invariant, which can lead to subtle and surprising lifetime
+errors. (It also affects auto traits, but that is orthogonal.)
+
+The theory is that it makes sense to present shared mutability very
+differently from ordinary ownership, both because it is unusual but
+also because it affords more capabilities than an ordinary type. In
+exchange for doing that, this means we can make ordinary ownership
+more ergonomic, by propagating sharing inward
+automatically. (Moreover, using a distinct syntactic form means that
+people can tell whether sharing will propagate without even looking at
+the struct definition.)
+
+Another way to look at it is that Rust forces all types to be
+conservative in order to account for the possibility that they *may*
+add shared mutation in the future, when in fact that is a very rare
+occurrence.
+
+## Subtyping rules
+
+The full subtyping rules are as follows:
 
 ```
-def foo(x: Vec<share(a) Foo>, y: Vec<share(b) Foo>) {
-  let v: Vec<Vec<share(c) Foo>> = [x, y]; // where a: c, b: c
-}
+share(r1) T1 <: share(r2) T2 :-
+  r1: r2,
+  T1 <: T2.
+
+borrow(r1) T1 <: borrow(r2) T2 :-
+  r1: r2,
+  T1 == T2. // sloppy, really this can only be a C
+
+N<{T1}, {N=U1}> <: N<{T2}, {N=U2}> :-
+  {T1 <: T2},
+  {U1 == U2}.
 ```
 
-For this to work, we must have a notion of variance.
-
-I touched briefly on variance in the previous section. I'm going to
-assume for now that only *some* fields are declared as `mut`. I think
-further that any type parameters which appear in the type of a `mut`
-field should also be declared `mut` by the user (that could be
-inferred, as Rust does; but note that it is transitive).
-
-Ideally, I think, we would have "multiple" notions of variance in
-Rust, depending on the mode.
+Here `==` means "equal types" can implements the normalization rules
+given earlier.
