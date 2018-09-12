@@ -123,8 +123,8 @@ mod test {
             }
 
             def new(msg: own String, level: String) -> Diagnostic {
-              Diagnostic { mgs, level }
             }
+            
             ",
         );
 

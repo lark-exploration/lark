@@ -49,6 +49,8 @@ impl ModuleBuilder<'program> {
         };
 
         builder.module = builder.module.add_struct(s);
+        builder.lf();
+        builder.lf();
 
         builder
     }
@@ -62,6 +64,8 @@ impl ModuleBuilder<'program> {
         let start_pos = self.pos;
 
         let (def, mut builder) = {
+            self.sigil("(");
+
             let def_builder = DefBuilder {
                 module: self,
                 def_start,
@@ -75,6 +79,8 @@ impl ModuleBuilder<'program> {
         };
 
         builder.module = builder.module.def(def);
+        builder.lf();
+        builder.lf();
 
         builder
     }
@@ -220,8 +226,9 @@ pub struct DefBuilder<'a> {
 
 impl DefBuilder<'a> {
     pub fn param(mut self, name: &str, mode: Option<Mode>, id: &str) -> Self {
-        if !self.first {
-            self.first = true;
+        if self.first {
+            self.first = false;
+        } else {
             self.module.sigil(",");
             self.module.ws();
         }
@@ -268,6 +275,7 @@ impl DefBuilder<'a> {
     }
 
     pub fn returns(mut self, mode: Option<Mode>, ty: &str) -> Self {
+        self.module.sigil(")");
         self.module.ws();
         self.module.sigil("->");
         self.module.ws();
@@ -288,6 +296,9 @@ impl DefBuilder<'a> {
         };
 
         self.def = self.def.ret(Some(ty));
+        self.module.ws();
+        self.module.sigil("{");
+        self.module.lf();
 
         self
     }

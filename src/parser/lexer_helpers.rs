@@ -117,10 +117,10 @@ impl<State: LexerStateTrait + Debug> Iterator for Tokenizer<'table, State> {
                     self.trace(&format!("whole {} {:?}", size, token));
 
                     let file_start = self.codespan_start;
-                    let start = self.start_pos;
-                    let end = self.pos + size;
+                    // let start = self.start_pos;
+                    // let end = self.pos + size;
 
-                    self.consume_token(size);
+                    let (start, end) = self.whole_token(size);
                     // self.token_start = self.rest;
 
                     let token = Some(Ok((
@@ -150,7 +150,10 @@ impl<State: LexerStateTrait + Debug> Iterator for Tokenizer<'table, State> {
                 }
 
                 LexerNext::FinalizeButDontEmitToken(size, next_state) => {
-                    self.finalize_current(size, next_state);
+                    let (l, r) = self.discard_current(size, next_state);
+                    let file_start = self.codespan_start;
+
+                    debug!(target: "lark::tokenize::noemit", "NoEmit @ {}..{}", l + file_start, r + file_start);
                     // Parser doesn't handle WS tokens
                     // return Some((0, Tok::WS(token), 0));
                 }
@@ -220,6 +223,27 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
         ret
     }
 
+    fn whole_token(&mut self, size: u32) -> (u32, u32) {
+        let token = &self.token_start[..size as usize];
+        let (start, end) = self.consume_token(size);
+        self.token_start = self.rest;
+
+        self.trace("whole");
+
+        trace!(target: "lark::tokenize", "-> token={:?}", token.clone());
+
+        (start, end)
+    }
+
+    fn discard_current(&mut self, size: u32, next_state: State) -> (u32, u32) {
+        self.token_start = self.rest;
+        self.state = next_state;
+        let (start_pos, end_pos) = self.consume_token(size);
+
+        self.trace("discard");
+        (start_pos, end_pos)
+    }
+
     fn finalize_current(&mut self, size: u32, next_state: State) -> (u32, StringId, u32) {
         let token = &self.token_start[..self.token_size as usize];
         let id = self.table.intern(token);
@@ -227,8 +251,8 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
         self.state = next_state;
         let (start_pos, end_pos) = self.consume_token(size);
 
-        self.trace("finalize  ");
-        trace!(target: "lark::tokenize", "-> token=WS body={:?}", token.clone());
+        self.trace("finalize");
+        trace!(target: "lark::tokenize", "-> token={:?}", token.clone());
         (start_pos, id, end_pos)
     }
 
@@ -247,11 +271,13 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
     }
 
     fn trace(&self, prefix: &str) {
+        let start = self.codespan_start;
+
         trace!(target: "lark::tokenize", "{}", prefix);
 
         trace!(target: "lark::tokenize", "          input={:?}", self.input);
 
-        trace!(target: "lark::tokenize", "          pos={:?} start_pos={:?}", self.pos, self.start_pos);
+        trace!(target: "lark::tokenize", "          pos={:?} start_pos={:?}", start + self.pos, start + self.start_pos);
 
         trace!(
             target: "lark::tokenize",
