@@ -27,6 +27,30 @@ impl Ast<'input> {
     }
 }
 
+pub struct DebuggableVec<'owner, T: DebugModuleTable + 'owner> {
+    inner: &'owner Vec<T>,
+    table: &'owner ModuleTable,
+}
+
+impl<T: DebugModuleTable + 'owner> DebuggableVec<'owner, T> {
+    pub fn from(inner: &'owner Vec<T>, table: &'owner ModuleTable) -> DebuggableVec<'owner, T> {
+        DebuggableVec { inner, table }
+    }
+}
+
+impl<T: DebugModuleTable> fmt::Debug for DebuggableVec<'table, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{:?}",
+            self.inner
+                .iter()
+                .map(|f| Debuggable::from(f, self.table))
+                .collect::<Vec<_>>()
+        )
+    }
+}
+
 pub struct Debuggable<'owner, T: DebugModuleTable + 'owner> {
     inner: &'owner T,
     table: &'owner ModuleTable,
@@ -54,11 +78,23 @@ pub enum Item {
     Def(Def),
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum BlockItem {
+    Item(Item),
+    Decl(Declaration),
+    Expr(Expression),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum Declaration {
+    Let,
+}
+
 impl DebugModuleTable for Item {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         match self {
-            Item::Struct(s) => write!(f, "{:?}", Debuggable::from(s, table)),
-            Item::Def(d) => write!(f, "{:?}", Debuggable::from(d, table)),
+            Item::Struct(s) => write!(f, "{:#?}", Debuggable::from(s, table)),
+            Item::Def(d) => write!(f, "{:#?}", Debuggable::from(d, table)),
         }
     }
 }
@@ -76,7 +112,7 @@ impl DebugModuleTable for Module {
             .map(|i| Debuggable::from(i, table))
             .collect();
 
-        write!(f, "{:?}", entries)
+        write!(f, "{:#?}", entries)
     }
 }
 
@@ -90,6 +126,11 @@ impl Module {
         self.items.push(Item::Struct(s));
         self
     }
+
+    crate fn def(mut self, def: Def) -> Module {
+        self.items.push(Item::Def(def));
+        self
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
@@ -99,25 +140,12 @@ pub struct Struct {
     span: Span,
 }
 
-struct DebugStruct<'a> {
-    name: &'a str,
-    fields: Vec<DebugField<'a>>,
-}
-
 impl DebugModuleTable for Struct {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         f.debug_struct("Struct")
             .field("name", &table.lookup(self.name.node))
-            .field(
-                "fields",
-                &format_args!(
-                    "{:?}",
-                    self.fields
-                        .iter()
-                        .map(|f| Debuggable::from(f, table))
-                        .collect::<Vec<_>>()
-                ),
-            ).finish()
+            .field("fields", &DebuggableVec::from(&self.fields, table))
+            .finish()
     }
 }
 
@@ -157,30 +185,25 @@ impl Struct {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Field {
-    name: Spanned<StringId>,
+    name: Identifier,
     ty: Spanned<Type>,
+    span: Span,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum ConstructField {
+    Longhand(Field),
+    Shorthand(Identifier),
 }
 
 impl DebugModuleTable for Field {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
-        f.debug_struct("Field")
-            .field("name", &table.lookup(self.name.node))
-            .finish()
-    }
-}
-
-struct DebugField<'a> {
-    name: &'a str,
-    ty: DebugType<'a>,
-}
-
-#[cfg(test)]
-impl Field {
-    crate fn build(name: &'input str, ty: Type, table: &mut ModuleTable) -> Field {
-        Field {
-            name: Spanned::synthetic(table.intern(name)),
-            ty: Spanned::synthetic(ty),
-        }
+        write!(
+            f,
+            "{}: {:?}",
+            &table.lookup(self.name.node),
+            &Debuggable::from(&self.ty.node, table)
+        )
     }
 }
 
@@ -190,18 +213,37 @@ pub struct Type {
     name: Spanned<StringId>,
 }
 
-struct DebugType<'a> {
-    name: &'a str,
-}
-
-#[cfg(test)]
-impl Type {
-    crate fn build(name: &'input str, mode: Mode, table: &mut ModuleTable) -> Type {
-        Type {
-            mode: Some(Spanned::synthetic(mode)),
-            name: Spanned::synthetic(table.intern(name)),
+impl DebugModuleTable for Type {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        match self.mode {
+            None => write!(f, "{:?}", &Debuggable::from(&self.mode, table)),
+            Some(mode) => write!(
+                f,
+                "{:?} {:?}",
+                &Debuggable::from(&self.mode, table),
+                &Debuggable::from(&self.name.node, table)
+            ),
         }
     }
+}
+
+impl DebugModuleTable for Option<Spanned<Type>> {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        match self {
+            None => write!(f, "none"),
+            Some(ty) => ty.node.debug(f, table),
+        }
+    }
+}
+
+impl DebugModuleTable for StringId {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        write!(f, "{}", table.lookup(*self))
+    }
+}
+
+struct DebugType<'a> {
+    name: &'a str,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -209,6 +251,21 @@ pub enum Mode {
     Owned,
     Shared,
     Borrowed,
+}
+
+impl DebugModuleTable for Option<Spanned<Mode>> {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        let mode = self.map(|i| i.node);
+
+        let result = match mode {
+            Some(Mode::Owned) => "owned",
+            Some(Mode::Shared) => "shared",
+            Some(Mode::Borrowed) => "borrowed",
+            None => "none",
+        };
+
+        write!(f, "{}", result)
+    }
 }
 
 pub struct Pattern {}
@@ -229,15 +286,45 @@ pub struct Def {
     span: Span,
 }
 
+#[cfg(test)]
+impl Def {
+    pub fn parameter(mut self, field: Field) -> Self {
+        self.parameters.push(field);
+        self
+    }
+
+    pub fn ret(mut self, ty: Option<Spanned<Type>>) -> Self {
+        self.ret = ty;
+        self
+    }
+
+    crate fn spanned(mut self, start: u32, end: u32) -> Self {
+        self.span = Span::from(ByteIndex(start), ByteIndex(end));
+        self
+    }
+}
+
 impl DebugModuleTable for Def {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
-        f.debug_struct("Def").finish()
+        f.debug_struct("Def")
+            .field("name", &table.lookup(self.name.node))
+            .field("parameters", &DebuggableVec::from(&self.parameters, table))
+            .field("ret", &Debuggable::from(&self.ret, table))
+            .finish()
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Expression {
     Block(Block),
+    ConstructStruct(ConstructStruct),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
+pub struct ConstructStruct {
+    name: Identifier,
+    fields: Vec<ConstructField>,
+    span: Span,
 }
 
 pub struct Let {
@@ -258,5 +345,5 @@ pub enum ChainedElse {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Block {
-    expressions: Vec<Expression>,
+    expressions: Vec<BlockItem>,
 }

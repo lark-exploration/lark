@@ -134,6 +134,10 @@ mod test {
             .add_struct("Diagnostic", |b| {
                 b.field("msg", Some(Mode::Owned), "String")
                     .field("level", None, "String")
+            }).def("new", |d| {
+                d.param("msg", Some(Mode::Owned), "String")
+                    .param("level", None, "String")
+                    .returns(None, "Diagnostic")
             }).finish();
 
         eq(actual, expected, &table);
@@ -148,7 +152,7 @@ mod test {
         assert!(
             actual == expected,
             format!(
-                "actual != expected\nactual: {:#?}\nexpected: {:#?}\n\nabbreviated:\n    actual: {:?}\n  expected: {:?}\n",
+                "actual != expected\nactual: {:#?}\nexpected: {:#?}\n\nabbreviated:\n\nactual: {:#?}\n\nexpected: {:#?}\n",
                 actual, expected, debug_actual, debug_expected
             )
         );

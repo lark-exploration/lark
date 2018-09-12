@@ -12,10 +12,6 @@ pub Program: Module = {
 }
 
 Item: Item = {
-    BlockItem
-}
-
-BlockItem: Item = {
     Struct => Item::Struct(<>),
     Def => Item::Def(<>)
 }
@@ -33,8 +29,12 @@ COMMA = {
     newline* "," newline*
 }
 
+COLON = {
+    newline* ":" newline*
+}
+
 Field: Field = {
-    <id: Identifier> ":" <ty: Type> => Field::new(id, ty)
+    <l: @L> <id: Identifier> ":" <ty: Type> <r: @R> => Field::new(id, ty, Span::from(l, r))
 }
 
 Def: Def = {
@@ -65,7 +65,12 @@ Mode: Spanned<Mode> = {
 }
 
 Block: Block = {
-    "{" PrefixDelim<Statement, SEP> "}" => unimplemented!("Block")
+    "{" <PrefixDelim<BlockItem, SEP>> "}" => Block::new(<>)
+}
+
+BlockItem: BlockItem = {
+    Decl => BlockItem::Decl(<>),
+    Expr => BlockItem::Expr(<>)
 }
 
 BlockOrIf: BlockOrIf = {
@@ -74,19 +79,16 @@ BlockOrIf: BlockOrIf = {
     ExprIfLet => unimplemented!("BlockOrIf::ExprIfLet")
 }
 
-Statement: Statement = {
-    Let => unimplemented!("Statement::Let"),
-    Block => unimplemented!("Statement::Block"),
-}
-
 Let: Let = {
     let Pat MaybeTypeAscription MaybeInitExpr => unimplemented!("Let")
 }
 
+#[inline]
 MaybeTypeAscription: () = {
     (":" <Type>)? => unimplemented!("MaybeTypeAscription")
 }
 
+#[inline]
 MaybeInitExpr: () = {
     ("=" Expr)? => unimplemented!("MaybeInitExpr")
 }
@@ -97,9 +99,24 @@ Pat: Pattern = {
     own Identifier => unimplemented!("Pat::own Identifier")
 }
 
+Decl: Declaration = {
+    Let => unimplemented!("Expr::Let"),
+}
+
 Expr: Expression = {
+    Block => unimplemented!("Expr::Block"),
     ExprIf => unimplemented!("Expr::ExprIf"),
-    ExprIfLet => unimplemented!("Expr::ExprIfLet")
+    ExprIfLet => unimplemented!("Expr::ExprIfLet"),
+    ConstructStruct => Expression::ConstructStruct(<>)
+}
+
+ConstructStruct: ConstructStruct = {
+    <l: @L> <name: Identifier> "{" <fields: Delim<ConstructField, COMMA>> "}" <r: @R> => ConstructStruct::new(name, fields, Span::from(l, r))
+}
+
+ConstructField: ConstructField = {
+    Identifier => ConstructField::Shorthand(<>),
+    <l: @L> <name: Identifier> ":" newline* <ty: Type> <r: @R> => ConstructField::Longhand(Field::new(name, ty, Span::from(l, r)))
 }
 
 ExprIf: Expression = {
