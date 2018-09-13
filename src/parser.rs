@@ -11,7 +11,6 @@ crate mod tokenizer;
 #[cfg(test)]
 pub mod test_helpers;
 
-crate use self::ast::Ast;
 crate use self::grammar::ProgramParser;
 crate use self::lexer_helpers::ParseError;
 crate use self::pos::{Span, Spanned};
@@ -19,7 +18,7 @@ crate use self::program::{Environment, Module, ModuleTable, NameId, StringId};
 crate use self::token::Token;
 crate use self::tokenizer::Tokenizer;
 
-use self::keywords::KeywordList;
+use crate::lexer::KeywordList;
 
 use codespan::ByteIndex;
 use derive_new::new;
@@ -89,7 +88,7 @@ mod test {
     use crate::parser::program::ModuleTable;
     use crate::parser::test_helpers;
     use crate::parser::test_helpers::ModuleBuilder;
-    use crate::parser::{self, ast, Ast};
+    use crate::parser::{self, ast};
     use language_reporting::{emit, Diagnostic, Label, Severity};
     use termcolor::{ColorChoice, StandardStream};
     use unindent::unindent;

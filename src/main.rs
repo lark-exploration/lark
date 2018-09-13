@@ -5,6 +5,9 @@
 #![feature(nll)]
 #![allow(unused)]
 
+#[macro_use]
+mod lexer;
+
 mod codegen;
 mod ir;
 mod parser;
