@@ -41,7 +41,7 @@ impl Hash for Ty<'global> {
 
 /// A "mostly internal" struct containing information about types.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-crate struct TyData<'global> {
+struct TyData<'global> {
     /// Pre-computed hash.
     hash: u64,
 

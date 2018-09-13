@@ -1,7 +1,6 @@
-use crate::ty;
+use crate::ty::context::TyArenas;
 
 pub struct Arenas<'arena> {
-    crate type_data_arena: typed_arena::Arena<ty::TyData<'arena>>,
-    crate kind_arena: typed_arena::Arena<ty::Kind<'arena>>,
+    crate ty_arenas: TyArenas<'arena>,
 }
 

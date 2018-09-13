@@ -5,17 +5,22 @@ use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
 
+pub struct TyArenas<'arena> {
+    type_data_arena: typed_arena::Arena<TyData<'arena>>,
+    kind_arena: typed_arena::Arena<Kind<'arena>>,
+}
+
 /// The "type context" is a global resource that interns types and
 /// other type-related things. Types are allocates in the various
 /// global arenas so that they can be freely copied around.
 pub struct TyContext<'global> {
-    arenas: &'global Arenas<'global>,
+    arenas: &'global TyArenas<'global>,
     intern_ty: RefCell<FxHashMap<&'global TyKind<'global>, Ty<'global>>>,
     intern_kinds: RefCell<FxHashMap<Kinds<'global>, Kinds<'global>>>,
 }
 
 impl<'global> TyContext<'global> {
-    crate fn new(arenas: &'global Arenas<'global>) -> Self {
+    crate fn new(arenas: &'global TyArenas<'global>) -> Self {
         TyContext {
             arenas,
             intern_ty: RefCell::new(FxHashMap::default()),
