@@ -97,11 +97,6 @@ pub enum Command {
     ConstInt(i32),
     ConstString(String),
     Call(DefId),
-    CreateStruct(DefId),
-    #[allow(unused)]
-    Borrow,
-    #[allow(unused)]
-    Move,
     #[allow(unused)]
     Add,
     Sub,

@@ -7,6 +7,7 @@ pub enum Value {
     Void,
     I32(i32),
     Str(String),
+    Struct(HashMap<String, Value>),
     Reference(usize), // a reference into the value stack
 }
 
@@ -20,6 +21,7 @@ impl fmt::Display for Value {
                 Value::Str(s) => s.clone(),
                 Value::Reference(r) => format!("reference to {}", r),
                 Value::Void => "<void>".into(),
+                Value::Struct(s) => format!("{:?}", s),
             }
         )
     }
@@ -41,7 +43,6 @@ impl Eval {
         commands: &Vec<Command>,
     ) -> Value {
         for command in commands {
-            println!("{:?}", command);
             match command {
                 Command::ConstInt(i) => self.stack.push(Value::I32(*i)),
                 Command::ConstString(s) => self.stack.push(Value::Str(s.clone())),
@@ -71,9 +72,6 @@ impl Eval {
                     println!("{}", arg);
                 }
                 Command::VarUse(var_id) => {
-                    println!("Using: {}", var_id);
-                    println!("{:#?}", self.stack);
-                    println!("{:#?}", vars);
                     let stack_pos = vars[var_id];
                     let var_use = self.stack[stack_pos].clone();
                     self.stack.push(var_use);
@@ -85,6 +83,14 @@ impl Eval {
                     Definition::Fn(ref f) => {
                         let result = self.eval_fn(c, f);
                         self.stack.push(result);
+                    }
+                    Definition::Struct(ref s) => {
+                        let mut new_obj = HashMap::new();
+                        for field in s.fields.iter().rev() {
+                            let val = self.stack.pop().unwrap();
+                            new_obj.insert(field.name.clone(), val);
+                        }
+                        self.stack.push(Value::Struct(new_obj));
                     }
                     Definition::BuiltinFn(BuiltinFn::StringInterpolate) => {
                         let format_string = self.stack.pop().unwrap();
@@ -122,7 +128,16 @@ impl Eval {
                     let result = self.stack.pop().unwrap();
                     return result;
                 }
-                _ => unimplemented!("Incomplete eval of commands in eval_fn"),
+                Command::Dot(field) => {
+                    let lhs = self.stack.pop().unwrap();
+                    match lhs {
+                        Value::Struct(s) => {
+                            self.stack.push(s[field].clone());
+                        }
+                        _ => unimplemented!("Dot into non-struct value")
+                    }
+                }
+                //_ => unimplemented!("Incomplete eval of commands in eval_fn"),
             }
         }
 
