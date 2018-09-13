@@ -8,10 +8,12 @@
 #[macro_use]
 mod lexer;
 
+mod arena;
 mod codegen;
 mod eval;
 mod ir;
 mod parser;
+mod ty;
 
 use crate::codegen::{codegen, RustFile};
 use crate::eval::Eval;
