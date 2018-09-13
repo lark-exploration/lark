@@ -55,10 +55,9 @@ fn main() {
     m.body.push(Command::ConstInt(11));
     m.body.push(Command::ConstInt(8));
     m.body.push(Command::Call(bob_def_id));
+    m.body.push(Command::ConstString("Hello, world {}".into()));
+    m.body.push(Command::Call(101)); //built-in string interpolation
     m.body.push(Command::DebugPrint);
-    //m.body.push(Command::ConstString("Hello, world {}".into()));
-    //m.body.push(Command::Call(101)); //built-in string interpolation
-    //m.body.push(Command::DebugPrint);
 
     /*
     m.body.push(Command::ConstString("Samwell".into()));

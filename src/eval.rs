@@ -86,6 +86,36 @@ impl Eval {
                         let result = self.eval_fn(c, f);
                         self.stack.push(result);
                     }
+                    Definition::BuiltinFn(BuiltinFn::StringInterpolate) => {
+                        let format_string = self.stack.pop().unwrap();
+
+                        match format_string {
+                            Value::Str(s) => {
+                                let sections: Vec<&str> = s.split("{}").collect();
+                                let sections_len = sections.len();
+
+                                let mut result = String::new();
+                                let mut pos = 0;
+
+                                for i in 0..(sections_len - 1) {
+                                    result += sections[i];
+                                    result += &format!(
+                                        "{}",
+                                        self.stack[self.stack.len() - sections_len + i]
+                                    );
+                                }
+
+                                result += sections[sections_len - 1];
+
+                                for _ in 0..sections_len {
+                                    self.stack.pop();
+                                }
+
+                                self.stack.push(Value::Str(result));
+                            }
+                            _ => unimplemented!("String interpolation without a format string"),
+                        }
+                    }
                     x => unimplemented!("Call of a non-function: {:#?}", x),
                 },
                 Command::ReturnLastStackValue => {
