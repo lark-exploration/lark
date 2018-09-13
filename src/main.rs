@@ -4,7 +4,6 @@
 #![feature(crate_visibility_modifier)]
 #![feature(nll)]
 #![allow(unused)]
-#![feature(crate_visibility_modifier)]
 
 mod codegen;
 mod eval;
