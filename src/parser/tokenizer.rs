@@ -37,9 +37,9 @@ impl LexerStateTrait for LexerState {
             LexerState::Top => match c {
                 None => LexerNext::EOF,
                 Some(c) => {
-                    if let Some((tok, size)) = KEYWORDS.match_keyword(rest) {
+                    if let Some((tok, size)) = KEYWORDS.match_token(rest) {
                         LexerNext::emit_token(tok, size)
-                    } else if let Some((tok, size)) = SIGILS.match_keyword(rest) {
+                    } else if let Some((tok, size)) = SIGILS.match_token(rest) {
                         LexerNext::emit_token(tok, size)
                     } else if c.is_digit(10) {
                         LexerNext::transition_to(LexerState::Integer).reconsume()

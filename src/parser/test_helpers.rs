@@ -123,7 +123,7 @@ impl ModuleBuilder<'program> {
     }
 
     fn keyword(&mut self, s: &str) -> Spanned<Token> {
-        let (token, len) = KEYWORDS.match_keyword(s).unwrap();
+        let (token, len) = KEYWORDS.match_token(s).unwrap();
 
         let name = Spanned::from(token, ByteIndex(self.pos), ByteIndex(self.pos + len));
 
@@ -133,7 +133,7 @@ impl ModuleBuilder<'program> {
     }
 
     fn sigil(&mut self, s: &str) -> Spanned<Token> {
-        let (token, len) = SIGILS.match_keyword(s).unwrap();
+        let (token, len) = SIGILS.match_token(s).unwrap();
 
         let name = Spanned::from(token, ByteIndex(self.pos), ByteIndex(self.pos + len));
 
