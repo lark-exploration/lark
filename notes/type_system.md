@@ -176,8 +176,9 @@ but should reduce its incidence.
 T1 normalizes to the type T2, that means that T1 and T2 are considered
 to be **the same type** by the system.
 
-- `share(r1) share(r2) T` becomes `share(r2) T`
-  - Note that "well formedness" requires that `r2: r1`
+- `share(r1) share(r2) T` becomes `share(r_m) T`
+  - where `r_m` = `min(r1, r2)` -- in other words, if `r1: r2`, then `r1`,
+    but if `r2: r1` then `r2`
 - `share(r1) S<{T}, {N=U}>` becomes `S<{share(r1) T}, {N=U}>`
   - Structs are eagerly cloned
   - Simple case: `share(r1) u32 = u32`
