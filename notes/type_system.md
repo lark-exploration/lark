@@ -10,6 +10,7 @@ type: i.e., a shared owned thing is shared, not owned.
 ```
 T  = share(r) T
    | borrow(r) C<{T}>
+   | sh_borrow(r) C<{T}> // not really "end-user visible"?
    | N<{T}, {N=T}>
    
 N = C // "classes", e.g., `Vec`
@@ -177,8 +178,15 @@ T1 normalizes to the type T2, that means that T1 and T2 are considered
 to be **the same type** by the system.
 
 - `share(r1) share(r2) T` becomes `share(r_m) T`
-  - where `r_m` = `min(r1, r2)` -- in other words, if `r1: r2`, then `r1`,
-    but if `r2: r1` then `r2`
+  - where `r_m` = `r1 || r2`
+  - in other words, if `r1: r2`, then `r1`, else `r2`
+  - WF rules will ensure that either `r1: r2` or `r2: r1`
+    - when doing viewpoint substitution from fields, it can happen
+      that `r1: r2`
+- `share(r1) borrow(r2) T` becomes `sh_borrow(r_m) (share(r_m) T)`
+  - where `r_m` = `r1 && r2`
+  - in other words, if `r1: r2`, then `r2`, else `r1`
+  - as above, WF rules guarantee that one of those two holds, typically `r2: r1`
 - `share(r1) S<{T}, {N=U}>` becomes `S<{share(r1) T}, {N=U}>`
   - Structs are eagerly cloned
   - Simple case: `share(r1) u32 = u32`
@@ -282,6 +290,10 @@ The full subtyping rules are as follows:
 
 ```
 share(r1) T1 <: share(r2) T2 :-
+  r1: r2,
+  T1 <: T2.
+
+sh_borrow(r1) T1 <: sh_borrow(r2) T2 :-
   r1: r2,
   T1 <: T2.
 
