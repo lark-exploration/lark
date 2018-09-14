@@ -3,7 +3,11 @@
 #![feature(box_patterns)]
 #![feature(crate_visibility_modifier)]
 #![feature(nll)]
+#![feature(min_const_fn)]
 #![allow(unused)]
+
+#[macro_use]
+mod indices;
 
 #[macro_use]
 mod lexer;
