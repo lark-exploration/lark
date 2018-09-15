@@ -1,17 +1,20 @@
 pub type DefId = usize;
 pub type VarId = usize;
 
+#[derive(Debug)]
 pub struct Variable {
     pub ty: DefId,
     pub name: String,
 }
 
+#[derive(Debug)]
 pub struct Param {
     pub ty: DefId,
     pub name: String,
     pub var_id: VarId,
 }
 
+#[derive(Debug)]
 pub struct Struct {
     pub fields: Vec<Variable>,
     pub name: String,
@@ -31,6 +34,7 @@ impl Struct {
     }
 }
 
+#[derive(Debug)]
 pub struct Function {
     pub params: Vec<Param>,
     pub body: Vec<Command>,
@@ -70,10 +74,12 @@ pub mod builtin_type {
     pub const ERROR: usize = 100;
 }
 
+#[derive(Debug)]
 pub enum BuiltinFn {
     StringInterpolate,
 }
 
+#[derive(Debug)]
 pub enum Definition {
     Builtin,
     BuiltinFn(BuiltinFn),
@@ -84,17 +90,13 @@ pub enum Definition {
     Move(DefId),
 }
 
+#[derive(Debug)]
 pub enum Command {
     VarUse(VarId),
     VarDeclWithInit(VarId),
     ConstInt(i32),
     ConstString(String),
     Call(DefId),
-    CreateStruct(DefId),
-    #[allow(unused)]
-    Borrow,
-    #[allow(unused)]
-    Move,
     #[allow(unused)]
     Add,
     Sub,

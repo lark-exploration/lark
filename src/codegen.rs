@@ -87,12 +87,6 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                 let lhs_expr = rust.expression_stack.pop().unwrap();
                 rust.delay_expr(format!("({}).{}", lhs_expr, rhs_field));
             }
-            Command::Borrow => {
-                //FIXME: add call to coerce magic
-            }
-            Command::Move => {
-                //FIXME: Do the real functionality/coerce magic
-            }
             Command::Call(def_id) => {
                 if let Definition::Fn(target) = &c.definitions[*def_id] {
                     let mut args_expr = String::new();
@@ -131,12 +125,7 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                             rust.delay_expr(format!("format!({}, {})", format_string, args_expr));
                         }
                     }
-                } else {
-                    unimplemented!("Only calls to functions are currently supported)");
-                }
-            }
-            Command::CreateStruct(def_id) => {
-                if let Definition::Struct(s) = &c.definitions[*def_id] {
+                } else if let Definition::Struct(s) = &c.definitions[*def_id] {
                     let mut field_values = vec![];
                     for _ in 0..s.fields.len() {
                         field_values.push(rust.expression_stack.pop().unwrap());
@@ -151,7 +140,7 @@ pub fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
                     struct_expr += "} ";
                     rust.delay_expr(struct_expr);
                 } else {
-                    unimplemented!("Attempt to create struct with non-struct definition");
+                    unimplemented!("Only calls to functions are currently supported)");
                 }
             }
             Command::ReturnLastStackValue => {

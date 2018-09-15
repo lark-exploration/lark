@@ -3,22 +3,28 @@
 #![feature(box_patterns)]
 #![feature(crate_visibility_modifier)]
 #![feature(nll)]
+#![feature(min_const_fn)]
 #![allow(unused)]
 
 #[macro_use]
 mod lexer;
 
+#[macro_use]
+mod indices;
+
+mod arena;
 mod codegen;
+mod eval;
 mod ir;
 mod parser;
+mod ty;
 
 use crate::codegen::{codegen, RustFile};
+use crate::eval::Eval;
 use crate::ir::{builtin_type, Command, Context, Definition, Function, Struct};
 
 fn main() {
     let mut c = Context::new();
-
-    let borrow_str_id = c.add_definition(Definition::Borrow(builtin_type::STRING));
 
     let mut bob = Function::new("bob".into(), builtin_type::I32)
         .param("x".into(), builtin_type::I32)
@@ -39,14 +45,6 @@ fn main() {
 
     let person_def_id = c.add_definition(Definition::Struct(person));
 
-    let mut greet =
-        Function::new("greet".into(), builtin_type::VOID).param("name".into(), borrow_str_id);
-
-    greet.body.push(Command::VarUse(0));
-    greet.body.push(Command::DebugPrint);
-
-    let greet_def_id = c.add_definition(Definition::Fn(greet));
-
     let mut m = Function::new("main".into(), builtin_type::VOID);
     m.body.push(Command::ConstInt(11));
     m.body.push(Command::ConstInt(8));
@@ -54,12 +52,11 @@ fn main() {
     m.body.push(Command::ConstString("Hello, world {}".into()));
     m.body.push(Command::Call(101)); //built-in string interpolation
     m.body.push(Command::DebugPrint);
-    m.body.push(Command::ConstString("Samwell".into()));
-    m.body.push(Command::Call(greet_def_id));
-    m.body.push(Command::DebugPrint);
+
     m.body.push(Command::ConstInt(17));
     m.body.push(Command::ConstInt(18));
-    m.body.push(Command::CreateStruct(person_def_id));
+    m.body.push(Command::Call(person_def_id));
+
     m.body.push(Command::VarDeclWithInit(0));
     m.body.push(Command::VarUse(0));
     m.body.push(Command::DebugPrint);
@@ -72,6 +69,8 @@ fn main() {
     let mut rust = RustFile::new();
 
     codegen(&mut rust, &c);
-
     println!("{}", rust.render());
+
+    let mut eval = Eval::new();
+    eval.eval(&c);
 }
