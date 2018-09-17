@@ -47,6 +47,28 @@ macro_rules! index_type {
             }
         }
 
+        impl From<usize> for $name {
+            fn from(v: usize) -> $name {
+                $name::new(v)
+            }
+        }
+
+        impl From<u32> for $name {
+            fn from(v: u32) -> $name {
+                $name::from_u32(v)
+            }
+        }
+
+        impl indexed_vec::Idx for $name {
+            fn new(v: usize) -> $name {
+                $name::from(v)
+            }
+
+            fn index(self) -> usize {
+                self.as_usize()
+            }
+        }
+
         impl std::fmt::Debug for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_tuple(stringify!($name))
