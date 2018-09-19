@@ -12,7 +12,6 @@
 
 permLess(shared(R1), shared(R2)) :- regionLess(R1, R2).
 permLess(shared(R1), borrow(R2)) :- regionLess(R1, R2).
-permLess(shared(_), own).
 permLess(borrow(R1), borrow(R2)) :- regionLess(R1, R2).
 permLess(_, own).
 
