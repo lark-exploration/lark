@@ -12,7 +12,6 @@ mod lexer;
 #[macro_use]
 mod indices;
 
-mod arena;
 mod codegen;
 mod eval;
 mod ir;
