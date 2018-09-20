@@ -4,6 +4,7 @@
 #![feature(crate_visibility_modifier)]
 #![feature(nll)]
 #![feature(min_const_fn)]
+#![feature(try_from)]
 #![allow(unused)]
 
 #[macro_use]

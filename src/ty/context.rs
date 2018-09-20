@@ -5,6 +5,6 @@ use std::rc::Rc;
 
 #[derive(Clone)]
 crate struct TyContextData {
-    crate intern: Rc<TyInterners>,
+    crate intern: TyInterners,
     crate engine: Rc<dyn TyQueries>,
 }

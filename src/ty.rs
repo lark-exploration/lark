@@ -6,6 +6,7 @@ use std::rc::Rc;
 crate mod context;
 crate mod intern;
 crate mod query;
+crate mod unify;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Ty {
@@ -44,7 +45,7 @@ crate enum PermData {
     },
     Own,
     Infer {
-        index: InferIndex,
+        var: InferVar,
     },
     Bound {
         binder: DebruijnIndex,
@@ -62,7 +63,7 @@ crate enum BaseData {
     Named { name: DefId },
 
     /// An inference variable in the current context.
-    Infer { index: InferIndex },
+    Infer { var: InferVar },
 
     /// A "bound" type is a generic parameter that has yet to be
     /// substituted with its value.
@@ -143,5 +144,29 @@ index_type! {
 }
 
 index_type! {
-    crate struct InferIndex { .. }
+    crate struct InferVar { .. }
+}
+
+crate trait AsInferVar {
+    fn as_infer_var(&self) -> Option<InferVar>;
+}
+
+impl AsInferVar for PermData {
+    fn as_infer_var(&self) -> Option<InferVar> {
+        if let PermData::Infer { var } = self {
+            Some(*var)
+        } else {
+            None
+        }
+    }
+}
+
+impl AsInferVar for BaseData {
+    fn as_infer_var(&self) -> Option<InferVar> {
+        if let BaseData::Infer { var } = self {
+            Some(*var)
+        } else {
+            None
+        }
+    }
 }

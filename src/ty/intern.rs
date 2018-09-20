@@ -5,6 +5,7 @@ use rustc_hash::FxHashMap;
 use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
+use std::rc::Rc;
 
 #[derive(Debug)]
 struct Interner<Key, Data>
@@ -39,7 +40,12 @@ where
 /// The "type context" is a global resource that interns types and
 /// other type-related things. Types are allocates in the various
 /// global arenas so that they can be freely copied around.
+#[derive(Clone)]
 crate struct TyInterners {
+    data: Rc<TyInternersData>,
+}
+
+struct TyInternersData {
     perms: RefCell<Interner<Perm, PermData>>,
     bases: RefCell<Interner<Base, BaseData>>,
     generics: RefCell<Interner<Generics, GenericsData>>,
@@ -48,9 +54,11 @@ crate struct TyInterners {
 impl TyInterners {
     crate fn new() -> Self {
         TyInterners {
-            perms: RefCell::new(Interner::new()),
-            bases: RefCell::new(Interner::new()),
-            generics: RefCell::new(Interner::new()),
+            data: Rc::new(TyInternersData {
+                perms: RefCell::new(Interner::new()),
+                bases: RefCell::new(Interner::new()),
+                generics: RefCell::new(Interner::new()),
+            }),
         }
     }
 
@@ -72,7 +80,7 @@ macro_rules! intern_ty {
     ($field:ident, $key:ty, $data:ty) => {
         impl TyInterners {
             crate fn perm(&self, data: $data) -> $key {
-                self.$field.borrow_mut().add(data)
+                self.data.$field.borrow_mut().add(data)
             }
         }
 
@@ -80,7 +88,7 @@ macro_rules! intern_ty {
             type Data = $data;
 
             fn get_from(self, interner: &TyInterners) -> $data {
-                interner.$field.borrow().vec[self].clone()
+                interner.data.$field.borrow().vec[self].clone()
             }
         }
     };
