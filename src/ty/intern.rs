@@ -54,15 +54,38 @@ impl TyInterners {
         }
     }
 
-    crate fn perm(&self, data: PermData) -> Perm {
-        self.perms.borrow_mut().add(data)
-    }
-
-    crate fn base(&self, data: BaseData) -> Base {
-        self.bases.borrow_mut().add(data)
-    }
-
-    crate fn generics(&self, data: GenericsData) -> Generics {
-        self.generics.borrow_mut().add(data)
+    crate fn get<K>(&self, key: K) -> K::Data
+    where
+        K: GetFrom,
+    {
+        key.get_from(self)
     }
 }
+
+crate trait GetFrom {
+    type Data;
+
+    fn get_from(self, interner: &TyInterners) -> Self::Data;
+}
+
+macro_rules! intern_ty {
+    ($field:ident, $key:ty, $data:ty) => {
+        impl TyInterners {
+            crate fn perm(&self, data: $data) -> $key {
+                self.$field.borrow_mut().add(data)
+            }
+        }
+
+        impl GetFrom for $key {
+            type Data = $data;
+
+            fn get_from(self, interner: &TyInterners) -> $data {
+                interner.$field.borrow().vec[self].clone()
+            }
+        }
+    };
+}
+
+intern_ty!(bases, Base, BaseData);
+intern_ty!(perms, Perm, PermData);
+intern_ty!(generics, Generics, GenericsData);
