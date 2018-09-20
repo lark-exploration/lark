@@ -5,7 +5,7 @@ macro_rules! index_type {
             attrs[$($attr)*],
             visibility[$visibility],
             name[$name],
-            max[std::u32::MAX],
+            max[std::u32::MAX - 1],
             debug_name[stringify!($name)],
         } }
     };
@@ -20,7 +20,7 @@ macro_rules! index_type {
         #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
         $(#[$attrs])*
         $visibility struct $name {
-            private: u32
+            private: std::num::NonZeroU32
         }
 
         impl $name {
@@ -28,22 +28,24 @@ macro_rules! index_type {
                 // This is a wacky assert that is compatible with a
                 // const fn.  It will evaluate to an out-of-bounds
                 // access if `index >= $max`.
-                Self { private: [index as u32][(index < ($max as usize)) as usize] }
+                let v: u32 = [index as u32][(index < ($max as usize)) as usize];
+                Self { private: std::num::NonZeroU32::new_unchecked(v + 1) }
             }
 
             $visibility const fn from_u32(index: u32) -> Self {
                 // This is a wacky assert that is compatible with a
                 // const fn.  It will evaluate to an out-of-bounds
                 // access if `index >= $max`.
-                Self { private: [index][(index < $max) as usize] }
+                let v: u32 = [index][(index < $max) as usize];
+                Self { private: std::num::NonZeroU32::new_unchecked(v + 1) }
             }
 
             $visibility fn as_u32(self) -> u32 {
-                self.private
+                self.private.get() - 1
             }
 
             $visibility fn as_usize(self) -> usize {
-                self.private as usize
+                self.as_u32() as usize
             }
         }
 
