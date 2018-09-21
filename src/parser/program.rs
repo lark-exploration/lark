@@ -59,7 +59,7 @@ pub struct ModuleTable {
 }
 
 impl ModuleTable {
-    fn get(&self, hashable: impl Seahash) -> Option<StringId> {
+    crate fn get(&self, hashable: impl Seahash) -> Option<StringId> {
         self.strings.get(&hashable)
     }
 

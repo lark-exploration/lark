@@ -12,7 +12,7 @@ use unicode_xid::UnicodeXID;
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LexerState {
     Top,
     Integer,

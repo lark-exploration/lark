@@ -92,7 +92,7 @@ impl DebugModuleTable for Field {
 impl DebugModuleTable for Type {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         match self.mode {
-            None => write!(f, "{:?}", &Debuggable::from(&self.mode, table)),
+            None => write!(f, "{:?}", &Debuggable::from(&self.name.node, table)),
             Some(mode) => write!(
                 f,
                 "{:?} {:?}",

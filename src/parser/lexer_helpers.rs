@@ -53,7 +53,7 @@ impl<LexerState: LexerStateTrait> LexerNext<LexerState> {
     }
 }
 
-pub trait LexerStateTrait: fmt::Debug + Sized {
+pub trait LexerStateTrait: fmt::Debug + Clone + Sized {
     type Token: fmt::Debug;
 
     fn next(&self, c: Option<char>, rest: &'input str) -> Result<LexerNext<Self>, ParseError>;
@@ -96,8 +96,11 @@ impl<State: LexerStateTrait + Debug> Iterator for Tokenizer<'table, State> {
         loop {
             let next = {
                 let Tokenizer { state, rest, .. } = self;
+                let next = rest.chars().next();
 
-                state.next(rest.chars().next(), rest)
+                trace!("next char={:?} rest={:?}", next, rest);
+
+                state.next(next, rest)
             };
 
             self.trace("start");
@@ -236,9 +239,9 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
     }
 
     fn discard_current(&mut self, size: u32, next_state: State) -> (u32, u32) {
-        self.token_start = self.rest;
         self.state = next_state;
         let (start_pos, end_pos) = self.consume_token(size);
+        self.token_start = self.rest;
 
         self.trace("discard");
         (start_pos, end_pos)
@@ -257,11 +260,12 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
     }
 
     fn error(&mut self, c: char) -> ParseError {
+        let state = self.state.clone();
         let token = &self.token_start[..self.token_size as usize];
         let (start_pos, end_pos) = self.consume_token(1);
 
         let error = ParseError::new(
-            format!("Unexpected char `{:?}` in state {:?}", c, self.state),
+            format!("Unexpected char `{}` in state {:?}", c, state),
             Span::from_pos(start_pos, end_pos),
         );
 

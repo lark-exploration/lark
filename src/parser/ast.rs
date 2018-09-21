@@ -11,7 +11,7 @@ use crate::parser::{Environment, ModuleTable, StringId, Token};
 use derive_new::new;
 use std::fmt;
 
-crate use self::debug::Debuggable;
+crate use self::debug::{DebugModuleTable, Debuggable, DebuggableVec};
 
 pub type Identifier = Spanned<StringId>;
 
@@ -35,7 +35,7 @@ pub enum Declaration {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Module {
-    items: Vec<Item>,
+    crate items: Vec<Item>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
@@ -79,6 +79,17 @@ pub enum Mode {
     Borrowed,
 }
 
+impl From<&str> for Mode {
+    fn from(input: &str) -> Mode {
+        match input {
+            "own" => Mode::Owned,
+            "share" => Mode::Shared,
+            "borrow" => Mode::Borrowed,
+            other => panic!("Invalid mode string {}", other),
+        }
+    }
+}
+
 pub struct Pattern {}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
@@ -90,11 +101,11 @@ pub enum Statement {}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Def {
-    name: Identifier,
-    parameters: Vec<Field>,
-    ret: Option<Spanned<Type>>,
-    body: Block,
-    span: Span,
+    crate name: Identifier,
+    crate parameters: Vec<Field>,
+    crate ret: Option<Spanned<Type>>,
+    crate body: Block,
+    crate span: Span,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
