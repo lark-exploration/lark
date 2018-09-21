@@ -62,32 +62,47 @@ impl TyInterners {
         }
     }
 
-    crate fn get<K>(&self, key: K) -> K::Data
+    crate fn intern<D>(&self, data: D) -> D::Key
     where
-        K: GetFrom,
+        D: Internable,
     {
-        key.get_from(self)
+        data.intern(self)
+    }
+
+    crate fn untern<K>(&self, key: K) -> K::Data
+    where
+        K: Unternable,
+    {
+        key.untern(self)
     }
 }
 
-crate trait GetFrom {
+crate trait Internable {
+    type Key;
+
+    fn intern(self, interner: &TyInterners) -> Self::Key;
+}
+
+crate trait Unternable {
     type Data;
 
-    fn get_from(self, interner: &TyInterners) -> Self::Data;
+    fn untern(self, interner: &TyInterners) -> Self::Data;
 }
 
 macro_rules! intern_ty {
     ($field:ident, $key:ty, $data:ty) => {
-        impl TyInterners {
-            crate fn perm(&self, data: $data) -> $key {
-                self.data.$field.borrow_mut().add(data)
+        impl Internable for $data {
+            type Key = $key;
+
+            fn intern(self, interner: &TyInterners) -> $key {
+                interner.data.$field.borrow_mut().add(self)
             }
         }
 
-        impl GetFrom for $key {
+        impl Unternable for $key {
             type Data = $data;
 
-            fn get_from(self, interner: &TyInterners) -> $data {
+            fn untern(self, interner: &TyInterners) -> $data {
                 interner.data.$field.borrow().vec[self].clone()
             }
         }

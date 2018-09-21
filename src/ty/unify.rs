@@ -1,4 +1,4 @@
-use crate::ty::intern::{GetFrom, TyInterners};
+use crate::ty::intern::{TyInterners, Unternable};
 use crate::ty::Ty;
 use crate::ty::{AsInferVar, InferVar};
 use crate::ty::{Base, BaseData};
@@ -14,7 +14,7 @@ crate struct UnificationTable {
 
 enum InferData {
     /// A root variable that is not yet bound to any value.
-    Unbound,
+    Unbound(Rank),
 
     /// A variable that is bound to `Value.
     Value(Value),
@@ -24,6 +24,11 @@ enum InferData {
     /// eventually get overwritten with `Value` once the value
     /// is known.
     Redirect(InferVar),
+}
+
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct Rank {
+    value: usize,
 }
 
 index_type! {
@@ -73,7 +78,7 @@ impl UnificationTable {
     /// In the "union-find" algorithm this is called "find".
     fn find(&mut self, index1: InferVar) -> (InferVar, Option<Value>) {
         match self.infers[index1] {
-            InferData::Unbound => (index1, None),
+            InferData::Unbound(_rank) => (index1, None),
             InferData::Value(value1) => (index1, Some(value1)),
             InferData::Redirect(index2) => {
                 let (index3, value3) = self.find(index2);
@@ -121,17 +126,26 @@ impl UnificationTable {
         value.shallow_resolve_in(self)
     }
 
-    fn unify_var_var(&mut self, index1: InferVar, index2: InferVar) {}
+    /// Creates a new inference variable.
+    fn new_infer_var(&mut self) -> InferVar {
+        self.infers.push(InferData::Unbound(Rank::default()))
+    }
+
+    crate fn new_inferable<T>(&mut self) -> T
+    where
+        T: Inferable,
+    {
+        let var = self.new_infer_var();
+        T::from_infer_var(self, var)
+    }
 }
 
 crate trait ShallowResolveable {
     fn shallow_resolve_in(self, unify: &mut UnificationTable) -> Self;
 }
 
-crate trait ShallowResolveableVar: Copy + GetFrom + TryFrom<ValueData, Error = String>
-where
-    Self::Data: AsInferVar,
-{
+crate trait Inferable: Copy + Unternable + TryFrom<ValueData, Error = String> {
+    fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self;
 }
 
 impl ShallowResolveable for Ty {
@@ -153,11 +167,11 @@ impl ShallowResolveable for Ty {
 
 impl<T> ShallowResolveable for T
 where
-    T: ShallowResolveableVar,
+    T: Inferable,
     T::Data: AsInferVar,
 {
     fn shallow_resolve_in(self, unify: &mut UnificationTable) -> T {
-        let data = unify.intern.get(self);
+        let data = unify.intern.untern(self);
         if let Some(var) = data.as_infer_var() {
             if let Some(value) = unify.probe(var) {
                 let value_data = unify.values[value];
@@ -169,6 +183,14 @@ where
     }
 }
 
-impl ShallowResolveableVar for Perm {}
+impl Inferable for Perm {
+    fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self {
+        unify.intern.intern(PermData::Infer { var })
+    }
+}
 
-impl ShallowResolveableVar for Base {}
+impl Inferable for Base {
+    fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self {
+        unify.intern.intern(BaseData::Infer { var })
+    }
+}
