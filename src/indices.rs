@@ -29,7 +29,7 @@ macro_rules! index_type {
                 // const fn.  It will evaluate to an out-of-bounds
                 // access if `index >= $max`.
                 let v: u32 = [index as u32][(index < ($max as usize)) as usize];
-                Self { private: std::num::NonZeroU32::new_unchecked(v + 1) }
+                unsafe { Self { private: std::num::NonZeroU32::new_unchecked(v + 1) } }
             }
 
             $visibility const fn from_u32(index: u32) -> Self {
@@ -37,7 +37,7 @@ macro_rules! index_type {
                 // const fn.  It will evaluate to an out-of-bounds
                 // access if `index >= $max`.
                 let v: u32 = [index][(index < $max) as usize];
-                Self { private: std::num::NonZeroU32::new_unchecked(v + 1) }
+                unsafe { Self { private: std::num::NonZeroU32::new_unchecked(v + 1) } }
             }
 
             $visibility fn as_u32(self) -> u32 {
