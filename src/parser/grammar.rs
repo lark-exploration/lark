@@ -1,5 +1,5 @@
 // auto-generated: "lalrpop 0.15.2"
-// sha256: ad597b29ca1043ea1dd5b8df83d6822fac156c82455d2e7632284b823ee1677
+// sha256: 337b64bdd5facbadae3d9da9fb0f74d0a6dc349b1f87d16577c5872cab67a
 use crate::parser::{Token, ParseError};
 use crate::parser::grammar_helpers::*;
 use crate::parser::ast::*;
@@ -62,14 +62,13 @@ mod __parse__Program {
         Variant34((Vec<Field>, Option<Spanned<Type>>)),
         Variant35(::std::option::Option<Spanned<StringId>>),
         Variant36(::std::option::Option<Item>),
-        Variant37(Let),
-        Variant38(()),
-        Variant39(Spanned<Mode>),
-        Variant40(Pattern),
-        Variant41(Path),
-        Variant42(Module),
-        Variant43(Struct),
-        Variant44(::std::vec::Vec<Token>),
+        Variant37(()),
+        Variant38(Spanned<Mode>),
+        Variant39(Pattern),
+        Variant40(Path),
+        Variant41(Module),
+        Variant42(Struct),
+        Variant43(::std::vec::Vec<Token>),
     }
     const __ACTION: &'static [i16] = &[
         // State 0
@@ -1462,7 +1461,7 @@ mod __parse__Program {
             }
             140 => {
                 // __Program = Program => ActionFn(0);
-                let __sym0 = __pop_Variant42(__symbols);
+                let __sym0 = __pop_Variant41(__symbols);
                 let __start = __sym0.0.clone();
                 let __end = __sym0.2.clone();
                 let __nt = super::__action0::<>(__sym0);
@@ -1490,13 +1489,13 @@ mod __parse__Program {
         __states.push(__next_state);
         None
     }
-    fn __pop_Variant38<
+    fn __pop_Variant37<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
     ) -> (ByteIndex, (), ByteIndex)
      {
         match __symbols.pop().unwrap() {
-            (__l, __Symbol::Variant38(__v), __r) => (__l, __v, __r),
+            (__l, __Symbol::Variant37(__v), __r) => (__l, __v, __r),
             _ => panic!("symbol type mismatch")
         }
     }
@@ -1660,30 +1659,10 @@ mod __parse__Program {
             _ => panic!("symbol type mismatch")
         }
     }
-    fn __pop_Variant37<
-    >(
-        __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, Let, ByteIndex)
-     {
-        match __symbols.pop().unwrap() {
-            (__l, __Symbol::Variant37(__v), __r) => (__l, __v, __r),
-            _ => panic!("symbol type mismatch")
-        }
-    }
-    fn __pop_Variant42<
-    >(
-        __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, Module, ByteIndex)
-     {
-        match __symbols.pop().unwrap() {
-            (__l, __Symbol::Variant42(__v), __r) => (__l, __v, __r),
-            _ => panic!("symbol type mismatch")
-        }
-    }
     fn __pop_Variant41<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, Path, ByteIndex)
+    ) -> (ByteIndex, Module, ByteIndex)
      {
         match __symbols.pop().unwrap() {
             (__l, __Symbol::Variant41(__v), __r) => (__l, __v, __r),
@@ -1693,7 +1672,7 @@ mod __parse__Program {
     fn __pop_Variant40<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, Pattern, ByteIndex)
+    ) -> (ByteIndex, Path, ByteIndex)
      {
         match __symbols.pop().unwrap() {
             (__l, __Symbol::Variant40(__v), __r) => (__l, __v, __r),
@@ -1703,10 +1682,20 @@ mod __parse__Program {
     fn __pop_Variant39<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, Spanned<Mode>, ByteIndex)
+    ) -> (ByteIndex, Pattern, ByteIndex)
      {
         match __symbols.pop().unwrap() {
             (__l, __Symbol::Variant39(__v), __r) => (__l, __v, __r),
+            _ => panic!("symbol type mismatch")
+        }
+    }
+    fn __pop_Variant38<
+    >(
+        __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
+    ) -> (ByteIndex, Spanned<Mode>, ByteIndex)
+     {
+        match __symbols.pop().unwrap() {
+            (__l, __Symbol::Variant38(__v), __r) => (__l, __v, __r),
             _ => panic!("symbol type mismatch")
         }
     }
@@ -1740,13 +1729,13 @@ mod __parse__Program {
             _ => panic!("symbol type mismatch")
         }
     }
-    fn __pop_Variant43<
+    fn __pop_Variant42<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
     ) -> (ByteIndex, Struct, ByteIndex)
      {
         match __symbols.pop().unwrap() {
-            (__l, __Symbol::Variant43(__v), __r) => (__l, __v, __r),
+            (__l, __Symbol::Variant42(__v), __r) => (__l, __v, __r),
             _ => panic!("symbol type mismatch")
         }
     }
@@ -1930,13 +1919,13 @@ mod __parse__Program {
             _ => panic!("symbol type mismatch")
         }
     }
-    fn __pop_Variant44<
+    fn __pop_Variant43<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
     ) -> (ByteIndex, ::std::vec::Vec<Token>, ByteIndex)
      {
         match __symbols.pop().unwrap() {
-            (__l, __Symbol::Variant44(__v), __r) => (__l, __v, __r),
+            (__l, __Symbol::Variant43(__v), __r) => (__l, __v, __r),
             _ => panic!("symbol type mismatch")
         }
     }
@@ -2054,7 +2043,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // (<BlockItem> SEP) = BlockItem, SEP => ActionFn(101);
-        let __sym1 = __pop_Variant38(__symbols);
+        let __sym1 = __pop_Variant37(__symbols);
         let __sym0 = __pop_Variant6(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
@@ -2105,7 +2094,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // (<BlockItem> SEP)+ = BlockItem, SEP => ActionFn(121);
-        let __sym1 = __pop_Variant38(__symbols);
+        let __sym1 = __pop_Variant37(__symbols);
         let __sym0 = __pop_Variant6(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
@@ -2123,7 +2112,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // (<BlockItem> SEP)+ = (<BlockItem> SEP)+, BlockItem, SEP => ActionFn(122);
-        let __sym2 = __pop_Variant38(__symbols);
+        let __sym2 = __pop_Variant37(__symbols);
         let __sym1 = __pop_Variant6(__symbols);
         let __sym0 = __pop_Variant7(__symbols);
         let __start = __sym0.0.clone();
@@ -2406,7 +2395,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // (<Item> SEP) = Item, SEP => ActionFn(108);
-        let __sym1 = __pop_Variant38(__symbols);
+        let __sym1 = __pop_Variant37(__symbols);
         let __sym0 = __pop_Variant14(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
@@ -2457,7 +2446,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // (<Item> SEP)+ = Item, SEP => ActionFn(137);
-        let __sym1 = __pop_Variant38(__symbols);
+        let __sym1 = __pop_Variant37(__symbols);
         let __sym0 = __pop_Variant14(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
@@ -2475,7 +2464,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // (<Item> SEP)+ = (<Item> SEP)+, Item, SEP => ActionFn(138);
-        let __sym2 = __pop_Variant38(__symbols);
+        let __sym2 = __pop_Variant37(__symbols);
         let __sym1 = __pop_Variant14(__symbols);
         let __sym0 = __pop_Variant15(__symbols);
         let __start = __sym0.0.clone();
@@ -2680,7 +2669,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // COLON = ":", newline+ => ActionFn(190);
-        let __sym1 = __pop_Variant44(__symbols);
+        let __sym1 = __pop_Variant43(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
@@ -2699,7 +2688,7 @@ mod __parse__Program {
     {
         // COLON = newline+, ":" => ActionFn(191);
         let __sym1 = __pop_Variant0(__symbols);
-        let __sym0 = __pop_Variant44(__symbols);
+        let __sym0 = __pop_Variant43(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action191::<>(__sym0, __sym1);
@@ -2716,9 +2705,9 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // COLON = newline+, ":", newline+ => ActionFn(192);
-        let __sym2 = __pop_Variant44(__symbols);
+        let __sym2 = __pop_Variant43(__symbols);
         let __sym1 = __pop_Variant0(__symbols);
-        let __sym0 = __pop_Variant44(__symbols);
+        let __sym0 = __pop_Variant43(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym2.2.clone();
         let __nt = super::__action192::<>(__sym0, __sym1, __sym2);
@@ -2752,7 +2741,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // COMMA = ",", newline+ => ActionFn(194);
-        let __sym1 = __pop_Variant44(__symbols);
+        let __sym1 = __pop_Variant43(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
@@ -2771,7 +2760,7 @@ mod __parse__Program {
     {
         // COMMA = newline+, "," => ActionFn(195);
         let __sym1 = __pop_Variant0(__symbols);
-        let __sym0 = __pop_Variant44(__symbols);
+        let __sym0 = __pop_Variant43(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action195::<>(__sym0, __sym1);
@@ -2788,9 +2777,9 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // COMMA = newline+, ",", newline+ => ActionFn(196);
-        let __sym2 = __pop_Variant44(__symbols);
+        let __sym2 = __pop_Variant43(__symbols);
         let __sym1 = __pop_Variant0(__symbols);
-        let __sym0 = __pop_Variant44(__symbols);
+        let __sym0 = __pop_Variant43(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym2.2.clone();
         let __nt = super::__action196::<>(__sym0, __sym1, __sym2);
@@ -2844,7 +2833,7 @@ mod __parse__Program {
     {
         // ConstructField = Identifier, ":", newline+, Type => ActionFn(198);
         let __sym3 = __pop_Variant2(__symbols);
-        let __sym2 = __pop_Variant44(__symbols);
+        let __sym2 = __pop_Variant43(__symbols);
         let __sym1 = __pop_Variant0(__symbols);
         let __sym0 = __pop_Variant12(__symbols);
         let __start = __sym0.0.clone();
@@ -2916,7 +2905,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // Decl = Let => ActionFn(29);
-        let __sym0 = __pop_Variant37(__symbols);
+        let __sym0 = __pop_Variant6(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action29::<>(__sym0);
@@ -3361,7 +3350,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // ExprAtom = Lit => ActionFn(41);
-        let __sym0 = __pop_Variant38(__symbols);
+        let __sym0 = __pop_Variant37(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action41::<>(__sym0);
@@ -3378,7 +3367,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // ExprAtom = PathExpr => ActionFn(42);
-        let __sym0 = __pop_Variant41(__symbols);
+        let __sym0 = __pop_Variant40(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action42::<>(__sym0);
@@ -3455,7 +3444,7 @@ mod __parse__Program {
         let __sym5 = __pop_Variant17(__symbols);
         let __sym4 = __pop_Variant30(__symbols);
         let __sym3 = __pop_Variant0(__symbols);
-        let __sym2 = __pop_Variant40(__symbols);
+        let __sym2 = __pop_Variant39(__symbols);
         let __sym1 = __pop_Variant0(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
@@ -3479,7 +3468,7 @@ mod __parse__Program {
         let __sym5 = __pop_Variant17(__symbols);
         let __sym4 = __pop_Variant30(__symbols);
         let __sym3 = __pop_Variant0(__symbols);
-        let __sym2 = __pop_Variant40(__symbols);
+        let __sym2 = __pop_Variant39(__symbols);
         let __sym1 = __pop_Variant0(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
@@ -3671,7 +3660,7 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // Item = Struct => ActionFn(2);
-        let __sym0 = __pop_Variant43(__symbols);
+        let __sym0 = __pop_Variant42(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action2::<>(__sym0);
@@ -3742,12 +3731,12 @@ mod __parse__Program {
         let __sym4 = __pop_Variant0(__symbols);
         let __sym3 = __pop_Variant2(__symbols);
         let __sym2 = __pop_Variant0(__symbols);
-        let __sym1 = __pop_Variant40(__symbols);
+        let __sym1 = __pop_Variant39(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym5.2.clone();
         let __nt = super::__action183::<>(__sym0, __sym1, __sym2, __sym3, __sym4, __sym5);
-        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant6(__nt), __end);
         (6, __symbol, 50)
     }
     pub(crate) fn __reduce104<
@@ -3762,12 +3751,12 @@ mod __parse__Program {
         // Let = let, Pat, "=", Expr => ActionFn(184);
         let __sym3 = __pop_Variant30(__symbols);
         let __sym2 = __pop_Variant0(__symbols);
-        let __sym1 = __pop_Variant40(__symbols);
+        let __sym1 = __pop_Variant39(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym3.2.clone();
         let __nt = super::__action184::<>(__sym0, __sym1, __sym2, __sym3);
-        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant6(__nt), __end);
         (4, __symbol, 50)
     }
     pub(crate) fn __reduce105<
@@ -3782,12 +3771,12 @@ mod __parse__Program {
         // Let = let, Pat, ":", Type => ActionFn(185);
         let __sym3 = __pop_Variant2(__symbols);
         let __sym2 = __pop_Variant0(__symbols);
-        let __sym1 = __pop_Variant40(__symbols);
+        let __sym1 = __pop_Variant39(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym3.2.clone();
         let __nt = super::__action185::<>(__sym0, __sym1, __sym2, __sym3);
-        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant6(__nt), __end);
         (4, __symbol, 50)
     }
     pub(crate) fn __reduce106<
@@ -3800,12 +3789,12 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // Let = let, Pat => ActionFn(186);
-        let __sym1 = __pop_Variant40(__symbols);
+        let __sym1 = __pop_Variant39(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action186::<>(__sym0, __sym1);
-        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant6(__nt), __end);
         (2, __symbol, 50)
     }
     pub(crate) fn __reduce107<
@@ -3822,7 +3811,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action44::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
         (1, __symbol, 51)
     }
     pub(crate) fn __reduce108<
@@ -3840,7 +3829,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action119::<>(__sym0, __sym1);
-        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
         (2, __symbol, 52)
     }
     pub(crate) fn __reduce109<
@@ -3856,7 +3845,7 @@ mod __parse__Program {
         let __start = __symbols.last().map(|s| s.2.clone()).unwrap_or_default();
         let __end = __lookahead_start.cloned().unwrap_or_else(|| __start.clone());
         let __nt = super::__action120::<>(&__start, &__end);
-        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
         (0, __symbol, 52)
     }
     pub(crate) fn __reduce110<
@@ -3874,7 +3863,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action116::<>(__sym0, __sym1);
-        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
         (2, __symbol, 53)
     }
     pub(crate) fn __reduce111<
@@ -3890,7 +3879,7 @@ mod __parse__Program {
         let __start = __symbols.last().map(|s| s.2.clone()).unwrap_or_default();
         let __end = __lookahead_start.cloned().unwrap_or_else(|| __start.clone());
         let __nt = super::__action117::<>(&__start, &__end);
-        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
         (0, __symbol, 53)
     }
     pub(crate) fn __reduce112<
@@ -3907,7 +3896,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action156::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant39(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
         (1, __symbol, 54)
     }
     pub(crate) fn __reduce113<
@@ -3924,7 +3913,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action157::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant39(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
         (1, __symbol, 54)
     }
     pub(crate) fn __reduce114<
@@ -3937,11 +3926,11 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // Newlines = newline+ => ActionFn(50);
-        let __sym0 = __pop_Variant44(__symbols);
+        let __sym0 = __pop_Variant43(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action50::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
         (1, __symbol, 55)
     }
     pub(crate) fn __reduce115<
@@ -3958,7 +3947,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action26::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant39(__nt), __end);
         (1, __symbol, 56)
     }
     pub(crate) fn __reduce116<
@@ -3975,7 +3964,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action27::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant39(__nt), __end);
         (1, __symbol, 56)
     }
     pub(crate) fn __reduce117<
@@ -3993,7 +3982,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action28::<>(__sym0, __sym1);
-        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant39(__nt), __end);
         (2, __symbol, 56)
     }
     pub(crate) fn __reduce118<
@@ -4010,7 +3999,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action55::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant41(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
         (1, __symbol, 57)
     }
     pub(crate) fn __reduce119<
@@ -4027,7 +4016,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action56::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant41(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
         (1, __symbol, 57)
     }
     pub(crate) fn __reduce120<
@@ -4044,7 +4033,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action53::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant41(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
         (1, __symbol, 58)
     }
     pub(crate) fn __reduce121<
@@ -4061,7 +4050,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action54::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant41(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
         (1, __symbol, 58)
     }
     pub(crate) fn __reduce122<
@@ -4074,11 +4063,11 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // PathExpr = Path<"."> => ActionFn(45);
-        let __sym0 = __pop_Variant41(__symbols);
+        let __sym0 = __pop_Variant40(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action45::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant41(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
         (1, __symbol, 59)
     }
     pub(crate) fn __reduce123<
@@ -4091,11 +4080,11 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // PathExpr = Path<"::"> => ActionFn(46);
-        let __sym0 = __pop_Variant41(__symbols);
+        let __sym0 = __pop_Variant40(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action46::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant41(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant40(__nt), __end);
         (1, __symbol, 59)
     }
     pub(crate) fn __reduce124<
@@ -4126,7 +4115,7 @@ mod __parse__Program {
     {
         // PrefixDelim<BlockItem, SEP> = SEP, Delim<BlockItem, SEP> => ActionFn(65);
         let __sym1 = __pop_Variant25(__symbols);
-        let __sym0 = __pop_Variant38(__symbols);
+        let __sym0 = __pop_Variant37(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action65::<>(__sym0, __sym1);
@@ -4196,7 +4185,7 @@ mod __parse__Program {
     {
         // PrefixDelim<Item, SEP> = SEP, Delim<Item, SEP> => ActionFn(74);
         let __sym1 = __pop_Variant29(__symbols);
-        let __sym0 = __pop_Variant38(__symbols);
+        let __sym0 = __pop_Variant37(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action74::<>(__sym0, __sym1);
@@ -4217,7 +4206,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action1::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant42(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant41(__nt), __end);
         (1, __symbol, 63)
     }
     pub(crate) fn __reduce131<
@@ -4285,7 +4274,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action48::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
         (1, __symbol, 66)
     }
     pub(crate) fn __reduce135<
@@ -4298,11 +4287,11 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // SEP = Newlines => ActionFn(49);
-        let __sym0 = __pop_Variant38(__symbols);
+        let __sym0 = __pop_Variant37(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action49::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant38(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant37(__nt), __end);
         (1, __symbol, 66)
     }
     pub(crate) fn __reduce136<
@@ -4323,7 +4312,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym4.2.clone();
         let __nt = super::__action199::<>(__sym0, __sym1, __sym2, __sym3, __sym4);
-        let __symbol = (__start, __Symbol::Variant43(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant42(__nt), __end);
         (5, __symbol, 67)
     }
     pub(crate) fn __reduce137<
@@ -4338,14 +4327,14 @@ mod __parse__Program {
         // Struct = struct, Identifier, "{", newline+, Fields, "}" => ActionFn(200);
         let __sym5 = __pop_Variant0(__symbols);
         let __sym4 = __pop_Variant27(__symbols);
-        let __sym3 = __pop_Variant44(__symbols);
+        let __sym3 = __pop_Variant43(__symbols);
         let __sym2 = __pop_Variant0(__symbols);
         let __sym1 = __pop_Variant12(__symbols);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym5.2.clone();
         let __nt = super::__action200::<>(__sym0, __sym1, __sym2, __sym3, __sym4, __sym5);
-        let __symbol = (__start, __Symbol::Variant43(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant42(__nt), __end);
         (6, __symbol, 67)
     }
     pub(crate) fn __reduce138<
@@ -4376,7 +4365,7 @@ mod __parse__Program {
     {
         // Type = Mode, Identifier => ActionFn(160);
         let __sym1 = __pop_Variant12(__symbols);
-        let __sym0 = __pop_Variant39(__symbols);
+        let __sym0 = __pop_Variant38(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action160::<>(__sym0, __sym1);
@@ -4396,7 +4385,7 @@ mod __parse__Program {
         let __start = __symbols.last().map(|s| s.2.clone()).unwrap_or_default();
         let __end = __lookahead_start.cloned().unwrap_or_else(|| __start.clone());
         let __nt = super::__action70::<>(&__start, &__end);
-        let __symbol = (__start, __Symbol::Variant44(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant43(__nt), __end);
         (0, __symbol, 70)
     }
     pub(crate) fn __reduce142<
@@ -4409,11 +4398,11 @@ mod __parse__Program {
     ) -> (usize, (ByteIndex,__Symbol<>,ByteIndex), usize)
     {
         // newline* = newline+ => ActionFn(71);
-        let __sym0 = __pop_Variant44(__symbols);
+        let __sym0 = __pop_Variant43(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action71::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant44(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant43(__nt), __end);
         (1, __symbol, 70)
     }
     pub(crate) fn __reduce143<
@@ -4430,7 +4419,7 @@ mod __parse__Program {
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
         let __nt = super::__action51::<>(__sym0);
-        let __symbol = (__start, __Symbol::Variant44(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant43(__nt), __end);
         (1, __symbol, 71)
     }
     pub(crate) fn __reduce144<
@@ -4444,11 +4433,11 @@ mod __parse__Program {
     {
         // newline+ = newline+, newline => ActionFn(52);
         let __sym1 = __pop_Variant0(__symbols);
-        let __sym0 = __pop_Variant44(__symbols);
+        let __sym0 = __pop_Variant43(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym1.2.clone();
         let __nt = super::__action52::<>(__sym0, __sym1);
-        let __symbol = (__start, __Symbol::Variant44(__nt), __end);
+        let __symbol = (__start, __Symbol::Variant43(__nt), __end);
         (2, __symbol, 71)
     }
 }
@@ -4679,7 +4668,7 @@ fn __action23<
     (_, __1, _): (ByteIndex, Pattern, ByteIndex),
     (_, __2, _): (ByteIndex, (), ByteIndex),
     (_, __3, _): (ByteIndex, (), ByteIndex),
-) -> Let
+) -> BlockItem
 {
     unimplemented!("Let")
 }
@@ -4727,7 +4716,7 @@ fn __action28<
 
 fn __action29<
 >(
-    (_, __0, _): (ByteIndex, Let, ByteIndex),
+    (_, __0, _): (ByteIndex, BlockItem, ByteIndex),
 ) -> Declaration
 {
     unimplemented!("Expr::Let")
@@ -6798,7 +6787,7 @@ fn __action181<
     __2: (ByteIndex, (), ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, Expression, ByteIndex),
-) -> Let
+) -> BlockItem
 {
     let __start0 = __3.0.clone();
     let __end0 = __4.2.clone();
@@ -6820,7 +6809,7 @@ fn __action182<
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Pattern, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> Let
+) -> BlockItem
 {
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
@@ -6845,7 +6834,7 @@ fn __action183<
     __3: (ByteIndex, Spanned<Type>, ByteIndex),
     __4: (ByteIndex, Token, ByteIndex),
     __5: (ByteIndex, Expression, ByteIndex),
-) -> Let
+) -> BlockItem
 {
     let __start0 = __2.0.clone();
     let __end0 = __3.2.clone();
@@ -6869,7 +6858,7 @@ fn __action184<
     __1: (ByteIndex, Pattern, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, Expression, ByteIndex),
-) -> Let
+) -> BlockItem
 {
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
@@ -6893,7 +6882,7 @@ fn __action185<
     __1: (ByteIndex, Pattern, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, Spanned<Type>, ByteIndex),
-) -> Let
+) -> BlockItem
 {
     let __start0 = __2.0.clone();
     let __end0 = __3.2.clone();
@@ -6913,7 +6902,7 @@ fn __action186<
 >(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Pattern, ByteIndex),
-) -> Let
+) -> BlockItem
 {
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();

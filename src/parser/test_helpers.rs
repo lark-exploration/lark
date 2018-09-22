@@ -47,22 +47,16 @@ impl LexerStateTrait for LexerState {
         let out = match self {
             LexerState::Top => match c {
                 None => LexerNext::EOF,
-                Some(c) => {
-                    if c == '^' {
-                        LexerNext::transition_to(LexerState::Underline).reconsume()
-                    } else if c == ' ' {
-                        LexerNext::transition_to(LexerState::Whitespace)
-                    } else {
-                        LexerNext::transition_to(LexerState::Name)
-                    }
-                }
+                Some('^') => LexerNext::transition_to(LexerState::Underline).reconsume(),
+                Some(' ') => LexerNext::transition_to(LexerState::Whitespace),
+                _ => LexerNext::transition_to(LexerState::Name),
             },
 
             LexerState::Name => match c {
                 None => LexerNext::emit(tk_name, LexerState::Top).reconsume(),
                 Some(' ') => LexerNext::transition_to(LexerState::Top).reconsume(),
                 Some(c) if c.is_alphabetic() => LexerNext::consume(),
-                Some('-') => LexerNext::consume(),
+                Some('-') | Some('_') => LexerNext::consume(),
 
                 Some(other) => LexerNext::Error(other),
             },
@@ -76,11 +70,8 @@ impl LexerStateTrait for LexerState {
 
             LexerState::Whitespace => match c {
                 None => LexerNext::EOF,
-                Some(c) => if c == ' ' {
-                    LexerNext::consume()
-                } else {
-                    LexerNext::finalize_no_emit(LexerState::Top).reconsume()
-                },
+                Some(' ') => LexerNext::consume(),
+                _ => LexerNext::finalize_no_emit(LexerState::Top).reconsume(),
             },
             other => unimplemented!("{:?}", other),
         };

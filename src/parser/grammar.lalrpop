@@ -70,7 +70,7 @@ Block: Block = {
 
 BlockItem: BlockItem = {
     Decl => BlockItem::Decl(<>),
-    Expr => BlockItem::Expr(<>)
+    Expr => BlockItem::Expr(<>),
 }
 
 BlockOrIf: BlockOrIf = {
@@ -79,8 +79,9 @@ BlockOrIf: BlockOrIf = {
     ExprIfLet => unimplemented!("BlockOrIf::ExprIfLet")
 }
 
-Let: Let = {
-    let Pat MaybeTypeAscription MaybeInitExpr => unimplemented!("Let")
+Let: BlockItem = {
+    let Identifier "=" Expr => unimplemented!("Let")
+    //let Pat MaybeTypeAscription MaybeInitExpr => unimplemented!("Let")
 }
 
 #[inline]

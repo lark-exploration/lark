@@ -131,7 +131,7 @@ mod test {
         init();
 
         let source = unindent(
-            "
+            r#"
             struct Diagnostic {
             ^^^^^^ ^^^^^^^^^^ ^ open-struct
               msg: own String,
@@ -146,7 +146,17 @@ mod test {
               ^^^^^^^^^^ ^ ^^^  ^^^^^ ^ construct-diag
             }
             ^ close-new
-            ",
+            def main() {
+            ^^^ ^^^^   ^ main
+              let var_name = "variable"
+              ^^^ ^^^^^^^^   ^^^^^^^^^^ var_name
+              let s = "variable is unused {{var_name}}"
+              ^^^ ^   ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^  ^ s
+              new(s, "warning")
+              ^^^ ^  ^^^^^^^^^ call
+            }
+            ^ close-main
+            "#,
         );
 
         let table = ModuleTable::new();
@@ -381,7 +391,7 @@ mod test {
             for token in tokens {
                 trace!("{:?}", token);
                 match token {
-                    Err(err) => panic!(err),
+                    Err(err) => panic!("{:?}", err),
                     Ok((start, token, end)) => match token {
                         Token::Underline => spans.push(Span::from(
                             start + ByteOffset(codespan_start as i64),
