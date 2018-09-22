@@ -16,6 +16,7 @@ use crate::ty::Ty;
 use crate::ty::{Base, BaseData};
 use crate::ty::{Generics, GenericsData};
 use crate::ty::{Perm, PermData};
+use log::debug;
 use std::convert::TryFrom;
 
 impl Relate<'me> {
@@ -23,6 +24,8 @@ impl Relate<'me> {
     /// means that their bases are deeply equal but which
     /// says nothing about their permissions.
     crate fn ty_base_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<(), Error> {
+        debug!("ty_base_eq(ty1={:?}, ty2={:?})", ty1, ty2);
+
         let Ty {
             perm: _,
             base: base1,
@@ -33,7 +36,9 @@ impl Relate<'me> {
             base: base2,
         } = ty2;
 
-        self.base_eq(base1, base2)
+        let r = self.base_eq(base1, base2);
+        debug!("ty_base_eq: r = {:?}", r);
+        r
     }
 
     /// No matter what the "variance" is, for two types
@@ -51,7 +56,7 @@ impl Relate<'me> {
 
             (Err(var1), Ok(data2)) => self.base_var_data_eq(var1, data2),
 
-            (Err(var1), Err(var2)) => {
+            (Err(_), Err(_)) => {
                 self.predicates.push(Predicate::BaseEq(base1, base2));
                 Ok(())
             }
@@ -80,7 +85,10 @@ impl Relate<'me> {
         _base2: Base,
         data2: BaseData,
     ) -> Result<(), Error> {
+        debug!("base_data_eq(data1={:?}, data2={:?})", data1, data2);
+
         if data1.kind != data2.kind {
+            debug!("base_data_eq: error: kind mismatch");
             return Err(Error);
         }
 
@@ -89,7 +97,7 @@ impl Relate<'me> {
         assert_eq!(generics_data1.len(), generics_data2.len());
 
         for (generic1, generic2) in generics_data1.iter().zip(&generics_data2) {
-            self.generic_base_eq(generic1, generic2);
+            self.generic_base_eq(generic1, generic2)?;
         }
 
         Ok(())

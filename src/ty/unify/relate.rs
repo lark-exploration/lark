@@ -14,6 +14,19 @@ use std::convert::TryFrom;
 mod base_eq;
 mod spine;
 use self::spine::InstantiateSpine;
+mod test;
+
+impl UnificationTable {
+    fn ty_base_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<Vec<Predicate>, Error> {
+        let mut relate = Relate {
+            unify: self,
+            predicates: vec![],
+        };
+        // FIXME transaction
+        relate.ty_base_eq(ty1, ty2)?;
+        Ok(relate.predicates)
+    }
+}
 
 enum Direction {
     LessThan,
@@ -26,6 +39,7 @@ struct Relate<'me> {
     predicates: Vec<Predicate>,
 }
 
+#[derive(Copy, Clone, Debug)]
 struct Error;
 
 impl Relate<'me> {

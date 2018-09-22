@@ -7,7 +7,8 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(try_from)]
-#![allow(unused)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 
 #[macro_use]
 mod lexer;

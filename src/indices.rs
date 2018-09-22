@@ -28,7 +28,7 @@ macro_rules! index_type {
                 // This is a wacky assert that is compatible with a
                 // const fn.  It will evaluate to an out-of-bounds
                 // access if `index >= $max`.
-                let v: u32 = [index as u32][(index < ($max as usize)) as usize];
+                let v: u32 = [index as u32][(index >= ($max as usize)) as usize];
                 unsafe { Self { private: std::num::NonZeroU32::new_unchecked(v + 1) } }
             }
 
@@ -36,7 +36,7 @@ macro_rules! index_type {
                 // This is a wacky assert that is compatible with a
                 // const fn.  It will evaluate to an out-of-bounds
                 // access if `index >= $max`.
-                let v: u32 = [index][(index < $max) as usize];
+                let v: u32 = [index][(index >= $max) as usize];
                 unsafe { Self { private: std::num::NonZeroU32::new_unchecked(v + 1) } }
             }
 

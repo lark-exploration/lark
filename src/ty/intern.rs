@@ -13,7 +13,7 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 #[derive(Debug)]
-struct Interner<Key, Data>
+crate struct Interner<Key, Data>
 where
     Key: Copy + Idx,
     Data: Clone + Hash + Eq,

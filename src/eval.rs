@@ -1,3 +1,6 @@
+#![allow(unused_mut)]
+#![allow(unused_variables)]
+
 use crate::ir::{builtin_type, BuiltinFn, Command, Context, DefId, Definition, Function, Struct};
 use std::collections::HashMap;
 use std::fmt;

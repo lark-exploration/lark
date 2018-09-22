@@ -37,7 +37,7 @@ impl Strings {
         self.to_id.get(&hashable.seahash()).map(|id| *id)
     }
 
-    crate fn intern(&mut self, mut hashable: impl Seahash) -> StringId {
+    crate fn intern(&mut self, hashable: impl Seahash) -> StringId {
         if let Some(existing) = self.get(&hashable) {
             existing
         } else {

@@ -38,7 +38,7 @@ impl InstantiateSpine for Base {
         match relate.unify.shallow_resolve_data(self) {
             Ok(data) => {
                 let data1 = data.instantiate_spine(relate);
-                relate.intern(data)
+                relate.intern(data1)
             }
 
             Err(_) => {

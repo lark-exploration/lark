@@ -52,8 +52,7 @@ crate enum PermData {
         index: ParameterIndex,
     },
     Placeholder {
-        universe: UniverseIndex,
-        index: ParameterIndex,
+        index: Placeholder,
     },
 }
 
@@ -169,6 +168,10 @@ index_type! {
 
 index_type! {
     crate struct UniverseIndex { .. }
+}
+
+impl UniverseIndex {
+    crate const ROOT: UniverseIndex = UniverseIndex::new(0);
 }
 
 index_type! {
