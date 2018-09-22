@@ -64,26 +64,26 @@ impl TyInterners {
 
     crate fn intern<D>(&self, data: D) -> D::Key
     where
-        D: Internable,
+        D: Intern,
     {
         data.intern(self)
     }
 
     crate fn untern<K>(&self, key: K) -> K::Data
     where
-        K: Unternable,
+        K: Untern,
     {
         key.untern(self)
     }
 }
 
-crate trait Internable {
+crate trait Intern {
     type Key;
 
     fn intern(self, interner: &TyInterners) -> Self::Key;
 }
 
-crate trait Unternable {
+crate trait Untern {
     type Data;
 
     fn untern(self, interner: &TyInterners) -> Self::Data;
@@ -91,7 +91,7 @@ crate trait Unternable {
 
 macro_rules! intern_ty {
     ($field:ident, $key:ty, $data:ty) => {
-        impl Internable for $data {
+        impl Intern for $data {
             type Key = $key;
 
             fn intern(self, interner: &TyInterners) -> $key {
@@ -99,7 +99,7 @@ macro_rules! intern_ty {
             }
         }
 
-        impl Unternable for $key {
+        impl Untern for $key {
             type Data = $data;
 
             fn untern(self, interner: &TyInterners) -> $data {

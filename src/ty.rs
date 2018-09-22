@@ -76,10 +76,7 @@ crate enum BaseData {
     /// universally quantified bound variable. For example, `forall<A>
     /// { ... }` -- inside the `...`, the variable `A` might be
     /// replaced with a placeholder, representing "any" type `A`.
-    Placeholder {
-        universe: UniverseIndex,
-        index: ParameterIndex,
-    },
+    Placeholder { placeholder: Placeholder },
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -129,6 +126,12 @@ impl DebruijnIndex {
         );
         outer.as_usize() - self.as_usize()
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate struct Placeholder {
+    crate universe: UniverseIndex,
+    crate index: ParameterIndex,
 }
 
 index_type! {
