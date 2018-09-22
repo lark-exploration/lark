@@ -95,6 +95,19 @@ impl UnificationTable {
         self.infers[root_unbound_var] = InferData::Redirect(bound_var);
     }
 
+    /// Binds `unbound_var`, which must not yet be bound to anything, to a value.
+    pub(super) fn bind_unbound_var_to_value(
+        &mut self,
+        unbound_var: InferVar,
+        value_data: impl Into<ValueData>,
+    ) {
+        debug_assert!(self.probe(unbound_var).is_none());
+        let value = self.values.push(value_data.into());
+        let (root_unbound_var, _) = self.find(unbound_var);
+        self.infers[root_unbound_var] = InferData::Value(value);
+        // FIXME: trace information?
+    }
+
     /// Redirects the (root) variable `root_from` to another root variable (`root_to`).
     /// Adjusts `root_to`'s rank to indicate its new depth.
     fn redirect(

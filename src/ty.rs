@@ -1,6 +1,7 @@
 use crate::ir::DefId;
 use rustc_hash::FxHashMap;
 use std::hash::{Hash, Hasher};
+use std::iter::IntoIterator;
 use std::rc::Rc;
 
 crate mod context;
@@ -12,7 +13,6 @@ crate mod unify;
 crate struct Ty {
     perm: Perm,
     base: Base,
-    generics: Generics,
 }
 
 index_type! {
@@ -58,7 +58,13 @@ crate enum PermData {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum BaseData {
+crate struct BaseData {
+    crate kind: BaseKind,
+    crate generics: Generics,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum BaseKind {
     /// A named type (might be value, might be linear, etc).
     Named { name: DefId },
 
@@ -82,6 +88,25 @@ crate enum BaseData {
 #[derive(Clone, PartialEq, Eq, Hash)]
 crate struct GenericsData {
     crate elements: Rc<Vec<Generic>>,
+}
+
+impl GenericsData {
+    crate fn len(&self) -> usize {
+        self.elements.len()
+    }
+
+    crate fn iter(&self) -> impl Iterator<Item = Generic> + '_ {
+        self.into_iter()
+    }
+}
+
+impl IntoIterator for &'iter GenericsData {
+    type IntoIter = std::iter::Cloned<std::slice::Iter<'iter, Generic>>;
+    type Item = Generic;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.elements.iter().cloned()
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -166,10 +191,16 @@ impl AsInferVar for PermData {
 
 impl AsInferVar for BaseData {
     fn as_infer_var(&self) -> Option<InferVar> {
-        if let BaseData::Infer { var } = self {
-            Some(*var)
+        if let BaseKind::Infer { var } = self.kind {
+            Some(var)
         } else {
             None
         }
     }
+}
+
+/// Predicates that can be proven about types.
+crate enum Predicate {
+    BaseEq(Base, Base),
+    RegionConstraint {},
 }

@@ -1,7 +1,7 @@
 use crate::ty::intern::{TyInterners, Untern};
 use crate::ty::Ty;
 use crate::ty::{AsInferVar, InferVar};
-use crate::ty::{Base, BaseData};
+use crate::ty::{Base, BaseData, BaseKind};
 use crate::ty::{Perm, PermData};
 use indexed_vec::IndexVec;
 use std::convert::TryFrom;
@@ -60,6 +60,18 @@ index_type! {
 crate enum ValueData {
     Perm(Perm),
     Base(Base),
+}
+
+impl From<Perm> for ValueData {
+    fn from(perm: Perm) -> Self {
+        ValueData::Perm(perm)
+    }
+}
+
+impl From<Base> for ValueData {
+    fn from(base: Base) -> Self {
+        ValueData::Base(base)
+    }
 }
 
 impl TryFrom<ValueData> for Perm {
@@ -134,6 +146,25 @@ impl UnificationTable {
         }
     }
 
+    crate fn shallow_resolve_data<K>(&mut self, value: K) -> Result<K::Data, InferVar>
+    where
+        K: Untern + TryFrom<ValueData, Error = String>,
+        K::Data: AsInferVar,
+    {
+        let data = self.intern.untern(value);
+        if let Some(var) = data.as_infer_var() {
+            if let Some(value) = self.probe(var) {
+                let value_data = self.values[value];
+                let key = K::try_from(value_data).unwrap();
+                Ok(self.intern.untern(key))
+            } else {
+                Err(var)
+            }
+        } else {
+            Ok(data)
+        }
+    }
+
     crate fn shallow_resolve<T>(&mut self, value: T) -> T
     where
         T: ShallowResolve,
@@ -161,18 +192,10 @@ crate trait FromInferVar: Copy + Untern + TryFrom<ValueData, Error = String> {
 
 impl ShallowResolve for Ty {
     fn shallow_resolve(self, unify: &mut UnificationTable) -> Self {
-        let Ty {
-            perm,
-            base,
-            generics,
-        } = self;
+        let Ty { perm, base } = self;
         let perm = unify.shallow_resolve(perm);
         let base = unify.shallow_resolve(base);
-        Ty {
-            perm,
-            base,
-            generics,
-        }
+        Ty { perm, base }
     }
 }
 
@@ -202,6 +225,6 @@ impl FromInferVar for Perm {
 
 impl FromInferVar for Base {
     fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self {
-        unify.intern.intern(BaseData::Infer { var })
+        unify.intern.intern_base_var(var)
     }
 }
