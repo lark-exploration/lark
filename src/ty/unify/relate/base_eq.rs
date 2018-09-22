@@ -3,7 +3,8 @@
 //! which does not relate their permissions.
 
 use crate::ty::intern::{Intern, Untern};
-use crate::ty::unify::relate::spine::InstantiateSpine;
+use crate::ty::map::Map;
+use crate::ty::unify::relate::spine::SpineInstantiator;
 use crate::ty::unify::relate::Error;
 use crate::ty::unify::relate::Relate;
 use crate::ty::unify::UnificationTable;
@@ -52,9 +53,9 @@ impl Relate<'me> {
         ) {
             (Ok(data1), Ok(data2)) => self.base_data_eq(base1, data1, base2, data2),
 
-            (Ok(data1), Err(var2)) => self.base_var_data_eq(var2, data1),
+            (Ok(_), Err(var2)) => self.base_var_data_eq(var2, base1),
 
-            (Err(var1), Ok(data2)) => self.base_var_data_eq(var1, data2),
+            (Err(var1), Ok(_)) => self.base_var_data_eq(var1, base2),
 
             (Err(_), Err(_)) => {
                 self.predicates.push(Predicate::BaseEq(base1, base2));
@@ -69,11 +70,16 @@ impl Relate<'me> {
         }
     }
 
-    fn base_var_data_eq(&mut self, var1: InferVar, data2: BaseData) -> Result<(), Error> {
+    fn spine_instantiator(&mut self) -> SpineInstantiator<'_> {
+        SpineInstantiator {
+            unify: &mut self.unify,
+            predicates: &mut self.predicates,
+        }
+    }
+
+    fn base_var_data_eq(&mut self, var1: InferVar, base2: Base) -> Result<(), Error> {
         assert!(self.unify.probe(var1).is_none());
-        assert!(data2.as_infer_var().is_none());
-        let new_spine_data = data2.instantiate_spine(self);
-        let new_spine = self.intern(new_spine_data);
+        let new_spine = base2.map_with(&mut self.spine_instantiator());
         self.unify.bind_unbound_var_to_value(var1, new_spine);
         Ok(())
     }

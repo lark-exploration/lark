@@ -13,7 +13,6 @@ use std::convert::TryFrom;
 
 mod base_eq;
 mod spine;
-use self::spine::InstantiateSpine;
 mod test;
 
 impl UnificationTable {

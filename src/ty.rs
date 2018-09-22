@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 crate mod context;
 crate mod intern;
+crate mod map;
 crate mod query;
 crate mod unify;
 

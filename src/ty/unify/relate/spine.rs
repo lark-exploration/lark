@@ -1,4 +1,5 @@
-use crate::ty::intern::Untern;
+use crate::ty::intern::{TyInterners, Untern};
+use crate::ty::map::{Map, Mapper};
 use crate::ty::unify::relate::Relate;
 use crate::ty::unify::UnificationTable;
 use crate::ty::AsInferVar;
@@ -29,60 +30,36 @@ use std::convert::TryFrom;
 ///   `?P0 Vec<?P1 String>`.
 /// - Given a `share Vec<?P0 ?B0>`, you would get back a
 ///   `?P1 Vec<?P2 ?B1>` and the constraint `BaseEq(?B0, ?B1)`.
-pub(super) trait InstantiateSpine {
-    fn instantiate_spine(self, relate: &mut Relate<'_>) -> Self;
+pub(super) struct SpineInstantiator<'me> {
+    pub(super) unify: &'me mut UnificationTable,
+    pub(super) predicates: &'me mut Vec<Predicate>,
 }
 
-impl InstantiateSpine for Base {
-    fn instantiate_spine(self, relate: &mut Relate<'_>) -> Self {
-        match relate.unify.shallow_resolve_data(self) {
+impl Mapper for SpineInstantiator<'me> {
+    fn interners(&self) -> &TyInterners {
+        &self.unify.intern
+    }
+
+    fn map_perm(&mut self, _: Perm) -> Perm {
+        self.unify.new_inferable::<Perm>()
+    }
+
+    fn map_base(&mut self, base: Base) -> Base {
+        match self.unify.shallow_resolve_data(base) {
             Ok(data) => {
-                let data1 = data.instantiate_spine(relate);
-                relate.intern(data1)
+                let data1 = BaseData {
+                    kind: data.kind,
+                    generics: data.generics.map_with(self),
+                };
+
+                self.unify.intern.intern(data1)
             }
 
             Err(_) => {
-                let new_variable = relate.unify.new_inferable::<Base>();
-                relate
-                    .predicates
-                    .push(Predicate::BaseEq(self, new_variable));
+                let new_variable = self.unify.new_inferable::<Base>();
+                self.predicates.push(Predicate::BaseEq(base, new_variable));
                 new_variable
             }
-        }
-    }
-}
-
-impl InstantiateSpine for BaseData {
-    fn instantiate_spine(self, relate: &mut Relate<'_>) -> BaseData {
-        assert!(self.as_infer_var().is_none());
-        BaseData {
-            kind: self.kind,
-            generics: self.generics.instantiate_spine(relate),
-        }
-    }
-}
-
-impl InstantiateSpine for Ty {
-    fn instantiate_spine(self, relate: &mut Relate<'_>) -> Self {
-        let Ty { perm: _, base } = self;
-        let perm = relate.unify.new_inferable::<Perm>();
-        let base = base.instantiate_spine(relate);
-        Ty { perm, base }
-    }
-}
-
-impl InstantiateSpine for Generics {
-    fn instantiate_spine(self, relate: &mut Relate<'_>) -> Self {
-        let data = relate.untern(self);
-        let intern = relate.unify.intern.clone();
-        intern.intern_generics(data.iter().map(|generic| generic.instantiate_spine(relate)))
-    }
-}
-
-impl InstantiateSpine for Generic {
-    fn instantiate_spine(self, relate: &mut Relate<'_>) -> Self {
-        match self {
-            Generic::Ty(ty) => Generic::Ty(ty.instantiate_spine(relate)),
         }
     }
 }
