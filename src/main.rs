@@ -4,7 +4,12 @@
 #![feature(crate_visibility_modifier)]
 #![feature(nll)]
 #![feature(min_const_fn)]
-#![allow(unused)]
+#![feature(const_fn)]
+#![feature(const_let)]
+#![feature(try_from)]
+#![feature(macro_at_most_once_rep)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 
 #[macro_use]
 mod lexer;
@@ -12,7 +17,6 @@ mod lexer;
 #[macro_use]
 mod indices;
 
-mod arena;
 mod codegen;
 mod eval;
 mod ir;

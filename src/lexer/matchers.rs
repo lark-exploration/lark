@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 use derive_new::new;
 use std::fmt;
 

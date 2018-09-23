@@ -1,3 +1,6 @@
+#![allow(unused_variables)]
+#![allow(unused_mut)]
+
 crate mod ast;
 crate mod grammar;
 crate mod grammar_helpers;

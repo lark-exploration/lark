@@ -1,3 +1,6 @@
+#![allow(unused_variables)]
+#![allow(unreachable_patterns)]
+
 crate mod annotate_lines;
 
 use crate::parser::lexer_helpers::{LexerNext, LexerStateTrait, ParseError, Tokenizer};

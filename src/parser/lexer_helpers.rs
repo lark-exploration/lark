@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 use crate::parser::pos::Span;
 use crate::parser::program::{ModuleTable, StringId};
 

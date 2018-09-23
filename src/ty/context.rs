@@ -1,14 +1,9 @@
 use crate::ty::intern::TyInterners;
 use crate::ty::query::TyQueries;
-use crate::ty::Mode;
+use std::rc::Rc;
 
-crate struct TyContextData<'global> {
-    crate intern: &'global TyInterners<'global>,
-    crate common: &'global Common<'global>,
-    crate engine: &'global dyn TyQueries<'global>,
+#[derive(Clone)]
+crate struct TyContextData {
+    crate intern: TyInterners,
+    crate engine: Rc<dyn TyQueries>,
 }
-
-crate struct Common<'global> {
-    crate own_mode: Mode<'global>,
-}
-

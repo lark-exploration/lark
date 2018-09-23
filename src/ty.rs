@@ -1,87 +1,112 @@
+#![warn(unused_imports)]
+
 use crate::ir::DefId;
-use rustc_hash::FxHashMap;
-use std::hash::{Hash, Hasher};
+use std::iter::IntoIterator;
+use std::rc::Rc;
 
 crate mod context;
+crate mod debug;
 crate mod intern;
-crate mod mode;
+crate mod map;
 crate mod query;
+crate mod unify;
 
-/// Internal, semantic representation for a Lark type. Derived from
-/// the AST, but not equivalent to it. `Ty` values are always interned
-/// into the global arenas via a `TyContext`.
-#[derive(Copy, Clone)]
-crate struct Ty<'global> {
-    // Correctness invariant: `Ty` is always interned for uniqueness,
-    // so we can rely on pointer equality.
-    data: &'global TyData<'global>,
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate struct Ty {
+    perm: Perm,
+    base: Base,
 }
 
-impl Ty<'global> {
-    crate fn kind(self) -> TyKind<'global> {
-        self.data.key.kind
-    }
-
-    crate fn generics(self) -> Generics<'global> {
-        &self.data.key.generics
-    }
+index_type! {
+    crate struct Perm { .. }
 }
 
-impl PartialEq<Ty<'global>> for Ty<'global> {
-    fn eq(&self, other: &Ty<'global>) -> bool {
-        let ptr1: *const TyData<'global> = self.data;
-        let ptr2: *const TyData<'global> = other.data;
-        ptr1 == ptr2
-    }
+index_type! {
+    crate struct Base { .. }
 }
 
-impl Eq for Ty<'global> {}
-
-impl Hash for Ty<'global> {
-    fn hash<H>(&self, hasher: &mut H)
-    where
-        H: Hasher,
-    {
-        self.data.hash.hash(hasher);
-    }
+index_type! {
+    crate struct Generics { .. }
 }
 
-/// A "mostly internal" struct containing information about types.
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-struct TyData<'global> {
-    /// Pre-computed hash.
-    hash: u64,
-
-    /// The key in our hashtable.
-    key: TyKey<'global>,
+index_type! {
+    /// A "region" is a kind of marker that we attach to shared/borrowed
+    /// values to distinguish them. During borrow checker, we will
+    /// associate each region with a set of possible shares/loans that may
+    /// have created this value.
+    crate struct Region { .. }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-crate struct TyKey<'global> {
-    crate kind: TyKind<'global>,
-    crate generics: Generics<'global>,
+crate enum PermData {
+    Shared { region: Region },
+    Borrow { region: Region },
+    Own,
+    Infer { var: InferVar },
+    Bound { index: BoundIndex },
+    Placeholder { index: Placeholder },
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-crate enum TyKind<'global> {
-    /// Expects a single type argument. Applies this mode to that.
-    Mode { mode: Mode<'global> },
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate struct BaseData {
+    crate kind: BaseKind,
+    crate generics: Generics,
+}
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum BaseKind {
     /// A named type (might be value, might be linear, etc).
-    Named { name: TyName },
+    Named { name: DefId },
+
+    /// An inference variable in the current context.
+    Infer { var: InferVar },
 
     /// A "bound" type is a generic parameter that has yet to be
     /// substituted with its value.
-    Bound { binder: DebruijnIndex, index: ParameterIndex },
-
-    /// An inference variable in the current context.
-    Infer { index: TyInferIndex },
+    Bound { index: BoundIndex },
 
     /// A "placeholder" is what you get when you instantiate a
     /// universally quantified bound variable. For example, `forall<A>
     /// { ... }` -- inside the `...`, the variable `A` might be
     /// replaced with a placeholder, representing "any" type `A`.
-    Placeholder { universe: UniverseIndex, index: ParameterIndex },
+    Placeholder { placeholder: Placeholder },
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+crate struct GenericsData {
+    crate elements: Rc<Vec<Generic>>,
+}
+
+impl GenericsData {
+    crate fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    crate fn is_not_empty(&self) -> bool {
+        self.len() != 0
+    }
+
+    crate fn len(&self) -> usize {
+        self.elements.len()
+    }
+
+    crate fn iter(&self) -> impl Iterator<Item = Generic> + '_ {
+        self.into_iter()
+    }
+}
+
+impl IntoIterator for &'iter GenericsData {
+    type IntoIter = std::iter::Cloned<std::slice::Iter<'iter, Generic>>;
+    type Item = Generic;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.elements.iter().cloned()
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum Generic {
+    Ty(Ty),
 }
 
 index_type! {
@@ -103,7 +128,10 @@ impl DebruijnIndex {
     /// Shifts the debruijn index out through a series of binders.
     /// Illegal if it represents the innermost binder.
     crate fn shifted_out(self) -> Self {
-        assert!(self != Self::INNERMOST, "cannot shift out from innermost binder");
+        assert!(
+            self != Self::INNERMOST,
+            "cannot shift out from innermost binder"
+        );
         DebruijnIndex::new(self.as_usize() - 1)
     }
 
@@ -112,9 +140,24 @@ impl DebruijnIndex {
     /// e.g., in `for<X> for<Y> for<Z> T`, `Y.difference(X)` would
     /// yield 1 and `Z.difference(X)` would yield 2.
     crate fn difference(self, outer: Self) -> usize {
-        assert!(outer.as_usize() >= self.as_usize(), "outer binder is not outer");
+        assert!(
+            outer.as_usize() >= self.as_usize(),
+            "outer binder is not outer"
+        );
         outer.as_usize() - self.as_usize()
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate struct BoundIndex {
+    crate binder: DebruijnIndex,
+    crate index: ParameterIndex,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate struct Placeholder {
+    crate universe: UniverseIndex,
+    crate index: ParameterIndex,
 }
 
 index_type! {
@@ -129,78 +172,40 @@ index_type! {
     crate struct UniverseIndex { .. }
 }
 
-/// The "name" of a type
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-crate enum TyName {
-    DefId(DefId),
+impl UniverseIndex {
+    crate const ROOT: UniverseIndex = UniverseIndex::new(0);
 }
 
-/// Modes define the following grammar:
-///
-/// ```
-/// Mode = shared(r) Mode
-///      | borrow(r)
-///      | own
-/// ```
-///
-/// Modes can be normalized against one another. For example,
-/// `shared(a) shared(b)` is equivalent to `shared(b)` (and requires
-/// that `b: a`).
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-crate struct Mode<'global> {
-    kind: &'global ModeKind<'global>
+index_type! {
+    crate struct InferVar { .. }
 }
 
-impl Mode<'global> {
-    fn kind(self) -> &'global ModeKind<'global> {
-        self.kind
+crate trait AsInferVar {
+    fn as_infer_var(&self) -> Option<InferVar>;
+}
+
+impl AsInferVar for PermData {
+    fn as_infer_var(&self) -> Option<InferVar> {
+        if let PermData::Infer { var } = self {
+            Some(*var)
+        } else {
+            None
+        }
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-crate enum ModeKind<'global> {
-    Shared { region: Region, mode: Mode<'global> },
-    Borrow { region: Region },
-    Owned,
-}
-
-index_type! {
-    /// A "region" is a kind of marker that we attach to shared/borrowed
-    /// values to distinguish them. During borrow checker, we will
-    /// associate each region with a set of possible shares/loans that may
-    /// have created this value.
-    crate struct Region { .. }
-}
-
-index_type! {
-    crate struct TyInferIndex { .. }
-}
-
-index_type! {
-    crate struct ModeInferVar { .. }
-}
-
-/// The value for a generic parameter.
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-crate enum Generic<'global> {
-    Ty(Ty<'global>),
-}
-
-impl From<Ty<'global>> for Generic<'global> {
-    fn from(value: Ty<'global>) -> Generic<'global> {
-        Generic::Ty(value)
+impl AsInferVar for BaseData {
+    fn as_infer_var(&self) -> Option<InferVar> {
+        if let BaseKind::Infer { var } = self.kind {
+            Some(var)
+        } else {
+            None
+        }
     }
 }
 
-/// A series of values.
-crate type Generics<'global> = &'global [Generic<'global>];
-
-//// Definition of a generic parameter.
-crate struct GenericParameter {
-    role: GenericParameterRole,
-}
-
-crate enum GenericParameterRole {
-    Owned,
-    Associated,
+/// Predicates that can be proven about types.
+crate enum Predicate {
+    BaseEq(Base, Base),
+    RegionConstraint {},
 }

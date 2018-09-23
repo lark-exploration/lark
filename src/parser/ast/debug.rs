@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 use super::*;
 use crate::parser::ModuleTable;
 
