@@ -5,6 +5,7 @@ use std::iter::IntoIterator;
 use std::rc::Rc;
 
 crate mod context;
+crate mod debug;
 crate mod intern;
 crate mod map;
 crate mod query;
@@ -36,25 +37,14 @@ index_type! {
     crate struct Region { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 crate enum PermData {
-    Shared {
-        region: Region,
-    },
-    Borrow {
-        region: Region,
-    },
+    Shared { region: Region },
+    Borrow { region: Region },
     Own,
-    Infer {
-        var: InferVar,
-    },
-    Bound {
-        binder: DebruijnIndex,
-        index: ParameterIndex,
-    },
-    Placeholder {
-        index: Placeholder,
-    },
+    Infer { var: InferVar },
+    Bound { index: BoundIndex },
+    Placeholder { index: Placeholder },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -73,10 +63,7 @@ crate enum BaseKind {
 
     /// A "bound" type is a generic parameter that has yet to be
     /// substituted with its value.
-    Bound {
-        binder: DebruijnIndex,
-        index: ParameterIndex,
-    },
+    Bound { index: BoundIndex },
 
     /// A "placeholder" is what you get when you instantiate a
     /// universally quantified bound variable. For example, `forall<A>
@@ -91,6 +78,14 @@ crate struct GenericsData {
 }
 
 impl GenericsData {
+    crate fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    crate fn is_not_empty(&self) -> bool {
+        self.len() != 0
+    }
+
     crate fn len(&self) -> usize {
         self.elements.len()
     }
@@ -151,6 +146,12 @@ impl DebruijnIndex {
         );
         outer.as_usize() - self.as_usize()
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate struct BoundIndex {
+    crate binder: DebruijnIndex,
+    crate index: ParameterIndex,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]

@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 use crate::ir::DefId;
+use crate::ty::debug::DebugIn;
 use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::unify::UnificationTable;
 use crate::ty::Generic;
@@ -201,6 +202,10 @@ fn instantiate_spine() {
         assert!(cx.unify.ty_base_eq(a, b).is_ok());
         let c = ir!(cx, ty[own Vec<[own Bar]>]);
         assert!(cx.unify.ty_base_eq(a, c).is_ok());
+        assert_eq!(
+            format!("{:?}", a.debug_in(&cx.unify)),
+            format!("InferVar(0) DefId(1)<InferVar(2) DefId(0)>")
+        );
         let d = ir!(cx, ty[own Vec<[own Baz]>]);
         assert!(cx.unify.ty_base_eq(a, d).is_err());
     });

@@ -1,3 +1,4 @@
+use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
 use crate::ty::InferVar;
 use crate::ty::{Base, BaseData, BaseKind};
@@ -126,16 +127,38 @@ impl Interners for TyInterners {
     }
 }
 
-crate trait Intern {
+crate trait Intern: Clone {
     type Key;
 
     fn intern(self, interner: &TyInterners) -> Self::Key;
 }
 
-crate trait Untern {
+impl<T> Intern for &T
+where
+    T: Intern,
+{
+    type Key = T::Key;
+
+    fn intern(self, interner: &TyInterners) -> Self::Key {
+        self.clone().intern(interner)
+    }
+}
+
+crate trait Untern: Clone {
     type Data;
 
     fn untern(self, interner: &TyInterners) -> Self::Data;
+}
+
+impl<T> Untern for &T
+where
+    T: Untern,
+{
+    type Data = T::Data;
+
+    fn untern(self, interner: &TyInterners) -> Self::Data {
+        self.clone().untern(interner)
+    }
 }
 
 macro_rules! intern_ty {
@@ -161,3 +184,5 @@ macro_rules! intern_ty {
 intern_ty!(bases, Base, BaseData);
 intern_ty!(perms, Perm, PermData);
 intern_ty!(generics, Generics, GenericsData);
+
+impl TyDebugContext for TyInterners {}

@@ -35,6 +35,16 @@ impl UnificationTable {
         }
     }
 
+    /// Finds the root data associated with `index1`; does not do path compression,
+    /// so only requires `&self`. Not the fastest thing ever.
+    pub(super) fn find_without_path_compression(&self, index1: InferVar) -> (InferVar, RootData) {
+        match self.infers[index1] {
+            InferData::Unbound(rank) => (index1, RootData::Rank(rank)),
+            InferData::Value(value1) => (index1, RootData::Value(value1)),
+            InferData::Redirect(index2) => self.find_without_path_compression(index2),
+        }
+    }
+
     /// Checks whether `index` has been assigned to a value yet.
     /// If so, returns it.
     pub(super) fn probe(&mut self, index: InferVar) -> Option<Value> {

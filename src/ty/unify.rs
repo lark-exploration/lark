@@ -1,9 +1,11 @@
+use crate::ty::debug::{DebugIn, TyDebugContext};
 use crate::ty::intern::{Interners, TyInterners, Untern};
 use crate::ty::Base;
 use crate::ty::{AsInferVar, InferVar};
 use crate::ty::{Perm, PermData};
 use indexed_vec::IndexVec;
 use std::convert::TryFrom;
+use std::fmt;
 
 mod relate;
 mod union_find;
@@ -192,6 +194,17 @@ impl UnificationTable {
         let var = self.new_infer_var();
         T::from_infer_var(self, var)
     }
+
+    fn write_infer_var(&self, var: InferVar, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (root_var, root_data) = self.find_without_path_compression(var);
+        match root_data {
+            RootData::Rank(_) => write!(fmt, "{:?}", root_var),
+            RootData::Value(v) => match self.values[v] {
+                ValueData::Perm(p) => write!(fmt, "{:?}", p.debug_in(self)),
+                ValueData::Base(p) => write!(fmt, "{:?}", p.debug_in(self)),
+            },
+        }
+    }
 }
 
 impl Interners for UnificationTable {
@@ -213,5 +226,15 @@ impl FromInferVar for Perm {
 impl FromInferVar for Base {
     fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self {
         unify.intern_base_var(var)
+    }
+}
+
+impl TyDebugContext for UnificationTable {
+    fn write_base_infer_var(&self, var: InferVar, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.write_infer_var(var, fmt)
+    }
+
+    fn write_perm_infer_var(&self, var: InferVar, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.write_infer_var(var, fmt)
     }
 }
