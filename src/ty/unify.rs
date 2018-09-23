@@ -1,8 +1,6 @@
-use crate::ty::intern::{TyInterners, Untern};
-use crate::ty::map::Map;
-use crate::ty::Ty;
+use crate::ty::intern::{Interners, TyInterners, Untern};
+use crate::ty::Base;
 use crate::ty::{AsInferVar, InferVar};
-use crate::ty::{Base, BaseData, BaseKind};
 use crate::ty::{Perm, PermData};
 use indexed_vec::IndexVec;
 use std::convert::TryFrom;
@@ -12,7 +10,7 @@ mod union_find;
 
 #[derive(Clone)]
 crate struct UnificationTable {
-    intern: TyInterners,
+    interners: TyInterners,
 
     /// Stores the union-find data for each inference variable.
     /// Used for most efficient lookup.
@@ -122,9 +120,9 @@ impl RootData {
 }
 
 impl UnificationTable {
-    fn new(intern: &TyInterners) -> Self {
+    fn new(interners: &TyInterners) -> Self {
         Self {
-            intern: intern.clone(),
+            interners: interners.clone(),
             infers: IndexVec::new(),
             trace: IndexVec::new(),
             values: IndexVec::new(),
@@ -152,12 +150,12 @@ impl UnificationTable {
         K: Untern + TryFrom<ValueData, Error = String>,
         K::Data: AsInferVar,
     {
-        let data = self.intern.untern(value);
+        let data = self.untern(value);
         if let Some(var) = data.as_infer_var() {
             if let Some(value) = self.probe(var) {
                 let value_data = self.values[value];
                 let key = K::try_from(value_data).unwrap();
-                Ok(self.intern.untern(key))
+                Ok(self.untern(key))
             } else {
                 Err(var)
             }
@@ -175,7 +173,7 @@ impl UnificationTable {
         T: FromInferVar,
         T::Data: AsInferVar,
     {
-        let data = self.intern.untern(value);
+        let data = self.untern(value);
         if let Some(var) = data.as_infer_var() {
             if let Some(value) = self.probe(var) {
                 let value_data = self.values[value];
@@ -196,18 +194,24 @@ impl UnificationTable {
     }
 }
 
+impl Interners for UnificationTable {
+    fn interners(&self) -> &TyInterners {
+        &self.interners
+    }
+}
+
 crate trait FromInferVar: Copy + Untern + TryFrom<ValueData, Error = String> {
     fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self;
 }
 
 impl FromInferVar for Perm {
     fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self {
-        unify.intern.intern(PermData::Infer { var })
+        unify.intern(PermData::Infer { var })
     }
 }
 
 impl FromInferVar for Base {
     fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self {
-        unify.intern.intern_base_var(var)
+        unify.intern_base_var(var)
     }
 }

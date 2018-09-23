@@ -2,23 +2,17 @@
 //! which means that two types have equal "base types" information but
 //! which does not relate their permissions.
 
-use crate::ty::intern::{Intern, Untern};
+use crate::ty::intern::Interners;
 use crate::ty::map::Map;
 use crate::ty::unify::relate::spine::SpineInstantiator;
 use crate::ty::unify::relate::Error;
 use crate::ty::unify::relate::Relate;
-use crate::ty::unify::UnificationTable;
-use crate::ty::AsInferVar;
 use crate::ty::Generic;
 use crate::ty::InferVar;
 use crate::ty::Predicate;
-use crate::ty::Region;
 use crate::ty::Ty;
 use crate::ty::{Base, BaseData};
-use crate::ty::{Generics, GenericsData};
-use crate::ty::{Perm, PermData};
 use log::debug;
-use std::convert::TryFrom;
 
 impl Relate<'me> {
     /// Checks that two types are "base equal", which

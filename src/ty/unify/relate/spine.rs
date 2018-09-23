@@ -1,17 +1,9 @@
-use crate::ty::intern::{TyInterners, Untern};
+use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::map::{Map, Mapper};
-use crate::ty::unify::relate::Relate;
 use crate::ty::unify::UnificationTable;
-use crate::ty::AsInferVar;
-use crate::ty::Generic;
-use crate::ty::InferVar;
+use crate::ty::Perm;
 use crate::ty::Predicate;
-use crate::ty::Region;
-use crate::ty::Ty;
 use crate::ty::{Base, BaseData};
-use crate::ty::{Generics, GenericsData};
-use crate::ty::{Perm, PermData};
-use std::convert::TryFrom;
 
 /// Instantiating the "spine" of a value means to create a value
 /// that is identical except that, for every permission, there is
@@ -35,11 +27,13 @@ pub(super) struct SpineInstantiator<'me> {
     pub(super) predicates: &'me mut Vec<Predicate>,
 }
 
-impl Mapper for SpineInstantiator<'me> {
+impl Interners for SpineInstantiator<'me> {
     fn interners(&self) -> &TyInterners {
-        &self.unify.intern
+        self.unify.interners()
     }
+}
 
+impl Mapper for SpineInstantiator<'me> {
     fn map_perm(&mut self, _: Perm) -> Perm {
         self.unify.new_inferable::<Perm>()
     }
@@ -52,7 +46,7 @@ impl Mapper for SpineInstantiator<'me> {
                     generics: data.generics.map_with(self),
                 };
 
-                self.unify.intern.intern(data1)
+                self.intern(data1)
             }
 
             Err(_) => {

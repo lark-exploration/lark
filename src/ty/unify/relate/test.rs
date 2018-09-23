@@ -1,8 +1,7 @@
 #![cfg(test)]
 
 use crate::ir::DefId;
-use crate::ty::intern::Interner;
-use crate::ty::intern::TyInterners;
+use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::unify::UnificationTable;
 use crate::ty::Generic;
 use crate::ty::ParameterIndex;
@@ -15,7 +14,6 @@ use crate::ty::{Perm, PermData};
 use rustc_hash::FxHashMap;
 
 struct TestContext {
-    intern: TyInterners,
     unify: UnificationTable,
     region: Region,
     type_names: FxHashMap<String, DefId>,
@@ -23,21 +21,27 @@ struct TestContext {
     placeholders: FxHashMap<String, Ty>,
 }
 
+impl Interners for TestContext {
+    fn interners(&self) -> &TyInterners {
+        self.unify.interners()
+    }
+}
+
 impl TestContext {
     fn share(&mut self) -> Perm {
-        self.intern.intern(PermData::Shared {
+        self.intern(PermData::Shared {
             region: self.region,
         })
     }
 
     fn borrow(&mut self) -> Perm {
-        self.intern.intern(PermData::Borrow {
+        self.intern(PermData::Borrow {
             region: self.region,
         })
     }
 
     fn own(&mut self) -> Perm {
-        self.intern.common().own
+        self.common().own
     }
 
     fn def_id(&mut self, name: &str) -> DefId {
@@ -48,7 +52,6 @@ impl TestContext {
     fn type_variable(&mut self, name: &str) -> Ty {
         let TestContext {
             type_variables,
-            intern,
             unify,
             ..
         } = self;
@@ -61,11 +64,8 @@ impl TestContext {
     }
 
     fn placeholder(&mut self, name: &str) -> Ty {
-        let TestContext {
-            placeholders,
-            intern,
-            ..
-        } = self;
+        let intern = self.interners().clone();
+        let TestContext { placeholders, .. } = self;
         let next_index = placeholders.len();
         *placeholders.entry(name.to_string()).or_insert_with(|| {
             let placeholder = Placeholder {
@@ -84,12 +84,10 @@ impl TestContext {
     }
 
     fn base(&mut self, name: &str, tys: Vec<Ty>) -> Base {
-        let generics = self
-            .intern
-            .intern_generics(tys.into_iter().map(Generic::Ty));
+        let generics = self.intern_generics(tys.into_iter().map(Generic::Ty));
         let name = self.def_id(name);
         let kind = BaseKind::Named { name };
-        self.intern.intern(BaseData { kind, generics })
+        self.intern(BaseData { kind, generics })
     }
 }
 
@@ -146,7 +144,6 @@ fn setup(op: impl FnOnce(&mut TestContext)) {
     let unify = UnificationTable::new(&intern);
     let region = Region::new(0);
     let mut cx = TestContext {
-        intern,
         unify,
         region,
         type_names: FxHashMap::default(),

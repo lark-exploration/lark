@@ -1,4 +1,3 @@
-use crate::parser::ast::Mode;
 use crate::ty::intern::TyInterners;
 use crate::ty::query::TyQueries;
 use std::rc::Rc;

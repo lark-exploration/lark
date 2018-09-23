@@ -1,15 +1,12 @@
-use crate::ty::query::TyQueries;
 use crate::ty::Generic;
 use crate::ty::InferVar;
-use crate::ty::Ty;
 use crate::ty::{Base, BaseData, BaseKind};
 use crate::ty::{Generics, GenericsData};
 use crate::ty::{Perm, PermData};
 use indexed_vec::{Idx, IndexVec};
 use rustc_hash::FxHashMap;
-use std::borrow::Borrow;
 use std::cell::RefCell;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -62,6 +59,43 @@ crate struct Common {
     crate own: Perm,
 }
 
+crate trait Interners {
+    fn interners(&self) -> &TyInterners;
+
+    fn intern<D>(&self, data: D) -> D::Key
+    where
+        D: Intern,
+    {
+        data.intern(self.interners())
+    }
+
+    fn untern<K>(&self, key: K) -> K::Data
+    where
+        K: Untern,
+    {
+        key.untern(self.interners())
+    }
+
+    fn common(&self) -> &Common {
+        &self.interners().data.common
+    }
+
+    fn intern_generics(&self, iter: impl Iterator<Item = Generic>) -> Generics {
+        let generics_data = GenericsData {
+            elements: Rc::new(iter.collect()),
+        };
+        self.intern(generics_data)
+    }
+
+    fn intern_base_var(&self, var: InferVar) -> Base {
+        let data = BaseData {
+            kind: BaseKind::Infer { var },
+            generics: self.common().empty_generics,
+        };
+        self.intern(data)
+    }
+}
+
 impl TyInterners {
     crate fn new() -> Self {
         let mut perms = Interner::new();
@@ -84,38 +118,11 @@ impl TyInterners {
             }),
         }
     }
+}
 
-    crate fn common(&self) -> &Common {
-        &self.data.common
-    }
-
-    crate fn intern<D>(&self, data: D) -> D::Key
-    where
-        D: Intern,
-    {
-        data.intern(self)
-    }
-
-    crate fn intern_generics(&self, iter: impl Iterator<Item = Generic>) -> Generics {
-        let generics_data = GenericsData {
-            elements: Rc::new(iter.collect()),
-        };
-        self.intern(generics_data)
-    }
-
-    crate fn intern_base_var(&self, var: InferVar) -> Base {
-        let data = BaseData {
-            kind: BaseKind::Infer { var },
-            generics: self.data.common.empty_generics,
-        };
-        self.intern(data)
-    }
-
-    crate fn untern<K>(&self, key: K) -> K::Data
-    where
-        K: Untern,
-    {
-        key.untern(self)
+impl Interners for TyInterners {
+    fn interners(&self) -> &TyInterners {
+        self
     }
 }
 

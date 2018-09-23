@@ -1,11 +1,7 @@
-use crate::ty::intern::{TyInterners, Untern};
+use crate::ty::intern::{Interners, Untern};
 use crate::ty::unify::{InferData, Rank, RootData, UnificationTable};
 use crate::ty::unify::{Value, ValueData};
-use crate::ty::Ty;
-use crate::ty::{AsInferVar, InferVar};
-use crate::ty::{Base, BaseData};
-use crate::ty::{Perm, PermData};
-use indexed_vec::IndexVec;
+use crate::ty::InferVar;
 use std::convert::TryFrom;
 
 // Core union-find algorithms.
@@ -55,7 +51,7 @@ impl UnificationTable {
         let (_root, root_data) = self.find(index);
         root_data.value().map(|v| {
             let key = K::try_from(self.values[v]).unwrap();
-            self.intern.untern(key)
+            self.untern(key)
         })
     }
 

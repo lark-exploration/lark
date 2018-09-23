@@ -1,9 +1,9 @@
-use crate::ty::intern::{Intern, TyInterners, Untern};
+use crate::ty::intern::Interners;
+use crate::ty::Base;
 use crate::ty::Generic;
+use crate::ty::Generics;
+use crate::ty::Perm;
 use crate::ty::Ty;
-use crate::ty::{Base, BaseData};
-use crate::ty::{Generics, GenericsData};
-use crate::ty::{Perm, PermData};
 
 crate trait Map {
     type Output;
@@ -11,23 +11,7 @@ crate trait Map {
     fn map_with(&self, mapper: &mut impl Mapper) -> Self::Output;
 }
 
-crate trait Mapper {
-    fn interners(&self) -> &TyInterners;
-
-    fn intern<D>(&self, data: D) -> D::Key
-    where
-        D: Intern,
-    {
-        self.interners().intern(data)
-    }
-
-    fn untern<K>(&self, key: K) -> K::Data
-    where
-        K: Untern,
-    {
-        self.interners().untern(key)
-    }
-
+crate trait Mapper: Interners {
     fn map_perm(&mut self, perm: Perm) -> Perm;
 
     fn map_base(&mut self, base: Base) -> Base;

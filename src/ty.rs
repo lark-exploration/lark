@@ -1,6 +1,6 @@
+#![warn(unused_imports)]
+
 use crate::ir::DefId;
-use rustc_hash::FxHashMap;
-use std::hash::{Hash, Hasher};
 use std::iter::IntoIterator;
 use std::rc::Rc;
 
