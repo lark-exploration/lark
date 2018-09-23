@@ -1,7 +1,7 @@
 use crate::ty::debug::{DebugIn, TyDebugContext};
-use crate::ty::intern::{Interners, TyInterners, Untern};
+use crate::ty::intern::{Intern, Interners, TyInterners, Untern};
 use crate::ty::Base;
-use crate::ty::{AsInferVar, InferVar};
+use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
 use indexed_vec::IndexVec;
 use std::convert::TryFrom;
@@ -147,63 +147,33 @@ impl UnificationTable {
         }
     }
 
-    crate fn shallow_resolve_data<K>(&mut self, value: K) -> Result<K::Data, InferVar>
+    crate fn shallow_resolve_data<K, V>(&mut self, value: K) -> Result<V, InferVar>
     where
-        K: Untern + TryFrom<ValueData, Error = String>,
-        K::Data: AsInferVar,
+        K: Untern<Data = Inferable<V>> + TryFrom<ValueData, Error = String>,
+        Inferable<V>: Intern<Key = K>,
     {
         let data = self.untern(value);
-        if let Some(var) = data.as_infer_var() {
+        if let Inferable::Infer { var } = data {
             if let Some(value) = self.probe(var) {
                 let value_data = self.values[value];
                 let key = K::try_from(value_data).unwrap();
-                Ok(self.untern(key))
+                Ok(self.untern(key).assert_known())
             } else {
                 Err(var)
             }
         } else {
-            Ok(data)
+            Ok(data.assert_known())
         }
-    }
-
-    /// If `value` is an inference variable, and it is bound to a value,
-    /// then return the value it is bound to using `Some`. Otherwise, return
-    /// `None`.
-    crate fn shallow_resolve<T>(&mut self, value: T) -> Option<T>
-    where
-        T: Untern,
-        T: FromInferVar,
-        T::Data: AsInferVar,
-    {
-        let data = self.untern(value);
-        if let Some(var) = data.as_infer_var() {
-            if let Some(value) = self.probe(var) {
-                let value_data = self.values[value];
-                return Some(T::try_from(value_data).unwrap());
-            }
-        }
-
-        None
     }
 
     /// Creates a new inferable thing (permission, base, etc).
-    crate fn new_inferable<T>(&mut self) -> T
+    crate fn new_inferable<T, K>(&mut self) -> T
     where
-        T: FromInferVar,
+        T: Untern<Data = Inferable<K>>,
+        Inferable<K>: Intern<Key = T>,
     {
         let var = self.new_infer_var();
-        T::from_infer_var(self, var)
-    }
-
-    fn write_infer_var(&self, var: InferVar, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (root_var, root_data) = self.find_without_path_compression(var);
-        match root_data {
-            RootData::Rank(_) => write!(fmt, "{:?}", root_var),
-            RootData::Value(v) => match self.values[v] {
-                ValueData::Perm(p) => write!(fmt, "{:?}", p.debug_in(self)),
-                ValueData::Base(p) => write!(fmt, "{:?}", p.debug_in(self)),
-            },
-        }
+        self.intern(Inferable::Infer { var })
     }
 }
 
@@ -213,28 +183,15 @@ impl Interners for UnificationTable {
     }
 }
 
-crate trait FromInferVar: Copy + Untern + TryFrom<ValueData, Error = String> {
-    fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self;
-}
-
-impl FromInferVar for Perm {
-    fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self {
-        unify.intern(PermData::Infer { var })
-    }
-}
-
-impl FromInferVar for Base {
-    fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self {
-        unify.intern_base_var(var)
-    }
-}
-
 impl TyDebugContext for UnificationTable {
-    fn write_base_infer_var(&self, var: InferVar, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.write_infer_var(var, fmt)
-    }
-
-    fn write_perm_infer_var(&self, var: InferVar, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.write_infer_var(var, fmt)
+    fn write_infer_var(&self, var: InferVar, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (root_var, root_data) = self.find_without_path_compression(var);
+        match root_data {
+            RootData::Rank(_) => write!(fmt, "{:?}", root_var),
+            RootData::Value(v) => match self.values[v] {
+                ValueData::Perm(p) => write!(fmt, "{:?}", p.debug_in(self)),
+                ValueData::Base(p) => write!(fmt, "{:?}", p.debug_in(self)),
+            },
+        }
     }
 }

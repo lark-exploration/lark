@@ -8,11 +8,11 @@ crate trait TyDebugContext: Interners {
         write!(fmt, "{:?}", region)
     }
 
-    fn write_base_infer_var(&self, var: InferVar, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn write_infer_var(&self, var: InferVar, fmt: &mut Formatter<'_>) -> fmt::Result {
         write!(fmt, "{:?}", var)
     }
 
-    fn write_base_bound(&self, index: BoundIndex, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn write_bound(&self, index: BoundIndex, fmt: &mut Formatter<'_>) -> fmt::Result {
         write!(fmt, "{:?}", index)
     }
 
@@ -22,14 +22,6 @@ crate trait TyDebugContext: Interners {
         fmt: &mut Formatter<'_>,
     ) -> fmt::Result {
         write!(fmt, "{:?}", placeholder)
-    }
-
-    fn write_perm_infer_var(&self, var: InferVar, fmt: &mut Formatter<'_>) -> fmt::Result {
-        write!(fmt, "{:?}", var)
-    }
-
-    fn write_perm_bound(&self, index: BoundIndex, fmt: &mut Formatter<'_>) -> fmt::Result {
-        write!(fmt, "{:?}", index)
     }
 
     fn write_perm_placeholder(
@@ -89,6 +81,22 @@ where
     }
 }
 
+impl<C, T> Debug for DebugInWrapper<'me, C, Inferable<T>>
+where
+    C: TyDebugContext,
+    DebugInWrapper<'me, C, T>: Debug,
+{
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+        match self.data {
+            Inferable::Infer { var } => self.context.write_infer_var(*var, fmt),
+
+            Inferable::Bound { index } => self.context.write_bound(*index, fmt),
+
+            Inferable::Known(k) => write!(fmt, "{:?}", k.debug_in(self.context)),
+        }
+    }
+}
+
 impl<C> Debug for DebugInWrapper<'me, C, BaseData>
 where
     C: TyDebugContext,
@@ -98,10 +106,6 @@ where
 
         match kind {
             BaseKind::Named { name } => self.context.write_type_name(*name, fmt)?,
-
-            BaseKind::Infer { var } => self.context.write_base_infer_var(*var, fmt)?,
-
-            BaseKind::Bound { index } => self.context.write_base_bound(*index, fmt)?,
 
             BaseKind::Placeholder { placeholder } => {
                 self.context.write_base_placeholder(*placeholder, fmt)?
@@ -147,9 +151,9 @@ where
             PermData::Borrow { region } => {
                 write!(fmt, "borrow({:?})", region.debug_in(self.context))
             }
-            PermData::Infer { var } => self.context.write_perm_infer_var(*var, fmt),
-            PermData::Bound { index } => self.context.write_perm_bound(*index, fmt),
-            PermData::Placeholder { index } => self.context.write_perm_placeholder(*index, fmt),
+            PermData::Placeholder { placeholder } => {
+                self.context.write_perm_placeholder(*placeholder, fmt)
+            }
         }
     }
 }

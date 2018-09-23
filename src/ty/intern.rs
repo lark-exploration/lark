@@ -1,8 +1,8 @@
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
-use crate::ty::InferVar;
 use crate::ty::{Base, BaseData, BaseKind};
 use crate::ty::{Generics, GenericsData};
+use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
 use indexed_vec::{Idx, IndexVec};
 use rustc_hash::FxHashMap;
@@ -49,8 +49,8 @@ crate struct TyInterners {
 }
 
 struct TyInternersData {
-    perms: RefCell<Interner<Perm, PermData>>,
-    bases: RefCell<Interner<Base, BaseData>>,
+    perms: RefCell<Interner<Perm, Inferable<PermData>>>,
+    bases: RefCell<Interner<Base, Inferable<BaseData>>>,
     generics: RefCell<Interner<Generics, GenericsData>>,
     common: Common,
 }
@@ -88,12 +88,12 @@ crate trait Interners {
         self.intern(generics_data)
     }
 
-    fn intern_base_var(&self, var: InferVar) -> Base {
-        let data = BaseData {
-            kind: BaseKind::Infer { var },
-            generics: self.common().empty_generics,
-        };
-        self.intern(data)
+    fn intern_infer_var<T, V>(&self, var: InferVar) -> T
+    where
+        T: Untern<Data = Inferable<V>>,
+        Inferable<V>: Intern<Key = T>,
+    {
+        self.intern(Inferable::Infer { var })
     }
 }
 
@@ -104,7 +104,7 @@ impl TyInterners {
         let mut generics = Interner::new();
 
         let common = Common {
-            own: perms.intern(PermData::Own),
+            own: perms.intern(Inferable::Known(PermData::Own)),
             empty_generics: generics.intern(GenericsData {
                 elements: Rc::new(vec![]),
             }),
@@ -128,37 +128,15 @@ impl Interners for TyInterners {
 }
 
 crate trait Intern: Clone {
-    type Key;
+    type Key: Untern<Data = Self>;
 
     fn intern(self, interner: &TyInterners) -> Self::Key;
 }
 
-impl<T> Intern for &T
-where
-    T: Intern,
-{
-    type Key = T::Key;
-
-    fn intern(self, interner: &TyInterners) -> Self::Key {
-        self.clone().intern(interner)
-    }
-}
-
 crate trait Untern: Clone {
-    type Data;
+    type Data: Intern<Key = Self>;
 
     fn untern(self, interner: &TyInterners) -> Self::Data;
-}
-
-impl<T> Untern for &T
-where
-    T: Untern,
-{
-    type Data = T::Data;
-
-    fn untern(self, interner: &TyInterners) -> Self::Data {
-        self.clone().untern(interner)
-    }
 }
 
 macro_rules! intern_ty {
@@ -181,8 +159,8 @@ macro_rules! intern_ty {
     };
 }
 
-intern_ty!(bases, Base, BaseData);
-intern_ty!(perms, Perm, PermData);
+intern_ty!(bases, Base, Inferable<BaseData>);
+intern_ty!(perms, Perm, Inferable<PermData>);
 intern_ty!(generics, Generics, GenericsData);
 
 impl TyDebugContext for TyInterners {}

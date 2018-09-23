@@ -5,6 +5,7 @@ use crate::ty::debug::DebugIn;
 use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::unify::UnificationTable;
 use crate::ty::Generic;
+use crate::ty::Inferable;
 use crate::ty::ParameterIndex;
 use crate::ty::Placeholder;
 use crate::ty::Region;
@@ -30,15 +31,15 @@ impl Interners for TestContext {
 
 impl TestContext {
     fn share(&mut self) -> Perm {
-        self.intern(PermData::Shared {
+        self.intern(Inferable::Known(PermData::Shared {
             region: self.region,
-        })
+        }))
     }
 
     fn borrow(&mut self) -> Perm {
-        self.intern(PermData::Borrow {
+        self.intern(Inferable::Known(PermData::Borrow {
             region: self.region,
-        })
+        }))
     }
 
     fn own(&mut self) -> Perm {
@@ -76,10 +77,10 @@ impl TestContext {
 
             Ty {
                 perm: intern.common().own,
-                base: intern.intern(BaseData {
+                base: intern.intern(Inferable::Known(BaseData {
                     kind: BaseKind::Placeholder { placeholder },
                     generics: intern.common().empty_generics,
-                }),
+                })),
             }
         })
     }
@@ -88,7 +89,7 @@ impl TestContext {
         let generics = self.intern_generics(tys.into_iter().map(Generic::Ty));
         let name = self.def_id(name);
         let kind = BaseKind::Named { name };
-        self.intern(BaseData { kind, generics })
+        self.intern(Inferable::Known(BaseData { kind, generics }))
     }
 }
 

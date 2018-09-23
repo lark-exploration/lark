@@ -37,14 +37,50 @@ index_type! {
     crate struct Region { .. }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum PermData {
-    Shared { region: Region },
-    Borrow { region: Region },
+    Shared {
+        region: Region,
+    },
+
+    Borrow {
+        region: Region,
+    },
+
     Own,
-    Infer { var: InferVar },
-    Bound { index: BoundIndex },
-    Placeholder { index: Placeholder },
+
+    /// A "placeholder" is what you get when you instantiate a
+    /// universally quantified bound variable. For example, `forall<A>
+    /// { ... }` -- inside the `...`, the variable `A` might be
+    /// replaced with a placeholder, representing "any" type `A`.
+    Placeholder {
+        placeholder: Placeholder,
+    },
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum Inferable<T> {
+    Known(T),
+
+    /// An inference variable in the current context.
+    Infer {
+        var: InferVar,
+    },
+
+    /// A "bound" type is a generic parameter that has yet to be
+    /// substituted with its value.
+    Bound {
+        index: BoundIndex,
+    },
+}
+
+impl<T> Inferable<T> {
+    crate fn assert_known(self) -> T {
+        match self {
+            Inferable::Known(v) => v,
+            _ => panic!("found inferable, expected known value"),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -57,13 +93,6 @@ crate struct BaseData {
 crate enum BaseKind {
     /// A named type (might be value, might be linear, etc).
     Named { name: DefId },
-
-    /// An inference variable in the current context.
-    Infer { var: InferVar },
-
-    /// A "bound" type is a generic parameter that has yet to be
-    /// substituted with its value.
-    Bound { index: BoundIndex },
 
     /// A "placeholder" is what you get when you instantiate a
     /// universally quantified bound variable. For example, `forall<A>
@@ -178,30 +207,6 @@ impl UniverseIndex {
 
 index_type! {
     crate struct InferVar { .. }
-}
-
-crate trait AsInferVar {
-    fn as_infer_var(&self) -> Option<InferVar>;
-}
-
-impl AsInferVar for PermData {
-    fn as_infer_var(&self) -> Option<InferVar> {
-        if let PermData::Infer { var } = self {
-            Some(*var)
-        } else {
-            None
-        }
-    }
-}
-
-impl AsInferVar for BaseData {
-    fn as_infer_var(&self) -> Option<InferVar> {
-        if let BaseKind::Infer { var } = self.kind {
-            Some(var)
-        } else {
-            None
-        }
-    }
 }
 
 /// Predicates that can be proven about types.
