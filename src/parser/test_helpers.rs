@@ -1,4 +1,5 @@
 #![allow(unused_variables)]
+#![allow(unreachable_patterns)]
 
 crate mod annotate_lines;
 
