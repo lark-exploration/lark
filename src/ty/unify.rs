@@ -1,4 +1,5 @@
 use crate::ty::intern::{TyInterners, Untern};
+use crate::ty::map::Map;
 use crate::ty::Ty;
 use crate::ty::{AsInferVar, InferVar};
 use crate::ty::{Base, BaseData, BaseKind};
@@ -165,11 +166,24 @@ impl UnificationTable {
         }
     }
 
-    crate fn shallow_resolve<T>(&mut self, value: T) -> T
+    /// If `value` is an inference variable, and it is bound to a value,
+    /// then return the value it is bound to using `Some`. Otherwise, return
+    /// `None`.
+    crate fn shallow_resolve<T>(&mut self, value: T) -> Option<T>
     where
-        T: ShallowResolve,
+        T: Untern,
+        T: FromInferVar,
+        T::Data: AsInferVar,
     {
-        value.shallow_resolve(self)
+        let data = self.intern.untern(value);
+        if let Some(var) = data.as_infer_var() {
+            if let Some(value) = self.probe(var) {
+                let value_data = self.values[value];
+                return Some(T::try_from(value_data).unwrap());
+            }
+        }
+
+        None
     }
 
     /// Creates a new inferable thing (permission, base, etc).
@@ -182,39 +196,8 @@ impl UnificationTable {
     }
 }
 
-crate trait ShallowResolve {
-    fn shallow_resolve(self, unify: &mut UnificationTable) -> Self;
-}
-
 crate trait FromInferVar: Copy + Untern + TryFrom<ValueData, Error = String> {
     fn from_infer_var(unify: &mut UnificationTable, var: InferVar) -> Self;
-}
-
-impl ShallowResolve for Ty {
-    fn shallow_resolve(self, unify: &mut UnificationTable) -> Self {
-        let Ty { perm, base } = self;
-        let perm = unify.shallow_resolve(perm);
-        let base = unify.shallow_resolve(base);
-        Ty { perm, base }
-    }
-}
-
-impl<T> ShallowResolve for T
-where
-    T: FromInferVar,
-    T::Data: AsInferVar,
-{
-    fn shallow_resolve(self, unify: &mut UnificationTable) -> T {
-        let data = unify.intern.untern(self);
-        if let Some(var) = data.as_infer_var() {
-            if let Some(value) = unify.probe(var) {
-                let value_data = unify.values[value];
-                return T::try_from(value_data).unwrap();
-            }
-        }
-
-        self
-    }
 }
 
 impl FromInferVar for Perm {

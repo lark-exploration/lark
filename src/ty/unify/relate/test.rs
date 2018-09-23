@@ -20,6 +20,7 @@ struct TestContext {
     region: Region,
     type_names: FxHashMap<String, DefId>,
     type_variables: FxHashMap<String, Ty>,
+    placeholders: FxHashMap<String, Ty>,
 }
 
 impl TestContext {
@@ -48,10 +49,25 @@ impl TestContext {
         let TestContext {
             type_variables,
             intern,
+            unify,
             ..
         } = self;
-        let next_index = type_variables.len();
-        *type_variables.entry(name.to_string()).or_insert_with(|| {
+        *type_variables
+            .entry(name.to_string())
+            .or_insert_with(|| Ty {
+                perm: unify.new_inferable(),
+                base: unify.new_inferable(),
+            })
+    }
+
+    fn placeholder(&mut self, name: &str) -> Ty {
+        let TestContext {
+            placeholders,
+            intern,
+            ..
+        } = self;
+        let next_index = placeholders.len();
+        *placeholders.entry(name.to_string()).or_insert_with(|| {
             let placeholder = Placeholder {
                 universe: UniverseIndex::ROOT,
                 index: ParameterIndex::new(next_index),
@@ -93,6 +109,10 @@ macro_rules! ir {
         $cx.type_variable(stringify!($name))
     };
 
+    (@cx[$cx:expr], @ty[!$name:ident]) => {
+        $cx.placeholder(stringify!($name))
+    };
+
     (@cx[$cx:expr], @ty[$perm:ident $name:ident]) => {
         Ty {
             perm: ir!(@cx[$cx], @perm[$perm]),
@@ -122,8 +142,8 @@ macro_rules! ir {
 }
 
 fn setup(op: impl FnOnce(&mut TestContext)) {
-    let mut intern = TyInterners::new();
-    let mut unify = UnificationTable::new(&intern);
+    let intern = TyInterners::new();
+    let unify = UnificationTable::new(&intern);
     let region = Region::new(0);
     let mut cx = TestContext {
         intern,
@@ -131,6 +151,7 @@ fn setup(op: impl FnOnce(&mut TestContext)) {
         region,
         type_names: FxHashMap::default(),
         type_variables: FxHashMap::default(),
+        placeholders: FxHashMap::default(),
     };
     op(&mut cx);
 }
@@ -172,5 +193,18 @@ fn share_vec_borrow_bar_base_eq_borrow_vec_share_bar() {
         let a = ir!(cx, ty[share Vec<[borrow Bar]>]);
         let b = ir!(cx, ty[borrow Vec<[share Bar]>]);
         assert!(cx.unify.ty_base_eq(a, b).is_ok());
+    });
+}
+
+#[test]
+fn instantiate_spine() {
+    setup(|cx| {
+        let a = ir!(cx, ty[?X]);
+        let b = ir!(cx, ty[share Vec<[borrow Bar]>]);
+        assert!(cx.unify.ty_base_eq(a, b).is_ok());
+        let c = ir!(cx, ty[own Vec<[own Bar]>]);
+        assert!(cx.unify.ty_base_eq(a, c).is_ok());
+        let d = ir!(cx, ty[own Vec<[own Baz]>]);
+        assert!(cx.unify.ty_base_eq(a, d).is_err());
     });
 }
