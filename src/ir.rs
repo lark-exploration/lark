@@ -1,8 +1,14 @@
 pub type DefId = usize;
 pub type VarId = usize;
 
+use crate::ty::{BaseKind, Perm, Ty};
+
 #[derive(Debug)]
 pub struct SourceInfo;
+
+fn create_simple_ty(def_id: DefId) -> Ty {
+    Ty { perm: Perm }
+}
 
 //Lark MIR representation of a single function
 #[derive(Debug)]
@@ -41,6 +47,32 @@ impl Function {
     pub fn push_block(&mut self, block: BasicBlock) {
         self.basic_blocks.push(block);
     }
+}
+
+#[derive(Debug)]
+pub struct Struct {
+    pub fields: Vec<Field>,
+    pub name: String,
+}
+
+impl Struct {
+    pub fn field(mut self, name: String, ty: DefId) -> Self {
+        self.fields.push(Field { ty, name });
+        self
+    }
+
+    pub fn new(name: String) -> Self {
+        Struct {
+            name,
+            fields: vec![],
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Field {
+    ty: DefId,
+    name: String,
 }
 
 #[derive(Debug)]
