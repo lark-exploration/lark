@@ -1,7 +1,9 @@
 use crate::ir::{
     builtin_type, BasicBlock, BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand,
-    Place, Rvalue, Statement, StatementKind, Terminator, TerminatorKind, VarId,
+    Place, Rvalue, Statement, StatementKind, Struct, Terminator, TerminatorKind, VarId,
 };
+use crate::ty::intern::{Interners, TyInterners};
+use crate::ty::{BaseKind, Inferable, Ty};
 
 pub struct RustFile {
     output_src: String,
@@ -29,17 +31,16 @@ impl RustFile {
     }
 }
 
-fn build_type(c: &Context, ty: DefId) -> String {
-    match ty {
-        builtin_type::I32 => "i32".into(),
-        builtin_type::VOID => "()".into(),
-        builtin_type::STRING => "String".into(),
-        _ => {
-            let definition = &c.definitions[ty];
-            match definition {
-                _ => unimplemented!("Cannot codegen type"),
-            }
-        }
+fn build_type(c: &Context, ty: Ty) -> String {
+    match c.get_def_id_for_ty(ty) {
+        Some(builtin_type::I32) => "i32".into(),
+        Some(builtin_type::VOID) => "()".into(),
+        Some(builtin_type::STRING) => "String".into(),
+        Some(def_id) => match &c.definitions[def_id] {
+            Definition::Struct(s) => s.name.clone(),
+            _ => unimplemented!("Can't build name for definition"),
+        },
+        _ => unimplemented!("Can't build name for definition"),
     }
 }
 
@@ -70,6 +71,13 @@ fn codegen_block(rust: &mut RustFile, c: &Context, f: &Function, b: &BasicBlock)
                         rust.output_raw(&format!("{} = ", build_var_name(f, *var_id)));
                     }
                     Place::Static(_) => unimplemented!("Assignment into static place"),
+                    Place::Field(var_id, field_name) => {
+                        rust.output_raw(&format!(
+                            "{}.{} = ",
+                            build_var_name(f, *var_id),
+                            field_name
+                        ));
+                    }
                 };
                 match rhs {
                     Rvalue::Use(operand) => rust.output_raw(&build_operand(f, operand)),
@@ -120,6 +128,16 @@ fn codegen_block(rust: &mut RustFile, c: &Context, f: &Function, b: &BasicBlock)
                                     rust.output_raw(")");
                                 }
                             },
+                            Definition::Struct(s) => {
+                                rust.output_raw(&format!("{} {{", s.name));
+                                for i in 0..s.fields.len() {
+                                    rust.output_raw(&s.fields[i].name);
+                                    rust.output_raw(": ");
+                                    rust.output_raw(&processed_args[i]);
+                                    rust.output_raw(", ");
+                                }
+                                rust.output_raw("}");
+                            }
                             _ => {}
                         }
                     }
@@ -134,6 +152,13 @@ fn codegen_block(rust: &mut RustFile, c: &Context, f: &Function, b: &BasicBlock)
                     ));
                 }
                 Place::Static(_) => unimplemented!("Debug print of value that is not a local"),
+                Place::Field(var_id, field_name) => {
+                    rust.output_raw(&format!(
+                        "println!(\"{{:?}}\", {}.{});\n",
+                        build_var_name(f, *var_id),
+                        field_name
+                    ));
+                }
             },
         }
     }
@@ -141,8 +166,8 @@ fn codegen_block(rust: &mut RustFile, c: &Context, f: &Function, b: &BasicBlock)
         Some(Terminator {
             kind: TerminatorKind::Return,
             ..
-        }) => match f.local_decls[0].ty {
-            builtin_type::VOID => rust.output_raw("return;\n"),
+        }) => match c.get_def_id_for_ty(f.local_decls[0].ty) {
+            Some(builtin_type::VOID) => rust.output_raw("return;\n"),
             _ => rust.output_raw(&format!("return {};\n", build_var_name(f, 0))),
         },
         None => {}
@@ -175,12 +200,15 @@ fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
         ));
     }
 
-    if f.local_decls[0].ty != builtin_type::VOID {
-        rust.output_raw(&format!(
-            "let {}: {};\n",
-            build_var_name(f, 0),
-            build_type(c, f.local_decls[0].ty)
-        ));
+    match c.get_def_id_for_ty(f.local_decls[0].ty) {
+        Some(builtin_type::VOID) => {}
+        _ => {
+            rust.output_raw(&format!(
+                "let {}: {};\n",
+                build_var_name(f, 0),
+                build_type(c, f.local_decls[0].ty)
+            ));
+        }
     }
 
     for block in &f.basic_blocks {
@@ -190,11 +218,23 @@ fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
     rust.output_raw("}\n");
 }
 
+fn codegen_struct(rust: &mut RustFile, c: &Context, s: &Struct) {
+    rust.output_raw(&format!("#[derive(Debug)]\n"));
+    rust.output_raw(&format!("struct {} {{\n", s.name));
+    for field in &s.fields {
+        rust.output_raw(&format!("{}: {},\n", field.name, build_type(c, field.ty)));
+    }
+    rust.output_raw("}\n");
+}
+
 pub fn codegen(rust: &mut RustFile, c: &Context) {
     for definition in &c.definitions {
         match definition {
             Definition::Fn(f) => {
                 codegen_fn(rust, c, f);
+            }
+            Definition::Struct(s) => {
+                codegen_struct(rust, c, s);
             }
             _ => {}
         }

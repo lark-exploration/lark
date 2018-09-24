@@ -27,22 +27,28 @@ use crate::codegen::{codegen, RustFile};
 use crate::eval::eval_context;
 use crate::ir::{
     builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
-    Rvalue, StatementKind, TerminatorKind,
+    Rvalue, StatementKind, Struct, TerminatorKind,
 };
+
+use crate::ty::intern::TyInterners;
 
 fn main() {
     let mut c = Context::new();
 
+    let i32_ty = c.simple_type_for_def_id(builtin_type::I32);
+    let void_ty = c.simple_type_for_def_id(builtin_type::VOID);
+    let string_ty = c.simple_type_for_def_id(builtin_type::STRING);
+
     let mut bob = Function::new(
-        builtin_type::I32,
+        i32_ty,
         vec![
-            LocalDecl::new(builtin_type::I32, Some("x".into())),
-            LocalDecl::new(builtin_type::I32, Some("y".into())),
+            LocalDecl::new(i32_ty, Some("x".into())),
+            LocalDecl::new(i32_ty, Some("y".into())),
         ],
         "bob".into(),
     );
 
-    let bob_tmp = bob.new_temp(builtin_type::I32);
+    let bob_tmp = bob.new_temp(i32_ty);
 
     let mut bb1 = BasicBlock::new();
 
@@ -61,9 +67,17 @@ fn main() {
 
     let bob_def_id = c.add_definition(Definition::Fn(bob));
 
-    let mut m = Function::new(builtin_type::VOID, vec![], "main".into());
-    let call_result_tmp = m.new_temp(builtin_type::I32);
-    let interp_result_tmp = m.new_temp(builtin_type::STRING);
+    let person = Struct::new("Person".into())
+        .field("height".into(), i32_ty)
+        .field("id".into(), i32_ty);
+
+    let person_def_id = c.add_definition(Definition::Struct(person));
+    let person_ty = c.simple_type_for_def_id(person_def_id);
+
+    let mut m = Function::new(void_ty, vec![], "main".into());
+    let call_result_tmp = m.new_temp(i32_ty);
+    let interp_result_tmp = m.new_temp(string_ty);
+    let person_result_tmp = m.new_temp(person_ty);
 
     let mut bb2 = BasicBlock::new();
 
@@ -87,6 +101,19 @@ fn main() {
     ));
 
     bb2.push_stmt(StatementKind::DebugPrint(Place::Local(interp_result_tmp)));
+
+    bb2.push_stmt(StatementKind::Assign(
+        Place::Local(person_result_tmp),
+        Rvalue::Call(
+            person_def_id,
+            vec![Operand::ConstantInt(17), Operand::ConstantInt(18)],
+        ),
+    ));
+
+    bb2.push_stmt(StatementKind::DebugPrint(Place::Field(
+        person_result_tmp,
+        "id".into(),
+    )));
 
     bb2.terminate(TerminatorKind::Return);
     m.push_block(bb2);

@@ -1,14 +1,11 @@
+use crate::ty::intern::{Interners, TyInterners};
+use crate::ty::{BaseData, BaseKind, Inferable, Ty};
+
 pub type DefId = usize;
 pub type VarId = usize;
 
-use crate::ty::{BaseKind, Perm, Ty};
-
 #[derive(Debug)]
 pub struct SourceInfo;
-
-fn create_simple_ty(def_id: DefId) -> Ty {
-    Ty { perm: Perm }
-}
 
 //Lark MIR representation of a single function
 #[derive(Debug)]
@@ -26,7 +23,7 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn new(return_ty: DefId, mut args: Vec<LocalDecl>, name: String) -> Function {
+    crate fn new(return_ty: Ty, mut args: Vec<LocalDecl>, name: String) -> Function {
         let arg_count = args.len();
         let mut local_decls = vec![LocalDecl::new_return_place(return_ty)];
         local_decls.append(&mut args);
@@ -39,7 +36,7 @@ impl Function {
         }
     }
 
-    pub fn new_temp(&mut self, ty: DefId) -> VarId {
+    crate fn new_temp(&mut self, ty: Ty) -> VarId {
         self.local_decls.push(LocalDecl::new_temp(ty));
         self.local_decls.len() - 1
     }
@@ -56,7 +53,7 @@ pub struct Struct {
 }
 
 impl Struct {
-    pub fn field(mut self, name: String, ty: DefId) -> Self {
+    crate fn field(mut self, name: String, ty: Ty) -> Self {
         self.fields.push(Field { ty, name });
         self
     }
@@ -71,8 +68,8 @@ impl Struct {
 
 #[derive(Debug)]
 pub struct Field {
-    ty: DefId,
-    name: String,
+    crate ty: Ty,
+    pub name: String,
 }
 
 #[derive(Debug)]
@@ -131,6 +128,8 @@ pub enum TerminatorKind {
 pub enum Place {
     Local(VarId),
     Static(DefId),
+    //FIXME: this is a simplifed projection for now
+    Field(VarId, String),
 }
 
 #[derive(Debug)]
@@ -158,23 +157,23 @@ pub enum BinOp {
 
 #[derive(Debug)]
 pub struct LocalDecl {
-    pub ty: DefId,
+    crate ty: Ty,
     pub name: Option<String>,
 }
 
 impl LocalDecl {
-    pub fn new_return_place(return_ty: DefId) -> LocalDecl {
+    crate fn new_return_place(return_ty: Ty) -> LocalDecl {
         LocalDecl {
             ty: return_ty,
             name: None,
         }
     }
 
-    pub fn new_temp(ty: DefId) -> LocalDecl {
+    crate fn new_temp(ty: Ty) -> LocalDecl {
         LocalDecl { ty, name: None }
     }
 
-    pub fn new(ty: DefId, name: Option<String>) -> LocalDecl {
+    crate fn new(ty: Ty, name: Option<String>) -> LocalDecl {
         LocalDecl { ty, name }
     }
 }
@@ -198,16 +197,18 @@ pub enum Definition {
     Builtin,
     BuiltinFn(BuiltinFn),
     Fn(Function),
+    Struct(Struct),
 }
 
-#[derive(Debug)]
 pub struct Context {
     pub definitions: Vec<Definition>,
+    crate ty_interners: TyInterners,
 }
 
 impl Context {
     pub fn new() -> Context {
         let mut definitions = vec![];
+        let ty_interners = TyInterners::new();
 
         for _ in 0..(builtin_type::ERROR + 1) {
             definitions.push(Definition::Builtin); // UNKNOWN
@@ -215,12 +216,38 @@ impl Context {
 
         definitions.push(Definition::BuiltinFn(BuiltinFn::StringInterpolate));
 
-        Context { definitions }
+        Context {
+            definitions,
+            ty_interners,
+        }
     }
 
     pub fn add_definition(&mut self, def: Definition) -> usize {
         self.definitions.push(def);
         self.definitions.len() - 1
+    }
+
+    crate fn simple_type_for_def_id(&self, def_id: DefId) -> Ty {
+        let base = self.ty_interners.intern(Inferable::Known(BaseData {
+            kind: BaseKind::Named(def_id),
+            generics: self.ty_interners.common().empty_generics,
+        }));
+        Ty {
+            base,
+            perm: self.ty_interners.common().own,
+        }
+    }
+
+    crate fn get_def_id_for_ty(&self, ty: Ty) -> Option<DefId> {
+        let unterned = self.ty_interners.untern(ty.base);
+
+        match unterned {
+            Inferable::Known(k) => match k.kind {
+                BaseKind::Named(n) => Some(n),
+                _ => None,
+            },
+            _ => None,
+        }
     }
 }
 
