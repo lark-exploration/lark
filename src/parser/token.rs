@@ -1,5 +1,6 @@
 use crate::parser::pos::Spanned;
 use crate::parser::program::{ModuleTable, StringId};
+use std::borrow::Cow;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -28,6 +29,10 @@ pub enum Token {
     KeywordBorrow,
     KeywordSelf,
     Identifier(StringId),
+    StringLiteral(StringId),
+    OpenStringFragment(StringId),
+    MiddleStringFragment(StringId),
+    EndStringFragment(StringId),
     Newline,
     Unimplemented,
 }
@@ -39,10 +44,10 @@ impl fmt::Display for Token {
 }
 
 impl Token {
-    crate fn source(&self, table: &'table ModuleTable) -> &'table str {
+    crate fn source(&self, table: &'table ModuleTable) -> Cow<'table, str> {
         use self::Token::*;
 
-        match self {
+        let result = match self {
             Underscore => "_",
             CurlyBraceOpen => "{",
             CurlyBraceClose => "}",
@@ -67,8 +72,20 @@ impl Token {
             KeywordBorrow => "borrow",
             KeywordSelf => "self",
             Identifier(id) => table.lookup(*id),
+            StringLiteral(id) => return Cow::Owned(format!("String({})", table.lookup(*id))),
+            OpenStringFragment(id) => {
+                return Cow::Owned(format!("OpenStringFragment({})", table.lookup(*id)))
+            }
+            MiddleStringFragment(id) => {
+                return Cow::Owned(format!("MiddleStringFragment({})", table.lookup(*id)))
+            }
+            EndStringFragment(id) => {
+                return Cow::Owned(format!("EndStringFragment({})", table.lookup(*id)))
+            }
             Newline => "newline",
             Unimplemented => "unimplemented",
-        }
+        };
+
+        Cow::Borrowed(result)
     }
 }

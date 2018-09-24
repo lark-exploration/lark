@@ -149,6 +149,16 @@ mod test {
               ^^^^^^^^^^ ^ ^^^  ^^^^^ ^ construct-diag
             }
             ^ close-new
+            def main() {
+            ^^^ ^^^^   ^ main
+                let var_name = "variable"
+                ^^^ ^^^^^^^^   ^^^^^^^^^^ var-name
+                let s = "variable is unused {{var_name}}"
+                ^^^ ^   ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^  ^ interpolation
+                new(s, "warning")
+                ^^^ ^  ^^^^^^^^^ invoke
+            }
+            ^ close-main
             "#,
         );
 
@@ -180,9 +190,21 @@ mod test {
             ann.span(("new", 0), ("close-new", 0)),
         );
 
+        let main = ast::Def::new(
+            ann.ident(("main", 1)),
+            vec![],
+            None,
+            ast::Block::new(vec![]),
+            ann.span(("main", 0), ("close-main", 0)),
+        );
+
         eq(
             actual,
-            ast::Module::new(vec![ast::Item::Struct(s), ast::Item::Def(def)]),
+            ast::Module::new(vec![
+                ast::Item::Struct(s),
+                ast::Item::Def(def),
+                ast::Item::Def(main),
+            ]),
             ann.table(),
         );
 

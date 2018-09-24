@@ -1,7 +1,9 @@
 use codespan::ByteOffset;
 use crate::parser::keywords::{KEYWORDS, SIGILS};
 use crate::parser::lexer_helpers::LexerStateTrait;
-use crate::parser::lexer_helpers::{LexerNext, ParseError, Tokenizer as GenericTokenizer};
+use crate::parser::lexer_helpers::{
+    LexerAction, LexerNext, ParseError, Tokenizer as GenericTokenizer,
+};
 use crate::parser::program::StringId;
 use crate::parser::{ModuleTable, Span, Token};
 use derive_new::new;
@@ -16,6 +18,9 @@ pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
 pub enum LexerState {
     Top,
     Integer,
+    StringLiteral,
+    AfterStringFragment,
+    InterpolateExpression,
     Whitespace,
     StartIdent,
     ContinueIdent,
@@ -43,12 +48,14 @@ impl LexerStateTrait for LexerState {
                         LexerNext::emit_token(tok, size)
                     } else if c.is_digit(10) {
                         LexerNext::transition_to(LexerState::Integer).reconsume()
-                    } else if c == '\n' {
-                        LexerNext::emit_char(Token::Newline)
+                    } else if c == '"' {
+                        LexerNext::transition_to(LexerState::StringLiteral)
                     } else if c.is_whitespace() {
                         LexerNext::transition_to(LexerState::Whitespace)
                     } else if UnicodeXID::is_xid_start(c) {
                         LexerNext::transition_to(LexerState::StartIdent).reconsume()
+                    } else if rest.starts_with("}}") {
+                        LexerNext::Transition(LexerAction::Finalize(2), LexerState::StringLiteral)
                     } else {
                         LexerNext::Error(c)
                     }
@@ -66,6 +73,20 @@ impl LexerStateTrait for LexerState {
                         LexerNext::finalize_no_emit(LexerState::Top).reconsume()
                     }
                 }
+            },
+
+            LexerState::StringLiteral => match c {
+                None => LexerNext::EOF,
+
+                Some(c) => match c {
+                    '"' => LexerNext::emit(Token::StringLiteral, LexerState::Top),
+
+                    other if rest.starts_with("{{") => {
+                        LexerNext::emit_and_skip(Token::OpenStringFragment, LexerState::Top, 2)
+                    }
+
+                    other => LexerNext::consume(),
+                },
             },
 
             LexerState::StartIdent => match c {

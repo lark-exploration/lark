@@ -3,15 +3,15 @@ use crate::parser::grammar_helpers::*;
 use crate::parser::ast::*;
 use crate::parser::pos::{Span, Spanned};
 use crate::parser::program::StringId;
-use codespan::ByteIndex;
+use codespan::{ByteIndex, ByteOffset};
 
 grammar;
 
 pub Program: Module = {
     Newlines? <Item> Newlines? => Module::new(vec![<>]),
-    Newlines? <a: Item> Newlines? <b: Item> Newlines? => {
+    Newlines? <a: (<Item> Newlines?)+> <b: Item> Newlines? => {
         let mut v = vec![];
-        v.push(a);
+        v.extend(a);
         v.push(b);
         Module::new(v)
     }
@@ -53,7 +53,8 @@ FnDecl: (Vec<Field>, Option<Spanned<Type>>) = {
 }
 
 FnParams: Vec<Field> = {
-    "(" <Delim<Field, COMMA>> ")"
+    "(" <Delim<Field, COMMA>> ")",
+    "(" ")" => vec![]
 }
 
 RetTy: Spanned<Type> = {
@@ -95,17 +96,18 @@ BlockOrIf: BlockOrIf = {
 }
 
 Let: Let = {
-    let Pat MaybeTypeAscription MaybeInitExpr => unimplemented!("Let")
+    let <p: Pat> <ty: MaybeTypeAscription> <init: MaybeInitExpr> =>
+        Let::new(p, ty, init)
 }
 
 #[inline]
-MaybeTypeAscription: () = {
-    (":" <Type>)? => unimplemented!("MaybeTypeAscription")
+MaybeTypeAscription: Option<Spanned<Type>> = {
+    <ty: (":" <Type>)?> => ty
 }
 
 #[inline]
-MaybeInitExpr: () = {
-    ("=" Expr)? => unimplemented!("MaybeInitExpr")
+MaybeInitExpr: Option<Expression> = {
+    <expr: ("=" <Expr>)?> => expr
 }
 
 Pat: Spanned<Pattern> = {
@@ -115,7 +117,7 @@ Pat: Spanned<Pattern> = {
 }
 
 Decl: Declaration = {
-    Let => unimplemented!("Expr::Let"),
+    <l: Let> => Declaration::Let(l),
 }
 
 Expr: Expression = {
@@ -123,11 +125,33 @@ Expr: Expression = {
     //ExprIf => unimplemented!("Expr::ExprIf"),
     //ExprIfLet => unimplemented!("Expr::ExprIfLet"),
     ConstructStruct => Expression::ConstructStruct(<>),
-    ExprAtom => unimplemented!("Expr::ExprAtom")
+    Call => Expression::Call(<>),
+    Identifier => Expression::Ref(<>),
+    Interpolation,
+    ExprAtom
 }
 
 ConstructStruct: ConstructStruct = {
     <l: @L> <name: Identifier> "{" <fields: Delim<ConstructField, COMMA>> "}" <r: @R> => ConstructStruct::new(name, fields, Span::from(l, r))
+}
+
+Call: Spanned<Call> = {
+    <l: @L> <callee: Callee> "(" <args: Args> ")" <r: @R> =>
+        Spanned::from(Call::new(callee, args), l, r)
+}
+
+Args: Vec<Expression> = {
+    Newlines? <Expr> Newlines? => vec![<>],
+    Newlines? <a: (<Expr> Newlines? "," Newlines?)+> <b: Expr> Newlines? => {
+        let mut v = vec![];
+        v.extend(a);
+        v.push(b);
+        v
+    }
+}
+
+Callee: Callee = {
+    Identifier => Callee::Identifier(<>)
 }
 
 ConstructField: ConstructField = {
@@ -145,10 +169,57 @@ ConstructField: ConstructField = {
 //    "if" let Pat "=" Expr Block => unimplemented!("ExprIfLet::NoElse"),
 //}
 
-ExprAtom: Atom = {
+ExprAtom: Expression = {
     Lit => unimplemented!("ExprAtom::Lit"),
     PathExpr => unimplemented!("ExprAtom::PathExpr"),
     self => unimplemented!("ExprAtom::Self"),
+    <l: @L> <s: string> <r: @R> => Expression::Literal(Spanned::from(Literal::String(Spanned::from(s, l + ByteOffset(1), r - ByteOffset(1))), l, r))
+}
+
+Interpolation: Expression = {
+    <start: InterpolationStart> <inner: InterpolationInner> <end: InterpolationEnd> => {
+        let mut elements = vec![];
+
+        elements.push(start);
+        elements.extend(inner);
+        elements.push(end);
+
+        Expression::Interpolation(elements)
+    }
+}
+
+InterpolationInner: Vec<InterpolationElement> = {
+    <chunks: InterpolationChunk*> <expr: Expr?> => {
+        let mut elements = vec![];
+
+        for chunk in chunks {
+            for item in chunk {
+                elements.push(item);
+            }
+        }
+
+        if let Some(expr) = expr {
+            elements.push(InterpolationElement::Expression(expr));
+        }
+
+        elements
+    }
+}
+
+InterpolationStart: InterpolationElement = {
+    <l: @L> <start: TemplateStart> <r: @R> => InterpolationElement::String(Spanned::from(start, l, r))
+}
+
+InterpolationEnd: InterpolationElement = {
+    <l: @L> <end: TemplateEnd> <r: @R> => InterpolationElement::String(Spanned::from(end, l, r))
+}
+
+InterpolationChunk: Vec<InterpolationElement> = {
+    <e: Expr> <s: InterpolationMiddle> => vec![InterpolationElement::Expression(e), s]
+}
+
+InterpolationMiddle: InterpolationElement = {
+    <l: @L> <mid: TemplateMiddle> <r: @R> => InterpolationElement::String(Spanned::from(mid, l, r))
 }
 
 Lit: () = {
@@ -228,6 +299,10 @@ extern {
         "for" => Token::KeywordFor,
         "unimpl" => Token::Unimplemented,
         identifier => Token::Identifier(<StringId>),
+        string => Token::StringLiteral(<StringId>),
+        TemplateStart => Token::OpenStringFragment(<StringId>),
+        TemplateMiddle => Token::MiddleStringFragment(<StringId>),
+        TemplateEnd => Token::EndStringFragment(<StringId>),
         newline => Token::Newline
     }
 }

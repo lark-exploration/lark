@@ -30,7 +30,7 @@ pub enum BlockItem {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Declaration {
-    Let,
+    Let(Let),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
@@ -116,6 +116,21 @@ pub struct Def {
 pub enum Expression {
     Block(Block),
     ConstructStruct(ConstructStruct),
+    Call(Spanned<Call>),
+    Ref(Identifier),
+    Interpolation(Vec<InterpolationElement>),
+    Literal(Spanned<Literal>),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum InterpolationElement {
+    String(Spanned<StringId>),
+    Expression(Expression),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum Literal {
+    String(Spanned<StringId>),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
@@ -125,9 +140,21 @@ pub struct ConstructStruct {
     span: Span,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
+pub struct Call {
+    callee: Callee,
+    arguments: Vec<Expression>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
+pub enum Callee {
+    Identifier(Identifier),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Let {
     pattern: Spanned<Pattern>,
-    ty: Option<Type>,
+    ty: Option<Spanned<Type>>,
     init: Option<Expression>,
 }
 
