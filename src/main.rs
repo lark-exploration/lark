@@ -23,8 +23,8 @@ mod ir;
 mod parser;
 mod ty;
 
-use crate::codegen::{codegen, RustFile};
-use crate::eval::Eval;
+//use crate::codegen::{codegen, RustFile};
+use crate::eval::eval_context;
 use crate::ir::{
     builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
     Rvalue, StatementKind, TerminatorKind,
@@ -60,13 +60,6 @@ fn main() {
 
     let bob_def_id = c.add_definition(Definition::Fn(bob));
 
-    // bob.body.push(Command::VarUse(0));
-    // bob.body.push(Command::VarUse(1));
-    // bob.body.push(Command::Sub);
-    // bob.body.push(Command::VarDeclWithInit(2));
-    // bob.body.push(Command::VarUse(2));
-    // bob.body.push(Command::ReturnLastStackValue);
-
     let mut m = Function::new(builtin_type::VOID, vec![]);
     let call_result_tmp = m.new_temp(builtin_type::I32);
     let interp_result_tmp = m.new_temp(builtin_type::STRING);
@@ -75,82 +68,36 @@ fn main() {
 
     bb2.push_stmt(StatementKind::Assign(
         Place::Local(call_result_tmp),
-        Rvalue::Use(Operand::Call(
+        Rvalue::Call(
             bob_def_id,
             vec![Operand::ConstantInt(11), Operand::ConstantInt(8)],
-        )),
+        ),
     ));
 
     bb2.push_stmt(StatementKind::Assign(
         Place::Local(interp_result_tmp),
-        Rvalue::Use(Operand::Call(
+        Rvalue::Call(
             101, /*builtin string interp*/
             vec![
                 Operand::ConstantString("Hello, world {}".into()),
                 Operand::Move(Place::Local(call_result_tmp)),
             ],
-        )),
+        ),
     ));
 
-    bb2.push_stmt(StatementKind::DebugPrint(Rvalue::Use(Operand::Move(
-        Place::Local(interp_result_tmp),
-    ))));
+    bb2.push_stmt(StatementKind::DebugPrint(Place::Local(interp_result_tmp)));
 
-    // let mut m = Function::new("main".into(), builtin_type::VOID);
-    // m.body.push(Command::ConstInt(11));
-    // m.body.push(Command::ConstInt(8));
-    // m.body.push(Command::Call(bob_def_id));
-    // m.body.push(Command::ConstString("Hello, world {}".into()));
-    // m.body.push(Command::Call(101)); //built-in string interpolation
-    // m.body.push(Command::DebugPrint);
+    bb2.terminate(TerminatorKind::Return);
+    m.push_block(bb2);
+    let main_def_id = c.add_definition(Definition::Fn(m));
 
-    /*
-    let mut bob = Function::new("bob".into(), builtin_type::I32)
-        .param("x".into(), builtin_type::I32)
-        .param("y".into(), builtin_type::I32);
+    //let mut rust = RustFile::new();
 
-    bob.body.push(Command::VarUse(0));
-    bob.body.push(Command::VarUse(1));
-    bob.body.push(Command::Sub);
-    bob.body.push(Command::VarDeclWithInit(2));
-    bob.body.push(Command::VarUse(2));
-    bob.body.push(Command::ReturnLastStackValue);
+    // codegen(&mut rust, &c);
+    // println!("{}", rust.render());
 
-    let bob_def_id = c.add_definition(Definition::Fn(bob));
+    //let mut eval = Eval::new();
+    //eval.eval(&c);
 
-    let person = Struct::new("Person".into())
-        .field("height".into(), builtin_type::I32)
-        .field("id".into(), builtin_type::I32);
-
-    let person_def_id = c.add_definition(Definition::Struct(person));
-
-    let mut m = Function::new("main".into(), builtin_type::VOID);
-    m.body.push(Command::ConstInt(11));
-    m.body.push(Command::ConstInt(8));
-    m.body.push(Command::Call(bob_def_id));
-    m.body.push(Command::ConstString("Hello, world {}".into()));
-    m.body.push(Command::Call(101)); //built-in string interpolation
-    m.body.push(Command::DebugPrint);
-
-    m.body.push(Command::ConstInt(17));
-    m.body.push(Command::ConstInt(18));
-    m.body.push(Command::Call(person_def_id));
-
-    m.body.push(Command::VarDeclWithInit(0));
-    m.body.push(Command::VarUse(0));
-    m.body.push(Command::DebugPrint);
-    m.body.push(Command::VarUse(0));
-    m.body.push(Command::Dot("id".into()));
-    m.body.push(Command::DebugPrint);
-
-    c.definitions.push(Definition::Fn(m));
-    */
-
-    let mut rust = RustFile::new();
-
-    codegen(&mut rust, &c);
-    println!("{}", rust.render());
-
-    let mut eval = Eval::new();
-    eval.eval(&c);
+    eval_context(&c, main_def_id);
 }

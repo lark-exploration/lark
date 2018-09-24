@@ -7,21 +7,21 @@ pub struct SourceInfo;
 //Lark MIR representation of a single function
 #[derive(Debug)]
 pub struct Function {
-    basic_blocks: Vec<BasicBlock>,
+    pub basic_blocks: Vec<BasicBlock>,
 
     //First local = return value pointer
     //Followed by arg_count parameters to the function
     //Followed by user defined variables and temporaries
-    local_decls: Vec<LocalDecl>,
+    pub local_decls: Vec<LocalDecl>,
 
-    arg_count: usize,
+    pub arg_count: usize,
 }
 
 impl Function {
-    pub fn new(return_ty: DefId, args: Vec<LocalDecl>) -> Function {
+    pub fn new(return_ty: DefId, mut args: Vec<LocalDecl>) -> Function {
+        let arg_count = args.len();
         let mut local_decls = vec![LocalDecl::new_return_place(return_ty)];
         local_decls.append(&mut args);
-        let arg_count = local_decls.len();
 
         Function {
             basic_blocks: vec![],
@@ -78,7 +78,7 @@ pub struct Statement {
 #[derive(Debug)]
 pub enum StatementKind {
     Assign(Place, Rvalue),
-    DebugPrint(Rvalue),
+    DebugPrint(Place),
 }
 
 #[derive(Debug)]
@@ -102,14 +102,14 @@ pub enum Place {
 pub enum Rvalue {
     Use(Operand),
     BinaryOp(BinOp, VarId, VarId),
+    //FIXME: MIR has this as a Terminator, presumably because stack can unwind
+    Call(DefId, Vec<Operand>),
 }
 
 #[derive(Debug)]
 pub enum Operand {
     Copy(Place),
     Move(Place),
-    //FIXME: MIR has this as a Terminator, presumably because stack can unwind
-    Call(DefId, Vec<Operand>),
     //FIXME: Move to Box<Constant>
     ConstantInt(i32),
     ConstantString(String),
@@ -165,6 +165,7 @@ pub enum Definition {
     Fn(Function),
 }
 
+#[derive(Debug)]
 pub struct Context {
     pub definitions: Vec<Definition>,
 }
