@@ -3,22 +3,11 @@ use crate::ty::unify::UnificationTable;
 use crate::ty::Predicate;
 use crate::ty::Ty;
 
-mod base_eq;
 mod repr_eq;
 mod spine;
 mod test;
 
 impl UnificationTable {
-    crate fn ty_base_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<Vec<Predicate>, Error> {
-        let mut relate = Relate {
-            unify: self,
-            predicates: vec![],
-        };
-        // FIXME transaction
-        relate.ty_base_eq(ty1, ty2)?;
-        Ok(relate.predicates)
-    }
-
     crate fn ty_repr_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<Vec<Predicate>, Error> {
         let mut relate = Relate {
             unify: self,
