@@ -1,6 +1,7 @@
 use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::map::{Map, Mapper};
 use crate::ty::unify::UnificationTable;
+use crate::ty::Inferable;
 use crate::ty::Perm;
 use crate::ty::Predicate;
 use crate::ty::{Base, BaseData};
@@ -35,7 +36,7 @@ impl Interners for SpineInstantiator<'me> {
 
 impl Mapper for SpineInstantiator<'me> {
     fn map_perm(&mut self, _: Perm) -> Perm {
-        self.unify.new_inferable::<Perm>()
+        self.unify.new_inferable()
     }
 
     fn map_base(&mut self, base: Base) -> Base {
@@ -46,12 +47,13 @@ impl Mapper for SpineInstantiator<'me> {
                     generics: data.generics.map_with(self),
                 };
 
-                self.intern(data1)
+                self.intern(Inferable::Known(data1))
             }
 
             Err(_) => {
-                let new_variable = self.unify.new_inferable::<Base>();
-                self.predicates.push(Predicate::BaseEq(base, new_variable));
+                let new_variable: Base = self.unify.new_inferable();
+                self.predicates
+                    .push(Predicate::BaseBaseEq(base, new_variable));
                 new_variable
             }
         }

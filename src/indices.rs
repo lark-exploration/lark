@@ -43,8 +43,10 @@
 ///
 /// The options are:
 ///
-/// - `debug_name[$name]` -- change how the `Debug` impl prints out. If you put
-///   just `debug_name[]`, then we will not emit any `Debug` impl at all.
+/// - `debug_name[$expr]` -- change how the `Debug` impl prints out. This should
+///   be a string expression, like `"XXX"`. We will print `"XXX"(N)` where `N`
+///   is the index. If you put just `debug_name[]`, then we will not emit any
+///   `Debug` impl at all, and you can provide your own.
 #[macro_use]
 macro_rules! index_type {
     ($(#[$attr:meta])* $visibility:vis struct $name:ident { $($tokens:tt)* }) => {
@@ -94,7 +96,7 @@ macro_rules! index_type {
             debug_name[$debug_name1:expr],
         }
         @tokens {
-            debug_name[$($debug_name2:ident)?],
+            debug_name[$($debug_name2:expr)?],
             $($tokens:tt)*
         }
     ) => {
@@ -104,7 +106,7 @@ macro_rules! index_type {
                 visibility[$visibility],
                 name[$name],
                 max[$max],
-                debug_name[$(stringify!($debug_name2))?],
+                debug_name[$($debug_name2)?],
             }
             @tokens {
                 $($tokens)*
@@ -161,6 +163,14 @@ macro_rules! index_type {
         impl From<u32> for $name {
             fn from(v: u32) -> $name {
                 $name::from_u32(v)
+            }
+        }
+
+        impl std::ops::Add<usize> for $name {
+            type Output = $name;
+
+            fn add(self, v: usize) -> $name {
+                $name::new(self.as_usize() + v)
             }
         }
 

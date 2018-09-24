@@ -1,10 +1,12 @@
 #![cfg(test)]
 
 use crate::ir::DefId;
-use crate::ty::debug::DebugIn;
+use crate::ty::debug::{DebugIn, TyDebugContext};
 use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::unify::UnificationTable;
 use crate::ty::Generic;
+use crate::ty::InferVar;
+use crate::ty::Inferable;
 use crate::ty::ParameterIndex;
 use crate::ty::Placeholder;
 use crate::ty::Region;
@@ -15,11 +17,43 @@ use crate::ty::{Perm, PermData};
 use rustc_hash::FxHashMap;
 
 struct TestContext {
+    intern: TyInterners,
     unify: UnificationTable,
     region: Region,
-    type_names: FxHashMap<String, DefId>,
+    types: FxHashMap<String, DefId>,
+    type_names: FxHashMap<DefId, String>,
     type_variables: FxHashMap<String, Ty>,
     placeholders: FxHashMap<String, Ty>,
+    placeholder_names: FxHashMap<Placeholder, String>,
+}
+
+impl TyDebugContext for TestContext {
+    fn write_infer_var(
+        &self,
+        var: InferVar,
+        context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        self.unify.write_infer_var(var, context, fmt)
+    }
+
+    fn write_placeholder(
+        &self,
+        placeholder: Placeholder,
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(fmt, "{}", self.placeholder_names[&placeholder])
+    }
+
+    fn write_type_name(
+        &self,
+        def_id: DefId,
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(fmt, "{}", self.type_names[&def_id])
+    }
 }
 
 impl Interners for TestContext {
@@ -30,15 +64,11 @@ impl Interners for TestContext {
 
 impl TestContext {
     fn share(&mut self) -> Perm {
-        self.intern(PermData::Shared {
-            region: self.region,
-        })
+        self.intern(Inferable::Known(PermData::Shared(self.region)))
     }
 
     fn borrow(&mut self) -> Perm {
-        self.intern(PermData::Borrow {
-            region: self.region,
-        })
+        self.intern(Inferable::Known(PermData::Borrow(self.region)))
     }
 
     fn own(&mut self) -> Perm {
@@ -46,8 +76,15 @@ impl TestContext {
     }
 
     fn def_id(&mut self, name: &str) -> DefId {
-        let next = self.type_names.len();
-        *self.type_names.entry(name.to_string()).or_insert(next)
+        let TestContext {
+            types, type_names, ..
+        } = self;
+
+        let next = types.len();
+        *types.entry(name.to_string()).or_insert_with(|| {
+            type_names.insert(next, name.to_string());
+            next
+        })
     }
 
     fn type_variable(&mut self, name: &str) -> Ty {
@@ -56,6 +93,7 @@ impl TestContext {
             unify,
             ..
         } = self;
+
         *type_variables
             .entry(name.to_string())
             .or_insert_with(|| Ty {
@@ -65,8 +103,13 @@ impl TestContext {
     }
 
     fn placeholder(&mut self, name: &str) -> Ty {
-        let intern = self.interners().clone();
-        let TestContext { placeholders, .. } = self;
+        let TestContext {
+            intern,
+            placeholders,
+            placeholder_names,
+            ..
+        } = self;
+
         let next_index = placeholders.len();
         *placeholders.entry(name.to_string()).or_insert_with(|| {
             let placeholder = Placeholder {
@@ -74,12 +117,14 @@ impl TestContext {
                 index: ParameterIndex::new(next_index),
             };
 
+            placeholder_names.insert(placeholder, name.to_string());
+
             Ty {
                 perm: intern.common().own,
-                base: intern.intern(BaseData {
-                    kind: BaseKind::Placeholder { placeholder },
+                base: intern.intern(Inferable::Known(BaseData {
+                    kind: BaseKind::Placeholder(placeholder),
                     generics: intern.common().empty_generics,
-                }),
+                })),
             }
         })
     }
@@ -87,8 +132,8 @@ impl TestContext {
     fn base(&mut self, name: &str, tys: Vec<Ty>) -> Base {
         let generics = self.intern_generics(tys.into_iter().map(Generic::Ty));
         let name = self.def_id(name);
-        let kind = BaseKind::Named { name };
-        self.intern(BaseData { kind, generics })
+        let kind = BaseKind::Named(name);
+        self.intern(Inferable::Known(BaseData { kind, generics }))
     }
 }
 
@@ -142,71 +187,81 @@ macro_rules! ir {
 
 fn setup(op: impl FnOnce(&mut TestContext)) {
     let intern = TyInterners::new();
-    let unify = UnificationTable::new(&intern);
-    let region = Region::new(0);
+    let mut unify = UnificationTable::new(&intern);
+    let region = unify.next_region();
     let mut cx = TestContext {
+        intern,
         unify,
         region,
+        types: FxHashMap::default(),
         type_names: FxHashMap::default(),
         type_variables: FxHashMap::default(),
         placeholders: FxHashMap::default(),
+        placeholder_names: FxHashMap::default(),
     };
     op(&mut cx);
 }
 
 #[test]
-fn vec_bar_not_base_eq_vec_baz() {
+fn vec_bar_not_repr_eq_vec_baz() {
     setup(|cx| {
         let a = ir!(cx, ty[share Vec<[own Bar]>]);
         let x = ir!(cx, ty[share Vec<[own Baz]>]);
-        assert!(cx.unify.ty_base_eq(a, x).is_err());
+        assert!(cx.unify.ty_repr_eq(a, x).is_err());
     });
 }
 
 #[test]
-fn share_vec_own_bar_base_eq_share_vec_own_bar() {
+fn share_vec_own_bar_repr_eq_share_vec_own_bar() {
     setup(|cx| {
         let a = ir!(cx, ty[share Vec<[own Bar]>]);
         let b = ir!(cx, ty[share Vec<[own Bar]>]);
-        assert!(cx.unify.ty_base_eq(a, b).is_ok());
+        assert!(cx.unify.ty_repr_eq(a, b).is_ok());
     });
 }
 
 /// We are only testing base-eq: here we see that
 /// permissions don't matter much.
 #[test]
-fn share_vec_own_bar_base_eq_own_vec_share_bar() {
+fn share_vec_own_bar_repr_eq_own_vec_share_bar() {
     setup(|cx| {
         let a = ir!(cx, ty[share Vec<[own Bar]>]);
         let b = ir!(cx, ty[own Vec<[share Bar]>]);
-        assert!(cx.unify.ty_base_eq(a, b).is_ok());
+        assert!(cx.unify.ty_repr_eq(a, b).is_ok());
     });
 }
 
 /// Even `borrow` and `share` are base-eq, despite
 /// having different representation.
 #[test]
-fn share_vec_borrow_bar_base_eq_borrow_vec_share_bar() {
+fn share_vec_borrow_bar_repr_eq_borrow_vec_share_bar() {
     setup(|cx| {
-        let a = ir!(cx, ty[share Vec<[borrow Bar]>]);
+        let a = ir!(cx, ty[share Vec<[?X]>]);
         let b = ir!(cx, ty[borrow Vec<[share Bar]>]);
-        assert!(cx.unify.ty_base_eq(a, b).is_ok());
+        assert!(cx.unify.ty_repr_eq(a, b).is_err());
+
+        // Even though got an error, we still inferred
+        // that `?X` must be `Bar`:
+        assert_eq!(
+            format!("{:?}", a.debug_in(cx)),
+            format!("shared(Region(0)) Vec<?(0) Bar>")
+        );
     });
 }
 
 #[test]
-fn instantiate_spine() {
+fn instantiate_spine_repr() {
     setup(|cx| {
         let a = ir!(cx, ty[?X]);
-        let b = ir!(cx, ty[share Vec<[borrow Bar]>]);
-        assert!(cx.unify.ty_base_eq(a, b).is_ok());
-        let c = ir!(cx, ty[own Vec<[own Bar]>]);
-        assert!(cx.unify.ty_base_eq(a, c).is_ok());
+        let b = ir!(cx, ty[share Vec<[own Bar]>]);
+        assert!(cx.unify.ty_repr_eq(a, b).is_ok());
         assert_eq!(
-            format!("{:?}", a.debug_in(&cx.unify)),
-            format!("InferVar(0) DefId(1)<InferVar(2) DefId(0)>")
+            format!("{:?}", a.debug_in(cx)),
+            format!("?(0) Vec<?(2) Bar>")
         );
+        let c = ir!(cx, ty[own Vec<[own Bar]>]);
+        assert!(cx.unify.ty_repr_eq(a, c).is_ok());
         let d = ir!(cx, ty[own Vec<[own Baz]>]);
-        assert!(cx.unify.ty_base_eq(a, d).is_err());
+        assert!(cx.unify.ty_repr_eq(a, d).is_err());
     });
 }

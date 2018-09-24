@@ -1,8 +1,8 @@
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
-use crate::ty::InferVar;
-use crate::ty::{Base, BaseData, BaseKind};
+use crate::ty::{Base, BaseData};
 use crate::ty::{Generics, GenericsData};
+use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
 use indexed_vec::{Idx, IndexVec};
 use rustc_hash::FxHashMap;
@@ -49,8 +49,8 @@ crate struct TyInterners {
 }
 
 struct TyInternersData {
-    perms: RefCell<Interner<Perm, PermData>>,
-    bases: RefCell<Interner<Base, BaseData>>,
+    perms: RefCell<Interner<Perm, Inferable<PermData>>>,
+    bases: RefCell<Interner<Base, Inferable<BaseData>>>,
     generics: RefCell<Interner<Generics, GenericsData>>,
     common: Common,
 }
@@ -66,6 +66,7 @@ crate trait Interners {
     fn intern<D>(&self, data: D) -> D::Key
     where
         D: Intern,
+        Self: Sized,
     {
         data.intern(self.interners())
     }
@@ -73,27 +74,44 @@ crate trait Interners {
     fn untern<K>(&self, key: K) -> K::Data
     where
         K: Untern,
+        Self: Sized,
     {
         key.untern(self.interners())
     }
 
-    fn common(&self) -> &Common {
+    fn common(&self) -> &Common
+    where
+        Self: Sized,
+    {
         &self.interners().data.common
     }
 
-    fn intern_generics(&self, iter: impl Iterator<Item = Generic>) -> Generics {
+    fn intern_generics(&self, iter: impl Iterator<Item = Generic>) -> Generics
+    where
+        Self: Sized,
+    {
         let generics_data = GenericsData {
             elements: Rc::new(iter.collect()),
         };
         self.intern(generics_data)
     }
 
-    fn intern_base_var(&self, var: InferVar) -> Base {
-        let data = BaseData {
-            kind: BaseKind::Infer { var },
-            generics: self.common().empty_generics,
-        };
-        self.intern(data)
+    fn intern_infer_var<T, V>(&self, var: InferVar) -> T
+    where
+        T: Untern<Data = Inferable<V>>,
+        Inferable<V>: Intern<Key = T>,
+        Self: Sized,
+    {
+        self.intern(Inferable::Infer(var))
+    }
+}
+
+impl<T: ?Sized> Interners for &T
+where
+    T: Interners,
+{
+    fn interners(&self) -> &TyInterners {
+        T::interners(self)
     }
 }
 
@@ -104,7 +122,7 @@ impl TyInterners {
         let mut generics = Interner::new();
 
         let common = Common {
-            own: perms.intern(PermData::Own),
+            own: perms.intern(Inferable::Known(PermData::Own)),
             empty_generics: generics.intern(GenericsData {
                 elements: Rc::new(vec![]),
             }),
@@ -133,32 +151,10 @@ crate trait Intern: Clone {
     fn intern(self, interner: &TyInterners) -> Self::Key;
 }
 
-impl<T> Intern for &T
-where
-    T: Intern,
-{
-    type Key = T::Key;
-
-    fn intern(self, interner: &TyInterners) -> Self::Key {
-        self.clone().intern(interner)
-    }
-}
-
 crate trait Untern: Clone {
     type Data;
 
     fn untern(self, interner: &TyInterners) -> Self::Data;
-}
-
-impl<T> Untern for &T
-where
-    T: Untern,
-{
-    type Data = T::Data;
-
-    fn untern(self, interner: &TyInterners) -> Self::Data {
-        self.clone().untern(interner)
-    }
 }
 
 macro_rules! intern_ty {
@@ -181,8 +177,26 @@ macro_rules! intern_ty {
     };
 }
 
-intern_ty!(bases, Base, BaseData);
-intern_ty!(perms, Perm, PermData);
+macro_rules! intern_inferable_ty {
+    ($field:ident, $key:ty, $data:ty) => {
+        // Add the canonical impls between `$key` and `Interable<$data>`.
+        intern_ty!($field, $key, Inferable<$data>);
+
+        // Add a convenience impl that lets you intern directly
+        // from `$data` without writing `Inferable::Known`.`
+        impl Intern for $data {
+            type Key = $key;
+
+            fn intern(self, interner: &TyInterners) -> $key {
+                let value = Inferable::Known(self);
+                value.intern(interner)
+            }
+        }
+    };
+}
+
+intern_inferable_ty!(bases, Base, BaseData);
+intern_inferable_ty!(perms, Perm, PermData);
 intern_ty!(generics, Generics, GenericsData);
 
 impl TyDebugContext for TyInterners {}

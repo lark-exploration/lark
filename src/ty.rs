@@ -37,14 +37,40 @@ index_type! {
     crate struct Region { .. }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum PermData {
-    Shared { region: Region },
-    Borrow { region: Region },
+    Shared(Region),
+
+    Borrow(Region),
+
     Own,
-    Infer { var: InferVar },
-    Bound { index: BoundIndex },
-    Placeholder { index: Placeholder },
+
+    /// A "placeholder" is what you get when you instantiate a
+    /// universally quantified bound variable. For example, `forall<A>
+    /// { ... }` -- inside the `...`, the variable `A` might be
+    /// replaced with a placeholder, representing "any" type `A`.
+    Placeholder(Placeholder),
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum Inferable<T> {
+    Known(T),
+
+    /// An inference variable in the current context.
+    Infer(InferVar),
+
+    /// A "bound" type is a generic parameter that has yet to be
+    /// substituted with its value.
+    Bound(BoundIndex),
+}
+
+impl<T> Inferable<T> {
+    crate fn assert_known(self) -> T {
+        match self {
+            Inferable::Known(v) => v,
+            _ => panic!("found inferable, expected known value"),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -56,20 +82,13 @@ crate struct BaseData {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum BaseKind {
     /// A named type (might be value, might be linear, etc).
-    Named { name: DefId },
-
-    /// An inference variable in the current context.
-    Infer { var: InferVar },
-
-    /// A "bound" type is a generic parameter that has yet to be
-    /// substituted with its value.
-    Bound { index: BoundIndex },
+    Named(DefId),
 
     /// A "placeholder" is what you get when you instantiate a
     /// universally quantified bound variable. For example, `forall<A>
     /// { ... }` -- inside the `...`, the variable `A` might be
     /// replaced with a placeholder, representing "any" type `A`.
-    Placeholder { placeholder: Placeholder },
+    Placeholder(Placeholder),
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -177,35 +196,81 @@ impl UniverseIndex {
 }
 
 index_type! {
-    crate struct InferVar { .. }
-}
-
-crate trait AsInferVar {
-    fn as_infer_var(&self) -> Option<InferVar>;
-}
-
-impl AsInferVar for PermData {
-    fn as_infer_var(&self) -> Option<InferVar> {
-        if let PermData::Infer { var } = self {
-            Some(*var)
-        } else {
-            None
-        }
-    }
-}
-
-impl AsInferVar for BaseData {
-    fn as_infer_var(&self) -> Option<InferVar> {
-        if let BaseKind::Infer { var } = self.kind {
-            Some(var)
-        } else {
-            None
-        }
+    crate struct InferVar {
+        debug_name["?"],
+        ..
     }
 }
 
 /// Predicates that can be proven about types.
 crate enum Predicate {
-    BaseEq(Base, Base),
-    RegionConstraint {},
+    // The two bases are "base-equal".
+    BaseBaseEq(Base, Base),
+
+    // The two bases are "repr-equal".
+    BaseReprEq(Base, Base),
+
+    // The two permissions are "repr-equal".
+    PermReprEq(Perm, Perm),
+
+    RelateTypes {
+        direction: Variance,
+        ty1: Ty,
+        ty2: Ty,
+    },
+
+    RelatePerms {
+        direction: Permits,
+        perm1: Perm,
+        perm2: Perm,
+    },
+
+    RelateRegions {
+        direction: Permits,
+        region1: Region,
+        region2: Region,
+    },
+}
+
+///
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+crate enum Variance {
+    Covariant,
+    Contravariant,
+    Invariant,
+}
+
+impl Variance {
+    /// Returns a "permits" relation R1 such that `P1 B1 (R) P2 B1` if `P1 (R1) P2`.
+    crate fn permits(self) -> Permits {
+        match self {
+            Variance::Covariant => {
+                // p1 T1 <: p2 T2 if p1: p2
+                Permits::Permits
+            }
+
+            Variance::Contravariant => {
+                // p1 T1 <: p2 T2 if p2: p1
+                Permits::PermittedBy
+            }
+
+            Variance::Invariant => {
+                // p1 T1 == p2 T2 if p2 == p1
+                Permits::Equals
+            }
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+crate enum Permits {
+    /// `P1 permits P2` if, everything you can do with P2, you can also do with P1.
+    ///  Alternatively, in terms of the permission lattice, if `P1 >= P2`.
+    Permits,
+
+    /// Inverse of `permits`.
+    PermittedBy,
+
+    /// Both permits and permitted by.
+    Equals,
 }
