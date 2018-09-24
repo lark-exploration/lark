@@ -16,9 +16,9 @@ use crate::ty::{Perm, PermData};
 use log::debug;
 
 impl Relate<'me> {
-    /// Checks that two types are "base equal", which
-    /// means that their bases are deeply equal but which
-    /// says nothing about their permissions.
+    /// Checks that two types are "repr-equal", which
+    /// means that their bases are deeply equal and that
+    /// they have repr-compatible permissions.
     crate fn ty_repr_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<(), Error> {
         debug!("ty_repr_eq(ty1={:?}, ty2={:?})", ty1, ty2);
 
@@ -44,6 +44,9 @@ impl Relate<'me> {
         Ok(())
     }
 
+    /// Check that the two permissions are "repr-equal" -- basically this means
+    /// that if one of them is a borrow, the other must be. If either of them
+    /// is not yet inferred, we file a predicate for later processing.
     fn perm_repr_eq(&mut self, perm1: Perm, perm2: Perm) -> Result<(), Error> {
         match (
             self.unify.shallow_resolve_data(perm1),
@@ -88,10 +91,8 @@ impl Relate<'me> {
         }
     }
 
-    /// No matter what the "variance" is, for two types
-    /// to be related, their bases must be equal. So
-    /// for example `p1 String` and `p2 Vec` can never
-    /// be related, but `p1 String` and `p2 String` can be.
+    /// Check that the two base types are repr-eq. If both of the base
+    /// types are unknown, this will file a predicate for later processing.
     fn base_repr_eq(&mut self, base1: Base, base2: Base) -> Result<(), Error> {
         match (
             self.unify.shallow_resolve_data(base1),
@@ -115,12 +116,12 @@ impl Relate<'me> {
             }
 
             (Ok(_), Err(var2)) => {
-                let base2 = self.instantiate_spine(var2, base1);
+                let base2 = self.bind_var_to_spine_of(var2, base1);
                 self.base_repr_eq(base1, base2)
             }
 
             (Err(var1), Ok(_)) => {
-                let base1 = self.instantiate_spine(var1, base2);
+                let base1 = self.bind_var_to_spine_of(var1, base2);
                 self.base_repr_eq(base1, base2)
             }
 
@@ -131,13 +132,16 @@ impl Relate<'me> {
         }
     }
 
+    /// Check that the two generics are repr-eq.
     fn generic_repr_eq(&mut self, generic1: Generic, generic2: Generic) -> Result<(), Error> {
         match (generic1, generic2) {
             (Generic::Ty(ty1), Generic::Ty(ty2)) => self.ty_repr_eq(ty1, ty2),
         }
     }
 
-    fn instantiate_spine(&mut self, var: InferVar, base: Base) -> Base {
+    /// Binds the (as yet unbound) inference variable `var` to the "spine" of `base` --
+    /// this means it will have the same base types but fresh permission variables.
+    fn bind_var_to_spine_of(&mut self, var: InferVar, base: Base) -> Base {
         assert!(self.unify.probe(var).is_none());
         let new_spine = base.map_with(&mut SpineInstantiator {
             unify: &mut self.unify,
