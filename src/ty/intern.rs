@@ -66,6 +66,7 @@ crate trait Interners {
     fn intern<D>(&self, data: D) -> D::Key
     where
         D: Intern,
+        Self: Sized,
     {
         data.intern(self.interners())
     }
@@ -73,15 +74,22 @@ crate trait Interners {
     fn untern<K>(&self, key: K) -> K::Data
     where
         K: Untern,
+        Self: Sized,
     {
         key.untern(self.interners())
     }
 
-    fn common(&self) -> &Common {
+    fn common(&self) -> &Common
+    where
+        Self: Sized,
+    {
         &self.interners().data.common
     }
 
-    fn intern_generics(&self, iter: impl Iterator<Item = Generic>) -> Generics {
+    fn intern_generics(&self, iter: impl Iterator<Item = Generic>) -> Generics
+    where
+        Self: Sized,
+    {
         let generics_data = GenericsData {
             elements: Rc::new(iter.collect()),
         };
@@ -92,8 +100,18 @@ crate trait Interners {
     where
         T: Untern<Data = Inferable<V>>,
         Inferable<V>: Intern<Key = T>,
+        Self: Sized,
     {
         self.intern(Inferable::Infer { var })
+    }
+}
+
+impl<T: ?Sized> Interners for &T
+where
+    T: Interners,
+{
+    fn interners(&self) -> &TyInterners {
+        T::interners(self)
     }
 }
 

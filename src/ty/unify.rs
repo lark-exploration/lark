@@ -184,13 +184,18 @@ impl Interners for UnificationTable {
 }
 
 impl TyDebugContext for UnificationTable {
-    fn write_infer_var(&self, var: InferVar, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn write_infer_var(
+        &self,
+        var: InferVar,
+        context: &dyn TyDebugContext,
+        fmt: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         let (root_var, root_data) = self.find_without_path_compression(var);
         match root_data {
             RootData::Rank(_) => write!(fmt, "{:?}", root_var),
             RootData::Value(v) => match self.values[v] {
-                ValueData::Perm(p) => write!(fmt, "{:?}", p.debug_in(self)),
-                ValueData::Base(p) => write!(fmt, "{:?}", p.debug_in(self)),
+                ValueData::Perm(p) => write!(fmt, "{:?}", p.debug_in(context)),
+                ValueData::Base(p) => write!(fmt, "{:?}", p.debug_in(context)),
             },
         }
     }
