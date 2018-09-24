@@ -13,8 +13,8 @@ crate mod unify;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Ty {
-    perm: Perm,
-    base: Base,
+    crate perm: Perm,
+    crate base: Base,
 }
 
 index_type! {

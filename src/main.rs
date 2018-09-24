@@ -24,57 +24,108 @@ mod parser;
 mod ty;
 
 use crate::codegen::{codegen, RustFile};
-use crate::eval::Eval;
-use crate::ir::{builtin_type, Command, Context, Definition, Function, Struct};
+use crate::eval::eval_context;
+use crate::ir::{
+    builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
+    Rvalue, StatementKind, Struct, TerminatorKind,
+};
+
+use crate::ty::intern::TyInterners;
 
 fn main() {
     let mut c = Context::new();
 
-    let mut bob = Function::new("bob".into(), builtin_type::I32)
-        .param("x".into(), builtin_type::I32)
-        .param("y".into(), builtin_type::I32);
+    let i32_ty = c.simple_type_for_def_id(builtin_type::I32);
+    let void_ty = c.simple_type_for_def_id(builtin_type::VOID);
+    let string_ty = c.simple_type_for_def_id(builtin_type::STRING);
 
-    bob.body.push(Command::VarUse(0));
-    bob.body.push(Command::VarUse(1));
-    bob.body.push(Command::Sub);
-    bob.body.push(Command::VarDeclWithInit(2));
-    bob.body.push(Command::VarUse(2));
-    bob.body.push(Command::ReturnLastStackValue);
+    let mut bob = Function::new(
+        i32_ty,
+        vec![
+            LocalDecl::new(i32_ty, Some("x".into())),
+            LocalDecl::new(i32_ty, Some("y".into())),
+        ],
+        "bob".into(),
+    );
+
+    let bob_tmp = bob.new_temp(i32_ty);
+
+    let mut bb1 = BasicBlock::new();
+
+    bb1.push_stmt(StatementKind::Assign(
+        Place::Local(bob_tmp),
+        Rvalue::BinaryOp(BinOp::Sub, 1, 2),
+    ));
+    bb1.push_stmt(StatementKind::Assign(
+        Place::Local(0),
+        Rvalue::Use(Operand::Move(Place::Local(bob_tmp))),
+    ));
+
+    bb1.terminate(TerminatorKind::Return);
+
+    bob.push_block(bb1);
 
     let bob_def_id = c.add_definition(Definition::Fn(bob));
 
     let person = Struct::new("Person".into())
-        .field("height".into(), builtin_type::I32)
-        .field("id".into(), builtin_type::I32);
+        .field("height".into(), i32_ty)
+        .field("id".into(), i32_ty);
 
     let person_def_id = c.add_definition(Definition::Struct(person));
+    let person_ty = c.simple_type_for_def_id(person_def_id);
 
-    let mut m = Function::new("main".into(), builtin_type::VOID);
-    m.body.push(Command::ConstInt(11));
-    m.body.push(Command::ConstInt(8));
-    m.body.push(Command::Call(bob_def_id));
-    m.body.push(Command::ConstString("Hello, world {}".into()));
-    m.body.push(Command::Call(101)); //built-in string interpolation
-    m.body.push(Command::DebugPrint);
+    let mut m = Function::new(void_ty, vec![], "main".into());
+    let call_result_tmp = m.new_temp(i32_ty);
+    let interp_result_tmp = m.new_temp(string_ty);
+    let person_result_tmp = m.new_temp(person_ty);
 
-    m.body.push(Command::ConstInt(17));
-    m.body.push(Command::ConstInt(18));
-    m.body.push(Command::Call(person_def_id));
+    let mut bb2 = BasicBlock::new();
 
-    m.body.push(Command::VarDeclWithInit(0));
-    m.body.push(Command::VarUse(0));
-    m.body.push(Command::DebugPrint);
-    m.body.push(Command::VarUse(0));
-    m.body.push(Command::Dot("id".into()));
-    m.body.push(Command::DebugPrint);
+    bb2.push_stmt(StatementKind::Assign(
+        Place::Local(call_result_tmp),
+        Rvalue::Call(
+            bob_def_id,
+            vec![Operand::ConstantInt(11), Operand::ConstantInt(8)],
+        ),
+    ));
 
-    c.definitions.push(Definition::Fn(m));
+    bb2.push_stmt(StatementKind::Assign(
+        Place::Local(interp_result_tmp),
+        Rvalue::Call(
+            101, /*builtin string interp*/
+            vec![
+                Operand::ConstantString("Hello, world {}".into()),
+                Operand::Move(Place::Local(call_result_tmp)),
+            ],
+        ),
+    ));
+
+    bb2.push_stmt(StatementKind::DebugPrint(Place::Local(interp_result_tmp)));
+
+    bb2.push_stmt(StatementKind::Assign(
+        Place::Local(person_result_tmp),
+        Rvalue::Call(
+            person_def_id,
+            vec![Operand::ConstantInt(17), Operand::ConstantInt(18)],
+        ),
+    ));
+
+    bb2.push_stmt(StatementKind::DebugPrint(Place::Field(
+        person_result_tmp,
+        "id".into(),
+    )));
+
+    bb2.terminate(TerminatorKind::Return);
+    m.push_block(bb2);
+    let main_def_id = c.add_definition(Definition::Fn(m));
 
     let mut rust = RustFile::new();
 
     codegen(&mut rust, &c);
     println!("{}", rust.render());
 
-    let mut eval = Eval::new();
-    eval.eval(&c);
+    //let mut eval = Eval::new();
+    //eval.eval(&c);
+
+    eval_context(&c, main_def_id);
 }
