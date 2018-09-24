@@ -102,7 +102,7 @@ crate trait Interners {
         Inferable<V>: Intern<Key = T>,
         Self: Sized,
     {
-        self.intern(Inferable::Infer { var })
+        self.intern(Inferable::Infer(var))
     }
 }
 

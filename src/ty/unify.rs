@@ -153,7 +153,7 @@ impl UnificationTable {
         Inferable<V>: Intern<Key = K>,
     {
         let data = self.untern(value);
-        if let Inferable::Infer { var } = data {
+        if let Inferable::Infer(var) = data {
             if let Some(value) = self.probe(var) {
                 let value_data = self.values[value];
                 let key = K::try_from(value_data).unwrap();
@@ -173,7 +173,7 @@ impl UnificationTable {
         Inferable<K>: Intern<Key = T>,
     {
         let var = self.new_infer_var();
-        self.intern(Inferable::Infer { var })
+        self.intern(Inferable::Infer(var))
     }
 }
 

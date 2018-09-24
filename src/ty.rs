@@ -39,13 +39,9 @@ index_type! {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum PermData {
-    Shared {
-        region: Region,
-    },
+    Shared(Region),
 
-    Borrow {
-        region: Region,
-    },
+    Borrow(Region),
 
     Own,
 
@@ -53,9 +49,7 @@ crate enum PermData {
     /// universally quantified bound variable. For example, `forall<A>
     /// { ... }` -- inside the `...`, the variable `A` might be
     /// replaced with a placeholder, representing "any" type `A`.
-    Placeholder {
-        placeholder: Placeholder,
-    },
+    Placeholder(Placeholder),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -63,15 +57,11 @@ crate enum Inferable<T> {
     Known(T),
 
     /// An inference variable in the current context.
-    Infer {
-        var: InferVar,
-    },
+    Infer(InferVar),
 
     /// A "bound" type is a generic parameter that has yet to be
     /// substituted with its value.
-    Bound {
-        index: BoundIndex,
-    },
+    Bound(BoundIndex),
 }
 
 impl<T> Inferable<T> {
@@ -92,13 +82,13 @@ crate struct BaseData {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum BaseKind {
     /// A named type (might be value, might be linear, etc).
-    Named { name: DefId },
+    Named(DefId),
 
     /// A "placeholder" is what you get when you instantiate a
     /// universally quantified bound variable. For example, `forall<A>
     /// { ... }` -- inside the `...`, the variable `A` might be
     /// replaced with a placeholder, representing "any" type `A`.
-    Placeholder { placeholder: Placeholder },
+    Placeholder(Placeholder),
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]

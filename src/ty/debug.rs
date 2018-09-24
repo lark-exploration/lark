@@ -99,9 +99,9 @@ where
 {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.data {
-            Inferable::Infer { var } => self.context.write_infer_var(*var, self.context, fmt),
+            Inferable::Infer(var) => self.context.write_infer_var(*var, self.context, fmt),
 
-            Inferable::Bound { index } => self.context.write_bound(*index, self.context, fmt),
+            Inferable::Bound(index) => self.context.write_bound(*index, self.context, fmt),
 
             Inferable::Known(k) => write!(fmt, "{:?}", k.debug_in(self.context)),
         }
@@ -113,9 +113,9 @@ impl Debug for DebugInWrapper<'me, BaseData> {
         let BaseData { kind, generics } = self.data;
 
         match kind {
-            BaseKind::Named { name } => self.context.write_type_name(*name, self.context, fmt)?,
+            BaseKind::Named(name) => self.context.write_type_name(*name, self.context, fmt)?,
 
-            BaseKind::Placeholder { placeholder } => {
+            BaseKind::Placeholder(placeholder) => {
                 self.context
                     .write_placeholder(*placeholder, self.context, fmt)?
             }
@@ -148,13 +148,9 @@ impl Debug for DebugInWrapper<'me, PermData> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.data {
             PermData::Own => write!(fmt, "own"),
-            PermData::Shared { region } => {
-                write!(fmt, "shared({:?})", region.debug_in(self.context))
-            }
-            PermData::Borrow { region } => {
-                write!(fmt, "borrow({:?})", region.debug_in(self.context))
-            }
-            PermData::Placeholder { placeholder } => {
+            PermData::Shared(region) => write!(fmt, "shared({:?})", region.debug_in(self.context)),
+            PermData::Borrow(region) => write!(fmt, "borrow({:?})", region.debug_in(self.context)),
+            PermData::Placeholder(placeholder) => {
                 self.context
                     .write_placeholder(*placeholder, self.context, fmt)
             }

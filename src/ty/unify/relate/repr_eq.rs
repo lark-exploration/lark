@@ -54,31 +54,28 @@ impl Relate<'me> {
         ) {
             (Ok(data1), Ok(data2)) => match (data1, data2) {
                 // Shared + own have the same representation.
-                (PermData::Shared { .. }, PermData::Shared { .. })
-                | (PermData::Shared { .. }, PermData::Own)
+                (PermData::Shared(_), PermData::Shared(_))
+                | (PermData::Shared(_), PermData::Own)
                 | (PermData::Own, PermData::Own)
-                | (PermData::Own, PermData::Shared { .. }) => Ok(()),
+                | (PermData::Own, PermData::Shared(_)) => Ok(()),
 
                 // Borrows are represented by a pointer
                 // and hence are only compatible with themselves.
-                (PermData::Borrow { .. }, PermData::Borrow { .. }) => Ok(()),
-                (PermData::Borrow { .. }, _) | (_, PermData::Borrow { .. }) => {
+                (PermData::Borrow(_), PermData::Borrow(_)) => Ok(()),
+                (PermData::Borrow(_), _) | (_, PermData::Borrow(_)) => {
                     return Err(Error);
                 }
 
                 // Placeholders might be represented by a pointer
                 // and hence are only compatible with themselves.
-                (
-                    PermData::Placeholder { placeholder: p1 },
-                    PermData::Placeholder { placeholder: p2 },
-                ) => {
+                (PermData::Placeholder(p1), PermData::Placeholder(p2)) => {
                     if p1 == p2 {
                         Ok(())
                     } else {
                         return Err(Error);
                     }
                 }
-                (PermData::Placeholder { .. }, _) | (_, PermData::Placeholder { .. }) => {
+                (PermData::Placeholder(_), _) | (_, PermData::Placeholder(_)) => {
                     return Err(Error);
                 }
             },

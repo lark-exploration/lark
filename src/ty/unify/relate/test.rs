@@ -64,15 +64,11 @@ impl Interners for TestContext {
 
 impl TestContext {
     fn share(&mut self) -> Perm {
-        self.intern(Inferable::Known(PermData::Shared {
-            region: self.region,
-        }))
+        self.intern(Inferable::Known(PermData::Shared(self.region)))
     }
 
     fn borrow(&mut self) -> Perm {
-        self.intern(Inferable::Known(PermData::Borrow {
-            region: self.region,
-        }))
+        self.intern(Inferable::Known(PermData::Borrow(self.region)))
     }
 
     fn own(&mut self) -> Perm {
@@ -126,7 +122,7 @@ impl TestContext {
             Ty {
                 perm: intern.common().own,
                 base: intern.intern(Inferable::Known(BaseData {
-                    kind: BaseKind::Placeholder { placeholder },
+                    kind: BaseKind::Placeholder(placeholder),
                     generics: intern.common().empty_generics,
                 })),
             }
@@ -136,7 +132,7 @@ impl TestContext {
     fn base(&mut self, name: &str, tys: Vec<Ty>) -> Base {
         let generics = self.intern_generics(tys.into_iter().map(Generic::Ty));
         let name = self.def_id(name);
-        let kind = BaseKind::Named { name };
+        let kind = BaseKind::Named(name);
         self.intern(Inferable::Known(BaseData { kind, generics }))
     }
 }
