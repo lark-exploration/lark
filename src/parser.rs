@@ -131,7 +131,7 @@ mod test {
         init();
 
         let source = unindent(
-            "
+            r#"
             struct Diagnostic {
             ^^^^^^ ^^^^^^^^^^ ^ open-struct
               msg: own String,
@@ -146,7 +146,7 @@ mod test {
               ^^^^^^^^^^ ^ ^^^  ^^^^^ ^ construct-diag
             }
             ^ close-new
-            ",
+            "#,
         );
 
         let table = ModuleTable::new();

@@ -90,7 +90,11 @@ impl From<&str> for Mode {
     }
 }
 
-pub struct Pattern {}
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
+pub enum Pattern {
+    Underscore,
+    Identifier(Identifier, Option<Spanned<Mode>>),
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Path {
@@ -122,7 +126,7 @@ pub struct ConstructStruct {
 }
 
 pub struct Let {
-    pattern: Pattern,
+    pattern: Spanned<Pattern>,
     ty: Option<Type>,
     init: Option<Expression>,
 }

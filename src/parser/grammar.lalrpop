@@ -8,7 +8,13 @@ use codespan::ByteIndex;
 grammar;
 
 pub Program: Module = {
-    PrefixDelim<Item, SEP> => Module::new(<>)
+    Newlines? <Item> Newlines? => Module::new(vec![<>]),
+    Newlines? <a: Item> Newlines? <b: Item> Newlines? => {
+        let mut v = vec![];
+        v.push(a);
+        v.push(b);
+        Module::new(v)
+    }
 }
 
 Item: Item = {
@@ -17,7 +23,7 @@ Item: Item = {
 }
 
 Struct: Struct = {
-    <l: @L> struct <name: Identifier> "{" newline* <fields: Fields> "}" <r: @R> => 
+    <l: @L> struct <name: Identifier> "{" Newlines? <fields: Fields> "}" <r: @R> => 
         Struct::new(name, fields, Span::from(l, r))
 }
 
@@ -26,11 +32,11 @@ Fields: Vec<Field> = {
 }
 
 COMMA = {
-    newline* "," newline*
+    "," Newlines?
 }
 
 COLON = {
-    newline* ":" newline*
+    ":"
 }
 
 Field: Field = {
@@ -65,7 +71,16 @@ Mode: Spanned<Mode> = {
 }
 
 Block: Block = {
-    "{" <PrefixDelim<BlockItem, SEP>> "}" => Block::new(<>)
+    "{" Newlines? <blocks: (<BlockItem> SEP Newlines?)*> "}" => {
+        Block::new(blocks)
+    },
+
+    "{" <blocks: (<BlockItem> SEP Newlines?)*> <trailing: BlockItem> "}" => {
+        let mut v = blocks;
+        v.push(trailing);
+
+        Block::new(v)
+    }
 }
 
 BlockItem: BlockItem = {
@@ -75,8 +90,8 @@ BlockItem: BlockItem = {
 
 BlockOrIf: BlockOrIf = {
     Block => unimplemented!("BlockOrIf::Block"),
-    ExprIf => unimplemented!("BlockOrIf::ExprIf"),
-    ExprIfLet => unimplemented!("BlockOrIf::ExprIfLet")
+    //ExprIf => unimplemented!("BlockOrIf::ExprIf"),
+    //ExprIfLet => unimplemented!("BlockOrIf::ExprIfLet")
 }
 
 Let: Let = {
@@ -93,10 +108,10 @@ MaybeInitExpr: () = {
     ("=" Expr)? => unimplemented!("MaybeInitExpr")
 }
 
-Pat: Pattern = {
-    "_" => unimplemented!("Pat::_"),
-    Identifier => unimplemented!("Pat::Identifier"),
-    own Identifier => unimplemented!("Pat::own Identifier")
+Pat: Spanned<Pattern> = {
+    <l: @L> "_" <r: @R> => Spanned::from(Pattern::Underscore, l, r),
+    <l: @L> <id: Identifier> <r: @R> => Spanned::from(Pattern::Identifier(id, None), l, r),
+    <l: @L> <mode: Mode> <id: Identifier> <r: @R> => Spanned::from(Pattern::Identifier(id, Some(mode)), l, r)
 }
 
 Decl: Declaration = {
@@ -105,9 +120,10 @@ Decl: Declaration = {
 
 Expr: Expression = {
     Block => unimplemented!("Expr::Block"),
-    ExprIf => unimplemented!("Expr::ExprIf"),
-    ExprIfLet => unimplemented!("Expr::ExprIfLet"),
-    ConstructStruct => Expression::ConstructStruct(<>)
+    //ExprIf => unimplemented!("Expr::ExprIf"),
+    //ExprIfLet => unimplemented!("Expr::ExprIfLet"),
+    ConstructStruct => Expression::ConstructStruct(<>),
+    ExprAtom => unimplemented!("Expr::ExprAtom")
 }
 
 ConstructStruct: ConstructStruct = {
@@ -116,18 +132,18 @@ ConstructStruct: ConstructStruct = {
 
 ConstructField: ConstructField = {
     Identifier => ConstructField::Shorthand(<>),
-    <l: @L> <name: Identifier> ":" newline* <ty: Type> <r: @R> => ConstructField::Longhand(Field::new(name, ty, Span::from(l, r)))
+    <l: @L> <name: Identifier> ":" <ty: Type> <r: @R> => ConstructField::Longhand(Field::new(name, ty, Span::from(l, r)))
 }
 
-ExprIf: Expression = {
-    "if" Expr Block => unimplemented!("ExprIf::NoElse"),
-    "if" Expr Block "else" BlockOrIf => unimplemented!("ExprIf::Else")
-}
+//ExprIf: Expression = {
+//    "if" Expr Block => unimplemented!("ExprIf::NoElse"),
+//    "if" Expr Block "else" BlockOrIf => unimplemented!("ExprIf::Else")
+//}
 
-ExprIfLet: If = {
-    "if" let Pat "=" Expr Block => unimplemented!("ExprIfLet::NoElse"),
-    "if" let Pat "=" Expr Block "else" BlockOrIf => unimplemented!("ExprIfLet::Else")
-}
+//ExprIfLet: If = {
+//    "if" let Pat "=" Expr Block "else" BlockOrIf => unimplemented!("ExprIfLet::Else"),
+//    "if" let Pat "=" Expr Block => unimplemented!("ExprIfLet::NoElse"),
+//}
 
 ExprAtom: Atom = {
     Lit => unimplemented!("ExprAtom::Lit"),
@@ -140,29 +156,29 @@ Lit: () = {
 }
 
 PathExpr: Path = {
-    Path<"."> => unimplemented!("PathExpr::Dot"),
-    Path<"::"> => unimplemented!("PathExpr::DoubleColon")
+    Delim<Identifier, "."> => unimplemented!("PathExpr::Dot"),
 }
 
 Identifier: Spanned<StringId> = {
     <l: @L> <id: identifier> <r: @R> => Spanned::from(id, l, r)
 }
 
+#[inline]
 Path<SEP>: Path = {
-    PrefixDelim<Identifier, "::"> => Path::new(<>),
-    Delim<Identifier, "::"> => Path::new(<>)
+    <Delim<Identifier, SEP>> => <>
 }
 
 // Delimeted list of E with optional trailing delimeter. Potentially
 // empty.
 Delim<T, SEP>: Vec<T> = {
-    <v:(<T> SEP)*> <e:T?> => match e {
-        None => v,
-        Some(e) => {
-            let mut v = v;
-            v.push(e);
-            v
-        }
+    <v:(<T> SEP)+> => {
+        v
+    },
+
+    <v:(<T> SEP)+> <e:T> => {
+        let mut v = v;
+        v.push(e);
+        v
     }
 };
 
@@ -175,7 +191,7 @@ Comma<E> = Delim<E, ",">;
 
 SEP: () = {
     ";",
-    Newlines
+    newline
 }
 
 Newlines: () = {
