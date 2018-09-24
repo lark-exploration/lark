@@ -4,17 +4,28 @@ use crate::ty::Predicate;
 use crate::ty::Ty;
 
 mod base_eq;
+mod repr_eq;
 mod spine;
 mod test;
 
 impl UnificationTable {
-    fn ty_base_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<Vec<Predicate>, Error> {
+    crate fn ty_base_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<Vec<Predicate>, Error> {
         let mut relate = Relate {
             unify: self,
             predicates: vec![],
         };
         // FIXME transaction
         relate.ty_base_eq(ty1, ty2)?;
+        Ok(relate.predicates)
+    }
+
+    crate fn ty_repr_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<Vec<Predicate>, Error> {
+        let mut relate = Relate {
+            unify: self,
+            predicates: vec![],
+        };
+        // FIXME transaction
+        relate.ty_repr_eq(ty1, ty2)?;
         Ok(relate.predicates)
     }
 }
@@ -31,7 +42,7 @@ struct Relate<'me> {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Error;
+crate struct Error;
 
 impl Interners for Relate<'_> {
     fn interners(&self) -> &TyInterners {

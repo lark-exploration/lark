@@ -211,6 +211,14 @@ index_type! {
 
 /// Predicates that can be proven about types.
 crate enum Predicate {
-    BaseEq(Base, Base),
+    // The two bases are "base-equal".
+    BaseBaseEq(Base, Base),
+
+    // The two bases are "repr-equal".
+    BaseReprEq(Base, Base),
+
+    // The two permissions are "repr-equal".
+    PermReprEq(Perm, Perm),
+
     RegionConstraint {},
 }

@@ -45,14 +45,14 @@ impl Relate<'me> {
             self.unify.shallow_resolve_data(base1),
             self.unify.shallow_resolve_data(base2),
         ) {
-            (Ok(data1), Ok(data2)) => self.base_data_eq(base1, data1, base2, data2),
+            (Ok(data1), Ok(data2)) => self.base_data_base_eq(base1, data1, base2, data2),
 
-            (Ok(_), Err(var2)) => self.base_var_data_eq(var2, base1),
+            (Ok(_), Err(var2)) => self.var_base_data_base_eq(var2, base1),
 
-            (Err(var1), Ok(_)) => self.base_var_data_eq(var1, base2),
+            (Err(var1), Ok(_)) => self.var_base_data_base_eq(var1, base2),
 
             (Err(_), Err(_)) => {
-                self.predicates.push(Predicate::BaseEq(base1, base2));
+                self.predicates.push(Predicate::BaseBaseEq(base1, base2));
                 Ok(())
             }
         }
@@ -71,14 +71,14 @@ impl Relate<'me> {
         }
     }
 
-    fn base_var_data_eq(&mut self, var1: InferVar, base2: Base) -> Result<(), Error> {
+    fn var_base_data_base_eq(&mut self, var1: InferVar, base2: Base) -> Result<(), Error> {
         assert!(self.unify.probe(var1).is_none());
         let new_spine = base2.map_with(&mut self.spine_instantiator());
         self.unify.bind_unbound_var_to_value(var1, new_spine);
         Ok(())
     }
 
-    fn base_data_eq(
+    fn base_data_base_eq(
         &mut self,
         _base1: Base,
         data1: BaseData,

@@ -1,8 +1,8 @@
 use crate::ty::debug::{DebugIn, TyDebugContext};
 use crate::ty::intern::{Intern, Interners, TyInterners, Untern};
 use crate::ty::Base;
+use crate::ty::Perm;
 use crate::ty::{InferVar, Inferable};
-use crate::ty::{Perm, PermData};
 use indexed_vec::IndexVec;
 use std::convert::TryFrom;
 use std::fmt;

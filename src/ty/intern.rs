@@ -1,6 +1,6 @@
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
-use crate::ty::{Base, BaseData, BaseKind};
+use crate::ty::{Base, BaseData};
 use crate::ty::{Generics, GenericsData};
 use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};

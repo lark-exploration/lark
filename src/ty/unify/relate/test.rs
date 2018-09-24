@@ -211,3 +211,67 @@ fn instantiate_spine() {
         assert!(cx.unify.ty_base_eq(a, d).is_err());
     });
 }
+
+#[test]
+fn vec_bar_not_repr_eq_vec_baz() {
+    setup(|cx| {
+        let a = ir!(cx, ty[share Vec<[own Bar]>]);
+        let x = ir!(cx, ty[share Vec<[own Baz]>]);
+        assert!(cx.unify.ty_repr_eq(a, x).is_err());
+    });
+}
+
+#[test]
+fn share_vec_own_bar_repr_eq_share_vec_own_bar() {
+    setup(|cx| {
+        let a = ir!(cx, ty[share Vec<[own Bar]>]);
+        let b = ir!(cx, ty[share Vec<[own Bar]>]);
+        assert!(cx.unify.ty_repr_eq(a, b).is_ok());
+    });
+}
+
+/// We are only testing base-eq: here we see that
+/// permissions don't matter much.
+#[test]
+fn share_vec_own_bar_repr_eq_own_vec_share_bar() {
+    setup(|cx| {
+        let a = ir!(cx, ty[share Vec<[own Bar]>]);
+        let b = ir!(cx, ty[own Vec<[share Bar]>]);
+        assert!(cx.unify.ty_repr_eq(a, b).is_ok());
+    });
+}
+
+/// Even `borrow` and `share` are base-eq, despite
+/// having different representation.
+#[test]
+fn share_vec_borrow_bar_repr_eq_borrow_vec_share_bar() {
+    setup(|cx| {
+        let a = ir!(cx, ty[share Vec<[?X]>]);
+        let b = ir!(cx, ty[borrow Vec<[share Bar]>]);
+        assert!(cx.unify.ty_repr_eq(a, b).is_err());
+
+        // Even though got an error, we still inferred
+        // that `?X` must be `Bar`:
+        assert_eq!(
+            format!("{:?}", a.debug_in(&cx.unify)),
+            format!("shared(Region(0)) DefId(0)<InferVar(0) DefId(1)>")
+        );
+    });
+}
+
+#[test]
+fn instantiate_spine_repr() {
+    setup(|cx| {
+        let a = ir!(cx, ty[?X]);
+        let b = ir!(cx, ty[share Vec<[own Bar]>]);
+        assert!(cx.unify.ty_repr_eq(a, b).is_ok());
+        assert_eq!(
+            format!("{:?}", a.debug_in(&cx.unify)),
+            format!("InferVar(0) DefId(1)<InferVar(2) DefId(0)>")
+        );
+        let c = ir!(cx, ty[own Vec<[own Bar]>]);
+        assert!(cx.unify.ty_repr_eq(a, c).is_ok());
+        let d = ir!(cx, ty[own Vec<[own Baz]>]);
+        assert!(cx.unify.ty_repr_eq(a, d).is_err());
+    });
+}

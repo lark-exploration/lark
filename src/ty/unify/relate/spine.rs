@@ -52,7 +52,8 @@ impl Mapper for SpineInstantiator<'me> {
 
             Err(_) => {
                 let new_variable: Base = self.unify.new_inferable();
-                self.predicates.push(Predicate::BaseEq(base, new_variable));
+                self.predicates
+                    .push(Predicate::BaseBaseEq(base, new_variable));
                 new_variable
             }
         }
