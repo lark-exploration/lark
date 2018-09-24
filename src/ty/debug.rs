@@ -1,60 +1,59 @@
 use crate::ir::DefId;
 use crate::ty::intern::Interners;
 use crate::ty::*;
-use std::fmt::{self, Debug, Formatter};
+use std::fmt::Debug;
 
+/// The `TyDebugContext` lets you customize how types
+/// are represented during debugging. There are various
+/// implementations that have different behaviors. The most
+/// basic is to supply a `TyInterners`, which at least
+/// lets us dereference the various indices. Better perhaps
+/// is to give a unification table, which can canonicalize
+/// inference variables. During testing, we use debug
+/// context that can also handle def-ids.
 crate trait TyDebugContext: Interners {
     fn write_region(
         &self,
         region: Region,
-        _cx: &dyn TyDebugContext,
-        fmt: &mut Formatter<'_>,
-    ) -> fmt::Result {
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(fmt, "{:?}", region)
     }
 
     fn write_infer_var(
         &self,
         var: InferVar,
-        _cx: &dyn TyDebugContext,
-        fmt: &mut Formatter<'_>,
-    ) -> fmt::Result {
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(fmt, "{:?}", var)
     }
 
     fn write_bound(
         &self,
         index: BoundIndex,
-        _cx: &dyn TyDebugContext,
-        fmt: &mut Formatter<'_>,
-    ) -> fmt::Result {
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(fmt, "{:?}", index)
     }
 
-    fn write_base_placeholder(
+    fn write_placeholder(
         &self,
         placeholder: Placeholder,
-        _cx: &dyn TyDebugContext,
-        fmt: &mut Formatter<'_>,
-    ) -> fmt::Result {
-        write!(fmt, "{:?}", placeholder)
-    }
-
-    fn write_perm_placeholder(
-        &self,
-        placeholder: Placeholder,
-        _cx: &dyn TyDebugContext,
-        fmt: &mut Formatter<'_>,
-    ) -> fmt::Result {
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(fmt, "{:?}", placeholder)
     }
 
     fn write_type_name(
         &self,
         def_id: DefId,
-        _cx: &dyn TyDebugContext,
-        fmt: &mut Formatter<'_>,
-    ) -> fmt::Result {
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(fmt, "DefId({})", def_id)
     }
 }
@@ -76,7 +75,7 @@ crate trait DebugIn: Sized {
 impl<T> DebugIn for T {}
 
 impl Debug for DebugInWrapper<'me, Ty> {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Ty { perm, base } = self.data;
         write!(
             fmt,
@@ -88,7 +87,7 @@ impl Debug for DebugInWrapper<'me, Ty> {
 }
 
 impl Debug for DebugInWrapper<'me, Base> {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let base_data = self.context.interners().untern(*self.data);
         write!(fmt, "{:?}", base_data.debug_in(self.context))
     }
@@ -98,7 +97,7 @@ impl<T> Debug for DebugInWrapper<'me, Inferable<T>>
 where
     DebugInWrapper<'me, T>: Debug,
 {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.data {
             Inferable::Infer { var } => self.context.write_infer_var(*var, self.context, fmt),
 
@@ -110,7 +109,7 @@ where
 }
 
 impl Debug for DebugInWrapper<'me, BaseData> {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let BaseData { kind, generics } = self.data;
 
         match kind {
@@ -118,7 +117,7 @@ impl Debug for DebugInWrapper<'me, BaseData> {
 
             BaseKind::Placeholder { placeholder } => {
                 self.context
-                    .write_base_placeholder(*placeholder, self.context, fmt)?
+                    .write_placeholder(*placeholder, self.context, fmt)?
             }
         }
 
@@ -139,14 +138,14 @@ impl Debug for DebugInWrapper<'me, BaseData> {
 }
 
 impl Debug for DebugInWrapper<'me, Perm> {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let perm_data = self.context.interners().untern(*self.data);
         write!(fmt, "{:?}", perm_data.debug_in(self.context))
     }
 }
 
 impl Debug for DebugInWrapper<'me, PermData> {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.data {
             PermData::Own => write!(fmt, "own"),
             PermData::Shared { region } => {
@@ -157,20 +156,20 @@ impl Debug for DebugInWrapper<'me, PermData> {
             }
             PermData::Placeholder { placeholder } => {
                 self.context
-                    .write_perm_placeholder(*placeholder, self.context, fmt)
+                    .write_placeholder(*placeholder, self.context, fmt)
             }
         }
     }
 }
 
 impl Debug for DebugInWrapper<'me, Region> {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.context.write_region(*self.data, self.context, fmt)
     }
 }
 
 impl Debug for DebugInWrapper<'me, Generic> {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.data {
             Generic::Ty(t) => write!(fmt, "{:?}", t.debug_in(self.context)),
         }

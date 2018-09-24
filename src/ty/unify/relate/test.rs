@@ -1,10 +1,11 @@
 #![cfg(test)]
 
 use crate::ir::DefId;
-use crate::ty::debug::DebugIn;
+use crate::ty::debug::{DebugIn, TyDebugContext};
 use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::unify::UnificationTable;
 use crate::ty::Generic;
+use crate::ty::InferVar;
 use crate::ty::Inferable;
 use crate::ty::ParameterIndex;
 use crate::ty::Placeholder;
@@ -16,11 +17,43 @@ use crate::ty::{Perm, PermData};
 use rustc_hash::FxHashMap;
 
 struct TestContext {
+    intern: TyInterners,
     unify: UnificationTable,
     region: Region,
-    type_names: FxHashMap<String, DefId>,
+    types: FxHashMap<String, DefId>,
+    type_names: FxHashMap<DefId, String>,
     type_variables: FxHashMap<String, Ty>,
     placeholders: FxHashMap<String, Ty>,
+    placeholder_names: FxHashMap<Placeholder, String>,
+}
+
+impl TyDebugContext for TestContext {
+    fn write_infer_var(
+        &self,
+        var: InferVar,
+        context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        self.unify.write_infer_var(var, context, fmt)
+    }
+
+    fn write_placeholder(
+        &self,
+        placeholder: Placeholder,
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(fmt, "{}", self.placeholder_names[&placeholder])
+    }
+
+    fn write_type_name(
+        &self,
+        def_id: DefId,
+        _context: &dyn TyDebugContext,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(fmt, "{}", self.type_names[&def_id])
+    }
 }
 
 impl Interners for TestContext {
@@ -47,8 +80,15 @@ impl TestContext {
     }
 
     fn def_id(&mut self, name: &str) -> DefId {
-        let next = self.type_names.len();
-        *self.type_names.entry(name.to_string()).or_insert(next)
+        let TestContext {
+            types, type_names, ..
+        } = self;
+
+        let next = types.len();
+        *types.entry(name.to_string()).or_insert_with(|| {
+            type_names.insert(next, name.to_string());
+            next
+        })
     }
 
     fn type_variable(&mut self, name: &str) -> Ty {
@@ -57,6 +97,7 @@ impl TestContext {
             unify,
             ..
         } = self;
+
         *type_variables
             .entry(name.to_string())
             .or_insert_with(|| Ty {
@@ -66,14 +107,21 @@ impl TestContext {
     }
 
     fn placeholder(&mut self, name: &str) -> Ty {
-        let intern = self.interners().clone();
-        let TestContext { placeholders, .. } = self;
+        let TestContext {
+            intern,
+            placeholders,
+            placeholder_names,
+            ..
+        } = self;
+
         let next_index = placeholders.len();
         *placeholders.entry(name.to_string()).or_insert_with(|| {
             let placeholder = Placeholder {
                 universe: UniverseIndex::ROOT,
                 index: ParameterIndex::new(next_index),
             };
+
+            placeholder_names.insert(placeholder, name.to_string());
 
             Ty {
                 perm: intern.common().own,
@@ -146,11 +194,14 @@ fn setup(op: impl FnOnce(&mut TestContext)) {
     let unify = UnificationTable::new(&intern);
     let region = Region::new(0);
     let mut cx = TestContext {
+        intern,
         unify,
         region,
+        types: FxHashMap::default(),
         type_names: FxHashMap::default(),
         type_variables: FxHashMap::default(),
         placeholders: FxHashMap::default(),
+        placeholder_names: FxHashMap::default(),
     };
     op(&mut cx);
 }
@@ -196,8 +247,8 @@ fn share_vec_borrow_bar_repr_eq_borrow_vec_share_bar() {
         // Even though got an error, we still inferred
         // that `?X` must be `Bar`:
         assert_eq!(
-            format!("{:?}", a.debug_in(&cx.unify)),
-            format!("shared(Region(0)) DefId(0)<InferVar(0) DefId(1)>")
+            format!("{:?}", a.debug_in(cx)),
+            format!("shared(Region(0)) Vec<?(0) Bar>")
         );
     });
 }
@@ -209,8 +260,8 @@ fn instantiate_spine_repr() {
         let b = ir!(cx, ty[share Vec<[own Bar]>]);
         assert!(cx.unify.ty_repr_eq(a, b).is_ok());
         assert_eq!(
-            format!("{:?}", a.debug_in(&cx.unify)),
-            format!("InferVar(0) DefId(1)<InferVar(2) DefId(0)>")
+            format!("{:?}", a.debug_in(cx)),
+            format!("?(0) Vec<?(2) Bar>")
         );
         let c = ir!(cx, ty[own Vec<[own Bar]>]);
         assert!(cx.unify.ty_repr_eq(a, c).is_ok());

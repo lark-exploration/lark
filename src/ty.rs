@@ -206,7 +206,10 @@ impl UniverseIndex {
 }
 
 index_type! {
-    crate struct InferVar { .. }
+    crate struct InferVar {
+        debug_name["?"],
+        ..
+    }
 }
 
 /// Predicates that can be proven about types.
