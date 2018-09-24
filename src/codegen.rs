@@ -1,3 +1,206 @@
+use crate::ir::{
+    builtin_type, BasicBlock, BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand,
+    Place, Rvalue, Statement, StatementKind, Terminator, TerminatorKind, VarId,
+};
+
+pub struct RustFile {
+    output_src: String,
+    expression_stack: Vec<String>,
+}
+
+impl RustFile {
+    pub fn output_raw(&mut self, output: &str) {
+        self.output_src += output;
+    }
+
+    pub fn delay_expr(&mut self, expr: String) {
+        self.expression_stack.push(expr);
+    }
+
+    pub fn new() -> RustFile {
+        RustFile {
+            output_src: String::new(),
+            expression_stack: vec![],
+        }
+    }
+
+    pub fn render(self) -> String {
+        self.output_src
+    }
+}
+
+fn build_type(c: &Context, ty: DefId) -> String {
+    match ty {
+        builtin_type::I32 => "i32".into(),
+        builtin_type::VOID => "()".into(),
+        builtin_type::STRING => "String".into(),
+        _ => {
+            let definition = &c.definitions[ty];
+            match definition {
+                _ => unimplemented!("Cannot codegen type"),
+            }
+        }
+    }
+}
+
+fn build_var_name(f: &Function, var_id: VarId) -> String {
+    match &f.local_decls[var_id].name {
+        Some(n) => n.clone(),
+        None => format!("_tmp_{}", var_id,),
+    }
+}
+
+fn build_operand(f: &Function, operand: &Operand) -> String {
+    match operand {
+        Operand::ConstantInt(i) => format!("{}", i),
+        Operand::ConstantString(s) => format!("\"{}\"", s),
+        Operand::Copy(place) | Operand::Move(place) => match place {
+            Place::Local(var_id) => format!("{}", build_var_name(f, *var_id)),
+            _ => unimplemented!("Copy of non-local value"),
+        },
+    }
+}
+
+fn codegen_block(rust: &mut RustFile, c: &Context, f: &Function, b: &BasicBlock) {
+    for stmt in &b.statements {
+        match &stmt.kind {
+            StatementKind::Assign(lhs, rhs) => {
+                match lhs {
+                    Place::Local(var_id) => {
+                        rust.output_raw(&format!("{} = ", build_var_name(f, *var_id)));
+                    }
+                    Place::Static(_) => unimplemented!("Assignment into static place"),
+                };
+                match rhs {
+                    Rvalue::Use(operand) => rust.output_raw(&build_operand(f, operand)),
+                    Rvalue::BinaryOp(bin_op, lhs, rhs) => {
+                        let op = match bin_op {
+                            BinOp::Add => "+",
+                            BinOp::Sub => "-",
+                        };
+
+                        rust.output_raw(&format!(
+                            "{} {} {}",
+                            build_var_name(f, *lhs),
+                            op,
+                            build_var_name(f, *rhs)
+                        ));
+                    }
+                    Rvalue::Call(def_id, args) => {
+                        let mut processed_args = vec![];
+                        for arg in args {
+                            processed_args.push(build_operand(f, arg));
+                        }
+                        match &c.definitions[*def_id] {
+                            Definition::Fn(f) => {
+                                rust.output_raw(&format!("{}(", f.name));
+                                let mut first = true;
+                                for processed_arg in processed_args {
+                                    if !first {
+                                        rust.output_raw(", ");
+                                    } else {
+                                        first = false;
+                                    }
+                                    rust.output_raw(&processed_arg);
+                                }
+                                rust.output_raw(")");
+                            }
+                            Definition::BuiltinFn(builtin_fn) => match builtin_fn {
+                                BuiltinFn::StringInterpolate => {
+                                    rust.output_raw("format!(");
+                                    let mut first = true;
+                                    for processed_arg in processed_args {
+                                        if !first {
+                                            rust.output_raw(", ");
+                                        } else {
+                                            first = false;
+                                        }
+                                        rust.output_raw(&processed_arg);
+                                    }
+                                    rust.output_raw(")");
+                                }
+                            },
+                            _ => {}
+                        }
+                    }
+                }
+                rust.output_raw(";\n");
+            }
+            StatementKind::DebugPrint(place) => match place {
+                Place::Local(var_id) => {
+                    rust.output_raw(&format!(
+                        "println!(\"{{:?}}\", {});\n",
+                        build_var_name(f, *var_id)
+                    ));
+                }
+                Place::Static(_) => unimplemented!("Debug print of value that is not a local"),
+            },
+        }
+    }
+    match b.terminator {
+        Some(Terminator {
+            kind: TerminatorKind::Return,
+            ..
+        }) => match f.local_decls[0].ty {
+            builtin_type::VOID => rust.output_raw("return;\n"),
+            _ => rust.output_raw(&format!("return {};\n", build_var_name(f, 0))),
+        },
+        None => {}
+    }
+}
+
+fn codegen_fn(rust: &mut RustFile, c: &Context, f: &Function) {
+    rust.output_raw(&("fn ".to_string() + &f.name + "("));
+    let mut after_first = false;
+    for param in f.local_decls.iter().skip(1).take(f.arg_count) {
+        if after_first {
+            rust.output_raw(", ");
+        } else {
+            after_first = true;
+        }
+        rust.output_raw(&param.name.clone().unwrap());
+        rust.output_raw(": ");
+        rust.output_raw(&build_type(c, param.ty));
+    }
+    rust.output_raw(") -> ");
+    rust.output_raw(&build_type(c, f.local_decls[0].ty));
+
+    rust.output_raw(" {\n");
+
+    for (idx, local_decl) in f.local_decls.iter().enumerate().skip(1 + f.arg_count) {
+        rust.output_raw(&format!(
+            "let {}: {};\n",
+            build_var_name(f, idx),
+            build_type(c, local_decl.ty)
+        ));
+    }
+
+    if f.local_decls[0].ty != builtin_type::VOID {
+        rust.output_raw(&format!(
+            "let {}: {};\n",
+            build_var_name(f, 0),
+            build_type(c, f.local_decls[0].ty)
+        ));
+    }
+
+    for block in &f.basic_blocks {
+        codegen_block(rust, c, f, block);
+    }
+
+    rust.output_raw("}\n");
+}
+
+pub fn codegen(rust: &mut RustFile, c: &Context) {
+    for definition in &c.definitions {
+        match definition {
+            Definition::Fn(f) => {
+                codegen_fn(rust, c, f);
+            }
+            _ => {}
+        }
+    }
+}
+
 // use crate::ir::{builtin_type, BuiltinFn, Command, Context, DefId, Definition, Function, Struct};
 
 // pub struct RustFile {
@@ -26,7 +229,7 @@
 //     }
 // }
 
-// fn codegen_type(c: &Context, ty: DefId) -> String {
+// fn build_type(c: &Context, ty: DefId) -> String {
 //     match ty {
 //         builtin_type::I32 => "i32".into(),
 //         builtin_type::VOID => "()".into(),
@@ -35,7 +238,7 @@
 //             let definition = &c.definitions[ty];
 //             match definition {
 //                 Definition::Borrow(builtin_type::STRING) => "&str".into(),
-//                 Definition::Borrow(x) => format!("&{}", codegen_type(c, *x)),
+//                 Definition::Borrow(x) => format!("&{}", build_type(c, *x)),
 //                 _ => unimplemented!("Cannot codegen type"),
 //             }
 //         }
@@ -53,10 +256,10 @@
 //         }
 //         rust.output_raw(&param.name);
 //         rust.output_raw(": ");
-//         rust.output_raw(&codegen_type(c, param.ty));
+//         rust.output_raw(&build_type(c, param.ty));
 //     }
 //     rust.output_raw(") -> ");
-//     rust.output_raw(&codegen_type(c, f.ret_ty));
+//     rust.output_raw(&build_type(c, f.ret_ty));
 
 //     rust.output_raw(" {\n");
 
@@ -167,7 +370,7 @@
 //     rust.output_raw(&format!("#[derive(Debug)]\n"));
 //     rust.output_raw(&format!("struct {} {{\n", s.name));
 //     for field in &s.fields {
-//         rust.output_raw(&format!("{}: {},\n", field.name, codegen_type(c, field.ty)));
+//         rust.output_raw(&format!("{}: {},\n", field.name, build_type(c, field.ty)));
 //     }
 //     rust.output_raw("}\n");
 // }

@@ -15,10 +15,12 @@ pub struct Function {
     pub local_decls: Vec<LocalDecl>,
 
     pub arg_count: usize,
+
+    pub name: String,
 }
 
 impl Function {
-    pub fn new(return_ty: DefId, mut args: Vec<LocalDecl>) -> Function {
+    pub fn new(return_ty: DefId, mut args: Vec<LocalDecl>, name: String) -> Function {
         let arg_count = args.len();
         let mut local_decls = vec![LocalDecl::new_return_place(return_ty)];
         local_decls.append(&mut args);
@@ -27,6 +29,7 @@ impl Function {
             basic_blocks: vec![],
             local_decls,
             arg_count,
+            name,
         }
     }
 

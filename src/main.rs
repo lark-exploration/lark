@@ -23,7 +23,7 @@ mod ir;
 mod parser;
 mod ty;
 
-//use crate::codegen::{codegen, RustFile};
+use crate::codegen::{codegen, RustFile};
 use crate::eval::eval_context;
 use crate::ir::{
     builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
@@ -39,6 +39,7 @@ fn main() {
             LocalDecl::new(builtin_type::I32, Some("x".into())),
             LocalDecl::new(builtin_type::I32, Some("y".into())),
         ],
+        "bob".into(),
     );
 
     let bob_tmp = bob.new_temp(builtin_type::I32);
@@ -60,7 +61,7 @@ fn main() {
 
     let bob_def_id = c.add_definition(Definition::Fn(bob));
 
-    let mut m = Function::new(builtin_type::VOID, vec![]);
+    let mut m = Function::new(builtin_type::VOID, vec![], "main".into());
     let call_result_tmp = m.new_temp(builtin_type::I32);
     let interp_result_tmp = m.new_temp(builtin_type::STRING);
 
@@ -91,10 +92,10 @@ fn main() {
     m.push_block(bb2);
     let main_def_id = c.add_definition(Definition::Fn(m));
 
-    //let mut rust = RustFile::new();
+    let mut rust = RustFile::new();
 
-    // codegen(&mut rust, &c);
-    // println!("{}", rust.render());
+    codegen(&mut rust, &c);
+    println!("{}", rust.render());
 
     //let mut eval = Eval::new();
     //eval.eval(&c);
