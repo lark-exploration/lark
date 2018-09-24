@@ -146,13 +146,13 @@ impl Interners for TyInterners {
 }
 
 crate trait Intern: Clone {
-    type Key: Untern<Data = Self>;
+    type Key;
 
     fn intern(self, interner: &TyInterners) -> Self::Key;
 }
 
 crate trait Untern: Clone {
-    type Data: Intern<Key = Self>;
+    type Data;
 
     fn untern(self, interner: &TyInterners) -> Self::Data;
 }
@@ -177,8 +177,26 @@ macro_rules! intern_ty {
     };
 }
 
-intern_ty!(bases, Base, Inferable<BaseData>);
-intern_ty!(perms, Perm, Inferable<PermData>);
+macro_rules! intern_inferable_ty {
+    ($field:ident, $key:ty, $data:ty) => {
+        // Add the canonical impls between `$key` and `Interable<$data>`.
+        intern_ty!($field, $key, Inferable<$data>);
+
+        // Add a convenience impl that lets you intern directly
+        // from `$data` without writing `Inferable::Known`.`
+        impl Intern for $data {
+            type Key = $key;
+
+            fn intern(self, interner: &TyInterners) -> $key {
+                let value = Inferable::Known(self);
+                value.intern(interner)
+            }
+        }
+    };
+}
+
+intern_inferable_ty!(bases, Base, BaseData);
+intern_inferable_ty!(perms, Perm, PermData);
 intern_ty!(generics, Generics, GenericsData);
 
 impl TyDebugContext for TyInterners {}

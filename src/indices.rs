@@ -166,6 +166,14 @@ macro_rules! index_type {
             }
         }
 
+        impl std::ops::Add<usize> for $name {
+            type Output = $name;
+
+            fn add(self, v: usize) -> $name {
+                $name::new(self.as_usize() + v)
+            }
+        }
+
         impl indexed_vec::Idx for $name {
             fn new(v: usize) -> $name {
                 $name::from(v)

@@ -2,6 +2,7 @@ use crate::ty::debug::{DebugIn, TyDebugContext};
 use crate::ty::intern::{Intern, Interners, TyInterners, Untern};
 use crate::ty::Base;
 use crate::ty::Perm;
+use crate::ty::Region;
 use crate::ty::{InferVar, Inferable};
 use indexed_vec::IndexVec;
 use std::convert::TryFrom;
@@ -23,6 +24,9 @@ crate struct UnificationTable {
     /// to form a balanced tree.
     trace: IndexVec<InferVar, Option<InferVar>>,
     values: IndexVec<Value, ValueData>,
+
+    /// If we need to create a fresh region, what number do we give it?
+    next_region: Region,
 }
 
 #[derive(Copy, Clone)]
@@ -128,7 +132,13 @@ impl UnificationTable {
             infers: IndexVec::new(),
             trace: IndexVec::new(),
             values: IndexVec::new(),
+            next_region: Region::new(0),
         }
+    }
+
+    crate fn next_region(&mut self) -> Region {
+        let next_next_region = self.next_region + 1;
+        std::mem::replace(&mut self.next_region, next_next_region)
     }
 
     fn value_as_perm(&self, value: Value) -> Perm {

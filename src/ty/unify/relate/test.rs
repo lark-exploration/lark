@@ -187,8 +187,8 @@ macro_rules! ir {
 
 fn setup(op: impl FnOnce(&mut TestContext)) {
     let intern = TyInterners::new();
-    let unify = UnificationTable::new(&intern);
-    let region = Region::new(0);
+    let mut unify = UnificationTable::new(&intern);
+    let region = unify.next_region();
     let mut cx = TestContext {
         intern,
         unify,
