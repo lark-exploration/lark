@@ -1,9 +1,9 @@
 use crate::ty::debug::{DebugIn, TyDebugContext};
 use crate::ty::intern::{Intern, Interners, TyInterners, Untern};
-use crate::ty::Base;
-use crate::ty::Perm;
 use crate::ty::Region;
+use crate::ty::{Base, BaseData};
 use crate::ty::{InferVar, Inferable};
+use crate::ty::{Perm, PermData};
 use indexed_vec::IndexVec;
 use std::convert::TryFrom;
 use std::fmt;
@@ -103,6 +103,40 @@ impl TryFrom<ValueData> for Base {
     }
 }
 
+/// A value (e.g., `Perm` or `Base`) that may be inferred or may not.
+crate trait InferValue: Copy + TryFrom<ValueData, Error = String> + Into<ValueData> {
+    type Known;
+
+    /// If this value represents an inference variable, return that (as `Ok`);
+    /// otherwise, if it represents a known value, return that (wrapped up in a `ValueData`)
+    /// struct.
+    fn deref(self, interners: &TyInterners) -> Result<InferVar, Self::Known>;
+}
+
+impl InferValue for Perm {
+    type Known = PermData;
+
+    fn deref(self, interners: &TyInterners) -> Result<InferVar, Self::Known> {
+        match interners.untern(self) {
+            Inferable::Infer(v) => Ok(v),
+            Inferable::Known(k) => Err(k),
+            Inferable::Bound(_) => panic!("bound perm"),
+        }
+    }
+}
+
+impl InferValue for Base {
+    type Known = BaseData;
+
+    fn deref(self, interners: &TyInterners) -> Result<InferVar, Self::Known> {
+        match interners.untern(self) {
+            Inferable::Infer(v) => Ok(v),
+            Inferable::Known(k) => Err(k),
+            Inferable::Bound(_) => panic!("bound perm"),
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 enum RootData {
     Rank(Rank),
@@ -159,20 +193,20 @@ impl UnificationTable {
 
     crate fn shallow_resolve_data<K, V>(&mut self, value: K) -> Result<V, InferVar>
     where
-        K: Untern<Data = Inferable<V>> + TryFrom<ValueData, Error = String>,
-        Inferable<V>: Intern<Key = K>,
+        K: InferValue<Known = V> + Untern<Data = Inferable<V>>,
     {
-        let data = self.untern(value);
-        if let Inferable::Infer(var) = data {
-            if let Some(value) = self.probe(var) {
-                let value_data = self.values[value];
-                let key = K::try_from(value_data).unwrap();
-                Ok(self.untern(key).assert_known())
-            } else {
-                Err(var)
+        match value.deref(self.interners()) {
+            Ok(var) => {
+                if let Some(value) = self.probe(var) {
+                    let value_data = self.values[value];
+                    let key = K::try_from(value_data).unwrap();
+                    Ok(self.untern(key).assert_known())
+                } else {
+                    Err(var)
+                }
             }
-        } else {
-            Ok(data.assert_known())
+
+            Err(data) => Ok(data),
         }
     }
 

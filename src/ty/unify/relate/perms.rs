@@ -83,12 +83,13 @@ impl Relate<'me> {
                 }
             },
 
+            // If we are equating permissions, and we have an
+            // unresolved inference variable, we can go ahead and
+            // unify.
             (Err(var1), Err(var2), Permits::Equals) => self.unify.unify_unbound_vars(var1, var2),
-
             (Err(var1), Ok(_), Permits::Equals) => {
                 self.unify.bind_unbound_var_to_value(var1, perm2)
             }
-
             (Ok(_), Err(var2), Permits::Equals) => {
                 self.unify.bind_unbound_var_to_value(var2, perm1)
             }

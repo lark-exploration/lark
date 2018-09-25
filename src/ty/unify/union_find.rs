@@ -1,5 +1,5 @@
 use crate::ty::intern::{Interners, Untern};
-use crate::ty::unify::{InferData, Rank, RootData, UnificationTable};
+use crate::ty::unify::{InferData, InferValue, Rank, RootData, UnificationTable};
 use crate::ty::unify::{Value, ValueData};
 use crate::ty::InferVar;
 use std::convert::TryFrom;
@@ -87,12 +87,28 @@ impl UnificationTable {
         }
     }
 
-    /// Binds `unbound_var`, which must not yet be bound to anything, to `bound_var`, which is.
-    pub(super) fn bind_unbound_var_to_bound_var(
+    pub(super) fn bind_unbound_var_to_value(
         &mut self,
         unbound_var: InferVar,
-        bound_var: InferVar,
+        value: impl InferValue,
     ) {
+        match value.deref(self.interners()) {
+            Ok(other_var) => match self.find(other_var) {
+                (_, RootData::Rank(_)) => self.unify_unbound_vars(unbound_var, other_var),
+                (_, RootData::Value(_)) => {
+                    self.bind_unbound_var_to_bound_var(unbound_var, other_var)
+                }
+            },
+
+            Err(_) => {
+                let value_data: ValueData = value.into();
+                self.bind_unbound_var_to_value_data(unbound_var, value_data);
+            }
+        }
+    }
+
+    /// Binds `unbound_var`, which must not yet be bound to anything, to `bound_var`, which is.
+    fn bind_unbound_var_to_bound_var(&mut self, unbound_var: InferVar, bound_var: InferVar) {
         debug_assert!(self.probe(unbound_var).is_none());
         debug_assert!(self.probe(bound_var).is_some());
 
@@ -102,11 +118,7 @@ impl UnificationTable {
     }
 
     /// Binds `unbound_var`, which must not yet be bound to anything, to a value.
-    pub(super) fn bind_unbound_var_to_value(
-        &mut self,
-        unbound_var: InferVar,
-        value_data: impl Into<ValueData>,
-    ) {
+    fn bind_unbound_var_to_value_data(&mut self, unbound_var: InferVar, value_data: ValueData) {
         debug_assert!(self.probe(unbound_var).is_none());
         let value = self.values.push(value_data.into());
         let (root_unbound_var, _) = self.find(unbound_var);
