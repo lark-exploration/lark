@@ -319,3 +319,28 @@ fn perm_relate_invariant() {
         );
     });
 }
+
+#[test]
+fn perm_relate_borrow_var_own_covariant() {
+    setup(|cx| {
+        let a = ir!(cx, ty[borrow Vec<[?T]>]);
+        let b = ir!(cx, ty[borrow Vec<[own Bar]>]);
+        let predicates = cx.unify.relate_tys(Variance::Covariant, a, b).unwrap();
+        cx.assert_eq::<Ty>(a, "borrow(Region(0)) Vec<?(0) Bar>");
+
+        // There is only one real solution to this set of constraints:
+        //
+        // - `?(0)` must be shared or own because of `PermReprEq`
+        // - `?(2)` must be at least `borrow`
+        // - `borrow & ?0` must be `?2` -- hence `?0` must be at least borrow
+        // - that means if must be own
+        cx.assert_eq::<Vec<Predicate>>(
+            predicates,
+            "[
+                PermReprEq(?(0), own),
+                IntersectPerms(borrow(Region(0)), ?(0), ?(2)),
+                RelatePerms(Permits, ?(2), borrow(Region(0)))
+            ]",
+        );
+    });
+}
