@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::ir::DefId;
-use crate::ty::debug::{DebugIn, TyDebugContext};
+use crate::ty::debug::{DebugIn, DebugInWrapper, TyDebugContext};
 use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::unify::UnificationTable;
 use crate::ty::Generic;
@@ -9,12 +9,16 @@ use crate::ty::InferVar;
 use crate::ty::Inferable;
 use crate::ty::ParameterIndex;
 use crate::ty::Placeholder;
+use crate::ty::Predicate;
 use crate::ty::Region;
 use crate::ty::Ty;
 use crate::ty::UniverseIndex;
+use crate::ty::Variance;
 use crate::ty::{Base, BaseData, BaseKind};
 use crate::ty::{Perm, PermData};
+use itertools::Itertools;
 use rustc_hash::FxHashMap;
+use std::fmt::Debug;
 
 struct TestContext {
     intern: TyInterners,
@@ -134,6 +138,24 @@ impl TestContext {
         let name = self.def_id(name);
         let kind = BaseKind::Named(name);
         self.intern(Inferable::Known(BaseData { kind, generics }))
+    }
+
+    fn assert_eq<T>(&self, actual: T, expected: &str)
+    where
+        for<'me> DebugInWrapper<'me, T>: Debug,
+    {
+        let actual = format!("{:#?}", actual.debug_in(self));
+        let actual: String = actual
+            .split(char::is_whitespace)
+            .filter(|s| !s.is_empty())
+            .intersperse(" ")
+            .collect();
+        let expected: String = expected
+            .split(char::is_whitespace)
+            .filter(|s| !s.is_empty())
+            .intersperse(" ")
+            .collect();
+        text_diff::assert_diff(&expected, &actual, " ", 0);
     }
 }
 
@@ -255,13 +277,28 @@ fn instantiate_spine_repr() {
         let a = ir!(cx, ty[?X]);
         let b = ir!(cx, ty[share Vec<[own Bar]>]);
         assert!(cx.unify.ty_repr_eq(a, b).is_ok());
-        assert_eq!(
-            format!("{:?}", a.debug_in(cx)),
-            format!("?(0) Vec<?(2) Bar>")
-        );
+        cx.assert_eq::<Ty>(a, "?(0) Vec<?(2) Bar>");
         let c = ir!(cx, ty[own Vec<[own Bar]>]);
         assert!(cx.unify.ty_repr_eq(a, c).is_ok());
         let d = ir!(cx, ty[own Vec<[own Baz]>]);
         assert!(cx.unify.ty_repr_eq(a, d).is_err());
+    });
+}
+
+#[test]
+fn perm_relate() {
+    setup(|cx| {
+        let a = ir!(cx, ty[share Vec<[?T]>]);
+        let b = ir!(cx, ty[share Vec<[own Bar]>]);
+        let predicates = cx.unify.relate_tys(Variance::Covariant, a, b).unwrap();
+        cx.assert_eq::<Ty>(a, "shared(Region(0)) Vec<?(0) Bar>");
+        cx.assert_eq::<Vec<Predicate>>(
+            predicates,
+            "[
+                PermReprEq(?(0), own), 
+                IntersectPerms(shared(Region(0)), ?(0), ?(2)),
+                RelatePerms(Permits, ?(2), shared(Region(0)))
+            ]",
+        );
     });
 }

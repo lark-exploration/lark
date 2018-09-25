@@ -226,9 +226,23 @@ crate enum Predicate {
     },
 
     RelateRegions {
-        direction: Permits,
+        direction: RegionDirection,
         region1: Region,
         region2: Region,
+    },
+
+    /// GLB(perm1, perm2) = perm3
+    IntersectPerms {
+        perm1: Perm,
+        perm2: Perm,
+        perm3: Perm,
+    },
+
+    /// LUB(region1, region2) = region3
+    UnionRegions {
+        region1: Region,
+        region2: Region,
+        region3: Region,
     },
 }
 
@@ -272,5 +286,34 @@ crate enum Permits {
     PermittedBy,
 
     /// Both permits and permitted by.
+    Equals,
+}
+
+impl Permits {
+    fn region_direction(self) -> RegionDirection {
+        match self {
+            // e.g., `shared(r1) permits shared(r2)` if `r1 <= r2` --
+            // in particular, as `r1` grows, it becomes more restrictive.
+            // (That implies more loans you must respect, which means
+            // less *other things* you can do.
+            //
+            // If you prefer to think in terms of lifetimes, then
+            // `shared(r1) permits shared(r2)` if `r1: r2` for the same
+            // reason.
+            Permits::Permits => RegionDirection::Subset,
+            Permits::PermittedBy => RegionDirection::Superset,
+            Permits::Equals => RegionDirection::Equals,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+crate enum RegionDirection {
+    /// `R1 <= R2`, where `Rn` are sets of loans that must be
+    /// respected.
+    Subset,
+
+    Superset,
+
     Equals,
 }

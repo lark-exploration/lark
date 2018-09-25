@@ -74,6 +74,17 @@ crate trait DebugIn: Sized {
 
 impl<T> DebugIn for T {}
 
+impl<T> Debug for DebugInWrapper<'me, Vec<T>>
+where
+    DebugInWrapper<'me, T>: Debug,
+{
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_list()
+            .entries(self.data.iter().map(|elem| elem.debug_in(self.context)))
+            .finish()
+    }
+}
+
 impl Debug for DebugInWrapper<'me, Ty> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Ty { perm, base } = self.data;
@@ -168,6 +179,93 @@ impl Debug for DebugInWrapper<'me, Generic> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.data {
             Generic::Ty(t) => write!(fmt, "{:?}", t.debug_in(self.context)),
+        }
+    }
+}
+
+impl Debug for DebugInWrapper<'me, Predicate> {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.data {
+            Predicate::BaseBaseEq(base1, base2) => write!(
+                fmt,
+                "BaseBaseEq({:?}, {:?})",
+                base1.debug_in(self.context),
+                base2.debug_in(self.context),
+            ),
+
+            Predicate::BaseReprEq(base1, base2) => write!(
+                fmt,
+                "BaseReprEq({:?}, {:?})",
+                base1.debug_in(self.context),
+                base2.debug_in(self.context),
+            ),
+
+            Predicate::PermReprEq(perm1, perm2) => write!(
+                fmt,
+                "PermReprEq({:?}, {:?})",
+                perm1.debug_in(self.context),
+                perm2.debug_in(self.context),
+            ),
+
+            Predicate::RelateTypes {
+                direction,
+                ty1,
+                ty2,
+            } => write!(
+                fmt,
+                "RelateTypes({:?}, {:?}, {:?})",
+                direction,
+                ty1.debug_in(self.context),
+                ty2.debug_in(self.context),
+            ),
+
+            Predicate::RelatePerms {
+                direction,
+                perm1,
+                perm2,
+            } => write!(
+                fmt,
+                "RelatePerms({:?}, {:?}, {:?})",
+                direction,
+                perm1.debug_in(self.context),
+                perm2.debug_in(self.context),
+            ),
+
+            Predicate::RelateRegions {
+                direction,
+                region1,
+                region2,
+            } => write!(
+                fmt,
+                "RelateRegions({:?}, {:?}, {:?})",
+                direction,
+                region1.debug_in(self.context),
+                region2.debug_in(self.context),
+            ),
+
+            Predicate::IntersectPerms {
+                perm1,
+                perm2,
+                perm3,
+            } => write!(
+                fmt,
+                "IntersectPerms({:?}, {:?}, {:?})",
+                perm1.debug_in(self.context),
+                perm2.debug_in(self.context),
+                perm3.debug_in(self.context),
+            ),
+
+            Predicate::UnionRegions {
+                region1,
+                region2,
+                region3,
+            } => write!(
+                fmt,
+                "UnionRegions({:?}, {:?}, {:?})",
+                region1.debug_in(self.context),
+                region2.debug_in(self.context),
+                region3.debug_in(self.context),
+            ),
         }
     }
 }
