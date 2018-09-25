@@ -66,8 +66,9 @@ impl Relate<'me> {
         match (
             self.unify.shallow_resolve_data(perm1),
             self.unify.shallow_resolve_data(perm2),
+            direction,
         ) {
-            (Ok(data1), Ok(data2)) => match (data1, data2) {
+            (Ok(data1), Ok(data2), _) => match (data1, data2) {
                 (PermData::Shared(region1), PermData::Shared(region2))
                 | (PermData::Borrow(region1), PermData::Borrow(region2)) => {
                     self.relate_regions(direction.region_direction(), region1, region2);
@@ -82,8 +83,21 @@ impl Relate<'me> {
                 }
             },
 
+            (Err(var1), Err(var2), Permits::Equals) => self.unify.unify_unbound_vars(var1, var2),
+
+            (Err(var1), Ok(_), Permits::Equals) => {
+                self.unify.bind_unbound_var_to_value(var1, perm2)
+            }
+
+            (Ok(_), Err(var2), Permits::Equals) => {
+                self.unify.bind_unbound_var_to_value(var2, perm1)
+            }
+
             // If either of the permissions is not known, then file an obligation for later.
-            (Err(_), _) | (_, Err(_)) => {
+            (Err(_), _, Permits::Permits)
+            | (_, Err(_), Permits::Permits)
+            | (Err(_), _, Permits::PermittedBy)
+            | (_, Err(_), Permits::PermittedBy) => {
                 self.predicates.push(Predicate::RelatePerms {
                     direction,
                     perm1,

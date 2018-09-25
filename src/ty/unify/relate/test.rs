@@ -286,7 +286,7 @@ fn instantiate_spine_repr() {
 }
 
 #[test]
-fn perm_relate() {
+fn perm_relate_covariant() {
     setup(|cx| {
         let a = ir!(cx, ty[share Vec<[?T]>]);
         let b = ir!(cx, ty[share Vec<[own Bar]>]);
@@ -298,6 +298,23 @@ fn perm_relate() {
                 PermReprEq(?(0), own), 
                 IntersectPerms(shared(Region(0)), ?(0), ?(2)),
                 RelatePerms(Permits, ?(2), shared(Region(0)))
+            ]",
+        );
+    });
+}
+
+#[test]
+fn perm_relate_invariant() {
+    setup(|cx| {
+        let a = ir!(cx, ty[share Vec<[?T]>]);
+        let b = ir!(cx, ty[share Vec<[own Bar]>]);
+        let predicates = cx.unify.relate_tys(Variance::Invariant, a, b).unwrap();
+        cx.assert_eq::<Ty>(a, "shared(Region(0)) Vec<?(0) Bar>");
+        cx.assert_eq::<Vec<Predicate>>(
+            predicates,
+            "[
+                PermReprEq(?(0), own), 
+                IntersectPerms(shared(Region(0)), ?(0), shared(Region(0)))
             ]",
         );
     });
