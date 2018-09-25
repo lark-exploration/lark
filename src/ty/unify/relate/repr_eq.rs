@@ -2,6 +2,7 @@
 //! which means that two types have equal "base types" information but
 //! which does not relate their permissions.
 
+use crate::ty::debug::DebugIn;
 use crate::ty::intern::Interners;
 use crate::ty::map::Map;
 use crate::ty::unify::relate::spine::SpineInstantiator;
@@ -20,7 +21,11 @@ impl Relate<'me> {
     /// means that their bases are deeply equal and that
     /// they have repr-compatible permissions.
     crate fn ty_repr_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<(), Error> {
-        debug!("ty_repr_eq(ty1={:?}, ty2={:?})", ty1, ty2);
+        debug!(
+            "ty_repr_eq(ty1={:?}, ty2={:?})",
+            ty1.debug_in(self.unify),
+            ty2.debug_in(self.unify)
+        );
 
         let Ty {
             perm: perm1,
