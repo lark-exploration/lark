@@ -11,15 +11,12 @@ mod test;
 
 impl UnificationTable {
     crate fn ty_repr_eq(&mut self, ty1: Ty, ty2: Ty) -> Result<Vec<Predicate>, Error> {
-        self.transactionally(|unify| {
-            let mut relate = Relate {
-                unify: unify,
-                predicates: vec![],
-            };
-            // FIXME transaction
-            relate.ty_repr_eq(ty1, ty2)?;
-            Ok(relate.predicates)
-        })
+        let mut relate = Relate {
+            unify: self,
+            predicates: vec![],
+        };
+        relate.ty_repr_eq(ty1, ty2)?;
+        Ok(relate.predicates)
     }
 
     crate fn relate_tys(
@@ -28,31 +25,14 @@ impl UnificationTable {
         ty1: Ty,
         ty2: Ty,
     ) -> Result<Vec<Predicate>, Error> {
-        self.transactionally(|unify| {
-            let mut relate = Relate {
-                unify,
-                predicates: vec![],
-            };
-            // FIXME transaction
-            relate.ty_repr_eq(ty1, ty2)?;
-            let perm_own = relate.common().own;
-            relate.relate_tys(direction, perm_own, ty1, perm_own, ty2)?;
-            Ok(relate.predicates)
-        })
-    }
-
-    fn transactionally<T, E>(
-        &mut self,
-        op: impl FnOnce(&mut Self) -> Result<T, E>,
-    ) -> Result<T, E> {
-        let saved_state = self.clone();
-        match op(self) {
-            Ok(r) => Ok(r),
-            Err(e) => {
-                *self = saved_state;
-                Err(e)
-            }
-        }
+        let mut relate = Relate {
+            unify: self,
+            predicates: vec![],
+        };
+        relate.ty_repr_eq(ty1, ty2)?;
+        let perm_own = relate.common().own;
+        relate.relate_tys(direction, perm_own, ty1, perm_own, ty2)?;
+        Ok(relate.predicates)
     }
 }
 
