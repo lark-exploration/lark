@@ -19,6 +19,7 @@ mod indices;
 
 mod codegen;
 mod eval;
+mod hir;
 mod intern;
 mod ir;
 mod parser;
