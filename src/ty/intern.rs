@@ -1,44 +1,12 @@
+use crate::intern::Interner;
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
 use crate::ty::{Base, BaseData};
 use crate::ty::{Generics, GenericsData};
 use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
-use indexed_vec::{Idx, IndexVec};
-use rustc_hash::FxHashMap;
 use std::cell::RefCell;
-use std::hash::Hash;
 use std::rc::Rc;
-
-#[derive(Debug)]
-crate struct Interner<Key, Data>
-where
-    Key: Copy + Idx,
-    Data: Clone + Hash + Eq,
-{
-    vec: IndexVec<Key, Data>,
-    map: FxHashMap<Data, Key>,
-}
-
-impl<Key, Data> Interner<Key, Data>
-where
-    Key: Copy + Idx,
-    Data: Clone + Hash + Eq,
-{
-    fn new() -> Self {
-        Self {
-            vec: IndexVec::default(),
-            map: FxHashMap::default(),
-        }
-    }
-
-    fn intern(&mut self, data: Data) -> Key {
-        let Interner { vec, map } = self;
-        map.entry(data.clone())
-            .or_insert_with(|| vec.push(data))
-            .clone()
-    }
-}
 
 /// The "type context" is a global resource that interns types and
 /// other type-related things. Types are allocates in the various
@@ -171,7 +139,7 @@ macro_rules! intern_ty {
             type Data = $data;
 
             fn untern(self, interner: &TyInterners) -> $data {
-                interner.data.$field.borrow().vec[self].clone()
+                interner.data.$field.borrow().get(self)
             }
         }
     };
