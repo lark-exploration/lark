@@ -1,4 +1,4 @@
-use crate::ty::intern::{Interners, Untern};
+use crate::ty::intern::{Interners, TyInterners, Untern};
 use crate::ty::unify::{InferData, InferValue, Rank, RootData, UnificationTable};
 use crate::ty::unify::{Value, ValueData};
 use crate::ty::InferVar;
@@ -56,7 +56,7 @@ impl UnificationTable {
     /// If so, returns it.
     pub(super) fn probe_data<K>(&mut self, index: InferVar) -> Option<K::Data>
     where
-        K: Untern + TryFrom<ValueData, Error = String>,
+        K: Untern<TyInterners> + TryFrom<ValueData, Error = String>,
     {
         let (_root, root_data) = self.find(index);
         root_data.value().map(|v| {

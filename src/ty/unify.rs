@@ -193,7 +193,7 @@ impl UnificationTable {
 
     crate fn shallow_resolve_data<K, V>(&mut self, value: K) -> Result<V, InferVar>
     where
-        K: InferValue<Known = V> + Untern<Data = Inferable<V>>,
+        K: InferValue<Known = V> + Untern<TyInterners, Data = Inferable<V>>,
     {
         match value.deref(self.interners()) {
             Ok(var) => {
@@ -213,8 +213,8 @@ impl UnificationTable {
     /// Creates a new inferable thing (permission, base, etc).
     crate fn new_inferable<T, K>(&mut self) -> T
     where
-        T: Untern<Data = Inferable<K>>,
-        Inferable<K>: Intern<Key = T>,
+        T: Untern<TyInterners, Data = Inferable<K>>,
+        Inferable<K>: Intern<TyInterners, Key = T>,
     {
         let var = self.new_infer_var();
         self.intern(Inferable::Infer(var))

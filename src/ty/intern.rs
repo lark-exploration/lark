@@ -33,7 +33,7 @@ crate trait Interners {
 
     fn intern<D>(&self, data: D) -> D::Key
     where
-        D: Intern,
+        D: Intern<TyInterners>,
         Self: Sized,
     {
         data.intern(self.interners())
@@ -41,7 +41,7 @@ crate trait Interners {
 
     fn untern<K>(&self, key: K) -> K::Data
     where
-        K: Untern,
+        K: Untern<TyInterners>,
         Self: Sized,
     {
         key.untern(self.interners())
@@ -66,8 +66,8 @@ crate trait Interners {
 
     fn intern_infer_var<T, V>(&self, var: InferVar) -> T
     where
-        T: Untern<Data = Inferable<V>>,
-        Inferable<V>: Intern<Key = T>,
+        T: Untern<TyInterners, Data = Inferable<V>>,
+        Inferable<V>: Intern<TyInterners, Key = T>,
         Self: Sized,
     {
         self.intern(Inferable::Infer(var))
@@ -113,21 +113,21 @@ impl Interners for TyInterners {
     }
 }
 
-crate trait Intern: Clone {
+crate trait Intern<Interners>: Clone {
     type Key;
 
-    fn intern(self, interner: &TyInterners) -> Self::Key;
+    fn intern(self, interner: &Interners) -> Self::Key;
 }
 
-crate trait Untern: Clone {
+crate trait Untern<Interners>: Clone {
     type Data;
 
-    fn untern(self, interner: &TyInterners) -> Self::Data;
+    fn untern(self, interner: &Interners) -> Self::Data;
 }
 
 macro_rules! intern_ty {
     ($field:ident, $key:ty, $data:ty) => {
-        impl Intern for $data {
+        impl Intern<TyInterners> for $data {
             type Key = $key;
 
             fn intern(self, interner: &TyInterners) -> $key {
@@ -135,7 +135,7 @@ macro_rules! intern_ty {
             }
         }
 
-        impl Untern for $key {
+        impl Untern<TyInterners> for $key {
             type Data = $data;
 
             fn untern(self, interner: &TyInterners) -> $data {
@@ -152,7 +152,7 @@ macro_rules! intern_inferable_ty {
 
         // Add a convenience impl that lets you intern directly
         // from `$data` without writing `Inferable::Known`.`
-        impl Intern for $data {
+        impl Intern<TyInterners> for $data {
             type Key = $key;
 
             fn intern(self, interner: &TyInterners) -> $key {
