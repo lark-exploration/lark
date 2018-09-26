@@ -1,12 +1,13 @@
-//! Basic interner type. This type itself is meant to be composed
-//! into a larger interner for many diffrent values (see e.g.
-//! `ty::intern::TyInterners`).
-
 use indexed_vec::{Idx, IndexVec};
 use rustc_hash::FxHashMap;
 use std::hash::Hash;
 use std::rc::Rc;
 
+/// An "intern table" defines a single interner for
+/// one key-value pair. They're meant to be grouped
+/// into a larger `Interners` struct, a la
+/// `crate::ty::TyInterners`, that define a series
+/// of interners related to some particular area.
 #[derive(Debug)]
 crate struct InternTable<Key, Data>
 where
