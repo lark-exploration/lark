@@ -1,5 +1,6 @@
 #![allow(unused_variables)]
 
+use crate::parser::ast::{DebugModuleTable, Debuggable};
 use crate::parser::pos::Span;
 use crate::parser::program::{ModuleTable, StringId};
 
@@ -12,8 +13,8 @@ use std::marker::PhantomData;
 #[derive(Debug)]
 pub enum LexerNext<State: LexerStateTrait> {
     Skip(u32, Box<LexerNext<State>>),
-    // PushState(State, Box<LexerNext<State>>),
-    // PopState(Box<LexerNext<State>>),
+    PushState(LexerAction<State>, State),
+    PopState(LexerAction<State>),
     Transition(LexerAction<State>, State),
     Continue(LexerAction<State>),
     WholeToken(u32, State::Token),
@@ -75,6 +76,8 @@ impl<LexerState: LexerStateTrait> LexerNext<LexerState> {
             LexerNext::Transition(action, state) => {
                 LexerNext::Transition(action.reconsume(), state)
             }
+            LexerNext::PushState(action, state) => LexerNext::PushState(action.reconsume(), state),
+            LexerNext::PopState(action) => LexerNext::PopState(action.reconsume()),
             LexerNext::Skip(..) => panic!("Skip and reconsume are not compatible"),
             LexerNext::Continue(action) => LexerNext::Continue(action.reconsume()),
             LexerNext::Error(c) => LexerNext::Error(c),
@@ -87,8 +90,8 @@ impl<LexerState: LexerStateTrait> LexerNext<LexerState> {
     }
 }
 
-pub trait LexerStateTrait: fmt::Debug + Clone + Sized {
-    type Token: fmt::Debug;
+pub trait LexerStateTrait: fmt::Debug + Clone + Copy + Sized {
+    type Token: fmt::Debug + Copy + DebugModuleTable;
 
     fn next(&self, c: Option<char>, rest: &'input str) -> Result<LexerNext<Self>, ParseError>;
 
@@ -150,7 +153,7 @@ impl<State: LexerStateTrait + Debug> Iterator for Tokenizer<'table, State> {
             };
 
             match self.step(next) {
-                LoopCompletion::Return(v) => return v,
+                LoopCompletion::Return(v) => return self.emit(v),
                 LoopCompletion::Continue => {}
             }
         }
@@ -305,7 +308,7 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
                     ByteIndex(end + file_start),
                 )));
 
-                debug!(target: "lark::tokenize::some", "WholeToken: {:?}", token);
+                trace!(target: "lark::tokenize::some", "WholeToken: {:?}", token);
 
                 LoopCompletion::Return(token)
             }
@@ -319,15 +322,49 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
 
             LexerNext::Transition(action, state) => {
                 let ret = self.handle_action(action);
-                self.state = state;
+                self.transition(state);
 
                 self.trace("transition");
 
                 ret
             }
 
+            LexerNext::PushState(action, state) => {
+                let ret = self.handle_action(action);
+                self.stack.push(state.clone());
+                self.transition(state);
+
+                ret
+            }
+
+            LexerNext::PopState(action) => {
+                let ret = self.handle_action(action);
+                let state = self.stack.pop().expect("Unexpected empty state stack");
+                self.transition(state);
+
+                ret
+            }
+
             LexerNext::Error(c) => LoopCompletion::Return(Some(Err(self.error(c)))),
         }
+    }
+
+    fn transition(&mut self, state: State) {
+        debug!("transition {:?} -> {:?}", self.state, state);
+        self.state = state;
+    }
+
+    fn emit(
+        &mut self,
+        token: Option<TokenizerItem<State::Token>>,
+    ) -> Option<TokenizerItem<State::Token>> {
+        match &token {
+            None => debug!("-> EOF"),
+            Some(Err(e)) => debug!("parse error {:?}", e),
+            Some(Ok(tok)) => debug!("emit {:?}", Debuggable::from(&tok.1, self.table)),
+        };
+
+        token
     }
 
     fn handle_action(
@@ -345,7 +382,7 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
                 let (l, r) = self.discard_current(size);
                 let file_start = self.codespan_start;
 
-                debug!(target: "lark::tokenize::noemit", "NoEmit @ {}..{}", l + file_start, r + file_start);
+                trace!(target: "lark::tokenize::noemit", "NoEmit @ {}..{}", l + file_start, r + file_start);
 
                 LoopCompletion::Continue
             }
@@ -361,7 +398,7 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
                     ByteIndex(end + file_start),
                 )));
 
-                debug!(target: "lark::tokenize::some", "EmitCurrent: {:?}", token);
+                trace!(target: "lark::tokenize::some", "EmitCurrent: {:?}", token);
 
                 LoopCompletion::Return(token)
             }

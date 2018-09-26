@@ -1,5 +1,8 @@
+use crate::parser::ast::DebugModuleTable;
 use crate::parser::pos::Spanned;
 use crate::parser::program::{ModuleTable, StringId};
+
+use codespan::ByteIndex;
 use std::borrow::Cow;
 use std::fmt;
 
@@ -17,6 +20,10 @@ pub enum Token {
     ThinArrow,
     DoubleColon,
     Period,
+    OpAdd,
+    OpSub,
+    OpMul,
+    OpDiv,
     KeywordFor,
     KeywordLoop,
     KeywordWhile,
@@ -30,9 +37,8 @@ pub enum Token {
     KeywordSelf,
     Identifier(StringId),
     StringLiteral(StringId),
-    OpenStringFragment(StringId),
-    MiddleStringFragment(StringId),
-    EndStringFragment(StringId),
+    StringFragment(StringId),
+    EndString(StringId),
     Newline,
     Unimplemented,
 }
@@ -60,6 +66,10 @@ impl Token {
             ThinArrow => "->",
             DoubleColon => "::",
             Period => ".",
+            OpAdd => "+",
+            OpSub => "-",
+            OpMul => "*",
+            OpDiv => "/",
             KeywordFor => "for",
             KeywordLoop => "loop",
             KeywordWhile => "while",
@@ -73,19 +83,20 @@ impl Token {
             KeywordSelf => "self",
             Identifier(id) => table.lookup(*id),
             StringLiteral(id) => return Cow::Owned(format!("String({})", table.lookup(*id))),
-            OpenStringFragment(id) => {
-                return Cow::Owned(format!("OpenStringFragment({})", table.lookup(*id)))
+            StringFragment(id) => {
+                return Cow::Owned(format!("StringFragment({})", table.lookup(*id)))
             }
-            MiddleStringFragment(id) => {
-                return Cow::Owned(format!("MiddleStringFragment({})", table.lookup(*id)))
-            }
-            EndStringFragment(id) => {
-                return Cow::Owned(format!("EndStringFragment({})", table.lookup(*id)))
-            }
+            EndString(id) => "closequote",
             Newline => "newline",
             Unimplemented => "unimplemented",
         };
 
         Cow::Borrowed(result)
+    }
+}
+
+impl DebugModuleTable for Token {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        write!(f, "{:?}", self.source(table))
     }
 }

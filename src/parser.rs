@@ -144,7 +144,7 @@ mod test {
             }
             ^ close-struct
             def new(msg: own String, level: String) -> Diagnostic {
-            ^^^ ^^^ ^^^  ^^^ ^^^^^^  ^^^^^  ^^^^^^     ^^^^^^^^^^ new
+            ^^^ ^^^ ^^^  ^^^ ^^^^^^  ^^^^^  ^^^^^^     ^^^^^^^^^^ ^ new
               Diagnostic { msg, level }
               ^^^^^^^^^^ ^ ^^^  ^^^^^ ^ construct-diag
             }
@@ -152,11 +152,11 @@ mod test {
             def main() {
             ^^^ ^^^^   ^ main
                 let var_name = "variable"
-                ^^^ ^^^^^^^^   ^^^^^^^^^^ var-name
-                let s = "variable is unused {{var_name}}"
-                ^^^ ^   ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^  ^ interpolation
+                ^^^ ^^^^^^^^    ^^^^^^^^ var-name
+                let s = "variable is unused " + var_name
+                ^^^ ^    ^^^^^^^^^^^^^^^^^^^  ^ ^^^^^^^^  ^ s-var
                 new(s, "warning")
-                ^^^ ^  ^^^^^^^^^ invoke
+                ^^^ ^   ^^^^^^^ ^ invoke
             }
             ^ close-main
             "#,
@@ -177,16 +177,19 @@ mod test {
             ann.ident(("new", 1)),
             vec![ann.field_mode("new", 2), ann.field("new", 5)],
             Some(ann.ty("new", 7)),
-            ast::Block::new(vec![ast::BlockItem::Expr(
-                ast::Expression::ConstructStruct(ast::ConstructStruct::new(
-                    ann.ident(("construct-diag", 0)),
-                    vec![
-                        ann.shorthand(("construct-diag", 2)),
-                        ann.shorthand(("construct-diag", 3)),
-                    ],
-                    ann.span(("construct-diag", 0), ("construct-diag", 4)),
-                )),
-            )]),
+            ast::Block::spanned(
+                vec![ast::BlockItem::Expr(ast::Expression::ConstructStruct(
+                    ast::ConstructStruct::new(
+                        ann.ident(("construct-diag", 0)),
+                        vec![
+                            ann.shorthand(("construct-diag", 2)),
+                            ann.shorthand(("construct-diag", 3)),
+                        ],
+                        ann.span(("construct-diag", 0), ("construct-diag", 4)),
+                    ),
+                ))],
+                ann.span(("new", 8), ("close-new", 0)),
+            ),
             ann.span(("new", 0), ("close-new", 0)),
         );
 
@@ -194,7 +197,30 @@ mod test {
             ann.ident(("main", 1)),
             vec![],
             None,
-            ast::Block::new(vec![]),
+            ast::Block::spanned(
+                vec![
+                    ast::BlockItem::let_decl(
+                        ann.pat_ident(("var-name", 1)),
+                        None,
+                        Some(ann.string(("var-name", 2))),
+                    ),
+                    ast::BlockItem::let_decl(
+                        ann.pat_ident(("s-var", 1)),
+                        None,
+                        Some(ast::Expression::binary(
+                            ann.op(("s-var", 3)),
+                            ann.string(("s-var", 2)),
+                            ann.refers(("s-var", 4)),
+                        )),
+                    ),
+                    ast::BlockItem::Expr(ast::Expression::call(
+                        ann.ident(("invoke", 0)),
+                        vec![ann.refers(("invoke", 1)), ann.string(("invoke", 2))],
+                        ann.span(("invoke", 0), ("invoke", 3)),
+                    )),
+                ],
+                ann.span(("main", 2), ("close-main", 0)),
+            ),
             ann.span(("main", 0), ("close-main", 0)),
         );
 
@@ -295,6 +321,20 @@ mod test {
             self.wrap_one(mode, pos)
         }
 
+        fn op(&self, pos: impl Position) -> Spanned<ast::Op> {
+            let src = self.src(pos);
+
+            match src {
+                "+" => self.wrap_one(ast::Op::Add, pos),
+                other => panic!("Unexpected operator {:?}", other),
+            }
+        }
+
+        fn pat_ident(&self, pos: impl Position) -> Spanned<ast::Pattern> {
+            let id = self.ident(pos);
+            self.wrap_one(ast::Pattern::Identifier(id, None), pos)
+        }
+
         fn ty(&self, line: &str, start: u32) -> Spanned<ast::Type> {
             self.wrap_one(
                 ast::Type::new(None, self.ident((line, start))),
@@ -333,6 +373,21 @@ mod test {
             let id = self.ident(pos);
 
             ast::ConstructField::Shorthand(id)
+        }
+
+        fn string(&self, pos: impl Position) -> ast::Expression {
+            let string = self.src(pos);
+            let id = self
+                .table
+                .get(&format!("\"{}\"", string)[..])
+                .expect(&format!("Missing expected string {:?}", string));
+
+            ast::Expression::Literal(ast::Literal::String(self.wrap_one(id, pos)))
+        }
+
+        fn refers(&self, pos: impl Position) -> ast::Expression {
+            let id = self.ident(pos);
+            ast::Expression::Ref(id)
         }
 
         fn ident(&self, pos: impl Position) -> Spanned<StringId> {

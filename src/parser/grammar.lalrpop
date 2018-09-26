@@ -71,16 +71,16 @@ Mode: Spanned<Mode> = {
     <l: @L> borrow <r: @R> => Spanned::from(Mode::Borrowed, l, r)
 }
 
-Block: Block = {
-    "{" Newlines? <blocks: (<BlockItem> SEP Newlines?)*> "}" => {
-        Block::new(blocks)
+Block: Spanned<Block> = {
+    <l: @L> "{" Newlines? <blocks: (<BlockItem> SEP Newlines?)*> "}" <r: @R> => {
+        Block::spanned(blocks, Span::from(l, r))
     },
 
-    "{" <blocks: (<BlockItem> SEP Newlines?)*> <trailing: BlockItem> "}" => {
+    <l: @L> "{" <blocks: (<BlockItem> SEP Newlines?)*> <trailing: BlockItem> "}" <r: @R> => {
         let mut v = blocks;
         v.push(trailing);
 
-        Block::new(v)
+        Block::spanned(v, Span::from(l, r))
     }
 }
 
@@ -121,6 +121,10 @@ Decl: Declaration = {
 }
 
 Expr: Expression = {
+    Expr2
+}
+
+Expr1: Expression = {
     Block => unimplemented!("Expr::Block"),
     //ExprIf => unimplemented!("Expr::ExprIf"),
     //ExprIfLet => unimplemented!("Expr::ExprIfLet"),
@@ -129,6 +133,15 @@ Expr: Expression = {
     Identifier => Expression::Ref(<>),
     Interpolation,
     ExprAtom
+}
+
+Expr2: Expression = {
+    Expr1,
+    <left: Expr2> <op: ADD> <right: Expr1> => Expression::Binary(op, box left, box right)
+}
+
+ADD: Spanned<Op> = {
+    <l: @L> "+" <r: @R> => Spanned::from(Op::Add, l, r)
 }
 
 ConstructStruct: ConstructStruct = {
@@ -173,18 +186,17 @@ ExprAtom: Expression = {
     Lit => unimplemented!("ExprAtom::Lit"),
     PathExpr => unimplemented!("ExprAtom::PathExpr"),
     self => unimplemented!("ExprAtom::Self"),
-    <l: @L> <s: string> <r: @R> => Expression::Literal(Spanned::from(Literal::String(Spanned::from(s, l + ByteOffset(1), r - ByteOffset(1))), l, r))
+    <l: @L> <s: string> <r: @R> => Expression::string(Spanned::from(s, l + ByteOffset(1), r - ByteOffset(1)))
 }
 
 Interpolation: Expression = {
-    <start: InterpolationStart> <inner: InterpolationInner> <end: InterpolationEnd> => {
+    <l: @L> <start: InterpolationStart> <inner: InterpolationInner> EndTemplate <r: @R> => {
         let mut elements = vec![];
 
         elements.push(start);
         elements.extend(inner);
-        elements.push(end);
 
-        Expression::Interpolation(elements)
+        Expression::Interpolation(elements, Span::from(l, r))
     }
 }
 
@@ -207,11 +219,7 @@ InterpolationInner: Vec<InterpolationElement> = {
 }
 
 InterpolationStart: InterpolationElement = {
-    <l: @L> <start: TemplateStart> <r: @R> => InterpolationElement::String(Spanned::from(start, l, r))
-}
-
-InterpolationEnd: InterpolationElement = {
-    <l: @L> <end: TemplateEnd> <r: @R> => InterpolationElement::String(Spanned::from(end, l, r))
+    <l: @L> <start: TemplateFragment> <r: @R> => InterpolationElement::String(Spanned::from(start, l, r))
 }
 
 InterpolationChunk: Vec<InterpolationElement> = {
@@ -219,7 +227,7 @@ InterpolationChunk: Vec<InterpolationElement> = {
 }
 
 InterpolationMiddle: InterpolationElement = {
-    <l: @L> <mid: TemplateMiddle> <r: @R> => InterpolationElement::String(Spanned::from(mid, l, r))
+    <l: @L> <mid: TemplateFragment> <r: @R> => InterpolationElement::String(Spanned::from(mid, l, r))
 }
 
 Lit: () = {
@@ -286,6 +294,7 @@ extern {
         "->" => Token::ThinArrow,
         "::" => Token::DoubleColon,
         "." => Token::Period,
+        "+" => Token::OpAdd,
         def => Token::KeywordDef,
         let => Token::KeywordLet,
         struct => Token::KeywordStruct,
@@ -300,9 +309,8 @@ extern {
         "unimpl" => Token::Unimplemented,
         identifier => Token::Identifier(<StringId>),
         string => Token::StringLiteral(<StringId>),
-        TemplateStart => Token::OpenStringFragment(<StringId>),
-        TemplateMiddle => Token::MiddleStringFragment(<StringId>),
-        TemplateEnd => Token::EndStringFragment(<StringId>),
+        TemplateFragment => Token::StringFragment(<StringId>),
+        EndTemplate => Token::EndString(<StringId>),
         newline => Token::Newline
     }
 }

@@ -26,6 +26,7 @@ tokens! {
         ","  => Comma,
         "->" => ThinArrow,
         "="  => Equals,
+        "+"  => OpAdd,
         "\n" => Newline
     }
 }

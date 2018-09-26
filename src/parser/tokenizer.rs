@@ -8,18 +8,19 @@ use crate::parser::program::StringId;
 use crate::parser::{ModuleTable, Span, Token};
 use derive_new::new;
 use lazy_static::lazy_static;
-use log::trace;
+use log::{trace, warn};
 use std::fmt;
 use unicode_xid::UnicodeXID;
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum LexerState {
     Top,
     Integer,
     StringLiteral,
     AfterStringFragment,
+    OpenCurly,
     InterpolateExpression,
     Whitespace,
     StartIdent,
@@ -44,6 +45,8 @@ impl LexerStateTrait for LexerState {
                 Some(c) => {
                     if let Some((tok, size)) = KEYWORDS.match_token(rest) {
                         LexerNext::emit_token(tok, size)
+                    } else if rest.starts_with("}}") {
+                        LexerNext::PopState(LexerAction::Finalize(2))
                     } else if let Some((tok, size)) = SIGILS.match_token(rest) {
                         LexerNext::emit_token(tok, size)
                     } else if c.is_digit(10) {
@@ -54,8 +57,6 @@ impl LexerStateTrait for LexerState {
                         LexerNext::transition_to(LexerState::Whitespace)
                     } else if UnicodeXID::is_xid_start(c) {
                         LexerNext::transition_to(LexerState::StartIdent).reconsume()
-                    } else if rest.starts_with("}}") {
-                        LexerNext::Transition(LexerAction::Finalize(2), LexerState::StringLiteral)
                     } else {
                         LexerNext::Error(c)
                     }
@@ -82,12 +83,32 @@ impl LexerStateTrait for LexerState {
                     '"' => LexerNext::emit(Token::StringLiteral, LexerState::Top),
 
                     other if rest.starts_with("{{") => {
-                        LexerNext::emit_and_skip(Token::OpenStringFragment, LexerState::Top, 2)
+                        LexerNext::PushState(LexerAction::Consume(0), LexerState::OpenCurly)
+                            .reconsume()
                     }
 
                     other => LexerNext::consume(),
                 },
             },
+
+            LexerState::OpenCurly => {
+                if let Some('"') = c {
+                    LexerNext::emit(Token::EndString, LexerState::Top)
+                } else if rest.starts_with("{{") {
+                    LexerNext::Skip(
+                        2,
+                        box LexerNext::PushState(
+                            LexerAction::EmitCurrent(0, Token::StringFragment),
+                            LexerState::Top,
+                        ),
+                    )
+                } else if rest.starts_with("}}") {
+                    LexerNext::Transition(LexerAction::Finalize(2), LexerState::StringLiteral)
+                } else {
+                    warn!("unreachable rest={:?}", rest);
+                    unreachable!()
+                }
+            }
 
             LexerState::StartIdent => match c {
                 None => LexerNext::emit(tk_id, LexerState::Top).reconsume(),

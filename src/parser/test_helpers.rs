@@ -3,14 +3,17 @@
 
 crate mod annotate_lines;
 
+use crate::parser::ast::DebugModuleTable;
 use crate::parser::lexer_helpers::{LexerNext, LexerStateTrait, ParseError, Tokenizer};
+use crate::parser::program::ModuleTable;
 use crate::parser::program::StringId;
 
 use codespan::ByteSpan;
 use derive_new::new;
 use log::trace;
+use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum LexerState {
     Top,
     Underline,
@@ -18,11 +21,17 @@ pub enum LexerState {
     Name,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Token {
     Underline,
     Name(StringId),
     Whitespace,
+}
+
+impl DebugModuleTable for Token {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 pub type LineTokenizer<'source> = Tokenizer<'source, LexerState>;

@@ -141,6 +141,121 @@ impl DebugModuleTable for Def {
             .field("name", &table.lookup(self.name.node))
             .field("parameters", &DebuggableVec::from(&self.parameters, table))
             .field("ret", &Debuggable::from(&self.ret, table))
+            .field("body", &Debuggable::from(&self.body, table))
             .finish()
+    }
+}
+
+impl<T: DebugModuleTable> DebugModuleTable for Spanned<T> {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        self.node.debug(f, table)
+    }
+}
+
+impl DebugModuleTable for Block {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        write!(f, "{:?}", DebuggableVec::from(&self.expressions, table))
+    }
+}
+
+impl DebugModuleTable for BlockItem {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        match self {
+            BlockItem::Item(item) => write!(f, "{:?}", Debuggable::from(item, table)),
+            BlockItem::Decl(decl) => write!(f, "{:?}", Debuggable::from(decl, table)),
+            BlockItem::Expr(expr) => write!(f, "{:?}", Debuggable::from(expr, table)),
+        }
+    }
+}
+
+impl DebugModuleTable for Declaration {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        match self {
+            Declaration::Let(let_decl) => let_decl.debug(f, table),
+        }
+    }
+}
+
+impl DebugModuleTable for Let {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        write!(f, "let ")?;
+        self.pattern.node.debug(f, table)?;
+
+        match &self.ty {
+            None => {}
+            Some(ty) => unimplemented!("Debug output for annotated lets"),
+        };
+
+        match &self.init {
+            None => {}
+            Some(init) => {
+                write!(f, " = ");
+                init.debug(f, table)?
+            }
+        };
+
+        Ok(())
+    }
+}
+
+impl DebugModuleTable for Pattern {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        match self {
+            Pattern::Underscore => write!(f, "_"),
+            Pattern::Identifier(id, Some(mode)) => {
+                mode.debug(f, table);
+                write!(f, " ");
+                id.debug(f, table)
+            }
+            Pattern::Identifier(id, None) => id.debug(f, table),
+        }
+    }
+}
+
+impl DebugModuleTable for Mode {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        let out: &str = (*self).into();
+        write!(f, "{}", out)
+    }
+}
+
+impl DebugModuleTable for Expression {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        use self::Expression::*;
+
+        match self {
+            Block(block) => write!(f, "<block>"),
+            ConstructStruct(construct) => {
+                construct.name.debug(f, table)?;
+                write!(f, " {{ ... }}")
+            }
+            Call(call) => call.debug(f, table),
+            Ref(id) => id.debug(f, table),
+            Binary(op, box left, box right) => {
+                left.debug(f, table)?;
+                write!(f, " {} ", op.node)?;
+                right.debug(f, table)
+            }
+            Interpolation(elements, span) => write!(f, "<interpolation>"),
+            Literal(literal) => literal.debug(f, table),
+        }
+    }
+}
+
+impl DebugModuleTable for Literal {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        match self {
+            Literal::String(id) => id.debug(f, table),
+        }
+    }
+}
+
+impl DebugModuleTable for Call {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        match self.callee {
+            Callee::Identifier(id) => id.debug(f, table)?,
+        };
+
+        write!(f, "( ... )")
     }
 }
