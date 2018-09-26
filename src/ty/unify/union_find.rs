@@ -70,6 +70,9 @@ impl UnificationTable {
     /// **not** to use the variables that result from (e.g.) a `find` operation,
     /// but rather the variables that "arose naturally" when doing inference, because
     /// it helps when issuing blame annotations later.
+    ///
+    /// Note: unifying two unbond variables does not trigger an "event", because
+    /// we don't actually have any more information than we had before.
     pub(super) fn unify_unbound_vars(&mut self, index1: InferVar, index2: InferVar) {
         let (root1, root_data1) = self.find(index1);
         let (root2, root_data2) = self.find(index2);
@@ -116,6 +119,7 @@ impl UnificationTable {
         let (root_unbound_var, _) = self.find(unbound_var);
         self.trace[unbound_var] = Some(bound_var);
         self.infers[root_unbound_var] = InferData::Redirect(bound_var);
+        self.events.push(unbound_var);
     }
 
     /// Binds `unbound_var`, which must not yet be bound to anything, to a value.
@@ -125,6 +129,7 @@ impl UnificationTable {
         let (root_unbound_var, _) = self.find(unbound_var);
         self.infers[root_unbound_var] = InferData::Value(value);
         // FIXME: trace information?
+        self.events.push(unbound_var);
     }
 
     /// Redirects the (root) variable `root_from` to another root variable (`root_to`).

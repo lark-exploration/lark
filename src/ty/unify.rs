@@ -28,6 +28,11 @@ crate struct UnificationTable {
 
     /// If we need to create a fresh region, what number do we give it?
     next_region: Region,
+
+    /// Each time an inference variable is bound, we push it into
+    /// this vector. External watchers can query this list and use it
+    /// to track what happened and trigger work.
+    events: Vec<InferVar>,
 }
 
 #[derive(Copy, Clone)]
@@ -168,6 +173,7 @@ impl UnificationTable {
             trace: IndexVec::new(),
             values: IndexVec::new(),
             next_region: Region::new(0),
+            events: Vec::new(),
         }
     }
 
@@ -219,6 +225,10 @@ impl UnificationTable {
     {
         let var = self.new_infer_var();
         self.intern(Inferable::Infer(var))
+    }
+
+    crate fn drain_events(&mut self) -> impl Iterator<Item = InferVar> + '_ {
+        self.events.drain(..)
     }
 }
 
