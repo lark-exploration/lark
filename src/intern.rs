@@ -40,3 +40,22 @@ where
             .clone()
     }
 }
+
+/// Trait used for data that can be interned into `Interners`,
+/// giving back a `Self::Key` type.
+///
+/// Example: implemented for `crate::ty::PermData` with
+/// key type `crate::ty::Perm`
+crate trait Intern<Interners>: Clone {
+    type Key;
+
+    fn intern(self, interner: &Interners) -> Self::Key;
+}
+
+/// Reverse trait: implemented by the key (`crate::ty::Perm`)
+/// and permits lookup in some `Interners` struct.
+crate trait Untern<Interners>: Clone {
+    type Data;
+
+    fn untern(self, interner: &Interners) -> Self::Data;
+}

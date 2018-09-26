@@ -1,4 +1,4 @@
-use crate::intern::Interner;
+use crate::intern::{Intern, Interner, Untern};
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
 use crate::ty::{Base, BaseData};
@@ -111,18 +111,6 @@ impl Interners for TyInterners {
     fn interners(&self) -> &TyInterners {
         self
     }
-}
-
-crate trait Intern<Interners>: Clone {
-    type Key;
-
-    fn intern(self, interner: &Interners) -> Self::Key;
-}
-
-crate trait Untern<Interners>: Clone {
-    type Data;
-
-    fn untern(self, interner: &Interners) -> Self::Data;
 }
 
 macro_rules! intern_ty {

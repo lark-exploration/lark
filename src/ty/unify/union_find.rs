@@ -1,4 +1,5 @@
-use crate::ty::intern::{Interners, TyInterners, Untern};
+use crate::intern::Untern;
+use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::unify::{InferData, InferValue, Rank, RootData, UnificationTable};
 use crate::ty::unify::{Value, ValueData};
 use crate::ty::InferVar;

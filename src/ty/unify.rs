@@ -1,5 +1,6 @@
+use crate::intern::{Intern, Untern};
 use crate::ty::debug::{DebugIn, TyDebugContext};
-use crate::ty::intern::{Intern, Interners, TyInterners, Untern};
+use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::Region;
 use crate::ty::{Base, BaseData};
 use crate::ty::{InferVar, Inferable};
