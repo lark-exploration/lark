@@ -95,6 +95,16 @@ crate enum ExpressionKind {
         first: Expression,
         second: Expression,
     },
+
+    /// if E1 { E2 } else { E3 }
+    If {
+        condition: Expression,
+        if_true: Expression,
+        if_false: Expression,
+    },
+
+    /// `()`
+    Unit {},
 }
 
 index_type! {

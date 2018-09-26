@@ -53,6 +53,11 @@ impl UnificationTable {
         root_data.value()
     }
 
+    /// True if `index` has been assigned to a value, false otherwise.
+    crate fn is_bound(&mut self, index: InferVar) -> bool {
+        self.probe(index).is_some()
+    }
+
     /// Checks whether `index` has been assigned to a value yet.
     /// If so, returns it.
     pub(super) fn probe_data<K>(&mut self, index: InferVar) -> Option<K::Data>
@@ -70,9 +75,6 @@ impl UnificationTable {
     /// **not** to use the variables that result from (e.g.) a `find` operation,
     /// but rather the variables that "arose naturally" when doing inference, because
     /// it helps when issuing blame annotations later.
-    ///
-    /// Note: unifying two unbond variables does not trigger an "event", because
-    /// we don't actually have any more information than we had before.
     pub(super) fn unify_unbound_vars(&mut self, index1: InferVar, index2: InferVar) {
         let (root1, root_data1) = self.find(index1);
         let (root2, root_data2) = self.find(index2);
@@ -153,5 +155,7 @@ impl UnificationTable {
         // This may or may not change the depth of the new root (depending on what its rank was before).
         let rank_max = std::cmp::max(rank_from.next(), rank_to);
         self.infers[root_to] = InferData::Unbound(rank_max);
+
+        self.events.push(root_from);
     }
 }

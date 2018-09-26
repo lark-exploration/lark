@@ -24,6 +24,7 @@ mod intern;
 mod ir;
 mod parser;
 mod ty;
+mod typeck;
 
 use crate::codegen::{codegen, RustFile};
 use crate::eval::eval_context;
