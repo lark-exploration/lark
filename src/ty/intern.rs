@@ -1,4 +1,4 @@
-use crate::intern::{Intern, Interner, Untern};
+use crate::intern::{Intern, InternerField, Untern};
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
 use crate::ty::{Base, BaseData};
@@ -17,9 +17,9 @@ crate struct TyInterners {
 }
 
 struct TyInternersData {
-    perms: RefCell<Interner<Perm, Inferable<PermData>>>,
-    bases: RefCell<Interner<Base, Inferable<BaseData>>>,
-    generics: RefCell<Interner<Generics, GenericsData>>,
+    perms: RefCell<InternerField<Perm, Inferable<PermData>>>,
+    bases: RefCell<InternerField<Base, Inferable<BaseData>>>,
+    generics: RefCell<InternerField<Generics, GenericsData>>,
     common: Common,
 }
 
@@ -85,9 +85,9 @@ where
 
 impl TyInterners {
     crate fn new() -> Self {
-        let mut perms = Interner::new();
-        let bases = Interner::new();
-        let mut generics = Interner::new();
+        let mut perms = InternerField::new();
+        let bases = InternerField::new();
+        let mut generics = InternerField::new();
 
         let common = Common {
             own: perms.intern(Inferable::Known(PermData::Own)),
