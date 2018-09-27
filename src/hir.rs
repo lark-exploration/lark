@@ -4,15 +4,17 @@ use crate::ir::DefId;
 use crate::parser::pos::{Span, Spanned};
 use crate::parser::StringId;
 use indexed_vec::{Idx, IndexVec};
-use std::rc::Rc;
+use std::sync::Arc;
 
+crate mod typeck;
 crate mod typed;
 
 crate struct Hir {
-    crate expressions: IndexVec<Expression, ExpressionData>,
-    crate places: IndexVec<Place, PlaceData>,
-    crate perms: IndexVec<Perm, PermData>,
-    crate variables: IndexVec<Variable, VariableData>,
+    crate expressions: IndexVec<Expression, Spanned<ExpressionData>>,
+    crate places: IndexVec<Place, Spanned<PlaceData>>,
+    crate perms: IndexVec<Perm, Spanned<PermData>>,
+    crate variables: IndexVec<Variable, Spanned<VariableData>>,
+    crate identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
 }
 
 /// The HIR has a number of *kinds* of indices that
@@ -24,17 +26,45 @@ crate enum MetaIndex {
     Place(Place),
     Perm(Perm),
     Variable(Variable),
+    Identifier(Identifier),
+}
+
+crate trait HirIndex: Idx {
+    type Data;
+
+    fn index_vec(hir: &Hir) -> &IndexVec<Self, Spanned<Self::Data>>;
+}
+
+impl<I> std::ops::Index<I> for Hir
+where
+    I: HirIndex,
+{
+    type Output = I::Data;
+
+    fn index(&self, index: I) -> &I::Data {
+        &I::index_vec(self)[index].node
+    }
+}
+
+impl Hir {
+    /// Get the span for the given part of the HIR.
+    crate fn span<I>(&self, index: I) -> Span
+    where
+        I: HirIndex,
+    {
+        I::index_vec(self)[index].span
+    }
 }
 
 /// Declares impls for each kind of HIR index; this permits
 /// you to do `hir[foo]` as well as `MetaIndex::from(foo)`.
 macro_rules! hir_index_impls {
     ($index_ty:ident, $data_ty:ty, $field:ident) => {
-        impl std::ops::Index<$index_ty> for Hir {
-            type Output = $data_ty;
+        impl HirIndex for $index_ty {
+            type Data = $data_ty;
 
-            fn index(&self, index: $index_ty) -> &$data_ty {
-                &self.$field[index]
+            fn index_vec(hir: &Hir) -> &IndexVec<Self, Spanned<Self::Data>> {
+                &hir.$field
             }
         }
 
@@ -50,26 +80,14 @@ hir_index_impls!(Expression, ExpressionData, expressions);
 hir_index_impls!(Place, PlaceData, places);
 hir_index_impls!(Perm, PermData, perms);
 hir_index_impls!(Variable, VariableData, variables);
-
-index_type! {
-    crate struct Function { .. }
-}
-
-crate struct FunctionData {
-    crate arguments: Rc<Vec<Variable>>,
-    crate body: Expression,
-}
+hir_index_impls!(Identifier, IdentifierData, identifiers);
 
 index_type! {
     crate struct Expression { .. }
 }
 
-crate struct ExpressionData {
-    crate span: Span,
-    crate kind: ExpressionKind,
-}
-
-crate enum ExpressionKind {
+#[derive(Clone, Debug)]
+crate enum ExpressionData {
     /// `let <var> = <initializer> in <body>`
     Let {
         var: Variable,
@@ -78,7 +96,7 @@ crate enum ExpressionKind {
     },
 
     /// reference to a local variable `X`
-    Place { perm: Option<Perm>, place: Place },
+    Place { perm: Perm, place: Place },
 
     /// `<place> = <value>`
     Assignment { place: Place, value: Expression },
@@ -86,8 +104,8 @@ crate enum ExpressionKind {
     /// `<place>.method(<args>)`
     MethodCall {
         owner: Place,
-        method: Spanned<StringId>,
-        arguments: Rc<Vec<Expression>>,
+        method: Identifier,
+        arguments: Arc<Vec<Expression>>,
     },
 
     /// E1; E2
@@ -111,17 +129,20 @@ index_type! {
     crate struct Perm { .. }
 }
 
+#[derive(Copy, Clone, Debug)]
 crate enum PermData {
     Share,
     Borrow,
     Own,
     Other(DefId),
+    Default,
 }
 
 index_type! {
     crate struct Place { .. }
 }
 
+#[derive(Copy, Clone, Debug)]
 crate enum PlaceData {
     Variable(Variable),
     Temporary(Expression),
@@ -132,14 +153,16 @@ index_type! {
     crate struct Variable { .. }
 }
 
+#[derive(Copy, Clone, Debug)]
 crate struct VariableData {
-    crate name: Spanned<StringId>,
+    crate name: Identifier,
 }
 
 index_type! {
-    crate struct ExpressionVec { .. }
+    crate struct Identifier { .. }
 }
 
-crate struct ExpressionVecData {
-    crate expressions: Rc<Vec<Expression>>,
+#[derive(Copy, Clone, Debug)]
+crate struct IdentifierData {
+    text: StringId,
 }

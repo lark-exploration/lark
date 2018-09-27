@@ -98,10 +98,10 @@ impl TyInterners {
             elements: Rc::new(vec![]),
         });
 
-        let error_base = bases.intern(BaseData {
+        let error_base = bases.intern(Inferable::Known(BaseData {
             kind: BaseKind::Error,
             generics: empty_generics,
-        });
+        }));
 
         let error_ty = Ty {
             perm: own,

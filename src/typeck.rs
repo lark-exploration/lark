@@ -10,6 +10,7 @@ use rustc_hash::FxHashMap;
 use std::rc::Rc;
 
 mod expr;
+mod infer;
 mod ops;
 
 struct TypeChecker {
@@ -20,19 +21,6 @@ struct TypeChecker {
     ops_blocked: FxHashMap<InferVar, Vec<ops::OpIndex>>,
     unify: UnificationTable,
     errors: Vec<Diagnostic>,
-}
-
-struct TypeckFuture<T> {
-    data: T,
-}
-
-impl<T> TypeckFuture<T> {
-    fn and_then<R>(
-        self,
-        closure: impl FnOnce(&mut TypeChecker, T) -> TypeckFuture<R> + 'static,
-    ) -> TypeckFuture<R> {
-        unimplemented!()
-    }
 }
 
 impl Interners for TypeChecker {
