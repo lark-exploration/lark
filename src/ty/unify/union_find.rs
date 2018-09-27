@@ -1,5 +1,6 @@
-use crate::ty::intern::{Interners, Untern};
-use crate::ty::unify::{InferData, Rank, RootData, UnificationTable};
+use crate::intern::Untern;
+use crate::ty::intern::{Interners, TyInterners};
+use crate::ty::unify::{InferData, InferValue, Rank, RootData, UnificationTable};
 use crate::ty::unify::{Value, ValueData};
 use crate::ty::InferVar;
 use std::convert::TryFrom;
@@ -52,11 +53,16 @@ impl UnificationTable {
         root_data.value()
     }
 
+    /// True if `index` has been assigned to a value, false otherwise.
+    crate fn is_bound(&mut self, index: InferVar) -> bool {
+        self.probe(index).is_some()
+    }
+
     /// Checks whether `index` has been assigned to a value yet.
     /// If so, returns it.
     pub(super) fn probe_data<K>(&mut self, index: InferVar) -> Option<K::Data>
     where
-        K: Untern + TryFrom<ValueData, Error = String>,
+        K: Untern<TyInterners> + TryFrom<ValueData, Error = String>,
     {
         let (_root, root_data) = self.find(index);
         root_data.value().map(|v| {
@@ -87,31 +93,45 @@ impl UnificationTable {
         }
     }
 
-    /// Binds `unbound_var`, which must not yet be bound to anything, to `bound_var`, which is.
-    pub(super) fn bind_unbound_var_to_bound_var(
+    pub(super) fn bind_unbound_var_to_value(
         &mut self,
         unbound_var: InferVar,
-        bound_var: InferVar,
+        value: impl InferValue,
     ) {
+        match value.deref(self.interners()) {
+            Ok(other_var) => match self.find(other_var) {
+                (_, RootData::Rank(_)) => self.unify_unbound_vars(unbound_var, other_var),
+                (_, RootData::Value(_)) => {
+                    self.bind_unbound_var_to_bound_var(unbound_var, other_var)
+                }
+            },
+
+            Err(_) => {
+                let value_data: ValueData = value.into();
+                self.bind_unbound_var_to_value_data(unbound_var, value_data);
+            }
+        }
+    }
+
+    /// Binds `unbound_var`, which must not yet be bound to anything, to `bound_var`, which is.
+    fn bind_unbound_var_to_bound_var(&mut self, unbound_var: InferVar, bound_var: InferVar) {
         debug_assert!(self.probe(unbound_var).is_none());
         debug_assert!(self.probe(bound_var).is_some());
 
         let (root_unbound_var, _) = self.find(unbound_var);
         self.trace[unbound_var] = Some(bound_var);
         self.infers[root_unbound_var] = InferData::Redirect(bound_var);
+        self.events.push(unbound_var);
     }
 
     /// Binds `unbound_var`, which must not yet be bound to anything, to a value.
-    pub(super) fn bind_unbound_var_to_value(
-        &mut self,
-        unbound_var: InferVar,
-        value_data: impl Into<ValueData>,
-    ) {
+    fn bind_unbound_var_to_value_data(&mut self, unbound_var: InferVar, value_data: ValueData) {
         debug_assert!(self.probe(unbound_var).is_none());
         let value = self.values.push(value_data.into());
         let (root_unbound_var, _) = self.find(unbound_var);
         self.infers[root_unbound_var] = InferData::Value(value);
         // FIXME: trace information?
+        self.events.push(unbound_var);
     }
 
     /// Redirects the (root) variable `root_from` to another root variable (`root_to`).
@@ -135,5 +155,7 @@ impl UnificationTable {
         // This may or may not change the depth of the new root (depending on what its rank was before).
         let rank_max = std::cmp::max(rank_from.next(), rank_to);
         self.infers[root_to] = InferData::Unbound(rank_max);
+
+        self.events.push(root_from);
     }
 }

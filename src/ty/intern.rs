@@ -1,44 +1,13 @@
+use crate::intern::{Intern, InternTable, Untern};
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
-use crate::ty::{Base, BaseData};
+use crate::ty::Ty;
+use crate::ty::{Base, BaseData, BaseKind};
 use crate::ty::{Generics, GenericsData};
 use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
-use indexed_vec::{Idx, IndexVec};
-use rustc_hash::FxHashMap;
 use std::cell::RefCell;
-use std::hash::Hash;
 use std::rc::Rc;
-
-#[derive(Debug)]
-crate struct Interner<Key, Data>
-where
-    Key: Copy + Idx,
-    Data: Clone + Hash + Eq,
-{
-    vec: IndexVec<Key, Data>,
-    map: FxHashMap<Data, Key>,
-}
-
-impl<Key, Data> Interner<Key, Data>
-where
-    Key: Copy + Idx,
-    Data: Clone + Hash + Eq,
-{
-    fn new() -> Self {
-        Self {
-            vec: IndexVec::default(),
-            map: FxHashMap::default(),
-        }
-    }
-
-    fn intern(&mut self, data: Data) -> Key {
-        let Interner { vec, map } = self;
-        map.entry(data.clone())
-            .or_insert_with(|| vec.push(data))
-            .clone()
-    }
-}
 
 /// The "type context" is a global resource that interns types and
 /// other type-related things. Types are allocates in the various
@@ -49,15 +18,17 @@ crate struct TyInterners {
 }
 
 struct TyInternersData {
-    perms: RefCell<Interner<Perm, Inferable<PermData>>>,
-    bases: RefCell<Interner<Base, Inferable<BaseData>>>,
-    generics: RefCell<Interner<Generics, GenericsData>>,
+    perms: RefCell<InternTable<Perm, Inferable<PermData>>>,
+    bases: RefCell<InternTable<Base, Inferable<BaseData>>>,
+    generics: RefCell<InternTable<Generics, GenericsData>>,
     common: Common,
 }
 
 crate struct Common {
     crate empty_generics: Generics,
     crate own: Perm,
+    crate error_ty: Ty,
+    crate error_base: Base,
 }
 
 crate trait Interners {
@@ -65,7 +36,7 @@ crate trait Interners {
 
     fn intern<D>(&self, data: D) -> D::Key
     where
-        D: Intern,
+        D: Intern<TyInterners>,
         Self: Sized,
     {
         data.intern(self.interners())
@@ -73,7 +44,7 @@ crate trait Interners {
 
     fn untern<K>(&self, key: K) -> K::Data
     where
-        K: Untern,
+        K: Untern<TyInterners>,
         Self: Sized,
     {
         key.untern(self.interners())
@@ -98,8 +69,8 @@ crate trait Interners {
 
     fn intern_infer_var<T, V>(&self, var: InferVar) -> T
     where
-        T: Untern<Data = Inferable<V>>,
-        Inferable<V>: Intern<Key = T>,
+        T: Untern<TyInterners, Data = Inferable<V>>,
+        Inferable<V>: Intern<TyInterners, Key = T>,
         Self: Sized,
     {
         self.intern(Inferable::Infer(var))
@@ -117,15 +88,31 @@ where
 
 impl TyInterners {
     crate fn new() -> Self {
-        let mut perms = Interner::new();
-        let bases = Interner::new();
-        let mut generics = Interner::new();
+        let mut perms = InternTable::new();
+        let mut bases = InternTable::new();
+        let mut generics = InternTable::new();
+
+        let own = perms.intern(Inferable::Known(PermData::Own));
+
+        let empty_generics = generics.intern(GenericsData {
+            elements: Rc::new(vec![]),
+        });
+
+        let error_base = bases.intern(Inferable::Known(BaseData {
+            kind: BaseKind::Error,
+            generics: empty_generics,
+        }));
+
+        let error_ty = Ty {
+            perm: own,
+            base: error_base,
+        };
 
         let common = Common {
-            own: perms.intern(Inferable::Known(PermData::Own)),
-            empty_generics: generics.intern(GenericsData {
-                elements: Rc::new(vec![]),
-            }),
+            own,
+            empty_generics,
+            error_base,
+            error_ty,
         };
 
         TyInterners {
@@ -145,21 +132,9 @@ impl Interners for TyInterners {
     }
 }
 
-crate trait Intern: Clone {
-    type Key;
-
-    fn intern(self, interner: &TyInterners) -> Self::Key;
-}
-
-crate trait Untern: Clone {
-    type Data;
-
-    fn untern(self, interner: &TyInterners) -> Self::Data;
-}
-
 macro_rules! intern_ty {
     ($field:ident, $key:ty, $data:ty) => {
-        impl Intern for $data {
+        impl Intern<TyInterners> for $data {
             type Key = $key;
 
             fn intern(self, interner: &TyInterners) -> $key {
@@ -167,11 +142,11 @@ macro_rules! intern_ty {
             }
         }
 
-        impl Untern for $key {
+        impl Untern<TyInterners> for $key {
             type Data = $data;
 
             fn untern(self, interner: &TyInterners) -> $data {
-                interner.data.$field.borrow().vec[self].clone()
+                interner.data.$field.borrow().get(self)
             }
         }
     };
@@ -184,7 +159,7 @@ macro_rules! intern_inferable_ty {
 
         // Add a convenience impl that lets you intern directly
         // from `$data` without writing `Inferable::Known`.`
-        impl Intern for $data {
+        impl Intern<TyInterners> for $data {
             type Key = $key;
 
             fn intern(self, interner: &TyInterners) -> $key {

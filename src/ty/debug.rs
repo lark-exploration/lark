@@ -130,6 +130,8 @@ impl Debug for DebugInWrapper<'me, BaseData> {
                 self.context
                     .write_placeholder(*placeholder, self.context, fmt)?
             }
+
+            BaseKind::Error => write!(fmt, "(Error)")?,
         }
 
         let generics_data = self.context.interners().untern(*generics);
