@@ -128,9 +128,7 @@ crate trait HirTypeChecker: Sized {
             hir::PlaceData::Field { owner, name } => {
                 let owner_ty = self.check_place(owner);
                 self.with_base_data(owner_ty, move |this, base_data| match base_data.kind {
-                    ty::BaseKind::Named(def_id) => {
-                        let fields = self.fields(def_id);
-                    }
+                    ty::BaseKind::Named(_def_id) => unimplemented!(),
                     ty::BaseKind::Placeholder(_) => this.report_error(place, |codespan| {
                         Diagnostic::new_error("cannot access field of generic type").with_label(
                             Label::new_primary(codespan)
