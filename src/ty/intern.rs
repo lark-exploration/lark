@@ -1,8 +1,7 @@
 use crate::intern::{Intern, InternTable, Untern};
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
-use crate::ty::Ty;
-use crate::ty::{Base, BaseData, BaseKind};
+use crate::ty::{Base, BaseData};
 use crate::ty::{Generics, GenericsData};
 use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
@@ -27,8 +26,6 @@ struct TyInternersData {
 crate struct Common {
     crate empty_generics: Generics,
     crate own: Perm,
-    crate error_ty: Ty,
-    crate error_base: Base,
 }
 
 crate trait Interners {
@@ -89,7 +86,7 @@ where
 impl TyInterners {
     crate fn new() -> Self {
         let mut perms = InternTable::new();
-        let mut bases = InternTable::new();
+        let bases = InternTable::new();
         let mut generics = InternTable::new();
 
         let own = perms.intern(Inferable::Known(PermData::Own));
@@ -98,21 +95,9 @@ impl TyInterners {
             elements: Rc::new(vec![]),
         });
 
-        let error_base = bases.intern(Inferable::Known(BaseData {
-            kind: BaseKind::Error,
-            generics: empty_generics,
-        }));
-
-        let error_ty = Ty {
-            perm: own,
-            base: error_base,
-        };
-
         let common = Common {
             own,
             empty_generics,
-            error_base,
-            error_ty,
         };
 
         TyInterners {

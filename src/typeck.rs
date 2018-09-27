@@ -9,7 +9,6 @@ use generational_arena::Arena;
 use rustc_hash::FxHashMap;
 use std::rc::Rc;
 
-mod expr;
 mod infer;
 mod ops;
 
