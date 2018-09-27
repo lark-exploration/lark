@@ -89,6 +89,10 @@ crate enum BaseKind {
     /// { ... }` -- inside the `...`, the variable `A` might be
     /// replaced with a placeholder, representing "any" type `A`.
     Placeholder(Placeholder),
+
+    /// Indicates an error was reporting in type inference. Used to
+    /// "contaminate" derived computations.
+    Error,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]

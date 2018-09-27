@@ -1,4 +1,6 @@
+use crate::ty;
 use crate::ty::unify::InferValue;
+use crate::ty::BaseData;
 use crate::ty::InferVar;
 use crate::typeck::TypeChecker;
 use generational_arena::Arena;
@@ -30,7 +32,7 @@ impl TypeChecker {
     /// variables in `values` are unified.
     pub(super) fn enqueue_op(
         &mut self,
-        values: impl Iterator<Item = impl InferValue>,
+        values: impl IntoIterator<Item = impl InferValue>,
         closure: impl FnOnce(&mut TypeChecker) + 'static,
     ) {
         let op: Box<dyn BoxedTypeCheckerOp> = Box::new(ClosureTypeCheckerOp { closure });

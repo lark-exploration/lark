@@ -1,7 +1,8 @@
+use codespan_reporting::Diagnostic;
 use crate::hir;
 use crate::hir::typed::Typed;
 use crate::ty;
-use crate::ty::intern::TyInterners;
+use crate::ty::intern::{Interners, TyInterners};
 use crate::ty::unify::UnificationTable;
 use crate::ty::InferVar;
 use generational_arena::Arena;
@@ -18,6 +19,7 @@ struct TypeChecker {
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp>>,
     ops_blocked: FxHashMap<InferVar, Vec<ops::OpIndex>>,
     unify: UnificationTable,
+    errors: Vec<Diagnostic>,
 }
 
 struct TypeckFuture<T> {
@@ -30,5 +32,11 @@ impl<T> TypeckFuture<T> {
         closure: impl FnOnce(&mut TypeChecker, T) -> TypeckFuture<R> + 'static,
     ) -> TypeckFuture<R> {
         unimplemented!()
+    }
+}
+
+impl Interners for TypeChecker {
+    fn interners(&self) -> &TyInterners {
+        &self.interners
     }
 }

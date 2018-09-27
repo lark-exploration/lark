@@ -1,7 +1,8 @@
-use crate::intern::{Intern, InternerField, Untern};
+use crate::intern::{Intern, InternTable, Untern};
 use crate::ty::debug::TyDebugContext;
 use crate::ty::Generic;
-use crate::ty::{Base, BaseData};
+use crate::ty::Ty;
+use crate::ty::{Base, BaseData, BaseKind};
 use crate::ty::{Generics, GenericsData};
 use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
@@ -17,15 +18,17 @@ crate struct TyInterners {
 }
 
 struct TyInternersData {
-    perms: RefCell<InternerField<Perm, Inferable<PermData>>>,
-    bases: RefCell<InternerField<Base, Inferable<BaseData>>>,
-    generics: RefCell<InternerField<Generics, GenericsData>>,
+    perms: RefCell<InternTable<Perm, Inferable<PermData>>>,
+    bases: RefCell<InternTable<Base, Inferable<BaseData>>>,
+    generics: RefCell<InternTable<Generics, GenericsData>>,
     common: Common,
 }
 
 crate struct Common {
     crate empty_generics: Generics,
     crate own: Perm,
+    crate error_ty: Ty,
+    crate error_base: Base,
 }
 
 crate trait Interners {
@@ -85,15 +88,31 @@ where
 
 impl TyInterners {
     crate fn new() -> Self {
-        let mut perms = InternerField::new();
-        let bases = InternerField::new();
-        let mut generics = InternerField::new();
+        let mut perms = InternTable::new();
+        let mut bases = InternTable::new();
+        let mut generics = InternTable::new();
+
+        let own = perms.intern(Inferable::Known(PermData::Own));
+
+        let empty_generics = generics.intern(GenericsData {
+            elements: Rc::new(vec![]),
+        });
+
+        let error_base = bases.intern(BaseData {
+            kind: BaseKind::Error,
+            generics: empty_generics,
+        });
+
+        let error_ty = Ty {
+            perm: own,
+            base: error_base,
+        };
 
         let common = Common {
-            own: perms.intern(Inferable::Known(PermData::Own)),
-            empty_generics: generics.intern(GenericsData {
-                elements: Rc::new(vec![]),
-            }),
+            own,
+            empty_generics,
+            error_base,
+            error_ty,
         };
 
         TyInterners {
