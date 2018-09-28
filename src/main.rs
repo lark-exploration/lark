@@ -17,14 +17,19 @@ mod lexer;
 #[macro_use]
 mod indices;
 
+#[macro_use]
+mod query;
+
 mod codegen;
 mod eval;
 mod hir;
 mod intern;
 mod ir;
 mod parser;
+mod query_impl;
 mod ty;
 mod typeck;
+mod unify;
 
 use crate::codegen::{codegen, RustFile};
 use crate::eval::eval_context;
