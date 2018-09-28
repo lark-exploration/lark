@@ -184,6 +184,16 @@ macro_rules! index_type {
             }
         }
 
+        impl crate::indices::U32Index for $name {
+            fn as_u32(self) -> u32 {
+                self.as_u32()
+            }
+
+            fn from_u32(v: u32) -> Self {
+                Self::from_u32(v)
+            }
+        }
+
         index_type! {
             @debug_impl {
                 name[$name],
@@ -216,4 +226,10 @@ macro_rules! index_type {
             }
         }
     };
+}
+
+crate trait U32Index: indexed_vec::Idx {
+    fn as_u32(self) -> u32;
+
+    fn from_u32(v: u32) -> Self;
 }

@@ -146,7 +146,7 @@ index_type! {
 crate enum PlaceData {
     Variable(Variable),
     Temporary(Expression),
-    Field { owner: Place, name: DefId },
+    Field { owner: Place, name: Identifier },
 }
 
 index_type! {
