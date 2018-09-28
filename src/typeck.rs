@@ -11,6 +11,7 @@ use std::rc::Rc;
 
 mod infer;
 mod ops;
+crate mod query;
 
 struct TypeChecker {
     hir: Rc<hir::Hir>,
