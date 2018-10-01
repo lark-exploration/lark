@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use serde_derive::{Deserialize, Serialize};
 use std::io;
 use std::io::prelude::{Read, Write};
@@ -13,14 +14,17 @@ enum LSPCommand {
     initialized,
     #[serde(rename = "textDocument/didOpen")]
     didOpen {
+        id: usize,
         params: languageserver_types::DidOpenTextDocumentParams,
     },
     #[serde(rename = "textDocument/didChange")]
     didChange {
+        id: usize,
         params: languageserver_types::DidChangeTextDocumentParams,
     },
     #[serde(rename = "textDocument/hover")]
     hover {
+        id: usize,
         params: languageserver_types::TextDocumentPositionParams,
     },
     #[serde(rename = "$/cancelRequest")]
@@ -43,6 +47,15 @@ impl<T> LSPResponse<T> {
             result,
         }
     }
+}
+
+fn send_result<T: Serialize>(id: usize, result: T) {
+    let response = LSPResponse::new(id, result);
+    let response_raw = serde_json::to_string(&response).unwrap();
+
+    print!("Content-Length: {}\r\n\r\n", response_raw.len());
+    print!("{}", response_raw);
+    let _ = io::stdout().flush();
 }
 
 pub fn lsp_serve() {
@@ -92,24 +105,31 @@ pub fn lsp_serve() {
                                     workspace: None,
                                 },
                             };
-                            let response = LSPResponse::new(id, result);
-                            let response_raw = serde_json::to_string(&response).unwrap();
 
-                            print!("Content-Length: {}\r\n\r\n", response_raw.len());
-                            print!("{}", response_raw);
-                            let _ = io::stdout().flush();
+                            send_result(id, result);
                         }
                         Ok(LSPCommand::initialized) => {
                             eprintln!("Initialized received");
                         }
-                        Ok(LSPCommand::didOpen { params }) => {
-                            eprintln!("didOpen: {:#?}", params);
+                        Ok(LSPCommand::didOpen { id, params }) => {
+                            eprintln!("didOpen: id={} {:#?}", id, params);
                         }
-                        Ok(LSPCommand::didChange { params }) => {
-                            eprintln!("didChange: {:#?}", params);
+                        Ok(LSPCommand::didChange { id, params }) => {
+                            eprintln!("didChange: id={} {:#?}", id, params);
                         }
-                        Ok(LSPCommand::hover { params }) => {
-                            eprintln!("hover: {:#?}", params);
+                        Ok(LSPCommand::hover { id, params }) => {
+                            eprintln!("hover: id={} {:#?}", id, params);
+                            let result = languageserver_types::Hover {
+                                contents: languageserver_types::HoverContents::Scalar(
+                                    languageserver_types::MarkedString::from_markdown(format!(
+                                        "This *is* a hover at {:?}",
+                                        params.position
+                                    )),
+                                ),
+                                range: None,
+                            };
+
+                            send_result(id, result);
                         }
                         Ok(LSPCommand::cancelRequest { params }) => {
                             eprintln!("cancel request: {:#?}", params);
