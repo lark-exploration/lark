@@ -5,7 +5,7 @@ use crate::parser::ModuleTable;
 
 use std::fmt;
 
-pub struct DebuggableVec<'owner, T: DebugModuleTable + 'owner> {
+pub struct DebuggableVec<'owner, T: DebugModuleTable> {
     inner: &'owner Vec<T>,
     table: &'owner ModuleTable,
 }
@@ -29,7 +29,7 @@ impl<T: DebugModuleTable> fmt::Debug for DebuggableVec<'table, T> {
     }
 }
 
-pub struct Debuggable<'owner, T: DebugModuleTable + 'owner> {
+pub struct Debuggable<'owner, T: DebugModuleTable> {
     inner: &'owner T,
     table: &'owner ModuleTable,
 }
