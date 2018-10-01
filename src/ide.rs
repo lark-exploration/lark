@@ -14,12 +14,10 @@ enum LSPCommand {
     initialized,
     #[serde(rename = "textDocument/didOpen")]
     didOpen {
-        id: usize,
         params: languageserver_types::DidOpenTextDocumentParams,
     },
     #[serde(rename = "textDocument/didChange")]
     didChange {
-        id: usize,
         params: languageserver_types::DidChangeTextDocumentParams,
     },
     #[serde(rename = "textDocument/hover")]
@@ -27,9 +25,19 @@ enum LSPCommand {
         id: usize,
         params: languageserver_types::TextDocumentPositionParams,
     },
+    #[serde(rename = "textDocument/completion")]
+    completion {
+        id: usize,
+        params: languageserver_types::CompletionParams,
+    },
     #[serde(rename = "$/cancelRequest")]
     cancelRequest {
         params: languageserver_types::CancelParams,
+    },
+    #[serde(rename = "completionItem/resolve")]
+    completionItemResolve {
+        id: usize,
+        params: languageserver_types::CompletionItem,
     },
 }
 
@@ -84,7 +92,12 @@ pub fn lsp_serve() {
                                         ),
                                     ),
                                     hover_provider: Some(true),
-                                    completion_provider: None,
+                                    completion_provider: Some(
+                                        languageserver_types::CompletionOptions {
+                                            resolve_provider: Some(true),
+                                            trigger_characters: Some(vec![".".into()]),
+                                        },
+                                    ),
                                     signature_help_provider: None,
                                     definition_provider: None,
                                     type_definition_provider: None,
@@ -111,11 +124,11 @@ pub fn lsp_serve() {
                         Ok(LSPCommand::initialized) => {
                             eprintln!("Initialized received");
                         }
-                        Ok(LSPCommand::didOpen { id, params }) => {
-                            eprintln!("didOpen: id={} {:#?}", id, params);
+                        Ok(LSPCommand::didOpen { params }) => {
+                            eprintln!("didOpen: {:#?}", params);
                         }
-                        Ok(LSPCommand::didChange { id, params }) => {
-                            eprintln!("didChange: id={} {:#?}", id, params);
+                        Ok(LSPCommand::didChange { params }) => {
+                            eprintln!("didChange: {:#?}", params);
                         }
                         Ok(LSPCommand::hover { id, params }) => {
                             eprintln!("hover: id={} {:#?}", id, params);
@@ -130,6 +143,29 @@ pub fn lsp_serve() {
                             };
 
                             send_result(id, result);
+                        }
+                        Ok(LSPCommand::completion { id, params }) => {
+                            eprintln!("completion: id={} {:#?}", id, params);
+                            let result = languageserver_types::CompletionList {
+                                is_incomplete: false,
+                                items: vec![
+                                    languageserver_types::CompletionItem::new_simple(
+                                        "bar".into(),
+                                        "the first completion item".into(),
+                                    ),
+                                    languageserver_types::CompletionItem::new_simple(
+                                        "foo".into(),
+                                        "the second completion item".into(),
+                                    ),
+                                ],
+                            };
+
+                            send_result(id, result);
+                        }
+                        Ok(LSPCommand::completionItemResolve { id, params }) => {
+                            //Note: this is here in case we need it, though it looks like it's only used
+                            //for more expensive computations on a completion (like fetching the docs)
+                            eprintln!("resolve completion item: id={} {:#?}", id, params);
                         }
                         Ok(LSPCommand::cancelRequest { params }) => {
                             eprintln!("cancel request: {:#?}", params);
