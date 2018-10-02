@@ -4,7 +4,9 @@
 crate mod annotate_lines;
 
 use crate::parser::ast::DebugModuleTable;
-use crate::parser::lexer_helpers::{LexerNext, LexerStateTrait, ParseError, Tokenizer};
+use crate::parser::lexer_helpers::{
+    LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError, Tokenizer,
+};
 use crate::parser::program::ModuleTable;
 use crate::parser::program::StringId;
 
@@ -17,6 +19,7 @@ use std::fmt;
 pub enum LexerState {
     Top,
     Underline,
+    SecondaryUnderline,
     Whitespace,
     Name,
 }
@@ -44,7 +47,7 @@ fn tk_name(id: StringId) -> Token {
     Token::Name(id)
 }
 
-impl LexerStateTrait for LexerState {
+impl LexerDelegateTrait for LexerState {
     type Token = Token;
 
     fn top() -> LexerState {
@@ -61,38 +64,89 @@ impl LexerStateTrait for LexerState {
                 None => LexerNext::EOF,
                 Some(c) => {
                     if c == '^' {
-                        LexerNext::transition_to(LexerState::Underline).reconsume()
+                        LexerNext::Transition(LexerAccumulate::Begin, LexerState::Underline)
+                    } else if c == '~' {
+                        LexerNext::Transition(
+                            LexerAccumulate::Begin,
+                            LexerState::SecondaryUnderline,
+                        )
                     } else if c == ' ' {
-                        LexerNext::transition_to(LexerState::Whitespace)
+                        LexerNext::Transition(LexerAccumulate::Begin, LexerState::Whitespace)
                     } else {
-                        LexerNext::transition_to(LexerState::Name)
+                        LexerNext::Transition(LexerAccumulate::Begin, LexerState::Name)
                     }
                 }
             },
 
             LexerState::Name => match c {
-                None => LexerNext::emit(tk_name, LexerState::Top).reconsume(),
-                Some(' ') => LexerNext::transition_to(LexerState::Top).reconsume(),
-                Some(c) if c.is_alphabetic() => LexerNext::consume(),
-                Some('-') => LexerNext::consume(),
+                None => LexerNext::Transition(
+                    LexerAccumulate::Emit {
+                        before: None,
+                        after: None,
+                        token: LexerToken::Dynamic(tk_name),
+                    },
+                    LexerState::Top,
+                ),
+                Some(' ') => LexerNext::Transition(
+                    LexerAccumulate::Emit {
+                        before: None,
+                        after: None,
+                        token: LexerToken::Dynamic(tk_name),
+                    },
+                    LexerState::Top,
+                ),
+                Some(c) if c.is_alphabetic() => {
+                    LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1)))
+                }
+                Some('-') => LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1))),
 
                 Some(other) => LexerNext::Error(other),
             },
 
             LexerState::Underline => match c {
-                None => LexerNext::emit(tk_underline, LexerState::Top).reconsume(),
-                Some(' ') => LexerNext::emit(tk_underline, LexerState::Top).reconsume(),
-                Some('^') => LexerNext::consume(),
-                _ => LexerNext::emit(tk_underline, LexerState::Top),
+                None => LexerNext::Transition(
+                    LexerAccumulate::emit_dynamic(tk_underline),
+                    LexerState::Top,
+                ),
+                Some(' ') | Some('~') => LexerNext::Transition(
+                    LexerAccumulate::emit_dynamic(tk_underline),
+                    LexerState::Top,
+                ),
+                Some('^') => LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1))),
+                _ => LexerNext::Transition(
+                    LexerAccumulate::emit_dynamic(tk_underline),
+                    LexerState::Top,
+                ),
+            },
+
+            LexerState::SecondaryUnderline => match c {
+                None => LexerNext::Transition(
+                    LexerAccumulate::emit_dynamic(tk_underline),
+                    LexerState::Top,
+                ),
+                Some(' ') | Some('^') => LexerNext::Transition(
+                    LexerAccumulate::emit_dynamic(tk_underline),
+                    LexerState::Top,
+                ),
+                Some('~') => LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1))),
+                _ => LexerNext::Transition(
+                    LexerAccumulate::emit_dynamic(tk_underline),
+                    LexerState::Top,
+                ),
             },
 
             LexerState::Whitespace => match c {
                 None => LexerNext::EOF,
-                Some(c) => if c == ' ' {
-                    LexerNext::consume()
-                } else {
-                    LexerNext::finalize_no_emit(LexerState::Top).reconsume()
-                },
+                Some(c) => {
+                    if c == ' ' {
+                        LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1)))
+                    } else {
+                        LexerNext::Transition(
+                            LexerAccumulate::Skip(LexerAction::Reconsume),
+                            LexerState::Top,
+                        )
+                    }
+                }
             },
             other => unimplemented!("{:?}", other),
         };

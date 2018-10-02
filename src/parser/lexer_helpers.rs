@@ -6,91 +6,122 @@ use crate::parser::program::{ModuleTable, StringId};
 
 use codespan::ByteIndex;
 use derive_new::new;
-use log::{debug, trace};
+use log::{debug, trace, warn};
 use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
+/// This enum describes which state to transition into next.
+/// The LexerEmit nested inside of the LexerNext describes
+/// what happens before the transition
 #[derive(Debug)]
-pub enum LexerNext<State: LexerStateTrait> {
-    Skip(u32, Box<LexerNext<State>>),
-    PushState(LexerAction<State>, State),
-    PopState(LexerAction<State>),
-    Transition(LexerAction<State>, State),
-    Continue(LexerAction<State>),
-    WholeToken(u32, State::Token),
-    Error(char),
+pub enum LexerNext<Delegate: LexerDelegateTrait> {
     EOF,
+    Remain(LexerAccumulate<Delegate>),
+    Transition(LexerAccumulate<Delegate>, Delegate),
+    PushState(LexerAccumulate<Delegate>, Delegate),
+    PopState(LexerAccumulate<Delegate>),
+    Error(char),
+}
+
+/// This enum describes whether to emit the current token.
+#[derive(Debug)]
+pub enum LexerAccumulate<Delegate: LexerDelegateTrait> {
+    /// Start a new token. There should be no accumulated characters
+    /// yet.
+    Begin,
+
+    /// Don't accumulate any characters or emit anything
+    Nothing,
+
+    /// Don't emit anything, but continue to accumulate characters
+    /// in the current token
+    Continue(LexerAction),
+
+    /// Start a new token after possibly consuming some characters.
+    /// Those characters are ignored, and are not part of any token.
+    Skip(LexerAction),
+
+    /// Emit a token after accumulating some characters into it.
+    /// Possibly skip some characters afterward.
+    Emit {
+        before: Option<LexerAction>,
+        after: Option<LexerAction>,
+        token: LexerToken<Delegate>,
+    },
+}
+
+impl<Delegate: LexerDelegateTrait> LexerAccumulate<Delegate> {
+    pub fn emit_dynamic(token: fn(StringId) -> Delegate::Token) -> LexerAccumulate<Delegate> {
+        LexerAccumulate::Emit {
+            before: None,
+            after: None,
+            token: LexerToken::Dynamic(token),
+        }
+    }
+
+    pub fn emit(token: Delegate::Token) -> LexerAccumulate<Delegate> {
+        LexerAccumulate::Emit {
+            before: None,
+            after: None,
+            token: LexerToken::Fixed(token),
+        }
+    }
+
+    pub fn before(self, action: LexerAction) -> LexerAccumulate<Delegate> {
+        match self {
+            LexerAccumulate::Emit {
+                before: None,
+                after,
+                token,
+            } => LexerAccumulate::Emit {
+                before: Some(action),
+                after,
+                token,
+            },
+
+            other => panic!("Can't add a before action to {:?}", other),
+        }
+    }
+
+    pub fn and_then(self, action: LexerAction) -> LexerAccumulate<Delegate> {
+        match self {
+            LexerAccumulate::Emit {
+                before,
+                after: None,
+                token,
+            } => LexerAccumulate::Emit {
+                before,
+                after: Some(action),
+                token,
+            },
+
+            other => panic!("Can't add an after action to {:?}", other),
+        }
+    }
 }
 
 #[derive(Debug)]
-pub enum LexerAction<State: LexerStateTrait> {
-    Finalize(u32),
-    EmitCurrent(u32, fn(StringId) -> State::Token),
+pub enum LexerToken<Delegate: LexerDelegateTrait> {
+    Dynamic(fn(StringId) -> Delegate::Token),
+    Fixed(Delegate::Token),
+}
+
+impl<Delegate: LexerDelegateTrait> LexerToken<Delegate> {
+    fn string(&self, id: StringId) -> Delegate::Token {
+        match self {
+            LexerToken::Dynamic(f) => f(id),
+            LexerToken::Fixed(tok) => *tok,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum LexerAction {
     Consume(u32),
+    Reconsume,
 }
 
-impl<LexerState: LexerStateTrait> LexerAction<LexerState> {
-    fn reconsume(self) -> LexerAction<LexerState> {
-        match self {
-            LexerAction::Finalize(..) => LexerAction::Finalize(0),
-            LexerAction::EmitCurrent(_, tk) => LexerAction::EmitCurrent(0, tk),
-            LexerAction::Consume(..) => LexerAction::Consume(0),
-        }
-    }
-}
-
-impl<LexerState: LexerStateTrait> LexerNext<LexerState> {
-    pub fn finalize_no_emit(next_state: LexerState) -> LexerNext<LexerState> {
-        LexerNext::Transition(LexerAction::Finalize(1), next_state)
-    }
-
-    pub fn consume() -> LexerNext<LexerState> {
-        LexerNext::Continue(LexerAction::Consume(1))
-    }
-
-    pub fn emit(
-        tok: fn(StringId) -> LexerState::Token,
-        next_state: LexerState,
-    ) -> LexerNext<LexerState> {
-        LexerNext::Transition(LexerAction::EmitCurrent(1, tok), next_state)
-    }
-
-    pub fn emit_and_skip(
-        tok: fn(StringId) -> LexerState::Token,
-        next_state: LexerState,
-        skip: u32,
-    ) -> LexerNext<LexerState> {
-        LexerNext::Skip(
-            skip,
-            box LexerNext::Transition(LexerAction::EmitCurrent(0, tok), next_state),
-        )
-    }
-
-    pub fn transition_to(next_state: LexerState) -> LexerNext<LexerState> {
-        LexerNext::Transition(LexerAction::Consume(1), next_state)
-    }
-
-    pub fn reconsume(self) -> LexerNext<LexerState> {
-        match self {
-            LexerNext::WholeToken(_, tok) => LexerNext::WholeToken(0, tok),
-            LexerNext::Transition(action, state) => {
-                LexerNext::Transition(action.reconsume(), state)
-            }
-            LexerNext::PushState(action, state) => LexerNext::PushState(action.reconsume(), state),
-            LexerNext::PopState(action) => LexerNext::PopState(action.reconsume()),
-            LexerNext::Skip(..) => panic!("Skip and reconsume are not compatible"),
-            LexerNext::Continue(action) => LexerNext::Continue(action.reconsume()),
-            LexerNext::Error(c) => LexerNext::Error(c),
-            LexerNext::EOF => LexerNext::EOF,
-        }
-    }
-
-    pub fn skip(self, num: u32) -> LexerNext<LexerState> {
-        LexerNext::Skip(num, Box::new(self))
-    }
-}
-
-pub trait LexerStateTrait: fmt::Debug + Clone + Copy + Sized {
+pub trait LexerDelegateTrait: fmt::Debug + Clone + Copy + Sized {
     type Token: fmt::Debug + Copy + DebugModuleTable;
 
     fn next(&self, c: Option<char>, rest: &'input str) -> Result<LexerNext<Self>, ParseError>;
@@ -99,48 +130,59 @@ pub trait LexerStateTrait: fmt::Debug + Clone + Copy + Sized {
 }
 
 #[derive(Debug, new)]
-pub struct Tokenizer<'table, State: LexerStateTrait> {
+pub struct Tokenizer<'table, Delegate: LexerDelegateTrait> {
     table: &'table mut ModuleTable,
     input: &'table str,
     codespan_start: u32,
 
+    /// The rest of the input
     #[new(value = "input")]
     rest: &'table str,
 
+    /// The beginning of the current token
     #[new(value = "input")]
     token_start: &'table str,
 
+    /// The position of the token_start offset from the input
     #[new(default)]
     start_pos: u32,
 
+    /// The current size of the token
     #[new(default)]
-    token_size: u32,
+    token_len: u32,
 
-    #[new(default)]
-    pos: u32,
-
-    #[new(value = "State::top()")]
-    state: State,
+    #[new(value = "Delegate::top()")]
+    state: Delegate,
 
     #[new(value = "vec![]")]
-    stack: Vec<State>,
+    stack: Vec<Delegate>,
 
     #[new(default)]
-    token: PhantomData<State::Token>,
+    token: PhantomData<Delegate::Token>,
 }
 
 pub type TokenizerItem<Token> = Result<(ByteIndex, Token, ByteIndex), ParseError>;
 
-impl<State: LexerStateTrait + Debug> Iterator for Tokenizer<'table, State> {
-    type Item = TokenizerItem<State::Token>;
+impl<Delegate: LexerDelegateTrait + Debug> Iterator for Tokenizer<'table, Delegate> {
+    type Item = TokenizerItem<Delegate::Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let mut count = 0;
         loop {
+            count += 1;
+
+            if count > 1000 {
+                return None;
+            }
+
+            // Get an action from the delegate
             let next = {
                 let Tokenizer { state, rest, .. } = self;
                 let next = rest.chars().next();
 
-                trace!("next char={:?} rest={:?}", next, rest);
+                trace!("next");
+                trace!("          char={:?}", next);
+                trace!("          rest={:?}", rest);
 
                 state.next(next, rest)
             };
@@ -148,8 +190,11 @@ impl<State: LexerStateTrait + Debug> Iterator for Tokenizer<'table, State> {
             self.trace("start");
 
             let next = match next {
-                Ok(n) => n,
+                // If the delegate returned an error, it's an error
                 Err(e) => return Some(Err(e)),
+
+                // Otherwise, process the action
+                Ok(n) => n,
             };
 
             match self.step(next) {
@@ -165,92 +210,23 @@ enum LoopCompletion<T> {
     Return(T),
 }
 
-impl<'a, State: LexerStateTrait> LexerNext<State> {
-    pub fn emit_token(t: State::Token, size: u32) -> LexerNext<State> {
-        LexerNext::WholeToken(size, t)
-    }
-
-    pub fn emit_char(t: State::Token) -> LexerNext<State> {
-        LexerNext::WholeToken(1, t)
-    }
-
-    pub fn emit_current(
-        size: u32,
-        tok: fn(StringId) -> State::Token,
-        next_state: State,
-    ) -> LexerNext<State> {
-        LexerNext::Transition(LexerAction::EmitCurrent(size, tok), next_state)
-    }
-}
-
-impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
-    fn accumulate(&mut self, size: u32) {
-        self.consume(size);
-        self.token_size += size;
-    }
-
-    fn consume(&mut self, size: u32) {
-        self.pos += size;
-        self.rest = &self.rest[(size as usize)..];
-    }
-
-    fn consume_token(&mut self, size: u32) -> (u32, u32) {
-        // get the starting position
-        let start_pos = self.start_pos;
-
-        self.consume(size);
-
-        // and advance it to the current position
-        self.start_pos = self.pos;
-
-        // reset the token size
-        self.token_size = 0;
-
-        let ret = (start_pos, self.pos);
-
-        ret
-    }
-
-    fn whole_token(&mut self, size: u32) -> (u32, u32) {
-        let token = &self.token_start[..size as usize];
-        let (start, end) = self.consume_token(size);
-        self.token_start = self.rest;
-
-        self.trace("whole");
-
-        trace!(target: "lark::tokenize", "-> token={:?}", token.clone());
-
-        (start, end)
-    }
-
-    fn discard_current(&mut self, size: u32) -> (u32, u32) {
-        let (start_pos, end_pos) = self.consume_token(size);
-        self.token_start = self.rest;
-
-        self.trace("discard");
-        (start_pos, end_pos)
-    }
-
-    fn finalize_current(&mut self, size: u32) -> (u32, StringId, u32) {
-        let token = &self.token_start[..self.token_size as usize];
-        let id = self.table.intern(token);
-        self.token_start = self.rest;
-        let (start_pos, end_pos) = self.consume_token(size);
-
-        self.trace("finalize");
-        trace!(target: "lark::tokenize", "-> token={:?}", token.clone());
-        (start_pos, id, end_pos)
+impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
+    fn intern(&mut self, source: &str) -> StringId {
+        self.table.intern(source)
     }
 
     fn error(&mut self, c: char) -> ParseError {
         let file_start = self.codespan_start;
         let state = self.state.clone();
-        let token = &self.token_start[..self.token_size as usize];
-        let (start_pos, end_pos) = self.consume_token(1);
+        // let token = &self.token_start[..self.token_size() as usize];
+        // let (start_pos, end_pos) = self.consume_token(1);
 
         let error = ParseError::new(
             format!("Unexpected char `{}` in state {:?}", c, state),
-            Span::from_pos(file_start + start_pos, file_start + end_pos),
+            Span::from_pos(
+                file_start + self.start_pos,
+                file_start + self.start_pos + self.token_len,
+            ),
         );
 
         debug!("lark::tokenize::error {:?}", error);
@@ -263,65 +239,43 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
 
         trace!(target: "lark::tokenize", "{}", prefix);
 
-        trace!(target: "lark::tokenize", "          input={:?}", self.input);
+        trace!(target: "lark::tokenize", "          pos={:?}", start + self.start_pos + self.token_len);
 
-        trace!(target: "lark::tokenize", "          pos={:?} start_pos={:?}", start + self.pos, start + self.start_pos);
+        let rest_end = std::cmp::min(20, self.rest.len());
+        let token_start_end = std::cmp::min(20, self.token_start.len());
 
         trace!(
             target: "lark::tokenize",
-            "          rest={:?} token-start={:?} token-size={:?} state={:?}",
-            self.rest,
-            self.token_start,
-            self.token_size,
-            self.state
+            "          rest={:?}",
+            &self.rest[..rest_end],
         );
+
+        trace!(
+            target: "lark::tokenize",
+            "          token-start={:?}",
+            &self.token_start[..token_start_end]
+        );
+
+        trace!(target: "lark::tokenize", "          token-size={:?} state={:?}", self.token_len, self.state)
     }
 
+    /// Take a LexerNext and process it
     fn step(
         &mut self,
-        next: LexerNext<State>,
-    ) -> LoopCompletion<Option<TokenizerItem<State::Token>>> {
+        next: LexerNext<Delegate>,
+    ) -> LoopCompletion<Option<TokenizerItem<Delegate::Token>>> {
+        debug!("next: {:?}", next);
         match next {
+            // If the delegate returned EOF, we're done
             LexerNext::EOF => {
                 self.trace("EOF");
                 return LoopCompletion::Return(None);
             }
 
-            LexerNext::Skip(size, next) => {
-                let tok = self.step(*next);
+            LexerNext::Remain(accum) => self.accumulate(accum),
 
-                self.discard_current(size);
-
-                tok
-            }
-
-            LexerNext::WholeToken(size, token) => {
-                self.trace(&format!("whole {} {:?}", size, token));
-
-                let file_start = self.codespan_start;
-
-                let (start, end) = self.whole_token(size);
-
-                let token = Some(Ok((
-                    ByteIndex(start + file_start),
-                    token,
-                    ByteIndex(end + file_start),
-                )));
-
-                trace!(target: "lark::tokenize::some", "WholeToken: {:?}", token);
-
-                LoopCompletion::Return(token)
-            }
-
-            LexerNext::Continue(action) => {
-                let ret = self.handle_action(action);
-                self.trace("continue");
-
-                ret
-            }
-
-            LexerNext::Transition(action, state) => {
-                let ret = self.handle_action(action);
+            LexerNext::Transition(accum, state) => {
+                let ret = self.accumulate(accum);
                 self.transition(state);
 
                 self.trace("transition");
@@ -330,7 +284,7 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
             }
 
             LexerNext::PushState(action, state) => {
-                let ret = self.handle_action(action);
+                let ret = self.accumulate(action);
                 self.stack.push(state.clone());
                 self.transition(state);
 
@@ -338,7 +292,7 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
             }
 
             LexerNext::PopState(action) => {
-                let ret = self.handle_action(action);
+                let ret = self.accumulate(action);
                 let state = self.stack.pop().expect("Unexpected empty state stack");
                 self.transition(state);
 
@@ -349,15 +303,82 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
         }
     }
 
-    fn transition(&mut self, state: State) {
+    fn accumulate(
+        &mut self,
+        accum: LexerAccumulate<Delegate>,
+    ) -> LoopCompletion<Option<TokenizerItem<Delegate::Token>>> {
+        use self::LexerAccumulate::*;
+
+        match accum {
+            Begin => {
+                assert!(
+                    self.token_len == 0,
+                    "Cannot begin a new token when there are already accumulated characters"
+                );
+
+                LoopCompletion::Continue
+            }
+            Nothing => LoopCompletion::Continue,
+            Continue(action) => {
+                self.action(action);
+                LoopCompletion::Continue
+            }
+            Skip(action) => {
+                self.action(action);
+
+                // TODO: Extract into "finalization"?
+                self.start_pos = self.start_pos + self.token_len;
+                self.token_len = 0;
+                LoopCompletion::Continue
+            }
+
+            Emit {
+                before,
+                after,
+                token,
+            } => {
+                if let Some(before) = before {
+                    self.action(before);
+                }
+
+                let start = self.start_pos as usize;
+                let len = self.token_len as usize;
+
+                let source = &self.input[start..start + len];
+                self.start_pos = start as u32 + len as u32;
+                self.token_len = 0;
+
+                let id = self.intern(source);
+                let token = token.string(id);
+
+                LoopCompletion::Return(Some(Ok((
+                    ByteIndex(self.codespan_start + start as u32),
+                    token,
+                    ByteIndex(self.codespan_start + start as u32 + len as u32),
+                ))))
+            }
+        }
+    }
+
+    fn action(&mut self, action: LexerAction) {
+        match action {
+            LexerAction::Consume(n) => {
+                self.token_len += n;
+                self.rest = &self.rest[(n as usize)..];
+            }
+            LexerAction::Reconsume => {}
+        }
+    }
+
+    fn transition(&mut self, state: Delegate) {
         debug!("transition {:?} -> {:?}", self.state, state);
         self.state = state;
     }
 
     fn emit(
         &mut self,
-        token: Option<TokenizerItem<State::Token>>,
-    ) -> Option<TokenizerItem<State::Token>> {
+        token: Option<TokenizerItem<Delegate::Token>>,
+    ) -> Option<TokenizerItem<Delegate::Token>> {
         match &token {
             None => debug!("-> EOF"),
             Some(Err(e)) => debug!("parse error {:?}", e),
@@ -365,44 +386,6 @@ impl<State: LexerStateTrait + Debug> Tokenizer<'table, State> {
         };
 
         token
-    }
-
-    fn handle_action(
-        &mut self,
-        action: LexerAction<State>,
-    ) -> LoopCompletion<Option<TokenizerItem<State::Token>>> {
-        match action {
-            LexerAction::Consume(size) => {
-                self.accumulate(size);
-
-                LoopCompletion::Continue
-            }
-
-            LexerAction::Finalize(size) => {
-                let (l, r) = self.discard_current(size);
-                let file_start = self.codespan_start;
-
-                trace!(target: "lark::tokenize::noemit", "NoEmit @ {}..{}", l + file_start, r + file_start);
-
-                LoopCompletion::Continue
-            }
-
-            LexerAction::EmitCurrent(size, tok) => {
-                let file_start = self.codespan_start;
-                self.token_size += size;
-                let (start, id, end) = self.finalize_current(size);
-
-                let token = Some(Ok((
-                    ByteIndex(start + file_start),
-                    tok(id),
-                    ByteIndex(end + file_start),
-                )));
-
-                trace!(target: "lark::tokenize::some", "EmitCurrent: {:?}", token);
-
-                LoopCompletion::Return(token)
-            }
-        }
     }
 }
 

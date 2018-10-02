@@ -25,7 +25,7 @@ crate use self::token::Token;
 crate use self::tokenizer::Tokenizer;
 
 use itertools::Itertools;
-use log::trace;
+use log::{trace, warn};
 use std::collections::HashMap;
 
 use crate::lexer::KeywordList;
@@ -108,7 +108,7 @@ mod test {
     use derive_new::new;
     use itertools::Itertools;
     use language_reporting::{emit, Diagnostic, Label, Severity};
-    use log::{debug, trace};
+    use log::{debug, trace, warn};
     use std::collections::HashMap;
     use termcolor::{ColorChoice, StandardStream};
     use unindent::unindent;
@@ -152,11 +152,11 @@ mod test {
             def main() {
             ^^^ ^^^^   ^ main
                 let var_name = "variable"
-                ^^^ ^^^^^^^^    ^^^^^^^^ var-name
+                ^^^ ^^^^^^^^   ^^^^^^^^^^ var-name
                 let s = "variable is unused " + var_name
-                ^^^ ^    ^^^^^^^^^^^^^^^^^^^  ^ ^^^^^^^^  ^ s-var
+                ^^^ ^   ^^^^^^^^^^^^^^^^^^^^^ ^ ^^^^^^^^  ^ s-var
                 new(s, "warning")
-                ^^^ ^   ^^^^^^^ ^ invoke
+                ^^^ ^  ^^^^^^^^^~ invoke
             }
             ^ close-main
             "#,
@@ -264,7 +264,8 @@ mod test {
             &codemap,
             &error,
             &language_reporting::DefaultConfig,
-        ).unwrap();
+        )
+        .unwrap();
         panic!("Parse Error");
     }
 
@@ -290,8 +291,17 @@ mod test {
         fn get(&self, pos: impl Position) -> Span {
             let (name, pos) = pos.pos();
 
-            let line = self.lines.get(name).expect("Wrong line name");
-            let spans = self.spans.get(line).expect("Wrong line number");
+            let line = self.lines.get(name).expect(&format!(
+                "Wrong line name {}, names={:?}",
+                name,
+                self.lines.keys()
+            ));
+
+            let spans = self.spans.get(line).expect(&format!(
+                "Wrong line number {}, len={}",
+                line,
+                self.spans.len()
+            ));
 
             spans[pos as usize]
         }
@@ -377,10 +387,11 @@ mod test {
 
         fn string(&self, pos: impl Position) -> ast::Expression {
             let string = self.src(pos);
-            let id = self
-                .table
-                .get(&format!("\"{}\"", string)[..])
-                .expect(&format!("Missing expected string {:?}", string));
+            let id = self.table.get(string).expect(&format!(
+                "Missing expected string {:?}, had {:?}",
+                string,
+                self.table.values()
+            ));
 
             ast::Expression::Literal(ast::Literal::String(self.wrap_one(id, pos)))
         }
@@ -392,6 +403,7 @@ mod test {
 
         fn ident(&self, pos: impl Position) -> Spanned<StringId> {
             let span = self.get(pos);
+
             let file = self
                 .codemap
                 .find_file(span.to_codespan().start())

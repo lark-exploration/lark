@@ -154,7 +154,7 @@ impl<T: DebugModuleTable> DebugModuleTable for Spanned<T> {
 
 impl DebugModuleTable for Block {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
-        write!(f, "{:?}", DebuggableVec::from(&self.expressions, table))
+        write!(f, "{:#?}", DebuggableVec::from(&self.expressions, table))
     }
 }
 
@@ -203,7 +203,7 @@ impl DebugModuleTable for Pattern {
         match self {
             Pattern::Underscore => write!(f, "_"),
             Pattern::Identifier(id, Some(mode)) => {
-                mode.debug(f, table);
+                mode.debug(f, table)?;
                 write!(f, " ");
                 id.debug(f, table)
             }

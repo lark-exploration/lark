@@ -131,7 +131,6 @@ Expr1: Expression = {
     ConstructStruct => Expression::ConstructStruct(<>),
     Call => Expression::Call(<>),
     Identifier => Expression::Ref(<>),
-    Interpolation,
     ExprAtom
 }
 
@@ -186,48 +185,7 @@ ExprAtom: Expression = {
     Lit => unimplemented!("ExprAtom::Lit"),
     PathExpr => unimplemented!("ExprAtom::PathExpr"),
     self => unimplemented!("ExprAtom::Self"),
-    <l: @L> <s: string> <r: @R> => Expression::string(Spanned::from(s, l + ByteOffset(1), r - ByteOffset(1)))
-}
-
-Interpolation: Expression = {
-    <l: @L> <start: InterpolationStart> <inner: InterpolationInner> EndTemplate <r: @R> => {
-        let mut elements = vec![];
-
-        elements.push(start);
-        elements.extend(inner);
-
-        Expression::Interpolation(elements, Span::from(l, r))
-    }
-}
-
-InterpolationInner: Vec<InterpolationElement> = {
-    <chunks: InterpolationChunk*> <expr: Expr?> => {
-        let mut elements = vec![];
-
-        for chunk in chunks {
-            for item in chunk {
-                elements.push(item);
-            }
-        }
-
-        if let Some(expr) = expr {
-            elements.push(InterpolationElement::Expression(expr));
-        }
-
-        elements
-    }
-}
-
-InterpolationStart: InterpolationElement = {
-    <l: @L> <start: TemplateFragment> <r: @R> => InterpolationElement::String(Spanned::from(start, l, r))
-}
-
-InterpolationChunk: Vec<InterpolationElement> = {
-    <e: Expr> <s: InterpolationMiddle> => vec![InterpolationElement::Expression(e), s]
-}
-
-InterpolationMiddle: InterpolationElement = {
-    <l: @L> <mid: TemplateFragment> <r: @R> => InterpolationElement::String(Spanned::from(mid, l, r))
+    <l: @L> <s: string> <r: @R> => Expression::string(Spanned::from(s, l, r))
 }
 
 Lit: () = {
