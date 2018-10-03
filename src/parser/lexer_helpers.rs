@@ -23,6 +23,67 @@ pub enum LexerNext<Delegate: LexerDelegateTrait> {
     Error(char),
 }
 
+trait EmitToken<Delegate: LexerDelegateTrait> {
+    fn token_for(self, s: StringId) -> Delegate::Token;
+}
+
+impl<Delegate: LexerDelegateTrait> LexerNext<Delegate> {
+    pub fn begin(state: Delegate) -> Self {
+        LexerNext::Transition(LexerAccumulate::Begin, state)
+    }
+
+    /// A sigil is a single character that represents a token
+    pub fn sigil(token: Delegate::Token) -> Self {
+        LexerNext::Remain(LexerAccumulate::Emit {
+            before: Some(LexerAction::Consume(1)),
+            after: None,
+            token: LexerToken::Fixed(token),
+        })
+    }
+
+    pub fn dynamic_sigil(token: fn(StringId) -> Delegate::Token) -> Self {
+        LexerNext::Remain(LexerAccumulate::Emit {
+            before: Some(LexerAction::Consume(1)),
+            after: None,
+            token: LexerToken::Dynamic(token),
+        })
+    }
+
+    pub fn emit(token: Delegate::Token, state: Delegate) -> Self {
+        LexerNext::Transition(
+            LexerAccumulate::Emit {
+                before: None,
+                after: None,
+                token: LexerToken::Fixed(token),
+            },
+            state,
+        )
+    }
+
+    pub fn emit_dynamic(token: fn(StringId) -> Delegate::Token, state: Delegate) -> Self {
+        LexerNext::Transition(
+            LexerAccumulate::Emit {
+                before: None,
+                after: None,
+                token: LexerToken::Dynamic(token),
+            },
+            state,
+        )
+    }
+
+    pub fn discard(state: Delegate) -> Self {
+        LexerNext::Transition(LexerAccumulate::Skip(LexerAction::Reconsume), state)
+    }
+
+    pub fn consume() -> Self {
+        LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1)))
+    }
+
+    pub fn transition(state: Delegate) -> Self {
+        LexerNext::Transition(LexerAccumulate::Continue(LexerAction::Consume(1)), state)
+    }
+}
+
 /// This enum describes whether to emit the current token.
 #[derive(Debug)]
 pub enum LexerAccumulate<Delegate: LexerDelegateTrait> {
@@ -46,8 +107,44 @@ pub enum LexerAccumulate<Delegate: LexerDelegateTrait> {
     Emit {
         before: Option<LexerAction>,
         after: Option<LexerAction>,
-        token: LexerToken<Delegate>,
+        token: LexerToken<Delegate::Token>,
     },
+}
+
+impl<Delegate: LexerDelegateTrait> From<LexerAccumulate<Delegate>> for LexerNext<Delegate> {
+    fn from(accum: LexerAccumulate<Delegate>) -> LexerNext<Delegate> {
+        LexerNext::Remain(accum)
+    }
+}
+
+impl<Delegate: LexerDelegateTrait> LexerAccumulate<Delegate> {
+    pub fn and_remain(self) -> LexerNext<Delegate> {
+        LexerNext::Remain(self)
+    }
+
+    pub fn and_transition(self, state: Delegate) -> LexerNext<Delegate> {
+        LexerNext::Transition(self, state)
+    }
+
+    pub fn and_push(self, state: Delegate) -> LexerNext<Delegate> {
+        LexerNext::PushState(self, state)
+    }
+
+    pub fn and_pop(self) -> LexerNext<Delegate> {
+        LexerNext::PopState(self)
+    }
+}
+
+impl<Delegate: LexerDelegateTrait> From<LexerAction> for LexerAccumulate<Delegate> {
+    fn from(action: LexerAction) -> LexerAccumulate<Delegate> {
+        LexerAccumulate::Continue(action)
+    }
+}
+
+impl<Delegate: LexerDelegateTrait> From<LexerAction> for LexerNext<Delegate> {
+    fn from(action: LexerAction) -> LexerNext<Delegate> {
+        LexerNext::Remain(LexerAccumulate::Continue(action))
+    }
 }
 
 impl<Delegate: LexerDelegateTrait> LexerAccumulate<Delegate> {
@@ -101,13 +198,13 @@ impl<Delegate: LexerDelegateTrait> LexerAccumulate<Delegate> {
 }
 
 #[derive(Debug)]
-pub enum LexerToken<Delegate: LexerDelegateTrait> {
-    Dynamic(fn(StringId) -> Delegate::Token),
-    Fixed(Delegate::Token),
+pub enum LexerToken<Token: Copy> {
+    Dynamic(fn(StringId) -> Token),
+    Fixed(Token),
 }
 
-impl<Delegate: LexerDelegateTrait> LexerToken<Delegate> {
-    fn string(&self, id: StringId) -> Delegate::Token {
+impl<Token: Copy> LexerToken<Token> {
+    fn string(&self, id: StringId) -> Token {
         match self {
             LexerToken::Dynamic(f) => f(id),
             LexerToken::Fixed(tok) => *tok,
@@ -115,10 +212,81 @@ impl<Delegate: LexerDelegateTrait> LexerToken<Delegate> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum LexerAction {
     Consume(u32),
     Reconsume,
+}
+
+impl LexerAction {
+    pub fn and_remain<Delegate: LexerDelegateTrait>(self) -> LexerNext<Delegate> {
+        LexerNext::Remain(LexerAccumulate::Continue(self))
+    }
+
+    pub fn and_transition<Delegate: LexerDelegateTrait>(
+        self,
+        state: Delegate,
+    ) -> LexerNext<Delegate> {
+        LexerNext::Transition(LexerAccumulate::Continue(self), state)
+    }
+
+    pub fn and_push<Delegate: LexerDelegateTrait>(self, state: Delegate) -> LexerNext<Delegate> {
+        LexerNext::PushState(LexerAccumulate::Continue(self), state)
+    }
+
+    pub fn and_pop<Delegate: LexerDelegateTrait>(self) -> LexerNext<Delegate> {
+        LexerNext::PopState(LexerAccumulate::Continue(self))
+    }
+
+    pub fn and_continue<Delegate: LexerDelegateTrait>(self) -> LexerAccumulate<Delegate> {
+        LexerAccumulate::Continue(self)
+    }
+
+    pub fn and_discard<Delegate: LexerDelegateTrait>(self) -> LexerAccumulate<Delegate> {
+        LexerAccumulate::Skip(self)
+    }
+
+    pub fn and_emit<Delegate: LexerDelegateTrait>(
+        self,
+        token: Delegate::Token,
+    ) -> LexerAccumulate<Delegate> {
+        LexerAccumulate::Emit {
+            before: Some(self),
+            after: None,
+            token: LexerToken::Fixed(token),
+        }
+    }
+
+    pub fn and_emit_dynamic<Delegate: LexerDelegateTrait>(
+        self,
+        token: fn(StringId) -> Delegate::Token,
+    ) -> LexerAccumulate<Delegate> {
+        LexerAccumulate::Emit {
+            before: Some(self),
+            after: None,
+            token: LexerToken::Dynamic(token),
+        }
+    }
+}
+
+pub fn reconsume() -> LexerAction {
+    LexerAction::Reconsume
+}
+
+pub fn consume() -> LexerAction {
+    LexerAction::Consume(1)
+}
+
+pub fn consume_n(size: u32) -> LexerAction {
+    LexerAction::Consume(size)
+}
+
+pub fn begin<Delegate: LexerDelegateTrait>() -> LexerAccumulate<Delegate> {
+    LexerAccumulate::Begin
+}
+
+pub fn eof<Delegate: LexerDelegateTrait>() -> LexerNext<Delegate> {
+    LexerNext::EOF
 }
 
 pub trait LexerDelegateTrait: fmt::Debug + Clone + Copy + Sized {
