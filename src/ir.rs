@@ -1,5 +1,5 @@
 use crate::ty::intern::{Interners, TyInterners};
-use crate::ty::{BaseData, BaseKind, Inferable, Ty};
+use crate::ty::{BaseData, BaseKind, Generics, Inferable, Ty};
 
 pub type DefId = usize;
 pub type VarId = usize;
@@ -230,7 +230,7 @@ impl Context {
     crate fn simple_type_for_def_id(&self, def_id: DefId) -> Ty {
         let base = self.ty_interners.intern(Inferable::Known(BaseData {
             kind: BaseKind::Named(def_id),
-            generics: self.ty_interners.common().empty_generics.clone(),
+            generics: Generics::empty(),
         }));
         Ty {
             base,

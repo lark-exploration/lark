@@ -1,11 +1,9 @@
 use crate::intern::{Intern, InternTable, Untern};
 use crate::ty::debug::TyDebugContext;
-use crate::ty::Generics;
 use crate::ty::{Base, BaseData};
 use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
 use parking_lot::RwLock;
-use std::iter::FromIterator;
 use std::sync::Arc;
 
 /// The "type context" is a global resource that interns types and
@@ -23,7 +21,6 @@ struct TyInternersData {
 }
 
 crate struct Common {
-    crate empty_generics: Generics,
     crate own: Perm,
 }
 
@@ -79,12 +76,7 @@ impl TyInterners {
 
         let own = perms.intern(Inferable::Known(PermData::Own));
 
-        let empty_generics = Generics::from_iter(None);
-
-        let common = Common {
-            own,
-            empty_generics,
-        };
+        let common = Common { own };
 
         TyInterners {
             data: Arc::new(TyInternersData {

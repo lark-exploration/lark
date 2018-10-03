@@ -2,6 +2,7 @@
 #![feature(in_band_lifetimes)]
 #![feature(box_patterns)]
 #![feature(crate_visibility_modifier)]
+#![feature(existential_type)]
 #![feature(nll)]
 #![feature(min_const_fn)]
 #![feature(const_fn)]

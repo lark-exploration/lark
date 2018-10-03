@@ -87,10 +87,14 @@ crate enum BaseKind {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Generics {
-    crate elements: Arc<Vec<Generic>>,
+    elements: Option<Arc<Vec<Generic>>>,
 }
 
 impl Generics {
+    crate fn empty() -> Self {
+        Generics { elements: None }
+    }
+
     crate fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -100,11 +104,18 @@ impl Generics {
     }
 
     crate fn len(&self) -> usize {
-        self.elements.len()
+        self.elements.as_ref().map(|v| v.len()).unwrap_or(0)
     }
 
     crate fn iter(&self) -> impl Iterator<Item = Generic> + '_ {
         self.into_iter()
+    }
+
+    crate fn elements(&self) -> &[Generic] {
+        match &self.elements {
+            Some(e) => &e[..],
+            None => &[],
+        }
     }
 }
 
@@ -113,19 +124,25 @@ impl std::iter::FromIterator<Generic> for Generics {
     where
         T: IntoIterator<Item = Generic>,
     {
-        let vec = iter.into_iter().collect();
-        Generics {
-            elements: Arc::new(vec),
+        let vec: Vec<Generic> = iter.into_iter().collect();
+        if vec.is_empty() {
+            Generics { elements: None }
+        } else {
+            Generics {
+                elements: Some(Arc::new(vec)),
+            }
         }
     }
 }
 
+existential type GenericsIntoIter<'iter>: Iterator<Item = Generic>;
+
 impl IntoIterator for &'iter Generics {
-    type IntoIter = std::iter::Cloned<std::slice::Iter<'iter, Generic>>;
+    type IntoIter = GenericsIntoIter<'iter>;
     type Item = Generic;
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.elements.iter().cloned()
+    fn into_iter(self) -> GenericsIntoIter<'iter> {
+        self.elements.iter().flat_map(|v| v.iter().cloned())
     }
 }
 
