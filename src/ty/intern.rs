@@ -85,9 +85,9 @@ where
 
 impl TyInterners {
     crate fn new() -> Self {
-        let mut perms = InternTable::new();
-        let bases = InternTable::new();
-        let mut generics = InternTable::new();
+        let mut perms = InternTable::default();
+        let bases = InternTable::default();
+        let mut generics = InternTable::default();
 
         let own = perms.intern(Inferable::Known(PermData::Own));
 
