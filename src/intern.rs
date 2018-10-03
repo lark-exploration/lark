@@ -1,5 +1,5 @@
+use crate::map::FxIndexMap;
 use indexed_vec::{Idx, IndexVec};
-use rustc_hash::FxHashMap;
 use std::hash::Hash;
 use std::rc::Rc;
 
@@ -15,7 +15,7 @@ where
     Data: Clone + Hash + Eq,
 {
     vec: IndexVec<Key, Data>,
-    map: FxHashMap<Data, Key>,
+    map: FxIndexMap<Data, Key>,
 }
 
 impl<Key, Data> Default for InternTable<Key, Data>
@@ -26,7 +26,7 @@ where
     fn default() -> Self {
         InternTable {
             vec: IndexVec::default(),
-            map: FxHashMap::default(),
+            map: FxIndexMap::default(),
         }
     }
 }

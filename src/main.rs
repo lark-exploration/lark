@@ -27,6 +27,7 @@ mod hir;
 mod ide;
 mod intern;
 mod ir;
+mod map;
 mod parser;
 mod parser2;
 mod tests;
