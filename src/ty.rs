@@ -1,15 +1,13 @@
 #![warn(unused_imports)]
 
 use crate::ir::DefId;
-use crate::unify;
 use std::iter::IntoIterator;
 use std::rc::Rc;
 
-crate mod context;
 crate mod debug;
+mod inferable;
 crate mod intern;
 crate mod map;
-crate mod query;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Ty {
@@ -316,25 +314,4 @@ crate enum RegionDirection {
     Superset,
 
     Equals,
-}
-
-impl unify::Inferable<TyInterners> for Perm {
-    type KnownData = PermData;
-    type Data = Inferable<PermData>;
-
-    fn as_infer_var(self, interners: &Interners) -> Option<InferVar> {
-        if let Inferable::Infer(v) = interners.unterm(self) {
-             Some(v)
-        } else {
-            None
-        }
-    }
-
-    /// Create an inferable representing the inference variable `var`.
-    fn from_infer_var(var: InferVar, interners: &Interners) -> Self;
-
-    /// Asserts that this is not an inference variable and returns the
-    /// "known data" that it represents.
-    fn assert_known(self, interners: &Interners) -> Self::KnownData;
-
 }
