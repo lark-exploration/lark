@@ -1,5 +1,4 @@
 use crate::ty;
-use crate::ty::unify::InferValue;
 use crate::ty::BaseData;
 use crate::ty::InferVar;
 use crate::typeck::TypeChecker;
