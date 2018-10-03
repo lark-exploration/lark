@@ -1,8 +1,11 @@
-use crate::ty::intern::{Interners, TyInterners};
-use crate::ty::{BaseData, BaseKind, Generics, Inferable, Ty};
-
 pub type DefId = usize;
 pub type VarId = usize;
+
+// Dummy for now
+#[derive(Copy, Clone, Debug)]
+pub struct Ty {
+    def_id: DefId,
+}
 
 #[derive(Debug)]
 pub struct SourceInfo;
@@ -202,13 +205,11 @@ pub enum Definition {
 
 pub struct Context {
     pub definitions: Vec<Definition>,
-    crate ty_interners: TyInterners,
 }
 
 impl Context {
     pub fn new() -> Context {
         let mut definitions = vec![];
-        let ty_interners = TyInterners::new();
 
         for _ in 0..(builtin_type::ERROR + 1) {
             definitions.push(Definition::Builtin); // UNKNOWN
@@ -216,10 +217,7 @@ impl Context {
 
         definitions.push(Definition::BuiltinFn(BuiltinFn::StringInterpolate));
 
-        Context {
-            definitions,
-            ty_interners,
-        }
+        Context { definitions }
     }
 
     pub fn add_definition(&mut self, def: Definition) -> usize {
@@ -228,26 +226,11 @@ impl Context {
     }
 
     crate fn simple_type_for_def_id(&self, def_id: DefId) -> Ty {
-        let base = self.ty_interners.intern(Inferable::Known(BaseData {
-            kind: BaseKind::Named(def_id),
-            generics: Generics::empty(),
-        }));
-        Ty {
-            base,
-            perm: self.ty_interners.common().own,
-        }
+        Ty { def_id: def_id }
     }
 
     crate fn get_def_id_for_ty(&self, ty: Ty) -> Option<DefId> {
-        let unterned = self.ty_interners.untern(ty.base);
-
-        match unterned {
-            Inferable::Known(k) => match k.kind {
-                BaseKind::Named(n) => Some(n),
-                _ => None,
-            },
-            _ => None,
-        }
+        Some(ty.def_id)
     }
 }
 

@@ -1,9 +1,7 @@
 use crate::ir::{
     builtin_type, BasicBlock, BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand,
-    Place, Rvalue, Statement, StatementKind, Struct, Terminator, TerminatorKind, VarId,
+    Place, Rvalue, Statement, StatementKind, Struct, Terminator, TerminatorKind, Ty, VarId,
 };
-use crate::ty::intern::{Interners, TyInterners};
-use crate::ty::{BaseKind, Inferable, Ty};
 
 pub struct RustFile {
     output_src: String,
