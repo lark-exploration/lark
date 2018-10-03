@@ -1,27 +1,32 @@
 use codespan::ByteOffset;
 use crate::parser::keywords::{KEYWORDS, SIGILS};
-use crate::parser::lexer_helpers::LexerStateTrait;
-use crate::parser::lexer_helpers::{LexerNext, ParseError, Tokenizer as GenericTokenizer};
+use crate::parser::lexer_helpers::{
+    LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError,
+    Tokenizer as GenericTokenizer,
+};
 use crate::parser::program::StringId;
 use crate::parser::{ModuleTable, Span, Token};
 use derive_new::new;
 use lazy_static::lazy_static;
-use log::trace;
+use log::{trace, warn};
 use std::fmt;
 use unicode_xid::UnicodeXID;
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum LexerState {
     Top,
     Integer,
+    StartStringLiteral,
+    StringLiteral,
+    OpenCurly,
     Whitespace,
     StartIdent,
     ContinueIdent,
 }
 
-impl LexerStateTrait for LexerState {
+impl LexerDelegateTrait for LexerState {
     type Token = Token;
 
     fn top() -> LexerState {
@@ -38,17 +43,28 @@ impl LexerStateTrait for LexerState {
                 None => LexerNext::EOF,
                 Some(c) => {
                     if let Some((tok, size)) = KEYWORDS.match_token(rest) {
-                        LexerNext::emit_token(tok, size)
+                        LexerNext::Remain(LexerAccumulate::Emit {
+                            before: Some(LexerAction::Consume(size)),
+                            after: None,
+                            token: LexerToken::Fixed(tok),
+                        })
                     } else if let Some((tok, size)) = SIGILS.match_token(rest) {
-                        LexerNext::emit_token(tok, size)
+                        LexerNext::Remain(LexerAccumulate::Emit {
+                            before: Some(LexerAction::Consume(size)),
+                            after: None,
+                            token: LexerToken::Fixed(tok),
+                        })
                     } else if c.is_digit(10) {
-                        LexerNext::transition_to(LexerState::Integer).reconsume()
-                    } else if c == '\n' {
-                        LexerNext::emit_char(Token::Newline)
+                        LexerNext::Transition(LexerAccumulate::Nothing, LexerState::Integer)
+                    } else if c == '"' {
+                        LexerNext::Transition(
+                            LexerAccumulate::Begin,
+                            LexerState::StartStringLiteral,
+                        )
                     } else if c.is_whitespace() {
-                        LexerNext::transition_to(LexerState::Whitespace)
+                        LexerNext::Transition(LexerAccumulate::Begin, LexerState::Whitespace)
                     } else if UnicodeXID::is_xid_start(c) {
-                        LexerNext::transition_to(LexerState::StartIdent).reconsume()
+                        LexerNext::Transition(LexerAccumulate::Begin, LexerState::StartIdent)
                     } else {
                         LexerNext::Error(c)
                     }
@@ -59,33 +75,68 @@ impl LexerStateTrait for LexerState {
                 None => LexerNext::EOF,
                 Some(c) => {
                     if c == '\n' {
-                        LexerNext::finalize_no_emit(LexerState::Top).reconsume()
+                        LexerNext::Transition(
+                            LexerAccumulate::Skip(LexerAction::Reconsume),
+                            LexerState::Top,
+                        )
                     } else if c.is_whitespace() {
-                        LexerNext::consume()
+                        LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1)))
                     } else {
-                        LexerNext::finalize_no_emit(LexerState::Top).reconsume()
+                        LexerNext::Transition(
+                            LexerAccumulate::Skip(LexerAction::Reconsume),
+                            LexerState::Top,
+                        )
                     }
                 }
             },
 
+            LexerState::StringLiteral => match c {
+                None => LexerNext::EOF,
+
+                Some(c) => match c {
+                    '"' => LexerNext::Transition(
+                        LexerAccumulate::Emit {
+                            before: Some(LexerAction::Consume(1)),
+                            after: None,
+                            token: LexerToken::Dynamic(Token::StringLiteral),
+                        },
+                        LexerState::Top,
+                    ),
+
+                    other => LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1))),
+                },
+            },
+
+            LexerState::StartStringLiteral => LexerNext::Transition(
+                LexerAccumulate::Continue(LexerAction::Consume(1)),
+                LexerState::StringLiteral,
+            ),
+
             LexerState::StartIdent => match c {
-                None => LexerNext::emit(tk_id, LexerState::Top).reconsume(),
+                None => {
+                    LexerNext::Transition(LexerAccumulate::emit_dynamic(tk_id), LexerState::Top)
+                }
                 Some(c) => {
                     if UnicodeXID::is_xid_continue(c) {
-                        LexerNext::transition_to(LexerState::ContinueIdent)
+                        LexerNext::Transition(
+                            LexerAccumulate::Continue(LexerAction::Consume(1)),
+                            LexerState::ContinueIdent,
+                        )
                     } else {
-                        LexerNext::emit(tk_id, LexerState::Top).reconsume()
+                        LexerNext::Transition(LexerAccumulate::emit_dynamic(tk_id), LexerState::Top)
                     }
                 }
             },
 
             LexerState::ContinueIdent => match c {
-                None => LexerNext::emit(tk_id, LexerState::Top).reconsume(),
+                None => {
+                    LexerNext::Transition(LexerAccumulate::emit_dynamic(tk_id), LexerState::Top)
+                }
                 Some(c) => {
                     if UnicodeXID::is_xid_continue(c) {
-                        LexerNext::consume()
+                        LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1)))
                     } else {
-                        LexerNext::emit(tk_id, LexerState::Top).reconsume()
+                        LexerNext::Transition(LexerAccumulate::emit_dynamic(tk_id), LexerState::Top)
                     }
                 }
             },

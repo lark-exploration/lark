@@ -1,5 +1,9 @@
+use crate::parser::ast::DebugModuleTable;
 use crate::parser::pos::Spanned;
 use crate::parser::program::{ModuleTable, StringId};
+
+use codespan::ByteIndex;
+use std::borrow::Cow;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -16,6 +20,10 @@ pub enum Token {
     ThinArrow,
     DoubleColon,
     Period,
+    OpAdd,
+    OpSub,
+    OpMul,
+    OpDiv,
     KeywordFor,
     KeywordLoop,
     KeywordWhile,
@@ -28,6 +36,9 @@ pub enum Token {
     KeywordBorrow,
     KeywordSelf,
     Identifier(StringId),
+    StringLiteral(StringId),
+    StringFragment(StringId),
+    EndString(StringId),
     Newline,
     Unimplemented,
 }
@@ -39,10 +50,10 @@ impl fmt::Display for Token {
 }
 
 impl Token {
-    crate fn source(&self, table: &'table ModuleTable) -> &'table str {
+    crate fn source(&self, table: &'table ModuleTable) -> Cow<'table, str> {
         use self::Token::*;
 
-        match self {
+        let result = match self {
             Underscore => "_",
             CurlyBraceOpen => "{",
             CurlyBraceClose => "}",
@@ -55,6 +66,10 @@ impl Token {
             ThinArrow => "->",
             DoubleColon => "::",
             Period => ".",
+            OpAdd => "+",
+            OpSub => "-",
+            OpMul => "*",
+            OpDiv => "/",
             KeywordFor => "for",
             KeywordLoop => "loop",
             KeywordWhile => "while",
@@ -67,8 +82,21 @@ impl Token {
             KeywordBorrow => "borrow",
             KeywordSelf => "self",
             Identifier(id) => table.lookup(*id),
+            StringLiteral(id) => return Cow::Owned(format!("String({})", table.lookup(*id))),
+            StringFragment(id) => {
+                return Cow::Owned(format!("StringFragment({})", table.lookup(*id)))
+            }
+            EndString(id) => "closequote",
             Newline => "newline",
             Unimplemented => "unimplemented",
-        }
+        };
+
+        Cow::Borrowed(result)
+    }
+}
+
+impl DebugModuleTable for Token {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        write!(f, "{:?}", self.source(table))
     }
 }

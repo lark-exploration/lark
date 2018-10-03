@@ -11,18 +11,22 @@ tokens! {
 
     declare KEYWORDS {
         "struct" => KeywordStruct,
-        "own" => KeywordOwn,
-        "def" => KeywordDef
+        "own"    => KeywordOwn,
+        "def"    => KeywordDef,
+        "let"    => KeywordLet
     }
 
     declare SIGILS {
-        "{" => CurlyBraceOpen,
-        "}" => CurlyBraceClose,
-        "(" => ParenOpen,
-        ":" => Colon,
-        ")" => ParenClose,
-        ":" => Colon,
-        "," => Comma,
-        "->"=> ThinArrow
+        "{"  => CurlyBraceOpen,
+        "}"  => CurlyBraceClose,
+        "("  => ParenOpen,
+        ":"  => Colon,
+        ")"  => ParenClose,
+        ":"  => Colon,
+        ","  => Comma,
+        "->" => ThinArrow,
+        "="  => Equals,
+        "+"  => OpAdd,
+        "\n" => Newline
     }
 }

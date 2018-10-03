@@ -70,6 +70,15 @@ impl ModuleTable {
     crate fn intern(&mut self, hashable: impl Seahash) -> StringId {
         self.strings.intern(hashable)
     }
+
+    crate fn values(&self) -> Vec<String> {
+        self.strings
+            .to_string
+            .iter()
+            .cloned()
+            .map(|s| s.node)
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, SmartDefault, new)]
