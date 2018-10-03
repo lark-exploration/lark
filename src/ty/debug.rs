@@ -11,7 +11,7 @@ use crate::ty::*;
 /// is to give a unification table, which can canonicalize
 /// inference variables. During testing, we use debug
 /// context that can also handle def-ids.
-crate trait TyDebugContext: Interners {
+crate trait TyDebugContext: Interners + 'static {
     fn write_region(
         &self,
         region: Region,
@@ -58,7 +58,7 @@ crate trait TyDebugContext: Interners {
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for Ty {
+impl DebugWith<dyn TyDebugContext> for Ty {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
@@ -69,7 +69,7 @@ impl DebugWith<dyn TyDebugContext + '_> for Ty {
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for Base {
+impl DebugWith<dyn TyDebugContext> for Base {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
@@ -80,13 +80,13 @@ impl DebugWith<dyn TyDebugContext + '_> for Base {
     }
 }
 
-impl<T> DebugWith<dyn TyDebugContext + 'cx> for Inferable<T>
+impl<T> DebugWith<dyn TyDebugContext> for Inferable<T>
 where
-    T: DebugWith<dyn TyDebugContext + 'cx>,
+    T: DebugWith<dyn TyDebugContext>,
 {
     fn fmt_with(
         &self,
-        cx: &(dyn TyDebugContext + 'cx),
+        cx: &dyn TyDebugContext,
         fmt: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
@@ -99,7 +99,7 @@ where
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for BaseData {
+impl DebugWith<dyn TyDebugContext> for BaseData {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
@@ -121,7 +121,7 @@ impl DebugWith<dyn TyDebugContext + '_> for BaseData {
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for Generics {
+impl DebugWith<dyn TyDebugContext> for Generics {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
@@ -139,7 +139,7 @@ impl DebugWith<dyn TyDebugContext + '_> for Generics {
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for Perm {
+impl DebugWith<dyn TyDebugContext> for Perm {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
@@ -150,7 +150,7 @@ impl DebugWith<dyn TyDebugContext + '_> for Perm {
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for PermData {
+impl DebugWith<dyn TyDebugContext> for PermData {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
@@ -165,7 +165,7 @@ impl DebugWith<dyn TyDebugContext + '_> for PermData {
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for Region {
+impl DebugWith<dyn TyDebugContext> for Region {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
@@ -175,7 +175,7 @@ impl DebugWith<dyn TyDebugContext + '_> for Region {
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for Generic {
+impl DebugWith<dyn TyDebugContext> for Generic {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
@@ -187,7 +187,7 @@ impl DebugWith<dyn TyDebugContext + '_> for Generic {
     }
 }
 
-impl DebugWith<dyn TyDebugContext + '_> for Predicate {
+impl DebugWith<dyn TyDebugContext> for Predicate {
     fn fmt_with(
         &self,
         cx: &dyn TyDebugContext,
