@@ -230,7 +230,7 @@ impl Context {
     crate fn simple_type_for_def_id(&self, def_id: DefId) -> Ty {
         let base = self.ty_interners.intern(Inferable::Known(BaseData {
             kind: BaseKind::Named(def_id),
-            generics: self.ty_interners.common().empty_generics,
+            generics: self.ty_interners.common().empty_generics.clone(),
         }));
         Ty {
             base,
