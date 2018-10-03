@@ -9,6 +9,7 @@
 #![feature(const_let)]
 #![feature(try_from)]
 #![feature(macro_at_most_once_rep)]
+#![feature(trace_macros)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -25,6 +26,7 @@ mod ide;
 mod intern;
 mod ir;
 mod parser;
+mod parser2;
 mod tests;
 mod ty;
 mod typeck;
