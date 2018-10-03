@@ -2,6 +2,7 @@
 #![feature(in_band_lifetimes)]
 #![feature(box_patterns)]
 #![feature(crate_visibility_modifier)]
+#![feature(existential_type)]
 #![feature(nll)]
 #![feature(min_const_fn)]
 #![feature(const_fn)]
@@ -18,6 +19,7 @@ mod lexer;
 mod indices;
 
 mod codegen;
+mod debug;
 mod eval;
 mod hir;
 mod ide;
@@ -27,6 +29,7 @@ mod parser;
 mod tests;
 mod ty;
 mod typeck;
+mod unify;
 
 use std::{env, io};
 

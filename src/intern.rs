@@ -18,18 +18,24 @@ where
     map: FxHashMap<Data, Key>,
 }
 
-impl<Key, Data> InternTable<Key, Data>
+impl<Key, Data> Default for InternTable<Key, Data>
 where
     Key: Copy + Idx,
     Data: Clone + Hash + Eq,
 {
-    crate fn new() -> Self {
+    fn default() -> Self {
         InternTable {
             vec: IndexVec::default(),
             map: FxHashMap::default(),
         }
     }
+}
 
+impl<Key, Data> InternTable<Key, Data>
+where
+    Key: Copy + Idx,
+    Data: Clone + Hash + Eq,
+{
     crate fn get(&self, key: Key) -> Data {
         self.vec[key].clone()
     }

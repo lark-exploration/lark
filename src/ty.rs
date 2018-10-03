@@ -2,14 +2,12 @@
 
 use crate::ir::DefId;
 use std::iter::IntoIterator;
-use std::rc::Rc;
+use std::sync::Arc;
 
-crate mod context;
 crate mod debug;
+mod inferable;
 crate mod intern;
 crate mod map;
-crate mod query;
-crate mod unify;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Ty {
@@ -23,10 +21,6 @@ index_type! {
 
 index_type! {
     crate struct Base { .. }
-}
-
-index_type! {
-    crate struct Generics { .. }
 }
 
 index_type! {
@@ -73,7 +67,7 @@ impl<T> Inferable<T> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct BaseData {
     crate kind: BaseKind,
     crate generics: Generics,
@@ -91,12 +85,16 @@ crate enum BaseKind {
     Placeholder(Placeholder),
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-crate struct GenericsData {
-    crate elements: Rc<Vec<Generic>>,
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate struct Generics {
+    elements: Option<Arc<Vec<Generic>>>,
 }
 
-impl GenericsData {
+impl Generics {
+    crate fn empty() -> Self {
+        Generics { elements: None }
+    }
+
     crate fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -106,20 +104,45 @@ impl GenericsData {
     }
 
     crate fn len(&self) -> usize {
-        self.elements.len()
+        self.elements.as_ref().map(|v| v.len()).unwrap_or(0)
     }
 
     crate fn iter(&self) -> impl Iterator<Item = Generic> + '_ {
         self.into_iter()
     }
+
+    crate fn elements(&self) -> &[Generic] {
+        match &self.elements {
+            Some(e) => &e[..],
+            None => &[],
+        }
+    }
 }
 
-impl IntoIterator for &'iter GenericsData {
-    type IntoIter = std::iter::Cloned<std::slice::Iter<'iter, Generic>>;
+impl std::iter::FromIterator<Generic> for Generics {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = Generic>,
+    {
+        let vec: Vec<Generic> = iter.into_iter().collect();
+        if vec.is_empty() {
+            Generics { elements: None }
+        } else {
+            Generics {
+                elements: Some(Arc::new(vec)),
+            }
+        }
+    }
+}
+
+existential type GenericsIntoIter<'iter>: Iterator<Item = Generic>;
+
+impl IntoIterator for &'iter Generics {
+    type IntoIter = GenericsIntoIter<'iter>;
     type Item = Generic;
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.elements.iter().cloned()
+    fn into_iter(self) -> GenericsIntoIter<'iter> {
+        self.elements.iter().flat_map(|v| v.iter().cloned())
     }
 }
 
