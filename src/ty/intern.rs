@@ -1,8 +1,9 @@
 use crate::intern::{Intern, InternTable, Untern};
 use crate::ty::debug::TyDebugContext;
+use crate::ty::Inferable;
 use crate::ty::{Base, BaseData};
-use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
+use crate::unify::InferVar;
 use parking_lot::RwLock;
 use std::sync::Arc;
 

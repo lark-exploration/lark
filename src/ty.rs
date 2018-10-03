@@ -1,6 +1,7 @@
 #![warn(unused_imports)]
 
 use crate::ir::DefId;
+use crate::unify::InferVar;
 use std::iter::IntoIterator;
 use std::sync::Arc;
 
@@ -216,13 +217,6 @@ index_type! {
 
 impl UniverseIndex {
     crate const ROOT: UniverseIndex = UniverseIndex::new(0);
-}
-
-index_type! {
-    crate struct InferVar {
-        debug_name["?"],
-        ..
-    }
 }
 
 /// Predicates that can be proven about types.

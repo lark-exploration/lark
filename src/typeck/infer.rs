@@ -1,7 +1,7 @@
 use crate::ty;
 use crate::ty::BaseData;
-use crate::ty::InferVar;
 use crate::typeck::TypeChecker;
+use crate::unify::InferVar;
 use generational_arena::Arena;
 
 impl TypeChecker {

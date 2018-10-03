@@ -2,6 +2,7 @@ use crate::debug::DebugWith;
 use crate::ir::DefId;
 use crate::ty::intern::Interners;
 use crate::ty::*;
+use crate::unify::InferVar;
 
 /// The `TyDebugContext` lets you customize how types
 /// are represented during debugging. There are various

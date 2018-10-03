@@ -1,8 +1,8 @@
 use crate::ty;
 use crate::ty::intern::TyInterners;
 use crate::ty::BaseData;
-use crate::ty::InferVar;
 use crate::typeck::TypeChecker;
+use crate::unify::InferVar;
 use crate::unify::Inferable;
 use generational_arena::Arena;
 

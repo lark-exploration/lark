@@ -4,7 +4,7 @@ use crate::hir::typed::Typed;
 use crate::parser::Span;
 use crate::ty;
 use crate::ty::intern::{Interners, TyInterners};
-use crate::ty::InferVar;
+use crate::unify::InferVar;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
 use rustc_hash::FxHashMap;
