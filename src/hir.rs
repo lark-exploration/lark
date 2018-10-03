@@ -7,7 +7,6 @@ use indexed_vec::{Idx, IndexVec};
 use std::sync::Arc;
 
 crate mod typeck;
-crate mod typed;
 
 crate struct Hir {
     crate expressions: IndexVec<Expression, Spanned<ExpressionData>>,
