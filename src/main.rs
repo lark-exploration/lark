@@ -18,6 +18,7 @@ mod lexer;
 mod indices;
 
 mod codegen;
+mod debug;
 mod eval;
 mod hir;
 mod ide;
