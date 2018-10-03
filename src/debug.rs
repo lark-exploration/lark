@@ -49,7 +49,7 @@ where
 }
 
 impl<Cx: ?Sized> DebugWith<Cx> for ! {
-    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt_with(&self, _cx: &Cx, _fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         unreachable!()
     }
 }

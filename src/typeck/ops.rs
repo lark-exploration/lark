@@ -1,6 +1,7 @@
 use crate::ty;
+use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
-use crate::typeck::TypeChecker;
+use crate::typeck::BaseTypeChecker;
 use crate::unify::InferVar;
 use crate::unify::Inferable;
 use generational_arena::Arena;
@@ -11,7 +12,7 @@ pub(super) struct OpIndex {
 }
 
 pub(super) trait BoxedTypeCheckerOp {
-    fn execute(self: Box<Self>, typeck: &mut TypeChecker);
+    fn execute(self: Box<Self>, typeck: &mut BaseTypeChecker);
 }
 
 struct ClosureTypeCheckerOp<C> {
@@ -20,20 +21,20 @@ struct ClosureTypeCheckerOp<C> {
 
 impl<'hir, C> BoxedTypeCheckerOp for ClosureTypeCheckerOp<C>
 where
-    C: FnOnce(&mut TypeChecker),
+    C: FnOnce(&mut BaseTypeChecker),
 {
-    fn execute(self: Box<Self>, typeck: &mut TypeChecker) {
+    fn execute(self: Box<Self>, typeck: &mut BaseTypeChecker) {
         (self.closure)(typeck)
     }
 }
 
-impl TypeChecker {
+impl BaseTypeChecker {
     /// Enqueues a closure to execute when any of the
     /// variables in `values` are unified.
     pub(super) fn enqueue_op(
         &mut self,
-        values: impl IntoIterator<Item = impl Inferable<TyInterners>>,
-        closure: impl FnOnce(&mut TypeChecker) + 'static,
+        values: impl IntoIterator<Item = impl Inferable<TyInternTables>>,
+        closure: impl FnOnce(&mut BaseTypeChecker) + 'static,
     ) {
         let op: Box<dyn BoxedTypeCheckerOp> = Box::new(ClosureTypeCheckerOp { closure });
         let op_index = OpIndex {
