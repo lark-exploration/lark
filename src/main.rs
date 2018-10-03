@@ -27,6 +27,7 @@ mod parser;
 mod tests;
 mod ty;
 mod typeck;
+mod unify;
 
 use std::{env, io};
 

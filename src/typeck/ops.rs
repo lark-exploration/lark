@@ -1,8 +1,9 @@
 use crate::ty;
-use crate::ty::unify::InferValue;
+use crate::ty::intern::TyInterners;
 use crate::ty::BaseData;
 use crate::ty::InferVar;
 use crate::typeck::TypeChecker;
+use crate::unify::Inferable;
 use generational_arena::Arena;
 
 #[derive(Copy, Clone, Debug)]
@@ -32,7 +33,7 @@ impl TypeChecker {
     /// variables in `values` are unified.
     pub(super) fn enqueue_op(
         &mut self,
-        values: impl IntoIterator<Item = impl InferValue>,
+        values: impl IntoIterator<Item = impl Inferable<TyInterners>>,
         closure: impl FnOnce(&mut TypeChecker) + 'static,
     ) {
         let op: Box<dyn BoxedTypeCheckerOp> = Box::new(ClosureTypeCheckerOp { closure });
@@ -41,23 +42,12 @@ impl TypeChecker {
         };
         let mut inserted = false;
         for infer_value in values {
-            // Check if `infer_value` represents an inference variable.
-            match infer_value.deref(&self.interners) {
-                Ok(var) => {
-                    // If so, check whether that inference variable is unbound.
-                    if !self.unify.is_bound(var) {
-                        // As yet unbound. Enqueue this op to be notified when
-                        // it does get bound.
-                        self.ops_blocked.entry(var).or_insert(vec![]).push(op_index);
-                        inserted = true;
-                    } else {
-                        // Already bound. Ignore.
-                    }
-                }
-
-                Err(_known_value) => {
-                    // Not a variable. Ignore.
-                }
+            // Check if `infer_value` represents an unbound inference variable.
+            if let Err(var) = self.unify.shallow_resolve_data(infer_value) {
+                // As yet unbound. Enqueue this op to be notified when
+                // it does get bound.
+                self.ops_blocked.entry(var).or_insert(vec![]).push(op_index);
+                inserted = true;
             }
         }
         assert!(
