@@ -2,7 +2,7 @@
 
 use crate::ir::DefId;
 use std::iter::IntoIterator;
-use std::rc::Rc;
+use std::sync::Arc;
 
 crate mod debug;
 mod inferable;
@@ -21,10 +21,6 @@ index_type! {
 
 index_type! {
     crate struct Base { .. }
-}
-
-index_type! {
-    crate struct Generics { .. }
 }
 
 index_type! {
@@ -71,7 +67,7 @@ impl<T> Inferable<T> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct BaseData {
     crate kind: BaseKind,
     crate generics: Generics,
@@ -89,12 +85,12 @@ crate enum BaseKind {
     Placeholder(Placeholder),
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-crate struct GenericsData {
-    crate elements: Rc<Vec<Generic>>,
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate struct Generics {
+    crate elements: Arc<Vec<Generic>>,
 }
 
-impl GenericsData {
+impl Generics {
     crate fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -112,7 +108,19 @@ impl GenericsData {
     }
 }
 
-impl IntoIterator for &'iter GenericsData {
+impl std::iter::FromIterator<Generic> for Generics {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = Generic>,
+    {
+        let vec = iter.into_iter().collect();
+        Generics {
+            elements: Arc::new(vec),
+        }
+    }
+}
+
+impl IntoIterator for &'iter Generics {
     type IntoIter = std::iter::Cloned<std::slice::Iter<'iter, Generic>>;
     type Item = Generic;
 

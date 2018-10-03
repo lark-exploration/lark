@@ -132,10 +132,9 @@ impl Debug for DebugInWrapper<'me, BaseData> {
             }
         }
 
-        let generics_data = self.context.interners().untern(*generics);
-        if generics_data.is_not_empty() {
+        if generics.is_not_empty() {
             write!(fmt, "<")?;
-            for (index, generic) in generics_data.iter().enumerate() {
+            for (index, generic) in generics.iter().enumerate() {
                 if index > 0 {
                     write!(fmt, ", ")?;
                 }

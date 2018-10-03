@@ -1,7 +1,6 @@
 use crate::ty::intern::Interners;
 use crate::ty::Base;
 use crate::ty::Generic;
-use crate::ty::Generics;
 use crate::ty::Perm;
 use crate::ty::Ty;
 
@@ -66,16 +65,6 @@ impl Map for Ty {
         let perm = perm.map_with(mapper);
         let base = base.map_with(mapper);
         Ty { perm, base }
-    }
-}
-
-impl Map for Generics {
-    type Output = Self;
-
-    fn map_with(&self, mapper: &mut impl Mapper) -> Self::Output {
-        let interners = mapper.interners().clone();
-        let data = interners.untern(*self);
-        interners.intern_generics(data.iter().map(|generic| generic.map_with(mapper)))
     }
 }
 

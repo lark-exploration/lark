@@ -1,25 +1,24 @@
 use crate::intern::{Intern, InternTable, Untern};
 use crate::ty::debug::TyDebugContext;
-use crate::ty::Generic;
+use crate::ty::Generics;
 use crate::ty::{Base, BaseData};
-use crate::ty::{Generics, GenericsData};
 use crate::ty::{InferVar, Inferable};
 use crate::ty::{Perm, PermData};
-use std::cell::RefCell;
-use std::rc::Rc;
+use parking_lot::RwLock;
+use std::iter::FromIterator;
+use std::sync::Arc;
 
 /// The "type context" is a global resource that interns types and
 /// other type-related things. Types are allocates in the various
 /// global arenas so that they can be freely copied around.
 #[derive(Clone)]
 crate struct TyInterners {
-    data: Rc<TyInternersData>,
+    data: Arc<TyInternersData>,
 }
 
 struct TyInternersData {
-    perms: RefCell<InternTable<Perm, Inferable<PermData>>>,
-    bases: RefCell<InternTable<Base, Inferable<BaseData>>>,
-    generics: RefCell<InternTable<Generics, GenericsData>>,
+    perms: RwLock<InternTable<Perm, Inferable<PermData>>>,
+    bases: RwLock<InternTable<Base, Inferable<BaseData>>>,
     common: Common,
 }
 
@@ -54,16 +53,6 @@ crate trait Interners {
         &self.interners().data.common
     }
 
-    fn intern_generics(&self, iter: impl Iterator<Item = Generic>) -> Generics
-    where
-        Self: Sized,
-    {
-        let generics_data = GenericsData {
-            elements: Rc::new(iter.collect()),
-        };
-        self.intern(generics_data)
-    }
-
     fn intern_infer_var<T, V>(&self, var: InferVar) -> T
     where
         T: Untern<TyInterners, Data = Inferable<V>>,
@@ -87,13 +76,10 @@ impl TyInterners {
     crate fn new() -> Self {
         let mut perms = InternTable::default();
         let bases = InternTable::default();
-        let mut generics = InternTable::default();
 
         let own = perms.intern(Inferable::Known(PermData::Own));
 
-        let empty_generics = generics.intern(GenericsData {
-            elements: Rc::new(vec![]),
-        });
+        let empty_generics = Generics::from_iter(None);
 
         let common = Common {
             own,
@@ -101,10 +87,9 @@ impl TyInterners {
         };
 
         TyInterners {
-            data: Rc::new(TyInternersData {
-                perms: RefCell::new(perms),
-                bases: RefCell::new(bases),
-                generics: RefCell::new(generics),
+            data: Arc::new(TyInternersData {
+                perms: RwLock::new(perms),
+                bases: RwLock::new(bases),
                 common,
             }),
         }
@@ -123,7 +108,7 @@ macro_rules! intern_ty {
             type Key = $key;
 
             fn intern(self, interner: &TyInterners) -> $key {
-                interner.data.$field.borrow_mut().intern(self)
+                interner.data.$field.write().intern(self)
             }
         }
 
@@ -131,7 +116,7 @@ macro_rules! intern_ty {
             type Data = $data;
 
             fn untern(self, interner: &TyInterners) -> $data {
-                interner.data.$field.borrow().get(self)
+                interner.data.$field.read().get(self)
             }
         }
     };
@@ -157,6 +142,5 @@ macro_rules! intern_inferable_ty {
 
 intern_inferable_ty!(bases, Base, BaseData);
 intern_inferable_ty!(perms, Perm, PermData);
-intern_ty!(generics, Generics, GenericsData);
 
 impl TyDebugContext for TyInterners {}
