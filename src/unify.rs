@@ -144,7 +144,7 @@ impl RootData {
 }
 
 impl<Interners, Cause> UnificationTable<Interners, Cause> {
-    fn new(interners: Interners) -> Self {
+    crate fn new(interners: Interners) -> Self {
         Self {
             interners: interners,
             infers: IndexVec::new(),
