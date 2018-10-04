@@ -1,6 +1,7 @@
 #![warn(unused_imports)]
 
 use crate::ir::DefId;
+use crate::ty::interners::HasTyInternTables;
 use crate::unify::InferVar;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -16,6 +17,8 @@ crate mod map_family;
 crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash {
     type Perm: Copy + Clone + Debug + Eq + Hash;
     type Base: Copy + Clone + Debug + Eq + Hash;
+
+    fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base;
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -46,6 +49,19 @@ impl<T> InferVarOr<T> {
             InferVarOr::Known(v) => v,
         }
     }
+}
+
+/// A "bound variable" refers to one of the generic type parameters in scope
+/// within a declaration. So, for example, if you have `struct Foo<T> { x: T }`,
+/// then the bound var #0 would be `T`.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate enum BoundVarOr<T> {
+    BoundVar(BoundVar),
+    Known(T),
+}
+
+index_type! {
+    crate struct BoundVar { .. }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]

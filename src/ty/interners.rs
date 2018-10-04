@@ -1,7 +1,10 @@
+use crate::intern::Intern;
 use crate::intern::InternTable;
+use crate::intern::Untern;
 use crate::ty::base_only;
 use crate::ty::declaration;
 use crate::ty::BaseData;
+use crate::ty::BoundVarOr;
 use crate::ty::InferVarOr;
 use std::sync::Arc;
 
@@ -12,6 +15,22 @@ crate struct TyInternTables {
 
 crate trait HasTyInternTables {
     fn ty_intern_tables(&self) -> &TyInternTables;
+
+    fn intern<V>(&self, value: V) -> V::Key
+    where
+        Self: Sized,
+        V: Intern<Self>,
+    {
+        value.intern(self)
+    }
+
+    fn untern<K>(&self, key: K) -> K::Data
+    where
+        Self: Sized,
+        K: Untern<Self>,
+    {
+        key.untern(self)
+    }
 }
 
 impl HasTyInternTables for TyInternTables {
@@ -56,6 +75,6 @@ macro_rules! intern_tables_data {
 intern_tables_data! {
     struct TyInternTablesData for TyInternTables {
         base_ty: map(base_only::Base, InferVarOr<BaseData<base_only::BaseOnly>>),
-        declaration_ty: map(declaration::Base, BaseData<declaration::Declaration>),
+        declaration_ty: map(declaration::Base, BoundVarOr<BaseData<declaration::Declaration>>),
     }
 }

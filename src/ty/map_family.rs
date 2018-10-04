@@ -1,3 +1,4 @@
+use crate::ty::interners::HasTyInternTables;
 use crate::ty::{self, TypeFamily};
 use std::sync::Arc;
 
@@ -7,12 +8,11 @@ crate trait Map<M: FamilyMapper> {
     fn map(&self, mapper: &mut M) -> Self::Output;
 }
 
-crate trait FamilyMapper {
+crate trait FamilyMapper: HasTyInternTables {
     type Source: TypeFamily;
     type Target: TypeFamily;
 
-    fn map_perm(&mut self, perm: SourcePerm<Self>) -> TargetPerm<Self>;
-    fn map_base(&mut self, perm: SourceBase<Self>) -> TargetBase<Self>;
+    fn map_ty(&mut self, ty: ty::Ty<Self::Source>) -> ty::Ty<Self::Target>;
 }
 
 #[allow(type_alias_bounds)]
@@ -86,11 +86,7 @@ where
     type Output = ty::Ty<M::Target>;
 
     fn map(&self, mapper: &mut M) -> Self::Output {
-        let ty::Ty { perm, base } = *self;
-        ty::Ty {
-            perm: mapper.map_perm(perm),
-            base: mapper.map_base(base),
-        }
+        mapper.map_ty(*self)
     }
 }
 
