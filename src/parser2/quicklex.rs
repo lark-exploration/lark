@@ -214,7 +214,7 @@ mod tests {
             .map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
             .collect();
 
-        trace!("{:#?}", DebuggableVec::from(&tokens.clone()?, ann.table()));
+        //FIXME trace!("{:#?}", DebuggableVec::from(&tokens.clone()?, ann.table()));
 
         Ok(())
     }
