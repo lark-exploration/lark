@@ -12,7 +12,7 @@ salsa::query_definition! {
 }
 
 salsa::query_definition! {
-    crate FnBody(_query: &impl HirQueries, _key: ()) -> hir::FnBody {
+    crate FnBody(_query: &impl HirQueries, _key: DefId) -> Arc<hir::FnBody> {
         unimplemented!()
     }
 }

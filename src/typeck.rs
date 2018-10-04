@@ -45,6 +45,14 @@ crate struct BaseTypeCheckResults<F: TypeFamily> {
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
 }
 
+impl<F: TypeFamily> Default for BaseTypeCheckResults<F> {
+    fn default() -> Self {
+        Self {
+            types: Default::default(),
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 crate struct Error {
     kind: ErrorKind,
