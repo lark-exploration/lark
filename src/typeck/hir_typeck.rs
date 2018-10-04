@@ -1,19 +1,23 @@
 use crate::hir;
 use crate::hir::typeck::{ErrorReported, HirTypeChecker, MethodSignature};
-use crate::intern::Intern;
 use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
+use crate::ty::interners::HasTyInternTables;
 use crate::ty::Erased;
 use crate::ty::InferVarOr;
 use crate::ty::Ty;
+use crate::ty::TypeFamily;
 use crate::ty::{BaseData, BaseKind};
 use crate::ty::{Generic, Generics};
 use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl HirTypeChecker for BaseTypeChecker {
+impl<Q> HirTypeChecker for BaseTypeChecker<'_, Q>
+where
+    Q: crate::typeck::TypeCheckQueries,
+{
     type FieldId = DefId;
     type MethodId = DefId;
     type Ty = BaseTy;
@@ -125,10 +129,13 @@ impl HirTypeChecker for BaseTypeChecker {
     fn error_type(&mut self) -> Self::Ty {
         Ty {
             perm: Erased,
-            base: InferVarOr::Known(BaseData {
-                kind: BaseKind::Error,
-                generics: Generics::empty(),
-            }).intern(&self.interners),
+            base: BaseOnly::intern_base_data(
+                self.db,
+                BaseData {
+                    kind: BaseKind::Error,
+                    generics: Generics::empty(),
+                },
+            ),
         }
     }
 }

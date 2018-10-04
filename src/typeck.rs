@@ -27,10 +27,10 @@ salsa::query_prototype! {
     }
 }
 
-crate struct BaseTypeChecker {
+crate struct BaseTypeChecker<'db, Q: TypeCheckQueries> {
+    db: &'db Q,
     hir: Arc<hir::FnBody>,
-    interners: TyInternTables,
-    ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp>>,
+    ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<BaseTypeChecker<'db, Q>>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     errors: Vec<Error>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
@@ -54,8 +54,11 @@ crate enum ErrorKind {
     BaseMismatch(BaseTy, BaseTy),
 }
 
-impl HasTyInternTables for BaseTypeChecker {
+impl<Q> HasTyInternTables for BaseTypeChecker<'_, Q>
+where
+    Q: TypeCheckQueries,
+{
     fn ty_intern_tables(&self) -> &TyInternTables {
-        &self.interners
+        self.db.ty_intern_tables()
     }
 }

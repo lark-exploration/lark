@@ -16,7 +16,10 @@ use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl BaseTypeChecker {
+impl<Q> BaseTypeChecker<'_, Q>
+where
+    Q: crate::typeck::TypeCheckQueries,
+{
     /// If `base` can be mapped to a concrete `BaseData`,
     /// invokes `op` and returns the resulting type.
     /// Otherwise, creates a type variable and returns that;

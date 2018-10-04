@@ -7,7 +7,7 @@ use crate::typeck::{BaseTypeCheckResults, TypeCheckQueries};
 use std::sync::Arc;
 
 salsa::query_definition! {
-    crate BaseTypeCheck(_query: &impl TypeCheckQueries, _key: DefId) -> BaseTypeCheckResults {
+    crate BaseTypeCheck(_db: &impl TypeCheckQueries, _key: DefId) -> BaseTypeCheckResults {
         unimplemented!()
     }
 }
