@@ -20,17 +20,17 @@ crate trait HasTyInternTables {
     fn intern<V>(&self, value: V) -> V::Key
     where
         Self: Sized,
-        V: Intern<Self>,
+        V: Intern<TyInternTables>,
     {
-        value.intern(self)
+        value.intern(self.ty_intern_tables())
     }
 
     fn untern<K>(&self, key: K) -> K::Data
     where
         Self: Sized,
-        K: Untern<Self>,
+        K: Untern<TyInternTables>,
     {
-        key.untern(self)
+        key.untern(self.ty_intern_tables())
     }
 }
 

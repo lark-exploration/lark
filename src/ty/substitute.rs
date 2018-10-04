@@ -1,43 +1,65 @@
-use crate::declaration::Declaration;
-use crate::map_family;
-use crate::ty;
+use crate::ty::declaration::Declaration;
+use crate::ty::interners::HasTyInternTables;
+use crate::ty::interners::TyInternTables;
+use crate::ty::map_family::FamilyMapper;
+use crate::ty::map_family::Map;
+use crate::ty::BoundVar;
 use crate::ty::BoundVarOr;
+use crate::ty::Erased;
+use crate::ty::Generic;
+use crate::ty::Ty;
+use crate::ty::TypeFamily;
 
-#[derive(new)]
-crate struct Substitution<'me, T: TypeFamily> {
-    intern_tables: TyInternTables,
-    values: &'me IndexVec<BoundVar, ty::Generic<T>>,
+crate struct Substitution<'me, T, V>
+where
+    T: TypeFamily<Perm = Erased>,
+    V: std::ops::Index<BoundVar, Output = Generic<T>>,
+{
+    intern_tables: &'me TyInternTables,
+    values: &'me V,
 }
 
-impl<T> HasTyInternTables for Substitution<'me, T>
+impl<T, V> Substitution<'me, T, V>
 where
-    T: TypeFamily,
+    T: TypeFamily<Perm = Erased>,
+    V: std::ops::Index<BoundVar, Output = Generic<T>>,
+{
+    crate fn new(intern_tables: &'me dyn HasTyInternTables, values: &'me V) -> Self {
+        Substitution {
+            intern_tables: intern_tables.ty_intern_tables(),
+            values,
+        }
+    }
+}
+
+impl<T, V> HasTyInternTables for Substitution<'me, T, V>
+where
+    T: TypeFamily<Perm = Erased>,
+    V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
     fn ty_intern_tables(&self) -> &TyInternTables {
         &self.intern_tables
     }
 }
 
-impl<T> map_family::Mapper for Substitution<'me, T>
+impl<T, V> FamilyMapper for Substitution<'me, T, V>
 where
-    T: TypeFamily<Perm = ty::Erased>,
+    T: TypeFamily<Perm = Erased>,
+    V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
     type Source = Declaration;
     type Target = T;
 
-    fn map_ty(&self, ty: Ty<Declaration>) -> Ty<T> {
-        let Ty {
-            perm: ty::Erased,
-            base,
-        } = ty;
+    fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<T> {
+        let Ty { perm: Erased, base } = ty;
 
-        match base.untern(&self.intern_tables) {
+        match self.untern(base) {
             BoundVarOr::BoundVar(var) => self.values[var].assert_ty(),
 
             BoundVarOr::Known(base_data) => {
                 let base_data1 = base_data.map(self);
                 Ty {
-                    perm: ty::Erased,
+                    perm: Erased,
                     base: T::intern_base_data(self, base_data1),
                 }
             }

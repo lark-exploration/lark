@@ -4,6 +4,8 @@ use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
 use crate::ty::interners::HasTyInternTables;
+use crate::ty::map_family::Map;
+use crate::ty::substitute::Substitution;
 use crate::ty::Erased;
 use crate::ty::InferVarOr;
 use crate::ty::Ty;
@@ -33,13 +35,15 @@ where
         &mut self,
         location: impl hir::HirIndex,
         owner_ty: Self::Ty,
-        _def_id: Self::FieldId,
+        field_def_id: Self::FieldId,
     ) -> Self::Ty {
-        self.with_base_data(
-            location.into(),
-            owner_ty.base,
-            |_this, _base_data| unimplemented!(),
-        )
+        self.with_base_data(location.into(), owner_ty.base, move |this, base_data| {
+            let field_decl_ty = this.db.ty().get(field_def_id);
+            field_decl_ty.map(&mut Substitution::new(
+                this.db.ty_intern_tables(),
+                &base_data.generics,
+            ))
+        })
     }
 
     /// Given the type of a field and its owner, substitute any generics appropriately
