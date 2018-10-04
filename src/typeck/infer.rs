@@ -1,12 +1,20 @@
+use crate::hir;
+use crate::hir::typeck::ErrorReported;
+use crate::hir::typeck::HirTypeChecker;
+use crate::intern::Intern;
+use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
 use crate::ty::BaseData;
+use crate::ty::BaseKind;
 use crate::ty::Erased;
 use crate::ty::Generic;
+use crate::ty::Generics;
+use crate::ty::InferVarOr;
 use crate::ty::Ty;
-use crate::typeck::{BaseTypeChecker, Cause, Error, ErrorKind};
+use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
 use crate::unify::InferVar;
-use generational_arena::Arena;
+use std::sync::Arc;
 
 impl BaseTypeChecker {
     /// If `base` can be mapped to a concrete `BaseData`,
@@ -16,7 +24,7 @@ impl BaseTypeChecker {
     /// invoked and the type variable will be unified.
     pub(super) fn with_base_data(
         &mut self,
-        cause: Cause,
+        cause: hir::MetaIndex,
         base: Base,
         op: impl FnOnce(&mut Self, BaseData<BaseOnly>) -> Ty<BaseOnly> + 'static,
     ) -> Ty<BaseOnly> {
@@ -31,9 +39,9 @@ impl BaseTypeChecker {
         }
     }
 
-    fn with_base_data_unify_with(
+    pub(super) fn with_base_data_unify_with(
         &mut self,
-        cause: Cause,
+        cause: hir::MetaIndex,
         base: Base,
         output_ty: Ty<BaseOnly>,
         op: impl FnOnce(&mut Self, BaseData<BaseOnly>) -> Ty<BaseOnly> + 'static,
@@ -41,7 +49,7 @@ impl BaseTypeChecker {
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => {
                 let ty1 = op(self, data);
-                self.equate_tys(cause, output_ty, ty1);
+                self.equate_types(cause, output_ty, ty1);
             }
 
             Err(_) => self.enqueue_op(Some(base), move |this| {
@@ -57,7 +65,12 @@ impl BaseTypeChecker {
         }
     }
 
-    pub(super) fn equate_tys(&mut self, cause: Cause, ty1: Ty<BaseOnly>, ty2: Ty<BaseOnly>) {
+    pub(super) fn equate_types(
+        &mut self,
+        cause: hir::MetaIndex,
+        ty1: Ty<BaseOnly>,
+        ty2: Ty<BaseOnly>,
+    ) {
         let Ty {
             perm: Erased,
             base: base1,
@@ -82,11 +95,48 @@ impl BaseTypeChecker {
                 for (generic1, generic2) in data1.generics.iter().zip(&data2.generics) {
                     match (generic1, generic2) {
                         (Generic::Ty(g1), Generic::Ty(g2)) => {
-                            self.equate_tys(cause, g1, g2);
+                            self.equate_types(cause, g1, g2);
                         }
                     }
                 }
             }
+        }
+    }
+
+    pub(super) fn boolean_type(&self) -> BaseTy {
+        let boolean_def_id = unimplemented!();
+        Ty {
+            perm: Erased,
+            base: InferVarOr::Known(BaseData {
+                kind: BaseKind::Named(boolean_def_id),
+                generics: Generics::empty(),
+            }).intern(&self.interners),
+        }
+    }
+
+    pub(super) fn field_def_id(
+        &mut self,
+        base_data: BaseData<BaseOnly>,
+        field_name: hir::Identifier,
+    ) -> Result<DefId, ErrorReported> {
+        let BaseData { kind, generics } = base_data;
+        match kind {
+            BaseKind::Named(_def_id) => unimplemented!(),
+
+            BaseKind::Error => Err(ErrorReported),
+        }
+    }
+
+    pub(super) fn method_def_id(
+        &mut self,
+        base_data: BaseData<BaseOnly>,
+        method_name: hir::Identifier,
+    ) -> Result<DefId, ErrorReported> {
+        let BaseData { kind, generics } = base_data;
+        match kind {
+            BaseKind::Named(_def_id) => unimplemented!(),
+
+            BaseKind::Error => Err(ErrorReported),
         }
     }
 }

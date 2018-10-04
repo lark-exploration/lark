@@ -1,3 +1,5 @@
+#![warn(warnings)]
+
 use codespan_reporting::Diagnostic;
 use crate::hir;
 use crate::map::FxIndexMap;
@@ -8,29 +10,25 @@ use crate::ty::interners::{HasTyInternTables, TyInternTables};
 use crate::unify::InferVar;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
-use std::rc::Rc;
+use std::sync::Arc;
 
+mod hir_typeck;
 mod infer;
 mod ops;
 
 crate struct BaseTypeChecker {
-    hir: Rc<hir::Hir>,
+    hir: Arc<hir::FnBody>,
     interners: TyInternTables,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     errors: Vec<Error>,
-    unify: UnificationTable<TyInternTables, Cause>,
-}
-
-#[derive(Copy, Clone, Debug)]
-crate struct Cause {
-    span: Span,
+    unify: UnificationTable<TyInternTables, hir::MetaIndex>,
 }
 
 #[derive(Copy, Clone, Debug)]
 crate struct Error {
     kind: ErrorKind,
-    cause: Cause,
+    cause: hir::MetaIndex,
 }
 
 #[derive(Copy, Clone, Debug)]

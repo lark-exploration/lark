@@ -50,6 +50,9 @@ impl<T> InferVarOr<T> {
 crate enum BaseKind {
     /// A named type (might be value, might be linear, etc).
     Named(DefId),
+
+    /// Indicates that a type error was reported.
+    Error,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

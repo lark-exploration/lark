@@ -8,7 +8,13 @@ use std::sync::Arc;
 
 crate mod typeck;
 
-crate struct Hir {
+salsa::query_prototype! {
+    trait BaseTypeCheckQueries: salsa::QueryContext {
+
+    }
+}
+
+crate struct FnBody {
     crate expressions: IndexVec<Expression, Spanned<ExpressionData>>,
     crate places: IndexVec<Place, Spanned<PlaceData>>,
     crate perms: IndexVec<Perm, Spanned<PermData>>,
@@ -28,13 +34,13 @@ crate enum MetaIndex {
     Identifier(Identifier),
 }
 
-crate trait HirIndex: Idx {
+crate trait HirIndex: Idx + Into<MetaIndex> {
     type Data;
 
-    fn index_vec(hir: &Hir) -> &IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>>;
 }
 
-impl<I> std::ops::Index<I> for Hir
+impl<I> std::ops::Index<I> for FnBody
 where
     I: HirIndex,
 {
@@ -45,7 +51,7 @@ where
     }
 }
 
-impl Hir {
+impl FnBody {
     /// Get the span for the given part of the HIR.
     crate fn span<I>(&self, index: I) -> Span
     where
@@ -62,7 +68,7 @@ macro_rules! hir_index_impls {
         impl HirIndex for $index_ty {
             type Data = $data_ty;
 
-            fn index_vec(hir: &Hir) -> &IndexVec<Self, Spanned<Self::Data>> {
+            fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>> {
                 &hir.$field
             }
         }
