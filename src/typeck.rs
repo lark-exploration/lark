@@ -13,17 +13,29 @@ use std::rc::Rc;
 mod infer;
 mod ops;
 
-struct BaseTypeChecker {
+crate struct BaseTypeChecker {
     hir: Rc<hir::Hir>,
     interners: TyInternTables,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
-    errors: Vec<Diagnostic>,
+    errors: Vec<Error>,
     unify: UnificationTable<TyInternTables, Cause>,
 }
 
-struct Cause {
+#[derive(Copy, Clone, Debug)]
+crate struct Cause {
     span: Span,
+}
+
+#[derive(Copy, Clone, Debug)]
+crate struct Error {
+    kind: ErrorKind,
+    cause: Cause,
+}
+
+#[derive(Copy, Clone, Debug)]
+crate enum ErrorKind {
+    BaseMismatch(BaseTy, BaseTy),
 }
 
 impl HasTyInternTables for BaseTypeChecker {
