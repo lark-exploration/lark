@@ -1,5 +1,6 @@
 use crate::intern::InternTable;
 use crate::ty::base_only;
+use crate::ty::declaration;
 use crate::ty::BaseData;
 use crate::ty::InferVarOr;
 use std::sync::Arc;
@@ -55,5 +56,6 @@ macro_rules! intern_tables_data {
 intern_tables_data! {
     struct TyInternTablesData for TyInternTables {
         base_ty: map(base_only::Base, InferVarOr<BaseData<base_only::BaseOnly>>),
+        declaration_ty: map(declaration::Base, BaseData<declaration::Declaration>),
     }
 }

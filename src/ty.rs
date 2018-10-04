@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 crate mod base_only;
 crate mod debug;
+crate mod declaration;
 crate mod interners;
 
 crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash {
@@ -117,4 +118,11 @@ impl<F: TypeFamily> IntoIterator for &'iter Generics<F> {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum Generic<F: TypeFamily> {
     Ty(Ty<F>),
+}
+
+/// Signature from a function or method.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate struct Signature<F: TypeFamily> {
+    crate inputs: Arc<Vec<Ty<F>>>,
+    crate output: Ty<F>,
 }

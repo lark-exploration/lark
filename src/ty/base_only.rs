@@ -1,4 +1,4 @@
-//! A type family where we just erase all permissions
+//! A type family where we just erase all permissions and we support inference.
 
 use crate::intern::{Intern, Untern};
 use crate::ty::interners::TyInternTables;

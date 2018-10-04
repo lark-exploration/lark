@@ -6,14 +6,35 @@ use crate::parser::pos::{Span, Spanned};
 use crate::parser::StringId;
 use std::sync::Arc;
 
+crate mod query_definitions;
 crate mod typeck;
 
 salsa::query_prototype! {
-    trait BaseTypeCheckQueries: salsa::QueryContext {
+    crate trait HirQueries: salsa::QueryContext {
+        /// Get the def-id for the built-in boolean type.
+        fn boolean_def_id() for query_definitions::BooleanDefId;
 
+        /// Get the fn-body for a given def-id.
+        fn fn_body() for query_definitions::FnBody;
+
+        /// Get the list of member names and their def-ids for a given struct.
+        fn members() for query_definitions::Members;
+
+        /// Get the type of something.
+        fn ty() for query_definitions::Ty;
+
+        /// Get the signature of a method or function -- defined for fields and structs.
+        fn signature() for query_definitions::Signature;
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate struct Member {
+    crate name: StringId,
+    crate def_id: DefId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct FnBody {
     crate expressions: IndexVec<Expression, Spanned<ExpressionData>>,
     crate places: IndexVec<Place, Spanned<PlaceData>>,
@@ -91,7 +112,7 @@ index_type! {
     crate struct Expression { .. }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate enum ExpressionData {
     /// `let <var> = <initializer> in <body>`
     Let {
@@ -134,7 +155,7 @@ index_type! {
     crate struct Perm { .. }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum PermData {
     Share,
     Borrow,
@@ -147,7 +168,7 @@ index_type! {
     crate struct Place { .. }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum PlaceData {
     Variable(Variable),
     Temporary(Expression),
@@ -158,7 +179,7 @@ index_type! {
     crate struct Variable { .. }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct VariableData {
     crate name: Identifier,
 }
@@ -167,7 +188,7 @@ index_type! {
     crate struct Identifier { .. }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct IdentifierData {
     text: StringId,
 }
