@@ -54,13 +54,15 @@ where
     }
 
     /// Records the computed type for an expression, variable, etc.
-    fn record_ty(&mut self, _index: impl hir::HirIndex, _ty: Self::Ty) {
-        unimplemented!()
+    fn record_ty(&mut self, index: impl hir::HirIndex, ty: Self::Ty) {
+        let index: hir::MetaIndex = index.into();
+        let old_value = self.results.types.insert(index, ty);
+        assert!(old_value.is_none());
     }
 
     /// Lookup the type for a variable.
-    fn variable_ty(&mut self, _var: hir::Variable) -> Self::Ty {
-        unimplemented!()
+    fn variable_ty(&mut self, var: hir::Variable) -> Self::Ty {
+        self.results.types[&hir::MetaIndex::from(var)]
     }
 
     fn apply_user_perm(&mut self, _perm: hir::Perm, place_ty: Self::Ty) -> Self::Ty {

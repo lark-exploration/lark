@@ -9,6 +9,7 @@ use crate::ty::base_inferred::BaseInferred;
 use crate::ty::base_only::{BaseOnly, BaseTy};
 use crate::ty::interners::{HasTyInternTables, TyInternTables};
 use crate::ty::Ty;
+use crate::ty::TypeFamily;
 use crate::unify::InferVar;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
@@ -34,13 +35,14 @@ crate struct BaseTypeChecker<'db, Q: TypeCheckQueries> {
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     errors: Vec<Error>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
+    results: BaseTypeCheckResults<BaseOnly>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct BaseTypeCheckResults {
+crate struct BaseTypeCheckResults<F: TypeFamily> {
     /// FIXME-- this will actually not want `BaseTy` unless we want to
     /// return the unification table too.
-    types: std::collections::BTreeMap<hir::MetaIndex, Ty<BaseInferred>>,
+    types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
 }
 
 #[derive(Copy, Clone, Debug)]
