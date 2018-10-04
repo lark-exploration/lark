@@ -11,12 +11,6 @@ macro_rules! token_impl {
                 $($token)*,
             )*
         }
-
-        impl $crate::parser::ast::DebugModuleTable for Token {
-            fn debug(&self, f: &mut std::fmt::Formatter<'_>, _table: &'table $crate::parser::ModuleTable) -> std::fmt::Result {
-                write!(f, "{:?}", self)
-            }
-        }
     };
 
     {

@@ -1,3 +1,5 @@
+use codespan::ByteIndex;
+use crate::parser::lexer_helpers::ParseError;
 use crate::parser::test_helpers::{LineTokenizer, Token};
 use crate::parser::{ast, ModuleTable, Span, Spanned, StringId};
 
@@ -6,19 +8,30 @@ use derive_new::new;
 use itertools::Itertools;
 use log::{debug, trace};
 use std::collections::HashMap;
+use unicode_xid::UnicodeXID;
+
+pub fn process(source: &str) -> (String, Annotations) {
+    let codemap = CodeMap::new();
+    extract(&source, codemap, 1)
+}
+
+#[derive(Debug)]
+pub enum Annotation {
+    Whitespace(Span),
+    Newline(Span),
+    Identifier(Span),
+    Sigil(Span),
+}
 
 fn extract(s: &str, codemap: CodeMap, mut codespan_start: u32) -> (String, Annotations) {
-    let mut span_map = HashMap::new();
-    let mut lines = HashMap::new();
-
     let mut source = String::new();
     let mut t2 = ModuleTable::new();
+    let mut anns = vec![];
+    let mut spans = vec![];
 
     for (i, mut chunk) in s.lines().chunks(2).into_iter().enumerate() {
         let line = chunk.next().expect("line in chunk");
         let annotations = chunk.next().expect("annotation in chunk");
-
-        let mut spans = vec![];
 
         source.push_str(&line);
         source.push('\n');
@@ -27,45 +40,121 @@ fn extract(s: &str, codemap: CodeMap, mut codespan_start: u32) -> (String, Annot
         debug!("annotations: {} {:?}", i, annotations);
 
         let tokens = LineTokenizer::new(&mut t2, annotations, 0);
-        let mut name = None;
+        let tokens: Result<Vec<(ByteIndex, Token, ByteIndex)>, ParseError> = tokens.collect();
 
-        for token in tokens {
-            trace!("{:?}", token);
+        for token in tokens.unwrap() {
+            trace!(target: "lark::parser::test::extract", "token={:?} start={:?}", token, codespan_start);
+
             match token {
-                Err(err) => panic!(err),
-                Ok((start, token, end)) => match token {
-                    Token::Underline => spans.push(Span::from(
-                        start + ByteOffset(codespan_start as i64),
-                        end + ByteOffset(codespan_start as i64),
-                    )),
-                    Token::Name(id) => {
-                        name = Some(id);
-                        break;
+                (start, token, end) => match token {
+                    Token::Underline => {
+                        trace!(target: "lark::parser::test::extract",
+                            "^^^ start={:?} end={:?} codespan_start={:?}",
+                            start,
+                            end,
+                            codespan_start
+                        );
+
+                        spans.push(Span::from(
+                            start + ByteOffset(codespan_start as i64),
+                            end + ByteOffset(codespan_start as i64),
+                        ))
                     }
+                    Token::Name(id) => {
+                        let (name, snip, span) = ident(id, &anns, &spans, &t2, &source);
+
+                        assert_eq!(&name[1..name.len() - 1], snip, "annotation matches source");
+
+                        assert!(
+                            UnicodeXID::is_xid_start(snip.chars().next().unwrap()),
+                            "source id starts with an id char; source={:?}",
+                            snip
+                        );
+                        assert!(
+                            snip[1..].chars().all(|i| UnicodeXID::is_xid_continue(i)),
+                            "source id contains only id chars; source={:?}",
+                            snip
+                        );
+
+                        anns.push(Annotation::Identifier(span));
+                    }
+
+                    Token::WsKeyword => {
+                        let (snip, span) = sigil(&anns, &spans, &source);
+
+                        assert!(
+                            snip.chars().all(|i| i.is_whitespace()),
+                            "annotation ws matches source"
+                        );
+
+                        anns.push(Annotation::Whitespace(span))
+                    }
+
+                    Token::Sigil(id) => {
+                        let (name, snip, span) = ident(id, &anns, &spans, &t2, &source);
+
+                        assert_eq!(&name[1..name.len() - 1], snip, "annotation matches source");
+
+                        anns.push(Annotation::Sigil(span));
+                    }
+
                     Token::Whitespace => {}
                 },
             }
         }
 
-        let name = t2.lookup(name.expect("Annotation line must have a name"));
-        lines.insert(name.to_string(), i as u32);
-        span_map.insert(i as u32, spans);
+        // lines.insert(name.to_string(), i as u32);
+        // span_map.insert(i as u32, spans);
 
-        codespan_start += (line.len() as u32) + 1;
+        codespan_start = (source.len() as u32) + 1;
     }
 
-    (source, Annotations::new(codemap, t2, span_map, lines))
+    (source, Annotations::new(codemap, t2, anns))
+}
+
+fn ident(
+    id: StringId,
+    anns: &[Annotation],
+    spans: &[Span],
+    table: &'table ModuleTable,
+    source: &'source str,
+) -> (&'table str, &'source str, Span) {
+    let pos = anns.len();
+    let span = spans[pos];
+
+    let name = table.lookup(id);
+    let snip = &source[span.to_range(-1)];
+
+    trace!(target: "lark::parser::test::extract",
+        "name={:?} snip={:?} span={:?} source={:?}",
+        name, snip, span, source
+    );
+
+    (name, snip, span)
+}
+
+fn sigil(anns: &[Annotation], spans: &[Span], source: &'source str) -> (&'source str, Span) {
+    let pos = anns.len();
+    let span = spans[pos];
+
+    let snip = &source[span.to_range(-1)];
+
+    trace!(target: "lark::parser::test::extract",
+        "snip={:?} span={:?} source={:?}",
+        snip, span, source
+    );
+
+    (snip, span)
 }
 
 #[derive(Debug, new)]
-struct Annotations {
+pub struct Annotations {
     codemap: CodeMap,
     table: ModuleTable,
-    spans: HashMap<u32, Vec<Span>>,
-    lines: HashMap<String, u32>,
+    tokens: Vec<Annotation>,
 }
 
-trait Position: Copy {
+pub trait Position: Copy {
     fn pos(&self) -> (&str, u32);
 }
 
@@ -76,157 +165,15 @@ impl Position for (&str, u32) {
 }
 
 impl Annotations {
-    fn get(&self, pos: impl Position) -> Span {
-        let (name, pos) = pos.pos();
-
-        let line = self.lines.get(name).expect(&format!(
-            "Wrong line name {}, names={:?}",
-            name,
-            self.lines.keys()
-        ));
-
-        let spans = self.spans.get(line).expect(&format!(
-            "Wrong line number {}, len={}",
-            line,
-            self.spans.len()
-        ));
-
-        spans[pos as usize]
-    }
-
-    fn codemap(&mut self) -> &mut CodeMap {
+    pub fn codemap(&mut self) -> &mut CodeMap {
         &mut self.codemap
     }
 
-    fn table(&mut self) -> &mut ModuleTable {
+    pub fn table(&mut self) -> &mut ModuleTable {
         &mut self.table
     }
 
-    fn wrap<T>(&self, value: T, left: impl Position, right: impl Position) -> Spanned<T> {
-        let span = self.span(left, right);
-
-        Spanned::wrap_span(value, span)
-    }
-
-    fn wrap_one<T>(&self, value: T, pos: impl Position) -> Spanned<T> {
-        Spanned::wrap_span(value, self.get(pos))
-    }
-
-    fn mode(&self, pos: impl Position) -> Spanned<ast::Mode> {
-        let src = self.src(pos);
-        let mode = src.into();
-
-        self.wrap_one(mode, pos)
-    }
-
-    fn op(&self, pos: impl Position) -> Spanned<ast::Op> {
-        let src = self.src(pos);
-
-        match src {
-            "+" => self.wrap_one(ast::Op::Add, pos),
-            other => panic!("Unexpected operator {:?}", other),
-        }
-    }
-
-    fn pat_ident(&self, pos: impl Position) -> Spanned<ast::Pattern> {
-        let id = self.ident(pos);
-        self.wrap_one(ast::Pattern::Identifier(id, None), pos)
-    }
-
-    fn ty(&self, line: &str, start: u32) -> Spanned<ast::Type> {
-        self.wrap_one(
-            ast::Type::new(None, self.ident((line, start))),
-            (line, start),
-        )
-    }
-
-    fn ty_mode(&self, line: &str, start: u32) -> Spanned<ast::Type> {
-        self.wrap(
-            ast::Type::new(
-                Some(self.mode((line, start))),
-                self.ident((line, start + 1)),
-            ),
-            (line, start),
-            (line, start + 1),
-        )
-    }
-
-    fn field(&self, line: &str, start: u32) -> ast::Field {
-        ast::Field::new(
-            self.ident((line, start)),
-            self.ty(line, start + 1),
-            self.span((line, start), (line, start + 1)),
-        )
-    }
-
-    fn field_mode(&self, line: &str, start: u32) -> ast::Field {
-        ast::Field::new(
-            self.ident((line, start)),
-            self.ty_mode(line, start + 1),
-            self.span((line, start), (line, start + 2)),
-        )
-    }
-
-    fn shorthand(&self, pos: impl Position) -> ast::ConstructField {
-        let id = self.ident(pos);
-
-        ast::ConstructField::Shorthand(id)
-    }
-
-    fn string(&self, pos: impl Position) -> ast::Expression {
-        let string = self.src(pos);
-        let id = self.table.get(string).expect(&format!(
-            "Missing expected string {:?}, had {:?}",
-            string,
-            self.table.values()
-        ));
-
-        ast::Expression::Literal(ast::Literal::String(self.wrap_one(id, pos)))
-    }
-
-    fn refers(&self, pos: impl Position) -> ast::Expression {
-        let id = self.ident(pos);
-        ast::Expression::Ref(id)
-    }
-
-    fn ident(&self, pos: impl Position) -> Spanned<StringId> {
-        let span = self.get(pos);
-
-        let file = self
-            .codemap
-            .find_file(span.to_codespan().start())
-            .expect("Missing file");
-
-        let src = file
-            .src_slice(span.to_codespan())
-            .expect("Missing src_slice");
-
-        let id = self
-            .table
-            .get(src)
-            .expect(&format!("Missing intern for {:?}", src));
-
-        Spanned::wrap_span(id, span)
-    }
-
-    fn src(&self, pos: impl Position) -> &str {
-        let span = self.get(pos);
-        let file = self
-            .codemap
-            .find_file(span.to_codespan().start())
-            .expect("Missing file");
-
-        let src = file
-            .src_slice(span.to_codespan())
-            .expect("Missing src_slice");
-
-        src
-    }
-
-    fn span(&self, from: impl Position, to: impl Position) -> Span {
-        let left = self.get(from);
-        let right = self.get(to);
-
-        left.to(right)
+    pub fn tokens(&mut self) -> &mut [Annotation] {
+        &mut self.tokens
     }
 }

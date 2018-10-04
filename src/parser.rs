@@ -19,10 +19,11 @@ use self::test_helpers::LineTokenizer;
 
 crate use self::grammar::ProgramParser;
 crate use self::lexer_helpers::ParseError;
-crate use self::pos::{Span, Spanned};
 crate use self::program::{Environment, Module, ModuleTable, NameId, StringId};
 crate use self::token::Token;
 crate use self::tokenizer::Tokenizer;
+
+pub use self::pos::{Span, Spanned};
 
 use itertools::Itertools;
 use log::{trace, warn};
@@ -483,6 +484,8 @@ mod test {
                             name = Some(id);
                             break;
                         }
+                        Token::WsKeyword => {}
+                        Token::Sigil(id) => {}
                         Token::Whitespace => {}
                     },
                 }

@@ -66,7 +66,7 @@ impl LexerDelegateTrait for LexerState {
                     } else if UnicodeXID::is_xid_start(c) {
                         LexerNext::Transition(LexerAccumulate::Begin, LexerState::StartIdent)
                     } else {
-                        LexerNext::Error(c)
+                        LexerNext::Error(Some(c))
                     }
                 }
             },

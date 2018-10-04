@@ -4,6 +4,7 @@
 crate mod annotate_lines;
 
 use crate::parser::ast::DebugModuleTable;
+use crate::parser::lexer_helpers::{consume, consume_n, reconsume};
 use crate::parser::lexer_helpers::{
     LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError, Tokenizer,
 };
@@ -22,13 +23,16 @@ pub enum LexerState {
     SecondaryUnderline,
     Whitespace,
     Name,
+    Sigil,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub enum Token {
     Underline,
+    Sigil(StringId),
     Name(StringId),
     Whitespace,
+    WsKeyword,
 }
 
 impl DebugModuleTable for Token {
@@ -70,37 +74,38 @@ impl LexerDelegateTrait for LexerState {
                             LexerAccumulate::Begin,
                             LexerState::SecondaryUnderline,
                         )
+                    } else if c == '#' {
+                        consume().and_continue().and_transition(LexerState::Sigil)
+                    } else if c == '@' {
+                        consume().and_continue().and_transition(LexerState::Name)
                     } else if c == ' ' {
                         LexerNext::Transition(LexerAccumulate::Begin, LexerState::Whitespace)
+                    } else if rest.starts_with("ws") {
+                        consume_n(2).and_emit(Token::WsKeyword).and_remain()
                     } else {
-                        LexerNext::Transition(LexerAccumulate::Begin, LexerState::Name)
+                        LexerNext::Error(Some(c))
                     }
                 }
             },
 
-            LexerState::Name => match c {
-                None => LexerNext::Transition(
-                    LexerAccumulate::Emit {
-                        before: None,
-                        after: None,
-                        token: LexerToken::Dynamic(tk_name),
-                    },
-                    LexerState::Top,
-                ),
-                Some(' ') => LexerNext::Transition(
-                    LexerAccumulate::Emit {
-                        before: None,
-                        after: None,
-                        token: LexerToken::Dynamic(tk_name),
-                    },
-                    LexerState::Top,
-                ),
-                Some(c) if c.is_alphabetic() => {
-                    LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1)))
-                }
-                Some('-') => LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1))),
+            LexerState::Sigil => match c {
+                None => LexerNext::Error(c),
 
-                Some(other) => LexerNext::Error(other),
+                Some(c) => match c {
+                    '#' => consume()
+                        .and_emit_dynamic(Token::Sigil)
+                        .and_transition(LexerState::Top),
+
+                    _ => consume().and_remain(),
+                },
+            },
+
+            LexerState::Name => match c {
+                Some('@') => consume()
+                    .and_emit_dynamic(Token::Name)
+                    .and_transition(LexerState::Top),
+                Some(_) => consume().and_remain(),
+                None => LexerNext::Error(None),
             },
 
             LexerState::Underline => match c {
@@ -108,11 +113,10 @@ impl LexerDelegateTrait for LexerState {
                     LexerAccumulate::emit_dynamic(tk_underline),
                     LexerState::Top,
                 ),
-                Some(' ') | Some('~') => LexerNext::Transition(
-                    LexerAccumulate::emit_dynamic(tk_underline),
-                    LexerState::Top,
-                ),
-                Some('^') => LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1))),
+                Some(' ') | Some('~') => reconsume()
+                    .and_emit(Token::Underline)
+                    .and_transition(LexerState::Top),
+                Some('^') => consume().and_remain(),
                 _ => LexerNext::Transition(
                     LexerAccumulate::emit_dynamic(tk_underline),
                     LexerState::Top,
@@ -124,11 +128,10 @@ impl LexerDelegateTrait for LexerState {
                     LexerAccumulate::emit_dynamic(tk_underline),
                     LexerState::Top,
                 ),
-                Some(' ') | Some('^') => LexerNext::Transition(
-                    LexerAccumulate::emit_dynamic(tk_underline),
-                    LexerState::Top,
-                ),
-                Some('~') => LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1))),
+                Some(' ') | Some('^') => reconsume()
+                    .and_emit(Token::Underline)
+                    .and_transition(LexerState::Top),
+                Some('~') => consume().and_remain(),
                 _ => LexerNext::Transition(
                     LexerAccumulate::emit_dynamic(tk_underline),
                     LexerState::Top,
@@ -141,10 +144,9 @@ impl LexerDelegateTrait for LexerState {
                     if c == ' ' {
                         LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1)))
                     } else {
-                        LexerNext::Transition(
-                            LexerAccumulate::Skip(LexerAction::Reconsume),
-                            LexerState::Top,
-                        )
+                        reconsume()
+                            .and_emit(Token::Whitespace)
+                            .and_transition(LexerState::Top)
                     }
                 }
             },
