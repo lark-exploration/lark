@@ -47,3 +47,9 @@ where
             .finish()
     }
 }
+
+impl<Cx: ?Sized> DebugWith<Cx> for ! {
+    fn fmt_with(&self, _cx: &Cx, _fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unreachable!()
+    }
+}

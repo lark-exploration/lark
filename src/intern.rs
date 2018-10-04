@@ -1,5 +1,5 @@
-use indexed_vec::{Idx, IndexVec};
-use rustc_hash::FxHashMap;
+use crate::indices::{IndexVec, U32Index};
+use crate::map::FxIndexMap;
 use std::hash::Hash;
 use std::rc::Rc;
 
@@ -11,29 +11,29 @@ use std::rc::Rc;
 #[derive(Debug)]
 crate struct InternTable<Key, Data>
 where
-    Key: Copy + Idx,
+    Key: Copy + U32Index,
     Data: Clone + Hash + Eq,
 {
     vec: IndexVec<Key, Data>,
-    map: FxHashMap<Data, Key>,
+    map: FxIndexMap<Data, Key>,
 }
 
 impl<Key, Data> Default for InternTable<Key, Data>
 where
-    Key: Copy + Idx,
+    Key: Copy + U32Index,
     Data: Clone + Hash + Eq,
 {
     fn default() -> Self {
         InternTable {
             vec: IndexVec::default(),
-            map: FxHashMap::default(),
+            map: FxIndexMap::default(),
         }
     }
 }
 
 impl<Key, Data> InternTable<Key, Data>
 where
-    Key: Copy + Idx,
+    Key: Copy + U32Index,
     Data: Clone + Hash + Eq,
 {
     crate fn get(&self, key: Key) -> Data {

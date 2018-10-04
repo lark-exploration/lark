@@ -123,7 +123,7 @@ fn ident(
     let span = spans[pos];
 
     let name = table.lookup(id);
-    let snip = &source[span.to_range(-1)];
+    let snip = unimplemented!(); // FIXME &source[span.to_range(-1)];
 
     trace!(target: "lark::parser::test::extract",
         "name={:?} snip={:?} span={:?} source={:?}",
@@ -137,7 +137,7 @@ fn sigil(anns: &[Annotation], spans: &[Span], source: &'source str) -> (&'source
     let pos = anns.len();
     let span = spans[pos];
 
-    let snip = &source[span.to_range(-1)];
+    let snip = unimplemented!(); // FIXME &source[span.to_range(-1)];
 
     trace!(target: "lark::parser::test::extract",
         "snip={:?} span={:?} source={:?}",

@@ -14,21 +14,27 @@ crate struct MethodSignature<TC: HirTypeChecker> {
 }
 
 crate trait HirTypeChecker: Sized {
-    type FieldId: Copy;
-    type MethodId: Copy;
-    type Ty: Copy;
+    type FieldId: Copy + 'static;
+    type MethodId: Copy + 'static;
+    type Ty: Copy + 'static;
 
     /// Return the HIR that we are type-checking.
-    fn hir(&self) -> &Arc<hir::Hir>;
+    fn hir(&self) -> &Arc<hir::FnBody>;
 
     /// Fetch the field of the given field from the given owner,
     /// appropriately substituted.
-    fn field_ty(&mut self, owner_ty: Self::Ty, def_id: Self::FieldId) -> Self::Ty;
+    fn field_ty(
+        &mut self,
+        location: impl hir::HirIndex,
+        owner_ty: Self::Ty,
+        def_id: Self::FieldId,
+    ) -> Self::Ty;
 
     /// Given the type of a field and its owner, substitute any generics appropriately
     /// and return an instantiated type.
     fn method_sig(
         &mut self,
+        location: impl hir::HirIndex,
         owner_ty: Self::Ty,
         method_def_id: Self::MethodId,
     ) -> MethodSignature<Self>;
@@ -71,7 +77,7 @@ crate trait HirTypeChecker: Sized {
         location: impl hir::HirIndex,
         owner_ty: Self::Ty,
         field_name: hir::Identifier,
-        op: impl FnOnce(&mut Self, Self::FieldId) -> Result<Self::Ty, ErrorReported>,
+        op: impl FnOnce(&mut Self, Self::FieldId) -> Self::Ty + 'static,
     ) -> Self::Ty;
 
     /// Invokes `op` once the base-data of `ty` is known. The returned
@@ -82,15 +88,7 @@ crate trait HirTypeChecker: Sized {
         location: impl hir::HirIndex,
         owner_ty: Self::Ty,
         method_name: hir::Identifier,
-        op: impl FnOnce(&mut Self, Self::MethodId) -> Result<Self::Ty, ErrorReported>,
-    ) -> Self::Ty;
-
-    /// Reports an error to the user and returns a special type
-    /// that indicates a type error occurred.
-    fn report_error(
-        &mut self,
-        location: impl hir::HirIndex,
-        message: impl FnOnce(codespan::ByteSpan) -> Diagnostic,
+        op: impl FnOnce(&mut Self, Self::MethodId) -> Self::Ty + 'static,
     ) -> Self::Ty;
 
     /// Returns a type used to indicate that an error has been reported.
@@ -187,7 +185,7 @@ crate trait HirTypeChecker: Sized {
                 let owner_ty = self.check_place(owner);
                 Ok(
                     self.with_field(place, owner_ty, name, move |this, field_id| {
-                        Ok(this.field_ty(owner_ty, field_id))
+                        this.field_ty(place, owner_ty, field_id)
                     }),
                 )
             }
@@ -203,12 +201,12 @@ crate trait HirTypeChecker: Sized {
         arguments: Arc<Vec<hir::Expression>>,
     ) -> Self::Ty {
         self.with_method(expression, owner_ty, method_name, move |this, method_id| {
-            let method_sig = this.method_sig(owner_ty, method_id);
+            let method_sig = this.method_sig(expression, owner_ty, method_id);
             for (&argument, &expected_ty) in arguments.iter().zip(method_sig.inputs.iter()) {
                 let argument_ty = this.check_expression(argument);
                 this.require_assignable(expression, argument_ty, expected_ty);
             }
-            Ok(method_sig.output)
+            method_sig.output
         })
     }
 }

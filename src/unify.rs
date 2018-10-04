@@ -1,9 +1,15 @@
-use crate::indices::U32Index;
-use crate::intern::{Intern, Untern};
-use crate::ty::InferVar;
-use indexed_vec::{Idx, IndexVec};
+#![deny(warnings)]
+
+use crate::indices::{IndexVec, U32Index};
 use std::convert::TryFrom;
 use std::fmt;
+
+index_type! {
+    crate struct InferVar {
+        debug_name["?"],
+        ..
+    }
+}
 
 /// Each "inferable" value represents something which can be inferred.
 /// For example, the `crate::ty::Perm` and `crate::ty::Base` types implement

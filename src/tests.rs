@@ -4,7 +4,6 @@ use crate::ir::{
     builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
     Rvalue, StatementKind, Struct, TerminatorKind,
 };
-use crate::ty::intern::TyInterners;
 
 #[test]
 fn internaltest() {

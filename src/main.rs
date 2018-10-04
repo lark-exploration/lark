@@ -4,6 +4,7 @@
 #![feature(box_syntax)]
 #![feature(crate_visibility_modifier)]
 #![feature(existential_type)]
+#![feature(never_type)]
 #![feature(nll)]
 #![feature(min_const_fn)]
 #![feature(const_fn)]
@@ -27,6 +28,7 @@ mod hir;
 mod ide;
 mod intern;
 mod ir;
+mod map;
 mod parser;
 mod parser2;
 mod tests;
