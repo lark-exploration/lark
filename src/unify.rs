@@ -1,7 +1,6 @@
 #![deny(warnings)]
 
-use crate::indices::U32Index;
-use indexed_vec::{Idx, IndexVec};
+use crate::indices::{IndexVec, U32Index};
 use std::convert::TryFrom;
 use std::fmt;
 

@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::hash::Hash;
+
 /// Use to declare a "newtype'd" index that can be used with `IndexVec`.
 /// The simplest usage is just:
 ///
@@ -129,6 +132,7 @@ macro_rules! index_type {
         }
 
         impl $name {
+            #[inline]
             $visibility const fn new(index: usize) -> Self {
                 // This is a wacky assert that is compatible with a
                 // const fn.  It will evaluate to an out-of-bounds
@@ -137,6 +141,7 @@ macro_rules! index_type {
                 unsafe { Self { private: std::num::NonZeroU32::new_unchecked(v + 1) } }
             }
 
+            #[inline]
             $visibility const fn from_u32(index: u32) -> Self {
                 // This is a wacky assert that is compatible with a
                 // const fn.  It will evaluate to an out-of-bounds
@@ -145,22 +150,26 @@ macro_rules! index_type {
                 unsafe { Self { private: std::num::NonZeroU32::new_unchecked(v + 1) } }
             }
 
+            #[inline]
             $visibility fn as_u32(self) -> u32 {
                 self.private.get() - 1
             }
 
+            #[inline]
             $visibility fn as_usize(self) -> usize {
                 self.as_u32() as usize
             }
         }
 
         impl From<usize> for $name {
+            #[inline]
             fn from(v: usize) -> $name {
                 $name::new(v)
             }
         }
 
         impl From<u32> for $name {
+            #[inline]
             fn from(v: u32) -> $name {
                 $name::from_u32(v)
             }
@@ -169,28 +178,31 @@ macro_rules! index_type {
         impl std::ops::Add<usize> for $name {
             type Output = $name;
 
+            #[inline]
             fn add(self, v: usize) -> $name {
                 $name::new(self.as_usize() + v)
             }
         }
 
-        impl indexed_vec::Idx for $name {
-            fn new(v: usize) -> $name {
-                $name::from(v)
-            }
-
-            fn index(self) -> usize {
-                self.as_usize()
-            }
-        }
-
         impl crate::indices::U32Index for $name {
+            #[inline]
             fn as_u32(self) -> u32 {
                 self.as_u32()
             }
 
+            #[inline]
             fn from_u32(v: u32) -> Self {
                 Self::from_u32(v)
+            }
+
+            #[inline]
+            fn as_usize(self) -> usize {
+                self.as_usize()
+            }
+
+            #[inline]
+            fn from_usize(v: usize) -> Self {
+                Self::new(v)
             }
         }
 
@@ -228,8 +240,281 @@ macro_rules! index_type {
     };
 }
 
-crate trait U32Index: indexed_vec::Idx {
+crate trait U32Index: Copy + Debug + Eq + Hash + 'static {
+    fn as_usize(self) -> usize;
+
+    fn from_usize(v: usize) -> Self;
+
     fn as_u32(self) -> u32;
 
     fn from_u32(v: u32) -> Self;
+}
+
+/// A vector indexable via values of type `I`.
+#[derive(Clone, Eq, PartialEq, Hash)]
+crate struct IndexVec<I, T>
+where
+    I: U32Index,
+{
+    vec: Vec<T>,
+    _marker: std::marker::PhantomData<I>,
+}
+
+impl<I, T> IndexVec<I, T>
+where
+    I: U32Index,
+{
+    crate fn new() -> Self {
+        Default::default()
+    }
+
+    crate fn with_capacity(cap: usize) -> Self {
+        IndexVec {
+            vec: Vec::with_capacity(cap),
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    crate fn from_elem<S>(elem: T, universe: &IndexVec<I, S>) -> Self
+    where
+        T: Clone,
+    {
+        IndexVec {
+            vec: vec![elem; universe.len()],
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    crate fn from_elem_n(elem: T, n: usize) -> Self
+    where
+        T: Clone,
+    {
+        IndexVec {
+            vec: vec![elem; n],
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    crate fn len(&self) -> usize {
+        self.vec.len()
+    }
+
+    crate fn is_empty(&self) -> bool {
+        self.vec.is_empty()
+    }
+
+    crate fn into_iter(self) -> std::vec::IntoIter<T> {
+        self.vec.into_iter()
+    }
+
+    crate fn into_iter_enumerated(self) -> impl Iterator<Item = (I, T)> {
+        self.vec
+            .into_iter()
+            .enumerate()
+            .map(|(i, v)| (I::from_usize(i), v))
+    }
+
+    crate fn iter(&self) -> std::slice::Iter<'_, T> {
+        self.vec.iter()
+    }
+
+    crate fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
+        self.vec.iter_mut()
+    }
+
+    crate fn iter_enumerated(&self) -> impl Iterator<Item = (I, &T)> {
+        self.vec
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (I::from_usize(i), v))
+    }
+
+    crate fn iter_enumerated_mut(&mut self) -> impl Iterator<Item = (I, &mut T)> {
+        self.vec
+            .iter_mut()
+            .enumerate()
+            .map(|(i, v)| (I::from_usize(i), v))
+    }
+    crate fn indices(&self) -> impl Iterator<Item = I> {
+        (0..self.len()).map(|v| I::from_usize(v))
+    }
+    crate fn last_idx(&self) -> Option<I> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(I::from_usize(self.len() - 1))
+        }
+    }
+    crate fn next_idx(&self) -> I {
+        I::from_usize(self.len())
+    }
+    crate fn shrink_to_fit(&mut self) {
+        self.vec.shrink_to_fit()
+    }
+    crate fn swap(&mut self, l: I, r: I) {
+        self.vec.swap(l.as_usize(), r.as_usize())
+    }
+    crate fn truncate(&mut self, s: usize) {
+        self.vec.truncate(s)
+    }
+    crate fn get(&self, i: I) -> Option<&T> {
+        self.vec.get(i.as_usize())
+    }
+    crate fn get_mut(&mut self, i: I) -> Option<&mut T> {
+        self.vec.get_mut(i.as_usize())
+    }
+
+    crate fn last(&self) -> Option<&T> {
+        self.vec.last()
+    }
+    crate fn last_mut(&mut self) -> Option<&mut T> {
+        self.vec.last_mut()
+    }
+
+    crate fn reserve(&mut self, s: usize) {
+        self.vec.reserve(s);
+    }
+
+    crate fn resize(&mut self, s: usize, v: T)
+    where
+        T: Clone,
+    {
+        self.vec.resize(s, v);
+    }
+    crate fn binary_search(&self, v: &T) -> Result<I, I>
+    where
+        T: Ord,
+    {
+        self.vec
+            .binary_search(v)
+            .map(I::from_usize)
+            .map_err(I::from_usize)
+    }
+    crate fn push(&mut self, d: T) -> I {
+        let idx = self.next_idx();
+        self.vec.push(d);
+        idx
+    }
+
+    crate fn push_with_idx<F>(&mut self, f: F) -> I
+    where
+        F: FnOnce(I) -> T,
+    {
+        let idx = self.next_idx();
+        let d = f(idx);
+        self.vec.push(d);
+        idx
+    }
+}
+
+impl<I, T> Default for IndexVec<I, T>
+where
+    I: U32Index,
+{
+    fn default() -> Self {
+        IndexVec::from(vec![])
+    }
+}
+
+impl<I, T> From<Vec<T>> for IndexVec<I, T>
+where
+    I: U32Index,
+{
+    fn from(vec: Vec<T>) -> Self {
+        IndexVec {
+            vec,
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<I, T> std::ops::Index<I> for IndexVec<I, T>
+where
+    I: U32Index,
+{
+    type Output = T;
+    fn index(&self, i: I) -> &T {
+        &self.vec[i.as_usize()]
+    }
+}
+
+impl<I, T> std::ops::IndexMut<I> for IndexVec<I, T>
+where
+    I: U32Index,
+{
+    fn index_mut(&mut self, i: I) -> &mut T {
+        &mut self.vec[i.as_usize()]
+    }
+}
+
+impl<I, T> std::iter::Extend<T> for IndexVec<I, T>
+where
+    I: U32Index,
+{
+    fn extend<IT>(&mut self, iter: IT)
+    where
+        IT: IntoIterator<Item = T>,
+    {
+        self.vec.extend(iter)
+    }
+}
+
+impl<I, T> std::iter::FromIterator<T> for IndexVec<I, T>
+where
+    I: U32Index,
+{
+    fn from_iter<IT>(iter: IT) -> Self
+    where
+        IT: IntoIterator<Item = T>,
+    {
+        IndexVec {
+            vec: iter.into_iter().collect(),
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<I, T> IntoIterator for IndexVec<I, T>
+where
+    I: U32Index,
+{
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> std::vec::IntoIter<T> {
+        self.into_iter()
+    }
+}
+
+impl<'a, I, T> IntoIterator for &'a IndexVec<I, T>
+where
+    I: U32Index,
+{
+    type Item = &'a T;
+    type IntoIter = std::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+impl<'a, I, T> IntoIterator for &'a mut IndexVec<I, T>
+where
+    I: U32Index,
+{
+    type Item = &'a mut T;
+    type IntoIter = std::slice::IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
+impl<I, T> std::fmt::Debug for IndexVec<I, T>
+where
+    I: U32Index,
+    T: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.vec, f)
+    }
 }

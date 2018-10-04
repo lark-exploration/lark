@@ -1,9 +1,9 @@
 //! The `Hir` is the "high-level IR". It is a simpified, somewhat resolved version of the bare AST.
 
+use crate::indices::{IndexVec, U32Index};
 use crate::ir::DefId;
 use crate::parser::pos::{Span, Spanned};
 use crate::parser::StringId;
-use indexed_vec::{Idx, IndexVec};
 use std::sync::Arc;
 
 crate mod typeck;
@@ -34,7 +34,7 @@ crate enum MetaIndex {
     Identifier(Identifier),
 }
 
-crate trait HirIndex: Idx + Into<MetaIndex> {
+crate trait HirIndex: U32Index + Into<MetaIndex> {
     type Data;
 
     fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>>;

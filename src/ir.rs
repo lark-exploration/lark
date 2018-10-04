@@ -235,7 +235,7 @@ impl Context {
 }
 
 /*
-use indexed_vec::{newtype_index, IndexVec};
+use crate::indices::{Index, IndexVec};
 
 pub type DefId = usize;
 pub type VarId = usize;
