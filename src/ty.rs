@@ -1,6 +1,7 @@
 #![warn(unused_imports)]
 
 use crate::ir::DefId;
+use crate::unify::InferVar;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter::IntoIterator;
@@ -13,8 +14,6 @@ crate mod interners;
 crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash {
     type Perm: Copy + Clone + Debug + Eq + Hash;
     type Base: Copy + Clone + Debug + Eq + Hash;
-    type Placeholder: Copy + Clone + Debug + Eq + Hash;
-    type InferVar: Copy + Clone + Debug + Eq + Hash;
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -28,23 +27,29 @@ crate struct Erased;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct BaseData<F: TypeFamily> {
-    crate kind: BaseKind<F>,
+    crate kind: BaseKind,
     crate generics: Generics<F>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate enum InferVarOr<T> {
+    InferVar(InferVar),
+    Known(T),
+}
+
+impl<T> InferVarOr<T> {
+    crate fn assert_known(self) -> T {
+        match self {
+            InferVarOr::InferVar(_) => panic!("assert_known invoked on infer var"),
+            InferVarOr::Known(v) => v,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum BaseKind<F: TypeFamily> {
+crate enum BaseKind {
     /// A named type (might be value, might be linear, etc).
     Named(DefId),
-
-    /// A "placeholder" is what you get when you instantiate a
-    /// universally quantified bound variable. For example, `forall<A>
-    /// { ... }` -- inside the `...`, the variable `A` might be
-    /// replaced with a placeholder, representing "any" type `A`.
-    Placeholder(F::Placeholder),
-
-    /// An "inference variable", used for types that are inferable.
-    InferVar(F::InferVar),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
