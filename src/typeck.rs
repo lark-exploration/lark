@@ -5,8 +5,10 @@ use crate::hir;
 use crate::map::FxIndexMap;
 use crate::parser::Span;
 use crate::ty;
+use crate::ty::base_inferred::BaseInferred;
 use crate::ty::base_only::{BaseOnly, BaseTy};
 use crate::ty::interners::{HasTyInternTables, TyInternTables};
+use crate::ty::Ty;
 use crate::unify::InferVar;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
@@ -38,7 +40,7 @@ crate struct BaseTypeChecker {
 crate struct BaseTypeCheckResults {
     /// FIXME-- this will actually not want `BaseTy` unless we want to
     /// return the unification table too.
-    types: std::collections::BTreeMap<hir::MetaIndex, BaseTy>,
+    types: std::collections::BTreeMap<hir::MetaIndex, Ty<BaseInferred>>,
 }
 
 #[derive(Copy, Clone, Debug)]

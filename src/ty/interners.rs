@@ -1,8 +1,9 @@
 use crate::intern::Intern;
 use crate::intern::InternTable;
 use crate::intern::Untern;
-use crate::ty::base_only;
-use crate::ty::declaration;
+use crate::ty::base_inferred::{self, BaseInferred};
+use crate::ty::base_only::{self, BaseOnly};
+use crate::ty::declaration::{self, Declaration};
 use crate::ty::BaseData;
 use crate::ty::BoundVarOr;
 use crate::ty::InferVarOr;
@@ -74,7 +75,8 @@ macro_rules! intern_tables_data {
 
 intern_tables_data! {
     struct TyInternTablesData for TyInternTables {
-        base_ty: map(base_only::Base, InferVarOr<BaseData<base_only::BaseOnly>>),
-        declaration_ty: map(declaration::Base, BoundVarOr<BaseData<declaration::Declaration>>),
+        base_only_base: map(base_only::Base, InferVarOr<BaseData<BaseOnly>>),
+        base_inferred_base: map(base_inferred::Base, BaseData<BaseInferred>),
+        declaration_base: map(declaration::Base, BoundVarOr<BaseData<Declaration>>),
     }
 }

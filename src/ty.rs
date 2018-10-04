@@ -8,6 +8,7 @@ use std::hash::Hash;
 use std::iter::IntoIterator;
 use std::sync::Arc;
 
+crate mod base_inferred;
 crate mod base_only;
 crate mod debug;
 crate mod declaration;
