@@ -11,6 +11,7 @@ crate mod base_only;
 crate mod debug;
 crate mod declaration;
 crate mod interners;
+crate mod map_family;
 
 crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash {
     type Perm: Copy + Clone + Debug + Eq + Hash;
