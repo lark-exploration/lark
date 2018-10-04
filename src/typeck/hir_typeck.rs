@@ -29,12 +29,12 @@ impl HirTypeChecker for BaseTypeChecker {
         &mut self,
         location: impl hir::HirIndex,
         owner_ty: Self::Ty,
-        def_id: Self::FieldId,
+        _def_id: Self::FieldId,
     ) -> Self::Ty {
         self.with_base_data(
             location.into(),
             owner_ty.base,
-            |this, base_data| unimplemented!(),
+            |_this, _base_data| unimplemented!(),
         )
     }
 
@@ -42,24 +42,24 @@ impl HirTypeChecker for BaseTypeChecker {
     /// and return an instantiated type.
     fn method_sig(
         &mut self,
-        location: impl hir::HirIndex,
-        owner_ty: Self::Ty,
-        method_def_id: Self::MethodId,
+        _location: impl hir::HirIndex,
+        _owner_ty: Self::Ty,
+        _method_def_id: Self::MethodId,
     ) -> MethodSignature<Self> {
         unimplemented!()
     }
 
     /// Records the computed type for an expression, variable, etc.
-    fn record_ty(&mut self, index: impl hir::HirIndex, ty: Self::Ty) {
+    fn record_ty(&mut self, _index: impl hir::HirIndex, _ty: Self::Ty) {
         unimplemented!()
     }
 
     /// Lookup the type for a variable.
-    fn variable_ty(&mut self, var: hir::Variable) -> Self::Ty {
+    fn variable_ty(&mut self, _var: hir::Variable) -> Self::Ty {
         unimplemented!()
     }
 
-    fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Self::Ty) -> Self::Ty {
+    fn apply_user_perm(&mut self, _perm: hir::Perm, place_ty: Self::Ty) -> Self::Ty {
         // In the "erased type check", we don't care about permissions.
         place_ty
     }

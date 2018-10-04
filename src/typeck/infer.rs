@@ -104,22 +104,22 @@ impl BaseTypeChecker {
     }
 
     pub(super) fn boolean_type(&self) -> BaseTy {
-        let boolean_def_id = unimplemented!();
-        Ty {
-            perm: Erased,
-            base: InferVarOr::Known(BaseData {
-                kind: BaseKind::Named(boolean_def_id),
-                generics: Generics::empty(),
-            }).intern(&self.interners),
-        }
+        unimplemented!()
+        // Ty {
+        //     perm: Erased,
+        //     base: InferVarOr::Known(BaseData {
+        //         kind: BaseKind::Named(boolean_def_id),
+        //         generics: Generics::empty(),
+        //     }).intern(&self.interners),
+        // }
     }
 
     pub(super) fn field_def_id(
         &mut self,
         base_data: BaseData<BaseOnly>,
-        field_name: hir::Identifier,
+        _field_name: hir::Identifier,
     ) -> Result<DefId, ErrorReported> {
-        let BaseData { kind, generics } = base_data;
+        let BaseData { kind, generics: _ } = base_data;
         match kind {
             BaseKind::Named(_def_id) => unimplemented!(),
 
@@ -130,9 +130,9 @@ impl BaseTypeChecker {
     pub(super) fn method_def_id(
         &mut self,
         base_data: BaseData<BaseOnly>,
-        method_name: hir::Identifier,
+        _method_name: hir::Identifier,
     ) -> Result<DefId, ErrorReported> {
-        let BaseData { kind, generics } = base_data;
+        let BaseData { kind, generics: _ } = base_data;
         match kind {
             BaseKind::Named(_def_id) => unimplemented!(),
 
