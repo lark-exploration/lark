@@ -1,20 +1,26 @@
 #![warn(unused_imports)]
 
 use crate::ir::DefId;
+use crate::ty::interners::HasTyInternTables;
 use crate::unify::InferVar;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter::IntoIterator;
 use std::sync::Arc;
 
+crate mod base_inferred;
 crate mod base_only;
 crate mod debug;
 crate mod declaration;
 crate mod interners;
+crate mod map_family;
+crate mod substitute;
 
 crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash {
     type Perm: Copy + Clone + Debug + Eq + Hash;
     type Base: Copy + Clone + Debug + Eq + Hash;
+
+    fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base;
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -45,6 +51,19 @@ impl<T> InferVarOr<T> {
             InferVarOr::Known(v) => v,
         }
     }
+}
+
+/// A "bound variable" refers to one of the generic type parameters in scope
+/// within a declaration. So, for example, if you have `struct Foo<T> { x: T }`,
+/// then the bound var #0 would be `T`.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate enum BoundVarOr<T> {
+    BoundVar(BoundVar),
+    Known(T),
+}
+
+index_type! {
+    crate struct BoundVar { .. }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -90,6 +109,17 @@ impl<F: TypeFamily> Generics<F> {
     }
 }
 
+impl<F> std::ops::Index<BoundVar> for Generics<F>
+where
+    F: TypeFamily,
+{
+    type Output = Generic<F>;
+
+    fn index(&self, index: BoundVar) -> &Self::Output {
+        &self.elements()[index.as_usize()]
+    }
+}
+
 impl<F: TypeFamily> std::iter::FromIterator<Generic<F>> for Generics<F> {
     fn from_iter<T>(iter: T) -> Self
     where
@@ -118,6 +148,14 @@ impl<F: TypeFamily> IntoIterator for &'iter Generics<F> {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum Generic<F: TypeFamily> {
     Ty(Ty<F>),
+}
+
+impl<F: TypeFamily> Generic<F> {
+    crate fn assert_ty(self) -> Ty<F> {
+        match self {
+            Generic::Ty(ty) => ty,
+        }
+    }
 }
 
 /// Signature from a function or method.

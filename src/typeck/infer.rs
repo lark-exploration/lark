@@ -12,11 +12,15 @@ use crate::ty::Generic;
 use crate::ty::Generics;
 use crate::ty::InferVarOr;
 use crate::ty::Ty;
+use crate::ty::TypeFamily;
 use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl BaseTypeChecker {
+impl<Q> BaseTypeChecker<'_, Q>
+where
+    Q: crate::typeck::TypeCheckQueries,
+{
     /// If `base` can be mapped to a concrete `BaseData`,
     /// invokes `op` and returns the resulting type.
     /// Otherwise, creates a type variable and returns that;
@@ -104,14 +108,17 @@ impl BaseTypeChecker {
     }
 
     pub(super) fn boolean_type(&self) -> BaseTy {
-        unimplemented!()
-        // Ty {
-        //     perm: Erased,
-        //     base: InferVarOr::Known(BaseData {
-        //         kind: BaseKind::Named(boolean_def_id),
-        //         generics: Generics::empty(),
-        //     }).intern(&self.interners),
-        // }
+        let boolean_def_id = self.db.boolean_def_id().read();
+        Ty {
+            perm: Erased,
+            base: BaseOnly::intern_base_data(
+                self.db,
+                BaseData {
+                    kind: BaseKind::Named(boolean_def_id),
+                    generics: Generics::empty(),
+                },
+            ),
+        }
     }
 
     pub(super) fn field_def_id(

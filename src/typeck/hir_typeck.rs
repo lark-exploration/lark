@@ -1,19 +1,25 @@
 use crate::hir;
 use crate::hir::typeck::{ErrorReported, HirTypeChecker, MethodSignature};
-use crate::intern::Intern;
 use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
+use crate::ty::interners::HasTyInternTables;
+use crate::ty::map_family::Map;
+use crate::ty::substitute::Substitution;
 use crate::ty::Erased;
 use crate::ty::InferVarOr;
 use crate::ty::Ty;
+use crate::ty::TypeFamily;
 use crate::ty::{BaseData, BaseKind};
 use crate::ty::{Generic, Generics};
 use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl HirTypeChecker for BaseTypeChecker {
+impl<Q> HirTypeChecker for BaseTypeChecker<'_, Q>
+where
+    Q: crate::typeck::TypeCheckQueries,
+{
     type FieldId = DefId;
     type MethodId = DefId;
     type Ty = BaseTy;
@@ -29,13 +35,15 @@ impl HirTypeChecker for BaseTypeChecker {
         &mut self,
         location: impl hir::HirIndex,
         owner_ty: Self::Ty,
-        _def_id: Self::FieldId,
+        field_def_id: Self::FieldId,
     ) -> Self::Ty {
-        self.with_base_data(
-            location.into(),
-            owner_ty.base,
-            |_this, _base_data| unimplemented!(),
-        )
+        self.with_base_data(location.into(), owner_ty.base, move |this, base_data| {
+            let field_decl_ty = this.db.ty().get(field_def_id);
+            field_decl_ty.map(&mut Substitution::new(
+                this.db.ty_intern_tables(),
+                &base_data.generics,
+            ))
+        })
     }
 
     /// Given the type of a field and its owner, substitute any generics appropriately
@@ -50,13 +58,15 @@ impl HirTypeChecker for BaseTypeChecker {
     }
 
     /// Records the computed type for an expression, variable, etc.
-    fn record_ty(&mut self, _index: impl hir::HirIndex, _ty: Self::Ty) {
-        unimplemented!()
+    fn record_ty(&mut self, index: impl hir::HirIndex, ty: Self::Ty) {
+        let index: hir::MetaIndex = index.into();
+        let old_value = self.results.types.insert(index, ty);
+        assert!(old_value.is_none());
     }
 
     /// Lookup the type for a variable.
-    fn variable_ty(&mut self, _var: hir::Variable) -> Self::Ty {
-        unimplemented!()
+    fn variable_ty(&mut self, var: hir::Variable) -> Self::Ty {
+        self.results.types[&hir::MetaIndex::from(var)]
     }
 
     fn apply_user_perm(&mut self, _perm: hir::Perm, place_ty: Self::Ty) -> Self::Ty {
@@ -125,10 +135,13 @@ impl HirTypeChecker for BaseTypeChecker {
     fn error_type(&mut self) -> Self::Ty {
         Ty {
             perm: Erased,
-            base: InferVarOr::Known(BaseData {
-                kind: BaseKind::Error,
-                generics: Generics::empty(),
-            }).intern(&self.interners),
+            base: BaseOnly::intern_base_data(
+                self.db,
+                BaseData {
+                    kind: BaseKind::Error,
+                    generics: Generics::empty(),
+                },
+            ),
         }
     }
 }

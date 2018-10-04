@@ -5,8 +5,11 @@ use crate::hir;
 use crate::map::FxIndexMap;
 use crate::parser::Span;
 use crate::ty;
+use crate::ty::base_inferred::BaseInferred;
 use crate::ty::base_only::{BaseOnly, BaseTy};
 use crate::ty::interners::{HasTyInternTables, TyInternTables};
+use crate::ty::Ty;
+use crate::ty::TypeFamily;
 use crate::unify::InferVar;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
@@ -25,20 +28,21 @@ salsa::query_prototype! {
     }
 }
 
-crate struct BaseTypeChecker {
+crate struct BaseTypeChecker<'db, Q: TypeCheckQueries> {
+    db: &'db Q,
     hir: Arc<hir::FnBody>,
-    interners: TyInternTables,
-    ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp>>,
+    ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<BaseTypeChecker<'db, Q>>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     errors: Vec<Error>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
+    results: BaseTypeCheckResults<BaseOnly>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct BaseTypeCheckResults {
+crate struct BaseTypeCheckResults<F: TypeFamily> {
     /// FIXME-- this will actually not want `BaseTy` unless we want to
     /// return the unification table too.
-    types: std::collections::BTreeMap<hir::MetaIndex, BaseTy>,
+    types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -52,8 +56,11 @@ crate enum ErrorKind {
     BaseMismatch(BaseTy, BaseTy),
 }
 
-impl HasTyInternTables for BaseTypeChecker {
+impl<Q> HasTyInternTables for BaseTypeChecker<'_, Q>
+where
+    Q: TypeCheckQueries,
+{
     fn ty_intern_tables(&self) -> &TyInternTables {
-        &self.interners
+        self.db.ty_intern_tables()
     }
 }

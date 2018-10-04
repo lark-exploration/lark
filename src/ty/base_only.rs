@@ -1,6 +1,7 @@
 //! A type family where we just erase all permissions and we support inference.
 
 use crate::intern::{Intern, Untern};
+use crate::ty::interners::HasTyInternTables;
 use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::Erased;
@@ -14,6 +15,12 @@ crate struct BaseOnly;
 impl TypeFamily for BaseOnly {
     type Perm = Erased;
     type Base = Base;
+
+    fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base {
+        tables
+            .ty_intern_tables()
+            .intern(InferVarOr::Known(base_data))
+    }
 }
 
 crate type BaseTy = crate::ty::Ty<BaseOnly>;
