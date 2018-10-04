@@ -1,4 +1,5 @@
 use codespan::ByteOffset;
+use crate::parser::ast::{DebugModuleTable, Debuggable};
 use crate::parser::keywords::{KEYWORDS, SIGILS};
 use crate::parser::lexer_helpers::{begin, consume, consume_n, reconsume};
 use crate::parser::lexer_helpers::{
@@ -18,11 +19,35 @@ token! {
     Identifier: String,
     Sigil: String,
     Comment: String,
+    String: String,
     OpenCurly,
     CloseCurly,
     OpenParen,
     CloseParen,
     Newline,
+}
+
+impl DebugModuleTable for Token {
+    fn debug(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        table: &'table crate::parser::ModuleTable,
+    ) -> std::fmt::Result {
+        use self::Token::*;
+
+        match self {
+            Whitespace(_) => write!(f, "<whitespace>"),
+            Identifier(s) => write!(f, "{:?}", Debuggable::from(s, table)),
+            Sigil(s) => write!(f, "#{:?}#", Debuggable::from(s, table)),
+            Comment(_) => write!(f, "/* ... */"),
+            String(s) => write!(f, "\"{:?}\"", Debuggable::from(s, table)),
+            OpenCurly => write!(f, "#{{#"),
+            CloseCurly => write!(f, "#}}#"),
+            OpenParen => write!(f, "#(#"),
+            CloseParen => write!(f, "#)#"),
+            Newline => write!(f, "<newline>"),
+        }
+    }
 }
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
@@ -33,6 +58,7 @@ pub enum LexerState {
     Whitespace,
     StartIdent,
     ContinueIdent,
+    StringLiteral,
     Comment(u32),
 }
 
@@ -59,11 +85,24 @@ impl LexerDelegateTrait for LexerState {
                     '}' => LexerNext::sigil(Token::CloseCurly),
                     '(' => LexerNext::sigil(Token::OpenParen),
                     ')' => LexerNext::sigil(Token::CloseParen),
-                    '+' | '-' | '*' | '/' => LexerNext::dynamic_sigil(Token::Sigil),
+                    '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' => {
+                        LexerNext::dynamic_sigil(Token::Sigil)
+                    }
+                    '"' => consume().and_transition(StringLiteral),
                     '\n' => LexerNext::sigil(Token::Newline),
                     c if c.is_whitespace() => LexerNext::begin(Whitespace),
                     _ if rest.starts_with("/*") => consume_n(2).and_push(Comment(1)),
-                    _ => LexerNext::Error(c),
+                    c => LexerNext::Error(Some(c)),
+                },
+            },
+
+            LexerState::StringLiteral => match c {
+                None => LexerNext::Error(c),
+                Some(c) => match c {
+                    '"' => consume()
+                        .and_emit_dynamic(Token::String)
+                        .and_transition(LexerState::Top),
+                    _ => consume().and_remain(),
                 },
             },
 
@@ -97,7 +136,9 @@ impl LexerDelegateTrait for LexerState {
                 Some(c) => match c {
                     '\n' => reconsume().and_discard().and_transition(LexerState::Top),
                     c if c.is_whitespace() => consume().and_remain(),
-                    _ => reconsume().and_discard().and_transition(LexerState::Top),
+                    _ => reconsume()
+                        .and_emit_dynamic(Token::Whitespace)
+                        .and_transition(LexerState::Top),
                 },
             },
 
@@ -135,4 +176,47 @@ impl LexerDelegateTrait for LexerState {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::{Token, Tokenizer};
+    use crate::parser::ast::DebuggableVec;
+    use crate::parser::lexer_helpers::ParseError;
+    use crate::parser::{Span, Spanned};
+    use crate::parser2::test_helpers::{process, Annotations, Position};
+
+    use log::trace;
+    use unindent::unindent;
+
+    #[test]
+    fn test_quicklex() -> Result<(), ParseError> {
+        pretty_env_logger::init();
+
+        let source = unindent(
+            r##"
+            struct Diagnostic {
+            ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
+              msg: own String,
+              ^^^~^~~~^~~~~~~^ @msg@ #:# ws @own@ ws @String@ #,#
+              level: String,
+              ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
+            }
+            ^ #}#
+            "##,
+        );
+
+        let (source, mut ann) = process(&source);
+
+        let filemap = ann.codemap().add_filemap("test".into(), source.clone());
+        let start = filemap.span().start().0;
+
+        let lexed = Tokenizer::new(ann.table(), &source, start);
+
+        let tokens: Result<Vec<Spanned<Token>>, ParseError> = lexed
+            .map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
+            .collect();
+
+        trace!("{:#?}", DebuggableVec::from(&tokens.clone()?, ann.table()));
+
+        Ok(())
+    }
+
+}

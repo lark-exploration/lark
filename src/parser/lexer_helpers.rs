@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 
 use crate::parser::ast::{DebugModuleTable, Debuggable};
-use crate::parser::pos::Span;
+use crate::parser::pos::{Span, Spanned};
 use crate::parser::program::{ModuleTable, StringId};
 
 use codespan::ByteIndex;
@@ -20,7 +20,7 @@ pub enum LexerNext<Delegate: LexerDelegateTrait> {
     Transition(LexerAccumulate<Delegate>, Delegate),
     PushState(LexerAccumulate<Delegate>, Delegate),
     PopState(LexerAccumulate<Delegate>),
-    Error(char),
+    Error(Option<char>),
 }
 
 trait EmitToken<Delegate: LexerDelegateTrait> {
@@ -383,14 +383,24 @@ impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
         self.table.intern(source)
     }
 
-    fn error(&mut self, c: char) -> ParseError {
+    fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, ParseError> {
+        self.map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
+            .collect()
+    }
+
+    fn error(&mut self, c: Option<char>) -> ParseError {
         let file_start = self.codespan_start;
         let state = self.state.clone();
         // let token = &self.token_start[..self.token_size() as usize];
         // let (start_pos, end_pos) = self.consume_token(1);
 
         let error = ParseError::new(
-            format!("Unexpected char `{}` in state {:?}", c, state),
+            format!(
+                "Unexpected char `{}` in state {:?}",
+                c.map(|item| item.to_string())
+                    .unwrap_or_else(|| "EOF".to_string()),
+                state
+            ),
             Span::from_pos(
                 file_start + self.start_pos,
                 file_start + self.start_pos + self.token_len,
@@ -409,19 +419,13 @@ impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
 
         trace!(target: "lark::tokenize", "          pos={:?}", start + self.start_pos + self.token_len);
 
-        let rest_end = std::cmp::min(20, self.rest.len());
-        let token_start_end = std::cmp::min(20, self.token_start.len());
-
-        trace!(
-            target: "lark::tokenize",
-            "          rest={:?}",
-            &self.rest[..rest_end],
-        );
+        let token_start = (self.start_pos) as usize;
+        let token_end = token_start + self.token_len as usize;
 
         trace!(
             target: "lark::tokenize",
             "          token-start={:?}",
-            &self.token_start[..token_start_end]
+            &self.input[token_start..token_end]
         );
 
         trace!(target: "lark::tokenize", "          token-size={:?} state={:?}", self.token_len, self.state)

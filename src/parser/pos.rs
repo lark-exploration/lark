@@ -1,5 +1,4 @@
-use codespan::ByteIndex;
-use codespan::ByteSpan;
+use codespan::{ByteIndex, ByteOffset, ByteSpan};
 use std::fmt;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -48,6 +47,15 @@ impl Span {
             Span::Real(span) => *span,
             other => unimplemented!("{:?}", other),
         }
+    }
+
+    crate fn to_range(&self, start: i32) -> std::ops::Range<usize> {
+        let span = self.to_codespan();
+
+        let start_pos = span.start() + ByteOffset(start as i64);
+        let end_pos = span.end() + ByteOffset(start as i64);
+
+        start_pos.to_usize()..end_pos.to_usize()
     }
 }
 
