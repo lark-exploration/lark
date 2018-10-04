@@ -1,5 +1,5 @@
 use crate::hir;
-use crate::hir::typeck::{ErrorReported, HirTypeChecker, MethodSignature};
+use crate::hir::typeck::{ErrorReported, HirTypeChecker};
 use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
@@ -8,6 +8,7 @@ use crate::ty::map_family::Map;
 use crate::ty::substitute::Substitution;
 use crate::ty::Erased;
 use crate::ty::InferVarOr;
+use crate::ty::Signature;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::ty::{BaseData, BaseKind};
@@ -16,13 +17,12 @@ use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<Q> HirTypeChecker for BaseTypeChecker<'_, Q>
+impl<Q> HirTypeChecker<BaseOnly> for BaseTypeChecker<'_, Q>
 where
     Q: crate::typeck::TypeCheckQueries,
 {
     type FieldId = DefId;
     type MethodId = DefId;
-    type Ty = BaseTy;
 
     /// Return the HIR that we are type-checking.
     fn hir(&self) -> &Arc<hir::FnBody> {
@@ -34,9 +34,9 @@ where
     fn field_ty(
         &mut self,
         location: impl hir::HirIndex,
-        owner_ty: Self::Ty,
+        owner_ty: Ty<BaseOnly>,
         field_def_id: Self::FieldId,
-    ) -> Self::Ty {
+    ) -> Ty<BaseOnly> {
         self.with_base_data(location.into(), owner_ty.base, move |this, base_data| {
             let field_decl_ty = this.db.ty().get(field_def_id);
             field_decl_ty.map(&mut Substitution::new(
@@ -51,25 +51,25 @@ where
     fn method_sig(
         &mut self,
         _location: impl hir::HirIndex,
-        _owner_ty: Self::Ty,
+        _owner_ty: Ty<BaseOnly>,
         _method_def_id: Self::MethodId,
-    ) -> MethodSignature<Self> {
+    ) -> Signature<BaseOnly> {
         unimplemented!()
     }
 
     /// Records the computed type for an expression, variable, etc.
-    fn record_ty(&mut self, index: impl hir::HirIndex, ty: Self::Ty) {
+    fn record_ty(&mut self, index: impl hir::HirIndex, ty: Ty<BaseOnly>) {
         let index: hir::MetaIndex = index.into();
         let old_value = self.results.types.insert(index, ty);
         assert!(old_value.is_none());
     }
 
     /// Lookup the type for a variable.
-    fn variable_ty(&mut self, var: hir::Variable) -> Self::Ty {
+    fn variable_ty(&mut self, var: hir::Variable) -> Ty<BaseOnly> {
         self.results.types[&hir::MetaIndex::from(var)]
     }
 
-    fn apply_user_perm(&mut self, _perm: hir::Perm, place_ty: Self::Ty) -> Self::Ty {
+    fn apply_user_perm(&mut self, _perm: hir::Perm, place_ty: Ty<BaseOnly>) -> Ty<BaseOnly> {
         // In the "erased type check", we don't care about permissions.
         place_ty
     }
@@ -77,22 +77,22 @@ where
     fn require_assignable(
         &mut self,
         expression: hir::Expression,
-        value_ty: Self::Ty,
-        place_ty: Self::Ty,
+        value_ty: Ty<BaseOnly>,
+        place_ty: Ty<BaseOnly>,
     ) {
         self.equate_types(expression.into(), value_ty, place_ty)
     }
 
-    fn require_boolean(&mut self, expression: hir::Expression, value_ty: Self::Ty) {
+    fn require_boolean(&mut self, expression: hir::Expression, value_ty: Ty<BaseOnly>) {
         self.equate_types(expression.into(), self.boolean_type(), value_ty)
     }
 
     fn least_upper_bound(
         &mut self,
         if_expression: hir::Expression,
-        true_ty: Self::Ty,
-        false_ty: Self::Ty,
-    ) -> Self::Ty {
+        true_ty: Ty<BaseOnly>,
+        false_ty: Ty<BaseOnly>,
+    ) -> Ty<BaseOnly> {
         self.equate_types(if_expression.into(), true_ty, false_ty);
         true_ty
     }
@@ -100,10 +100,10 @@ where
     fn with_field(
         &mut self,
         location: impl hir::HirIndex,
-        owner_ty: Self::Ty,
+        owner_ty: Ty<BaseOnly>,
         field_name: hir::Identifier,
-        op: impl FnOnce(&mut Self, Self::FieldId) -> Self::Ty + 'static,
-    ) -> Self::Ty {
+        op: impl FnOnce(&mut Self, Self::FieldId) -> Ty<BaseOnly> + 'static,
+    ) -> Ty<BaseOnly> {
         self.with_base_data(
             location.into(),
             owner_ty.base,
@@ -117,10 +117,10 @@ where
     fn with_method(
         &mut self,
         location: impl hir::HirIndex,
-        owner_ty: Self::Ty,
+        owner_ty: Ty<BaseOnly>,
         method_name: hir::Identifier,
-        op: impl FnOnce(&mut Self, Self::MethodId) -> Self::Ty + 'static,
-    ) -> Self::Ty {
+        op: impl FnOnce(&mut Self, Self::MethodId) -> Ty<BaseOnly> + 'static,
+    ) -> Ty<BaseOnly> {
         self.with_base_data(
             location.into(),
             owner_ty.base,
@@ -132,7 +132,7 @@ where
     }
 
     /// Returns a type used to indicate that an error has been reported.
-    fn error_type(&mut self) -> Self::Ty {
+    fn error_type(&mut self) -> Ty<BaseOnly> {
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
