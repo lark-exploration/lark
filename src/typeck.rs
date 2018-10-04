@@ -15,6 +15,15 @@ use std::sync::Arc;
 mod hir_typeck;
 mod infer;
 mod ops;
+mod query_definitions;
+
+salsa::query_prototype! {
+    crate trait TypeCheckQueries: hir::HirQueries + HasTyInternTables {
+        /// Compute the "base type information" for a given fn body.
+        /// This is the type information excluding permissions.
+        fn base_type_check() for query_definitions::BaseTypeCheck;
+    }
+}
 
 crate struct BaseTypeChecker {
     hir: Arc<hir::FnBody>,
@@ -23,6 +32,13 @@ crate struct BaseTypeChecker {
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     errors: Vec<Error>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate struct BaseTypeCheckResults {
+    /// FIXME-- this will actually not want `BaseTy` unless we want to
+    /// return the unification table too.
+    types: std::collections::BTreeMap<hir::MetaIndex, BaseTy>,
 }
 
 #[derive(Copy, Clone, Debug)]
