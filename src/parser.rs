@@ -115,7 +115,7 @@ mod test {
     use unindent::unindent;
 
     fn init() {
-        pretty_env_logger::init();
+        crate::init_logger();
     }
 
     fn parse_string(source: &str, annotations: &mut Annotations) -> (ast::Module, u32) {

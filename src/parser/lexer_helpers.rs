@@ -383,7 +383,7 @@ impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
         self.table.intern(source)
     }
 
-    fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, ParseError> {
+    pub fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, ParseError> {
         self.map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
             .collect()
     }

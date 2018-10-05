@@ -7,7 +7,7 @@ use crate::parser::lexer_helpers::{
     Tokenizer as GenericTokenizer,
 };
 use crate::parser::program::StringId;
-use crate::parser::{ModuleTable, Span};
+use crate::parser::{ModuleTable, Span, Spanned};
 use derive_new::new;
 use lazy_static::lazy_static;
 use log::{trace, warn};
@@ -20,11 +20,16 @@ token! {
     Sigil: String,
     Comment: String,
     String: String,
-    OpenCurly,
-    CloseCurly,
-    OpenParen,
-    CloseParen,
     Newline,
+}
+
+impl Spanned<Token> {
+    pub fn as_id(self) -> Spanned<StringId> {
+        match self.node {
+            Token::Identifier(id) => Spanned::wrap_span(id, self.span),
+            other => panic!("Unexpected token {:?}, expected id", other),
+        }
+    }
 }
 
 impl DebugModuleTable for Token {
@@ -41,16 +46,19 @@ impl DebugModuleTable for Token {
             Sigil(s) => write!(f, "#{:?}#", Debuggable::from(s, table)),
             Comment(_) => write!(f, "/* ... */"),
             String(s) => write!(f, "\"{:?}\"", Debuggable::from(s, table)),
-            OpenCurly => write!(f, "#{{#"),
-            CloseCurly => write!(f, "#}}#"),
-            OpenParen => write!(f, "#(#"),
-            CloseParen => write!(f, "#)#"),
             Newline => write!(f, "<newline>"),
         }
     }
 }
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
+
+// impl Tokenizer<'table> {
+//     fn tokens(self) -> Result<Vec<Spanned<Token>>, ParseError> {
+//         self.map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
+//             .collect()
+//     }
+// }
 
 #[derive(Debug, Copy, Clone)]
 pub enum LexerState {
@@ -81,11 +89,7 @@ impl LexerDelegateTrait for LexerState {
                 None => LexerNext::EOF,
                 Some(c) => match c {
                     c if UnicodeXID::is_xid_start(c) => LexerNext::begin(StartIdent),
-                    '{' => LexerNext::sigil(Token::OpenCurly),
-                    '}' => LexerNext::sigil(Token::CloseCurly),
-                    '(' => LexerNext::sigil(Token::OpenParen),
-                    ')' => LexerNext::sigil(Token::CloseParen),
-                    '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' => {
+                    '{' | '}' | '(' | ')' | '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' => {
                         LexerNext::dynamic_sigil(Token::Sigil)
                     }
                     '"' => consume().and_transition(StringLiteral),
@@ -188,7 +192,7 @@ mod tests {
 
     #[test]
     fn test_quicklex() -> Result<(), ParseError> {
-        pretty_env_logger::init();
+        crate::init_logger();
 
         let source = unindent(
             r##"

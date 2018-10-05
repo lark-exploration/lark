@@ -20,6 +20,12 @@ mod lexer;
 #[macro_use]
 mod indices;
 
+#[cfg(test)]
+mod test_helpers;
+
+#[cfg(test)]
+pub use self::test_helpers::init_logger;
+
 mod codegen;
 mod debug;
 mod eval;
