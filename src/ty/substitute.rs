@@ -42,14 +42,11 @@ where
     }
 }
 
-impl<T, V> FamilyMapper for Substitution<'me, T, V>
+impl<T, V> FamilyMapper<Declaration, T> for Substitution<'me, T, V>
 where
     T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
-    type Source = Declaration;
-    type Target = T;
-
     fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<T> {
         let Ty { perm: Erased, base } = ty;
 

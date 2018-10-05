@@ -5,6 +5,9 @@ use crate::intern::Intern;
 use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
+use crate::ty::declaration::Declaration;
+use crate::ty::map_family::Map;
+use crate::ty::substitute::Substitution;
 use crate::ty::BaseData;
 use crate::ty::BaseKind;
 use crate::ty::Erased;
@@ -60,6 +63,18 @@ where
                 this.with_base_data_unify_with(cause, base, output_ty, op)
             }),
         }
+    }
+
+    pub(super) fn substitute<M>(
+        &mut self,
+        location: hir::MetaIndex,
+        generics: &Generics<BaseOnly>,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Declaration, BaseOnly>,
+    {
+        value.map(&mut Substitution::new(self, generics))
     }
 
     pub(super) fn new_infer_ty(&mut self) -> Ty<BaseOnly> {

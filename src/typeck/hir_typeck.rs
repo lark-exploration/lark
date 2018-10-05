@@ -49,22 +49,17 @@ where
         self.with_base_data(cause.into(), base, op)
     }
 
-    fn substitute_ty(
+    fn substitute<M>(
         &mut self,
         location: impl hir::HirIndex,
-        owner_ty: Ty<BaseOnly>,
-        field_decl_ty: Ty<Declaration>,
-    ) -> Ty<BaseOnly> {
-        unimplemented!()
-    }
-
-    fn substitute_signature(
-        &mut self,
-        location: impl hir::HirIndex,
-        owner_ty: Ty<BaseOnly>,
-        field_decl_ty: Signature<Declaration>,
-    ) -> Signature<BaseOnly> {
-        unimplemented!()
+        _owner_perm: Erased,
+        owner_base_data: &BaseData<BaseOnly>,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Declaration, BaseOnly>,
+    {
+        self.substitute(location.into(), &owner_base_data.generics, value)
     }
 
     /// Records the computed type for an expression, variable, etc.

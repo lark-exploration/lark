@@ -1,6 +1,7 @@
 use codespan_reporting::{Diagnostic, Label};
 use crate::hir;
 use crate::ty::declaration::Declaration;
+use crate::ty::map_family::Map;
 use crate::ty::BaseData;
 use crate::ty::BaseKind;
 use crate::ty::Signature;
@@ -40,21 +41,15 @@ crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
 
     /// Fetch the field of the given field from the given owner,
     /// appropriately substituted.
-    fn substitute_ty(
+    fn substitute<M>(
         &mut self,
         location: impl hir::HirIndex,
-        owner_ty: Ty<F>,
-        field_decl_ty: Ty<Declaration>,
-    ) -> Ty<F>;
-
-    /// Fetch the field of the given field from the given owner,
-    /// appropriately substituted.
-    fn substitute_signature(
-        &mut self,
-        location: impl hir::HirIndex,
-        owner_ty: Ty<F>,
-        field_decl_ty: Signature<Declaration>,
-    ) -> Signature<F>;
+        owner_perm: F::Perm,
+        owner_base_data: &BaseData<F>,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Declaration, F>;
 
     /// Records the computed type for an expression, variable, etc.
     fn record_ty(&mut self, index: impl hir::HirIndex, ty: Ty<F>);
@@ -182,7 +177,7 @@ crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
                                 text,
                             )) {
                                 let field_decl_ty = this.db().ty().get(field_def_id);
-                                this.substitute_ty(place, owner_ty, field_decl_ty)
+                                this.substitute(place, owner_ty.perm, &base_data, field_decl_ty)
                             } else {
                                 this.report_error(place);
                                 this.error_type()
@@ -234,7 +229,8 @@ crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
                         }
                     };
                 let signature_decl = self.db().signature().get(method_def_id);
-                let signature = self.substitute_signature(expression, owner_ty, signature_decl);
+                let signature =
+                    self.substitute(expression, owner_ty.perm, &base_data, signature_decl);
                 if signature.inputs.len() != arguments.len() {
                     self.report_error(expression);
                 }
