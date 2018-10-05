@@ -33,7 +33,6 @@ crate struct BaseTypeChecker<'db, Q: TypeCheckQueries> {
     hir: Arc<hir::FnBody>,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<BaseTypeChecker<'db, Q>>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
-    errors: Vec<Error>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
     results: BaseTypeCheckResults<BaseOnly>,
 }
@@ -43,25 +42,22 @@ crate struct BaseTypeCheckResults<F: TypeFamily> {
     /// FIXME-- this will actually not want `BaseTy` unless we want to
     /// return the unification table too.
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
+
+    errors: Vec<Error>,
 }
 
 impl<F: TypeFamily> Default for BaseTypeCheckResults<F> {
     fn default() -> Self {
         Self {
             types: Default::default(),
+            errors: Default::default(),
         }
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Error {
-    kind: ErrorKind,
-    cause: hir::MetaIndex,
-}
-
-#[derive(Copy, Clone, Debug)]
-crate enum ErrorKind {
-    BaseMismatch(BaseTy, BaseTy),
+    location: hir::MetaIndex,
 }
 
 impl<Q> HasTyInternTables for BaseTypeChecker<'_, Q>

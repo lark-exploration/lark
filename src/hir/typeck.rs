@@ -173,16 +173,16 @@ crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
                 let text = self.hir()[name].text;
                 let owner_ty = self.check_place(owner);
                 self.with_base_data(place, owner_ty.base, move |this, base_data| {
-                    let BaseData { kind, generics } = base_data;
+                    let BaseData { kind, generics: _ } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
-                            if let Some(field_def_id) = self.db().member_def_id().get((
+                            if let Some(field_def_id) = this.db().member_def_id().get((
                                 def_id,
                                 hir::MemberKind::Field,
                                 text,
                             )) {
                                 let field_decl_ty = this.db().ty().get(field_def_id);
-                                self.substitute_ty(place, owner_ty, field_decl_ty)
+                                this.substitute_ty(place, owner_ty, field_decl_ty)
                             } else {
                                 this.report_error(place);
                                 this.error_type()
@@ -217,7 +217,7 @@ crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
         arguments: Arc<Vec<hir::Expression>>,
         base_data: BaseData<F>,
     ) -> Ty<F> {
-        let BaseData { kind, generics } = base_data;
+        let BaseData { kind, generics: _ } = base_data;
         match kind {
             BaseKind::Named(def_id) => {
                 let text = self.hir()[method_name].text;

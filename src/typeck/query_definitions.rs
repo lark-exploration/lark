@@ -30,7 +30,6 @@ salsa::query_definition! {
             hir: fn_body,
             ops_arena: Arena::new(),
             ops_blocked: FxIndexMap::default(),
-            errors: Vec::default(),
             unify: UnificationTable::new(db.ty_intern_tables().clone()),
             results: BaseTypeCheckResults::default(),
         };

@@ -19,7 +19,7 @@ salsa::query_definition! {
 }
 
 salsa::query_definition! {
-    crate Members(_db: &impl HirQueries, key: DefId) -> Arc<Vec<hir::Member>> {
+    crate Members(_db: &impl HirQueries, _key: DefId) -> Arc<Vec<hir::Member>> {
         unimplemented!()
     }
 }

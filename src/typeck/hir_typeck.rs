@@ -14,7 +14,7 @@ use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::ty::{BaseData, BaseKind};
 use crate::ty::{Generic, Generics};
-use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
+use crate::typeck::{BaseTypeChecker, Error};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
@@ -35,7 +35,9 @@ where
     }
 
     fn report_error(&mut self, location: impl hir::HirIndex) {
-        unimplemented!()
+        self.results.errors.push(Error {
+            location: location.into(),
+        })
     }
 
     fn with_base_data(
@@ -44,7 +46,7 @@ where
         base: Base,
         op: impl FnOnce(&mut Self, BaseData<BaseOnly>) -> Ty<BaseOnly> + 'static,
     ) -> Ty<BaseOnly> {
-        unimplemented!()
+        self.with_base_data(cause.into(), base, op)
     }
 
     fn substitute_ty(

@@ -13,7 +13,7 @@ use crate::ty::Generics;
 use crate::ty::InferVarOr;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
-use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
+use crate::typeck::{BaseTypeChecker, Error};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
@@ -89,10 +89,7 @@ where
 
             Err((data1, data2)) => {
                 if data1.kind != data2.kind {
-                    self.errors.push(Error {
-                        cause,
-                        kind: ErrorKind::BaseMismatch(ty1, ty2),
-                    });
+                    self.results.errors.push(Error { location: cause });
                     return;
                 }
 
@@ -118,32 +115,6 @@ where
                     generics: Generics::empty(),
                 },
             ),
-        }
-    }
-
-    pub(super) fn field_def_id(
-        &mut self,
-        base_data: BaseData<BaseOnly>,
-        _field_name: hir::Identifier,
-    ) -> Result<DefId, ErrorReported> {
-        let BaseData { kind, generics: _ } = base_data;
-        match kind {
-            BaseKind::Named(_def_id) => unimplemented!(),
-
-            BaseKind::Error => Err(ErrorReported),
-        }
-    }
-
-    pub(super) fn method_def_id(
-        &mut self,
-        base_data: BaseData<BaseOnly>,
-        _method_name: hir::Identifier,
-    ) -> Result<DefId, ErrorReported> {
-        let BaseData { kind, generics: _ } = base_data;
-        match kind {
-            BaseKind::Named(_def_id) => unimplemented!(),
-
-            BaseKind::Error => Err(ErrorReported),
         }
     }
 }
