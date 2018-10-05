@@ -16,7 +16,7 @@ crate mod interners;
 crate mod map_family;
 crate mod substitute;
 
-crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash {
+crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
     type Perm: Copy + Clone + Debug + Eq + Hash;
     type Base: Copy + Clone + Debug + Eq + Hash;
 

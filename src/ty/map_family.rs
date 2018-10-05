@@ -2,64 +2,52 @@ use crate::ty::interners::HasTyInternTables;
 use crate::ty::{self, TypeFamily};
 use std::sync::Arc;
 
-crate trait Map<M: FamilyMapper> {
+crate trait Map<S: TypeFamily, T: TypeFamily> {
     type Output;
 
-    fn map(&self, mapper: &mut M) -> Self::Output;
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output;
 }
 
-crate trait FamilyMapper: HasTyInternTables {
-    type Source: TypeFamily;
-    type Target: TypeFamily;
-
-    fn map_ty(&mut self, ty: ty::Ty<Self::Source>) -> ty::Ty<Self::Target>;
+crate trait FamilyMapper<S: TypeFamily, T: TypeFamily>: HasTyInternTables {
+    fn map_ty(&mut self, ty: ty::Ty<S>) -> ty::Ty<T>;
 }
 
-#[allow(type_alias_bounds)]
-type SourcePerm<M: FamilyMapper> = <<M as FamilyMapper>::Source as TypeFamily>::Perm;
-
-#[allow(type_alias_bounds)]
-type SourceBase<M: FamilyMapper> = <<M as FamilyMapper>::Source as TypeFamily>::Base;
-
-#[allow(type_alias_bounds)]
-type TargetPerm<M: FamilyMapper> = <<M as FamilyMapper>::Target as TypeFamily>::Perm;
-
-#[allow(type_alias_bounds)]
-type TargetBase<M: FamilyMapper> = <<M as FamilyMapper>::Target as TypeFamily>::Base;
-
-impl<M, V> Map<M> for &V
+impl<S, T, V> Map<S, T> for &V
 where
-    M: FamilyMapper,
-    V: Map<M>,
+    S: TypeFamily,
+    T: TypeFamily,
+    V: Map<S, T>,
 {
     type Output = V::Output;
 
-    fn map(&self, mapper: &mut M) -> Self::Output {
-        <V as Map<M>>::map(self, mapper)
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        <V as Map<S, T>>::map(self, mapper)
     }
 }
 
-impl<M, V> Map<M> for Arc<V>
+impl<S, T, V> Map<S, T> for Arc<V>
 where
-    M: FamilyMapper,
-    V: Map<M>,
+    S: TypeFamily,
+    T: TypeFamily,
+    V: Map<S, T>,
 {
     type Output = Arc<V::Output>;
 
-    fn map(&self, mapper: &mut M) -> Self::Output {
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         let this: &V = self;
         Arc::new(this.map(mapper))
     }
 }
 
-impl<M, V> Map<M> for Option<V>
+impl<S, T, V> Map<S, T> for Option<V>
 where
-    M: FamilyMapper,
-    V: Map<M>,
+    S: TypeFamily,
+    T: TypeFamily,
+    V: Map<S, T>,
 {
     type Output = Option<V::Output>;
 
-    fn map(&self, mapper: &mut M) -> Self::Output {
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         match self {
             Some(v) => Some(v.map(mapper)),
             None => None,
@@ -67,36 +55,39 @@ where
     }
 }
 
-impl<M, V> Map<M> for Vec<V>
+impl<S, T, V> Map<S, T> for Vec<V>
 where
-    M: FamilyMapper,
-    V: Map<M>,
+    S: TypeFamily,
+    T: TypeFamily,
+    V: Map<S, T>,
 {
     type Output = Vec<V::Output>;
 
-    fn map(&self, mapper: &mut M) -> Self::Output {
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         self.iter().map(|e| e.map(mapper)).collect()
     }
 }
 
-impl<M> Map<M> for ty::Ty<M::Source>
+impl<S, T> Map<S, T> for ty::Ty<S>
 where
-    M: FamilyMapper,
+    S: TypeFamily,
+    T: TypeFamily,
 {
-    type Output = ty::Ty<M::Target>;
+    type Output = ty::Ty<T>;
 
-    fn map(&self, mapper: &mut M) -> Self::Output {
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         mapper.map_ty(*self)
     }
 }
 
-impl<M> Map<M> for ty::BaseData<M::Source>
+impl<S, T> Map<S, T> for ty::BaseData<S>
 where
-    M: FamilyMapper,
+    S: TypeFamily,
+    T: TypeFamily,
 {
-    type Output = ty::BaseData<M::Target>;
+    type Output = ty::BaseData<T>;
 
-    fn map(&self, mapper: &mut M) -> Self::Output {
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         let ty::BaseData { kind, generics } = self;
         ty::BaseData {
             kind: kind.map(mapper),
@@ -105,24 +96,26 @@ where
     }
 }
 
-impl<M> Map<M> for ty::BaseKind
+impl<S, T> Map<S, T> for ty::BaseKind
 where
-    M: FamilyMapper,
+    S: TypeFamily,
+    T: TypeFamily,
 {
     type Output = ty::BaseKind;
 
-    fn map(&self, _mapper: &mut M) -> Self::Output {
+    fn map(&self, _mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         *self
     }
 }
 
-impl<M> Map<M> for ty::Generics<M::Source>
+impl<S, T> Map<S, T> for ty::Generics<S>
 where
-    M: FamilyMapper,
+    S: TypeFamily,
+    T: TypeFamily,
 {
-    type Output = ty::Generics<M::Target>;
+    type Output = ty::Generics<T>;
 
-    fn map(&self, mapper: &mut M) -> Self::Output {
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         let ty::Generics { elements } = self;
         ty::Generics {
             elements: elements.map(mapper),
@@ -130,15 +123,32 @@ where
     }
 }
 
-impl<M> Map<M> for ty::Generic<M::Source>
+impl<S, T> Map<S, T> for ty::Generic<S>
 where
-    M: FamilyMapper,
+    S: TypeFamily,
+    T: TypeFamily,
 {
-    type Output = ty::Generic<M::Target>;
+    type Output = ty::Generic<T>;
 
-    fn map(&self, mapper: &mut M) -> Self::Output {
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         match self {
             ty::Generic::Ty(ty) => ty::Generic::Ty(ty.map(mapper)),
+        }
+    }
+}
+
+impl<S, T> Map<S, T> for ty::Signature<S>
+where
+    S: TypeFamily,
+    T: TypeFamily,
+{
+    type Output = ty::Signature<T>;
+
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        let ty::Signature { inputs, output } = self;
+        ty::Signature {
+            inputs: inputs.map(mapper),
+            output: output.map(mapper),
         }
     }
 }

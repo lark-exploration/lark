@@ -4,33 +4,63 @@ use crate::indices::{IndexVec, U32Index};
 use crate::ir::DefId;
 use crate::parser::pos::{Span, Spanned};
 use crate::parser::StringId;
+use crate::ty;
+use crate::ty::declaration::Declaration;
 use std::sync::Arc;
 
 crate mod query_definitions;
 crate mod typeck;
 
-salsa::query_prototype! {
-    crate trait HirQueries: salsa::QueryContext {
+salsa::query_group! {
+    crate trait HirDatabase: salsa::Database {
         /// Get the def-id for the built-in boolean type.
-        fn boolean_def_id() for query_definitions::BooleanDefId;
+        fn boolean_def_id(key: ()) -> DefId {
+            type BooleanDefIdQuery;
+            use fn query_definitions::boolean_def_id;
+        }
 
         /// Get the fn-body for a given def-id.
-        fn fn_body() for query_definitions::FnBody;
+        fn fn_body(key: DefId) -> Arc<FnBody> {
+            type FnBodyQuery;
+            use fn query_definitions::fn_body;
+        }
 
         /// Get the list of member names and their def-ids for a given struct.
-        fn members() for query_definitions::Members;
+        fn members(key: DefId) -> Arc<Vec<Member>> {
+            type MembersQuery;
+            use fn query_definitions::members;
+        }
+
+        /// Gets the def-id for a field of a given class.
+        fn member_def_id(m: (DefId, MemberKind, StringId)) -> Option<DefId> {
+            type MemberDefIdQuery;
+            use fn query_definitions::member_def_id;
+        }
 
         /// Get the type of something.
-        fn ty() for query_definitions::Ty;
+        fn ty(key: DefId) -> ty::Ty<Declaration> {
+            type TyQuery;
+            use fn query_definitions::ty;
+        }
 
         /// Get the signature of a method or function -- defined for fields and structs.
-        fn signature() for query_definitions::Signature;
+        fn signature(key: DefId) -> ty::Signature<Declaration> {
+            type SignatureQuery;
+            use fn query_definitions::signature;
+        }
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum MemberKind {
+    Field,
+    Method,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Member {
     crate name: StringId,
+    crate kind: MemberKind,
     crate def_id: DefId,
 }
 

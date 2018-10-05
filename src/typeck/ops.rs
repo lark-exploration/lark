@@ -2,7 +2,7 @@ use crate::ty;
 use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::typeck::BaseTypeChecker;
-use crate::typeck::TypeCheckQueries;
+use crate::typeck::TypeCheckDatabase;
 use crate::unify::InferVar;
 use crate::unify::Inferable;
 use generational_arena::Arena;
@@ -29,9 +29,9 @@ where
     }
 }
 
-impl<Q> BaseTypeChecker<'q, Q>
+impl<DB> BaseTypeChecker<'q, DB>
 where
-    Q: crate::typeck::TypeCheckQueries,
+    DB: crate::typeck::TypeCheckDatabase,
 {
     /// Enqueues a closure to execute when any of the
     /// variables in `values` are unified.

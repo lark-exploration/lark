@@ -2,6 +2,7 @@
 
 use codespan_reporting::Diagnostic;
 use crate::hir;
+use crate::ir::DefId;
 use crate::map::FxIndexMap;
 use crate::parser::Span;
 use crate::ty;
@@ -20,20 +21,22 @@ mod infer;
 mod ops;
 mod query_definitions;
 
-salsa::query_prototype! {
-    crate trait TypeCheckQueries: hir::HirQueries + HasTyInternTables {
+salsa::query_group! {
+    crate trait TypeCheckDatabase: hir::HirDatabase + HasTyInternTables {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
-        fn base_type_check() for query_definitions::BaseTypeCheck;
+        fn base_type_check(key: DefId) -> BaseTypeCheckResults<BaseInferred> {
+            type BaseTypeCheckQuery;
+            use fn query_definitions::base_type_check;
+        }
     }
 }
 
-crate struct BaseTypeChecker<'db, Q: TypeCheckQueries> {
-    db: &'db Q,
+crate struct BaseTypeChecker<'db, DB: TypeCheckDatabase> {
+    db: &'db DB,
     hir: Arc<hir::FnBody>,
-    ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<BaseTypeChecker<'db, Q>>>>,
+    ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<BaseTypeChecker<'db, DB>>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
-    errors: Vec<Error>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
     results: BaseTypeCheckResults<BaseOnly>,
 }
@@ -43,30 +46,27 @@ crate struct BaseTypeCheckResults<F: TypeFamily> {
     /// FIXME-- this will actually not want `BaseTy` unless we want to
     /// return the unification table too.
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
+
+    errors: Vec<Error>,
 }
 
 impl<F: TypeFamily> Default for BaseTypeCheckResults<F> {
     fn default() -> Self {
         Self {
             types: Default::default(),
+            errors: Default::default(),
         }
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Error {
-    kind: ErrorKind,
-    cause: hir::MetaIndex,
+    location: hir::MetaIndex,
 }
 
-#[derive(Copy, Clone, Debug)]
-crate enum ErrorKind {
-    BaseMismatch(BaseTy, BaseTy),
-}
-
-impl<Q> HasTyInternTables for BaseTypeChecker<'_, Q>
+impl<DB> HasTyInternTables for BaseTypeChecker<'_, DB>
 where
-    Q: TypeCheckQueries,
+    DB: TypeCheckDatabase,
 {
     fn ty_intern_tables(&self) -> &TyInternTables {
         self.db.ty_intern_tables()

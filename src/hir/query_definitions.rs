@@ -1,36 +1,42 @@
 use crate::hir;
-use crate::hir::HirQueries;
+use crate::hir::HirDatabase;
 use crate::ir::DefId;
+use crate::parser::StringId;
 use crate::ty;
 use crate::ty::declaration::Declaration;
 use std::sync::Arc;
 
-salsa::query_definition! {
-    crate BooleanDefId(_query: &impl HirQueries, _key: ()) -> DefId {
-        unimplemented!()
-    }
+crate fn boolean_def_id(_query: &impl HirDatabase, _key: ()) -> DefId {
+    unimplemented!()
 }
 
-salsa::query_definition! {
-    crate FnBody(_query: &impl HirQueries, _key: DefId) -> Arc<hir::FnBody> {
-        unimplemented!()
-    }
+crate fn fn_body(_query: &impl HirDatabase, _key: DefId) -> Arc<hir::FnBody> {
+    unimplemented!()
 }
 
-salsa::query_definition! {
-    crate Members(_query: &impl HirQueries, _key: DefId) -> Arc<Vec<hir::Member>> {
-        unimplemented!()
-    }
+crate fn members(_db: &impl HirDatabase, _key: DefId) -> Arc<Vec<hir::Member>> {
+    unimplemented!()
 }
 
-salsa::query_definition! {
-    crate Ty(_query: &impl HirQueries, _key: DefId) -> ty::Ty<Declaration> {
-        unimplemented!()
-    }
+crate fn member_def_id(
+    db: &impl HirDatabase,
+    (owner, kind, name): (DefId, hir::MemberKind, StringId),
+) -> Option<DefId> {
+    db.members(owner)
+        .iter()
+        .filter_map(|member| {
+            if member.kind == kind && member.name == name {
+                Some(member.def_id)
+            } else {
+                None
+            }
+        }).next()
 }
 
-salsa::query_definition! {
-    crate Signature(_query: &impl HirQueries, _key: DefId) -> ty::Signature<Declaration> {
-        unimplemented!()
-    }
+crate fn ty(_query: &impl HirDatabase, _key: DefId) -> ty::Ty<Declaration> {
+    unimplemented!()
+}
+
+crate fn signature(_query: &impl HirDatabase, _key: DefId) -> ty::Signature<Declaration> {
+    unimplemented!()
 }

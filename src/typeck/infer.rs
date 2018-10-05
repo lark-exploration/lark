@@ -5,6 +5,9 @@ use crate::intern::Intern;
 use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
+use crate::ty::declaration::Declaration;
+use crate::ty::map_family::Map;
+use crate::ty::substitute::Substitution;
 use crate::ty::BaseData;
 use crate::ty::BaseKind;
 use crate::ty::Erased;
@@ -13,13 +16,13 @@ use crate::ty::Generics;
 use crate::ty::InferVarOr;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
-use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
+use crate::typeck::{BaseTypeChecker, Error};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<Q> BaseTypeChecker<'_, Q>
+impl<DB> BaseTypeChecker<'_, DB>
 where
-    Q: crate::typeck::TypeCheckQueries,
+    DB: crate::typeck::TypeCheckDatabase,
 {
     /// If `base` can be mapped to a concrete `BaseData`,
     /// invokes `op` and returns the resulting type.
@@ -62,6 +65,18 @@ where
         }
     }
 
+    pub(super) fn substitute<M>(
+        &mut self,
+        _location: hir::MetaIndex,
+        generics: &Generics<BaseOnly>,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Declaration, BaseOnly>,
+    {
+        value.map(&mut Substitution::new(self, generics))
+    }
+
     pub(super) fn new_infer_ty(&mut self) -> Ty<BaseOnly> {
         Ty {
             perm: Erased,
@@ -89,10 +104,7 @@ where
 
             Err((data1, data2)) => {
                 if data1.kind != data2.kind {
-                    self.errors.push(Error {
-                        cause,
-                        kind: ErrorKind::BaseMismatch(ty1, ty2),
-                    });
+                    self.results.errors.push(Error { location: cause });
                     return;
                 }
 
@@ -108,7 +120,7 @@ where
     }
 
     pub(super) fn boolean_type(&self) -> BaseTy {
-        let boolean_def_id = self.db.boolean_def_id().read();
+        let boolean_def_id = self.db.boolean_def_id(());
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
@@ -118,32 +130,6 @@ where
                     generics: Generics::empty(),
                 },
             ),
-        }
-    }
-
-    pub(super) fn field_def_id(
-        &mut self,
-        base_data: BaseData<BaseOnly>,
-        _field_name: hir::Identifier,
-    ) -> Result<DefId, ErrorReported> {
-        let BaseData { kind, generics: _ } = base_data;
-        match kind {
-            BaseKind::Named(_def_id) => unimplemented!(),
-
-            BaseKind::Error => Err(ErrorReported),
-        }
-    }
-
-    pub(super) fn method_def_id(
-        &mut self,
-        base_data: BaseData<BaseOnly>,
-        _method_name: hir::Identifier,
-    ) -> Result<DefId, ErrorReported> {
-        let BaseData { kind, generics: _ } = base_data;
-        match kind {
-            BaseKind::Named(_def_id) => unimplemented!(),
-
-            BaseKind::Error => Err(ErrorReported),
         }
     }
 }
