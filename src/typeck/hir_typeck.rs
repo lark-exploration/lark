@@ -3,6 +3,7 @@ use crate::hir::typeck::{ErrorReported, HirTypeChecker};
 use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
+use crate::ty::declaration::Declaration;
 use crate::ty::interners::HasTyInternTables;
 use crate::ty::map_family::Map;
 use crate::ty::substitute::Substitution;
@@ -17,42 +18,49 @@ use crate::typeck::{BaseTypeChecker, Error, ErrorKind};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<Q> HirTypeChecker<BaseOnly> for BaseTypeChecker<'_, Q>
+impl<Q> HirTypeChecker<Q, BaseOnly> for BaseTypeChecker<'_, Q>
 where
     Q: crate::typeck::TypeCheckQueries,
 {
     type FieldId = DefId;
     type MethodId = DefId;
 
+    fn db(&self) -> &Q {
+        self.db
+    }
+
     /// Return the HIR that we are type-checking.
     fn hir(&self) -> &Arc<hir::FnBody> {
         &self.hir
     }
 
-    /// Fetch the field of the given field from the given owner,
-    /// appropriately substituted.
-    fn field_ty(
+    fn report_error(&mut self, location: impl hir::HirIndex) {
+        unimplemented!()
+    }
+
+    fn with_base_data(
+        &mut self,
+        cause: impl hir::HirIndex,
+        base: Base,
+        op: impl FnOnce(&mut Self, BaseData<BaseOnly>) -> Ty<BaseOnly> + 'static,
+    ) -> Ty<BaseOnly> {
+        unimplemented!()
+    }
+
+    fn substitute_ty(
         &mut self,
         location: impl hir::HirIndex,
         owner_ty: Ty<BaseOnly>,
-        field_def_id: Self::FieldId,
+        field_decl_ty: Ty<Declaration>,
     ) -> Ty<BaseOnly> {
-        self.with_base_data(location.into(), owner_ty.base, move |this, base_data| {
-            let field_decl_ty = this.db.ty().get(field_def_id);
-            field_decl_ty.map(&mut Substitution::new(
-                this.db.ty_intern_tables(),
-                &base_data.generics,
-            ))
-        })
+        unimplemented!()
     }
 
-    /// Given the type of a field and its owner, substitute any generics appropriately
-    /// and return an instantiated type.
-    fn method_sig(
+    fn substitute_signature(
         &mut self,
-        _location: impl hir::HirIndex,
-        _owner_ty: Ty<BaseOnly>,
-        _method_def_id: Self::MethodId,
+        location: impl hir::HirIndex,
+        owner_ty: Ty<BaseOnly>,
+        field_decl_ty: Signature<Declaration>,
     ) -> Signature<BaseOnly> {
         unimplemented!()
     }
@@ -95,40 +103,6 @@ where
     ) -> Ty<BaseOnly> {
         self.equate_types(if_expression.into(), true_ty, false_ty);
         true_ty
-    }
-
-    fn with_field(
-        &mut self,
-        location: impl hir::HirIndex,
-        owner_ty: Ty<BaseOnly>,
-        field_name: hir::Identifier,
-        op: impl FnOnce(&mut Self, Self::FieldId) -> Ty<BaseOnly> + 'static,
-    ) -> Ty<BaseOnly> {
-        self.with_base_data(
-            location.into(),
-            owner_ty.base,
-            move |this, base_data| match this.field_def_id(base_data, field_name) {
-                Ok(def_id) => op(this, def_id),
-                Err(ErrorReported) => this.error_type(),
-            },
-        )
-    }
-
-    fn with_method(
-        &mut self,
-        location: impl hir::HirIndex,
-        owner_ty: Ty<BaseOnly>,
-        method_name: hir::Identifier,
-        op: impl FnOnce(&mut Self, Self::MethodId) -> Ty<BaseOnly> + 'static,
-    ) -> Ty<BaseOnly> {
-        self.with_base_data(
-            location.into(),
-            owner_ty.base,
-            move |this, base_data| match this.method_def_id(base_data, method_name) {
-                Ok(def_id) => op(this, def_id),
-                Err(ErrorReported) => this.error_type(),
-            },
-        )
     }
 
     /// Returns a type used to indicate that an error has been reported.

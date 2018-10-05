@@ -20,6 +20,9 @@ salsa::query_prototype! {
         /// Get the list of member names and their def-ids for a given struct.
         fn members() for query_definitions::Members;
 
+        /// Gets the def-id for a field of a given class.
+        fn member_def_id() for query_definitions::MemberDefId;
+
         /// Get the type of something.
         fn ty() for query_definitions::Ty;
 
@@ -29,8 +32,15 @@ salsa::query_prototype! {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum MemberKind {
+    Field,
+    Method,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Member {
     crate name: StringId,
+    crate kind: MemberKind,
     crate def_id: DefId,
 }
 
