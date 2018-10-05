@@ -14,7 +14,7 @@ use std::sync::Arc;
 /// any downstream work.
 crate struct ErrorReported;
 
-crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
+crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
     type FieldId: Copy + 'static;
     type MethodId: Copy + 'static;
 
@@ -171,12 +171,11 @@ crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
                     let BaseData { kind, generics: _ } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
-                            if let Some(field_def_id) = this.db().member_def_id().get((
-                                def_id,
-                                hir::MemberKind::Field,
-                                text,
-                            )) {
-                                let field_decl_ty = this.db().ty().get(field_def_id);
+                            if let Some(field_def_id) =
+                                this.db()
+                                    .member_def_id((def_id, hir::MemberKind::Field, text))
+                            {
+                                let field_decl_ty = this.db().ty(field_def_id);
                                 this.substitute(place, owner_ty.perm, &base_data, field_decl_ty)
                             } else {
                                 this.report_error(place);
@@ -219,8 +218,7 @@ crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
                 let method_def_id =
                     match self
                         .db()
-                        .member_def_id()
-                        .get((def_id, hir::MemberKind::Method, text))
+                        .member_def_id((def_id, hir::MemberKind::Method, text))
                     {
                         Some(def_id) => def_id,
                         None => {
@@ -228,7 +226,7 @@ crate trait HirTypeChecker<DB: hir::HirQueries, F: TypeFamily>: Sized {
                             return self.error_type();
                         }
                     };
-                let signature_decl = self.db().signature().get(method_def_id);
+                let signature_decl = self.db().signature(method_def_id);
                 let signature =
                     self.substitute(expression, owner_ty.perm, &base_data, signature_decl);
                 if signature.inputs.len() != arguments.len() {

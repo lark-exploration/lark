@@ -18,14 +18,14 @@ use crate::typeck::{BaseTypeChecker, Error};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<Q> HirTypeChecker<Q, BaseOnly> for BaseTypeChecker<'_, Q>
+impl<DB> HirTypeChecker<DB, BaseOnly> for BaseTypeChecker<'_, DB>
 where
-    Q: crate::typeck::TypeCheckQueries,
+    DB: crate::typeck::TypeCheckDatabase,
 {
     type FieldId = DefId;
     type MethodId = DefId;
 
-    fn db(&self) -> &Q {
+    fn db(&self) -> &DB {
         self.db
     }
 

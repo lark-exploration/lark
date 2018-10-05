@@ -20,9 +20,9 @@ use crate::typeck::{BaseTypeChecker, Error};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<Q> BaseTypeChecker<'_, Q>
+impl<DB> BaseTypeChecker<'_, DB>
 where
-    Q: crate::typeck::TypeCheckQueries,
+    DB: crate::typeck::TypeCheckDatabase,
 {
     /// If `base` can be mapped to a concrete `BaseData`,
     /// invokes `op` and returns the resulting type.
@@ -67,7 +67,7 @@ where
 
     pub(super) fn substitute<M>(
         &mut self,
-        location: hir::MetaIndex,
+        _location: hir::MetaIndex,
         generics: &Generics<BaseOnly>,
         value: M,
     ) -> M::Output
@@ -120,7 +120,7 @@ where
     }
 
     pub(super) fn boolean_type(&self) -> BaseTy {
-        let boolean_def_id = self.db.boolean_def_id().read();
+        let boolean_def_id = self.db.boolean_def_id(());
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
