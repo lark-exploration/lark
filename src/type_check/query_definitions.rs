@@ -21,11 +21,12 @@ use std::sync::Arc;
 
 crate fn base_type_check(
     db: &impl TypeCheckDatabase,
-    key: DefId,
+    fn_def_id: DefId,
 ) -> TypeCheckResults<BaseInferred> {
-    let fn_body = db.fn_body(key);
+    let fn_body = db.fn_body(fn_def_id);
     let base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
         db,
+        fn_def_id,
         hir: fn_body,
         ops_arena: Arena::new(),
         ops_blocked: FxIndexMap::default(),
