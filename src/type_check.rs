@@ -21,6 +21,7 @@ use crate::unify::UnificationTable;
 use generational_arena::Arena;
 use std::sync::Arc;
 
+mod base_only;
 mod hir_typeck;
 mod ops;
 mod query_definitions;
