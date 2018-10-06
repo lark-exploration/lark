@@ -1,84 +1,32 @@
-use codespan_reporting::{Diagnostic, Label};
 use crate::hir;
+use crate::hir::HirDatabase;
+use crate::ir::DefId;
+use crate::ty;
+use crate::ty::base_only::{Base, BaseOnly, BaseTy};
 use crate::ty::declaration::Declaration;
+use crate::ty::interners::HasTyInternTables;
+use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::Map;
-use crate::ty::BaseData;
-use crate::ty::BaseKind;
+use crate::ty::substitute::Substitution;
+use crate::ty::Erased;
+use crate::ty::InferVarOr;
 use crate::ty::Signature;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
+use crate::ty::{BaseData, BaseKind};
+use crate::ty::{Generic, Generics};
+use crate::type_check::Error;
+use crate::type_check::TypeCheckFamily;
+use crate::type_check::TypeChecker;
+use crate::type_check::TypeCheckerFields;
+use crate::unify::{InferVar, UnificationTable};
 use std::sync::Arc;
 
-/// A unit type that means "the operation failed and an error
-/// has been reported to the user". It implies you should suppress
-/// any downstream work.
-crate struct ErrorReported;
-
-crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
-    type FieldId: Copy + 'static;
-    type MethodId: Copy + 'static;
-
-    /// Return the query database.
-    fn db(&self) -> &DB;
-
-    /// Return the HIR that we are type-checking.
-    fn hir(&self) -> &Arc<hir::FnBody>;
-
-    /// Report an error at the given location. Eventually we should include
-    /// a bit more detail about what sort of error it is. =)
-    fn report_error(&mut self, location: impl hir::HirIndex);
-
-    /// Once the base data of `owner_ty` is known, invoke `op` with it
-    /// to create a derived type. (If the base data of `owner_ty` is not
-    /// immediately known, then create a type variable and return immediately,
-    /// enqueueing a call to `op` for later.)
-    fn with_base_data(
-        &mut self,
-        cause: impl hir::HirIndex,
-        base: F::Base,
-        op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
-    ) -> Ty<F>;
-
-    /// Fetch the field of the given field from the given owner,
-    /// appropriately substituted.
-    fn substitute<M>(
-        &mut self,
-        location: impl hir::HirIndex,
-        owner_perm: F::Perm,
-        owner_base_data: &BaseData<F>,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<Declaration, F>;
-
-    /// Records the computed type for an expression, variable, etc.
-    fn record_ty(&mut self, index: impl hir::HirIndex, ty: Ty<F>);
-
-    /// Lookup the type for a variable.
-    fn variable_ty(&mut self, var: hir::Variable) -> Ty<F>;
-
-    /// Given some permissions supplied by the user (which may be a "default"),
-    /// apply them to `place_ty` to yield a new type.
-    fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F>;
-
-    /// Requires that `value_ty` can be assigned to `place_ty`.
-    fn require_assignable(&mut self, expression: hir::Expression, value_ty: Ty<F>, place_ty: Ty<F>);
-
-    /// Requires that `value_ty` is a boolean value.
-    fn require_boolean(&mut self, expression: hir::Expression, value_ty: Ty<F>);
-
-    /// Compute the least-upper-bound (mutual supertype) of two types
-    /// (owing to the given expression) and return the resulting type.
-    fn least_upper_bound(
-        &mut self,
-        if_expression: hir::Expression,
-        true_ty: Ty<F>,
-        false_ty: Ty<F>,
-    ) -> Ty<F>;
-
-    /// Returns a type used to indicate that an error has been reported.
-    fn error_type(&mut self) -> Ty<F>;
-
+impl<DB, F> TypeChecker<'_, DB, F>
+where
+    DB: crate::type_check::TypeCheckDatabase,
+    F: TypeCheckFamily,
+{
     fn check_expression_has_type(&mut self, expected_ty: Ty<F>, expression: hir::Expression) {
         let actual_ty = self.check_expression(expression);
         self.require_assignable(expression, actual_ty, expected_ty);
@@ -88,13 +36,13 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
     /// an inference variable).
     fn check_expression(&mut self, expression: hir::Expression) -> Ty<F> {
         let ty = self.compute_expression_ty(expression);
-        self.record_ty(expression, ty);
+        self.results.record_ty(expression, ty);
         ty
     }
 
     /// Helper for `check_expression`: compute the type of the given expression.
     fn compute_expression_ty(&mut self, expression: hir::Expression) -> Ty<F> {
-        let expression_data = self.hir()[expression].clone();
+        let expression_data = self.hir[expression].clone();
         match expression_data {
             hir::ExpressionData::Let {
                 var,
@@ -102,7 +50,7 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
                 body,
             } => {
                 let initializer_ty = self.check_expression(initializer);
-                self.record_ty(var, initializer_ty);
+                self.results.record_ty(var, initializer_ty);
                 self.check_expression(body)
             }
 
@@ -138,7 +86,7 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
                 if_false,
             } => {
                 let condition_ty = self.check_expression(condition);
-                self.require_boolean(expression, condition_ty);
+                self.require_assignable(expression, condition_ty, self.boolean_type());
                 let true_ty = self.check_expression(if_true);
                 let false_ty = self.check_expression(if_false);
                 self.least_upper_bound(expression, true_ty, false_ty)
@@ -152,22 +100,22 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
     /// an inference variable).
     fn check_place(&mut self, place: hir::Place) -> Ty<F> {
         let ty = self.compute_place_ty(place);
-        self.record_ty(place, ty);
+        self.results.record_ty(place, ty);
         ty
     }
 
     /// Helper for `check_place`.
     fn compute_place_ty(&mut self, place: hir::Place) -> Ty<F> {
-        let place_data = self.hir()[place];
+        let place_data = self.hir[place];
         match place_data {
-            hir::PlaceData::Variable(var) => self.variable_ty(var),
+            hir::PlaceData::Variable(var) => self.results.ty(var),
 
             hir::PlaceData::Temporary(expr) => self.check_expression(expr),
 
             hir::PlaceData::Field { owner, name } => {
-                let text = self.hir()[name].text;
+                let text = self.hir[name].text;
                 let owner_ty = self.check_place(owner);
-                self.with_base_data(place, owner_ty.base, move |this, base_data| {
+                self.with_base_data(place, owner_ty.base.into(), move |this, base_data| {
                     let BaseData { kind, generics: _ } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
@@ -178,7 +126,7 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
                                 let field_decl_ty = this.db().ty(field_def_id);
                                 this.substitute(place, owner_ty.perm, &base_data, field_decl_ty)
                             } else {
-                                this.report_error(place);
+                                this.results.record_error(place);
                                 this.error_type()
                             }
                         }
@@ -198,7 +146,7 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
         method_name: hir::Identifier,
         arguments: Arc<Vec<hir::Expression>>,
     ) -> Ty<F> {
-        self.with_base_data(expression, owner_ty.base, move |this, base_data| {
+        self.with_base_data(expression, owner_ty.base.into(), move |this, base_data| {
             this.check_method_call(expression, owner_ty, method_name, arguments, base_data)
         })
     }
@@ -214,7 +162,7 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
         let BaseData { kind, generics: _ } = base_data;
         match kind {
             BaseKind::Named(def_id) => {
-                let text = self.hir()[method_name].text;
+                let text = self.hir[method_name].text;
                 let method_def_id =
                     match self
                         .db()
@@ -222,7 +170,7 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
                     {
                         Some(def_id) => def_id,
                         None => {
-                            self.report_error(expression);
+                            self.results.record_error(expression);
                             return self.error_type();
                         }
                     };
@@ -230,7 +178,7 @@ crate trait HirTypeChecker<DB: hir::HirDatabase, F: TypeFamily>: Sized {
                 let signature =
                     self.substitute(expression, owner_ty.perm, &base_data, signature_decl);
                 if signature.inputs.len() != arguments.len() {
-                    self.report_error(expression);
+                    self.results.record_error(expression);
                 }
                 for (&expected_ty, &argument_expr) in signature.inputs.iter().zip(arguments.iter())
                 {

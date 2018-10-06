@@ -4,6 +4,7 @@
 #![feature(box_syntax)]
 #![feature(crate_visibility_modifier)]
 #![feature(existential_type)]
+#![feature(self_in_typedefs)]
 #![feature(never_type)]
 #![feature(nll)]
 #![feature(min_const_fn)]
@@ -33,7 +34,7 @@ mod parser;
 mod parser2;
 mod tests;
 mod ty;
-mod typeck;
+mod type_check;
 mod unify;
 
 use std::{env, io};
