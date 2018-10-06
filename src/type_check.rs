@@ -32,7 +32,9 @@ salsa::query_group! {
     }
 }
 
-struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeFamily> {
+trait TypeCheckFamily: TypeFamily {}
+
+struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     db: &'db DB,
     hir: Arc<hir::FnBody>,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<Self>>>,
@@ -67,7 +69,7 @@ crate struct Error {
 impl<DB, F> HasTyInternTables for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeFamily,
+    F: TypeCheckFamily,
 {
     fn ty_intern_tables(&self) -> &TyInternTables {
         self.db.ty_intern_tables()

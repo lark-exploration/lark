@@ -3,6 +3,7 @@ use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::TypeFamily;
 use crate::type_check::TypeCheckDatabase;
+use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::unify::InferVar;
 use crate::unify::Inferable;
@@ -33,7 +34,7 @@ where
 impl<DB, F> TypeChecker<'q, DB, F>
 where
     DB: crate::type_check::TypeCheckDatabase,
-    F: TypeFamily,
+    F: TypeCheckFamily,
 {
     /// Enqueues a closure to execute when any of the
     /// variables in `values` are unified.
