@@ -23,21 +23,37 @@ crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
     fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base;
 }
 
+/// A type is the combination of a *permission* and a *base type*.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Ty<F: TypeFamily> {
     crate perm: F::Perm,
     crate base: F::Base,
 }
 
+/// Indicates something that we've opted not to track statically.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Erased;
 
+/// The "base data" for a type.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct BaseData<F: TypeFamily> {
     crate kind: BaseKind,
     crate generics: Generics<F>,
 }
 
+/// The *kinds* of base types we have on offer.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum BaseKind {
+    /// A named type (might be value, might be linear, etc).
+    Named(DefId),
+
+    /// Indicates that a type error was reported.
+    Error,
+}
+
+/// Used as the value for inferable things during inference -- either
+/// a given `Base` (etc) maps to an inference variable or to some
+/// known value.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate enum InferVarOr<T> {
     InferVar(InferVar),
@@ -66,15 +82,8 @@ index_type! {
     crate struct BoundVar { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum BaseKind {
-    /// A named type (might be value, might be linear, etc).
-    Named(DefId),
-
-    /// Indicates that a type error was reported.
-    Error,
-}
-
+/// A set of generic arguments; e.g., in a type like `Vec<i32>`, this
+/// would be `[i32]`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Generics<F: TypeFamily> {
     elements: Option<Arc<Vec<Generic<F>>>>,
@@ -145,6 +154,8 @@ impl<F: TypeFamily> IntoIterator for &'iter Generics<F> {
     }
 }
 
+/// The value of a single generic argument; e.g., in a type like
+/// `Vec<i32>`, this might be the `i32`.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate enum Generic<F: TypeFamily> {
     Ty(Ty<F>),
@@ -158,7 +169,9 @@ impl<F: TypeFamily> Generic<F> {
     }
 }
 
-/// Signature from a function or method.
+/// Signature from a function or method: `(T1, T2) -> T3`.  `inputs`
+/// are the list of the types of the arguments, and `output` is the
+/// return type.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Signature<F: TypeFamily> {
     crate inputs: Arc<Vec<Ty<F>>>,
