@@ -1,5 +1,5 @@
 use crate::hir;
-use crate::hir::typeck::{ErrorReported, HirTypeChecker};
+use crate::hir::type_check::{ErrorReported, HirTypeChecker};
 use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
@@ -14,13 +14,13 @@ use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::ty::{BaseData, BaseKind};
 use crate::ty::{Generic, Generics};
-use crate::typeck::{BaseTypeChecker, Error};
+use crate::type_check::{BaseTypeChecker, Error};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
 impl<DB> HirTypeChecker<DB, BaseOnly> for BaseTypeChecker<'_, DB>
 where
-    DB: crate::typeck::TypeCheckDatabase,
+    DB: crate::type_check::TypeCheckDatabase,
 {
     type FieldId = DefId;
     type MethodId = DefId;

@@ -9,7 +9,7 @@ use crate::ty::declaration::Declaration;
 use std::sync::Arc;
 
 crate mod query_definitions;
-crate mod typeck;
+crate mod type_check;
 
 salsa::query_group! {
     crate trait HirDatabase: salsa::Database {

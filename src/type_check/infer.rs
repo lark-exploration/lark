@@ -1,6 +1,6 @@
 use crate::hir;
-use crate::hir::typeck::ErrorReported;
-use crate::hir::typeck::HirTypeChecker;
+use crate::hir::type_check::ErrorReported;
+use crate::hir::type_check::HirTypeChecker;
 use crate::intern::Intern;
 use crate::ir::DefId;
 use crate::ty;
@@ -16,13 +16,13 @@ use crate::ty::Generics;
 use crate::ty::InferVarOr;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
-use crate::typeck::{BaseTypeChecker, Error};
+use crate::type_check::{BaseTypeChecker, Error};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
 impl<DB> BaseTypeChecker<'_, DB>
 where
-    DB: crate::typeck::TypeCheckDatabase,
+    DB: crate::type_check::TypeCheckDatabase,
 {
     /// If `base` can be mapped to a concrete `BaseData`,
     /// invokes `op` and returns the resulting type.
