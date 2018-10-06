@@ -20,7 +20,7 @@ use crate::type_check::{Error, TypeChecker};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<DB> TypeChecker<'_, DB>
+impl<DB> TypeChecker<'_, DB, BaseOnly>
 where
     DB: crate::type_check::TypeCheckDatabase,
 {

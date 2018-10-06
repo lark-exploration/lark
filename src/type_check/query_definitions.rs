@@ -24,7 +24,7 @@ crate fn base_type_check(
     key: DefId,
 ) -> TypeCheckResults<BaseInferred> {
     let fn_body = db.fn_body(key);
-    let base_type_checker = TypeChecker {
+    let base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
         db,
         hir: fn_body,
         ops_arena: Arena::new(),

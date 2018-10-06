@@ -18,7 +18,7 @@ use crate::type_check::{Error, TypeChecker};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<DB> HirTypeChecker<DB, BaseOnly> for TypeChecker<'_, DB>
+impl<DB> HirTypeChecker<DB, BaseOnly> for TypeChecker<'_, DB, BaseOnly>
 where
     DB: crate::type_check::TypeCheckDatabase,
 {
