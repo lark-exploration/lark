@@ -14,11 +14,11 @@ use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::ty::{BaseData, BaseKind};
 use crate::ty::{Generic, Generics};
-use crate::type_check::{BaseTypeChecker, Error};
+use crate::type_check::{Error, TypeChecker};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<DB> HirTypeChecker<DB, BaseOnly> for BaseTypeChecker<'_, DB>
+impl<DB> HirTypeChecker<DB, BaseOnly> for TypeChecker<'_, DB>
 where
     DB: crate::type_check::TypeCheckDatabase,
 {

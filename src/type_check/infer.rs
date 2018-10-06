@@ -16,11 +16,11 @@ use crate::ty::Generics;
 use crate::ty::InferVarOr;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
-use crate::type_check::{BaseTypeChecker, Error};
+use crate::type_check::{Error, TypeChecker};
 use crate::unify::InferVar;
 use std::sync::Arc;
 
-impl<DB> BaseTypeChecker<'_, DB>
+impl<DB> TypeChecker<'_, DB>
 where
     DB: crate::type_check::TypeCheckDatabase,
 {

@@ -1,8 +1,8 @@
 use crate::ty;
 use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
-use crate::type_check::BaseTypeChecker;
 use crate::type_check::TypeCheckDatabase;
+use crate::type_check::TypeChecker;
 use crate::unify::InferVar;
 use crate::unify::Inferable;
 use generational_arena::Arena;
@@ -29,7 +29,7 @@ where
     }
 }
 
-impl<DB> BaseTypeChecker<'q, DB>
+impl<DB> TypeChecker<'q, DB>
 where
     DB: crate::type_check::TypeCheckDatabase,
 {

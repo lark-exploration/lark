@@ -32,10 +32,10 @@ salsa::query_group! {
     }
 }
 
-crate struct BaseTypeChecker<'db, DB: TypeCheckDatabase> {
+struct TypeChecker<'db, DB: TypeCheckDatabase> {
     db: &'db DB,
     hir: Arc<hir::FnBody>,
-    ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<BaseTypeChecker<'db, DB>>>>,
+    ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<Self>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
     results: TypeCheckResults<BaseOnly>,
@@ -64,7 +64,7 @@ crate struct Error {
     location: hir::MetaIndex,
 }
 
-impl<DB> HasTyInternTables for BaseTypeChecker<'_, DB>
+impl<DB> HasTyInternTables for TypeChecker<'_, DB>
 where
     DB: TypeCheckDatabase,
 {

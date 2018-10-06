@@ -11,9 +11,9 @@ use crate::ty::declaration::Declaration;
 use crate::ty::interners::{HasTyInternTables, TyInternTables};
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
-use crate::type_check::BaseTypeChecker;
 use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckResults;
+use crate::type_check::TypeChecker;
 use crate::unify::InferVar;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
@@ -24,7 +24,7 @@ crate fn base_type_check(
     key: DefId,
 ) -> TypeCheckResults<BaseInferred> {
     let fn_body = db.fn_body(key);
-    let base_type_checker = BaseTypeChecker {
+    let base_type_checker = TypeChecker {
         db,
         hir: fn_body,
         ops_arena: Arena::new(),
