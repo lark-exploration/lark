@@ -25,7 +25,7 @@ salsa::query_group! {
     crate trait TypeCheckDatabase: hir::HirDatabase + HasTyInternTables {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
-        fn base_type_check(key: DefId) -> BaseTypeCheckResults<BaseInferred> {
+        fn base_type_check(key: DefId) -> TypeCheckResults<BaseInferred> {
             type BaseTypeCheckQuery;
             use fn query_definitions::base_type_check;
         }
@@ -38,11 +38,11 @@ crate struct BaseTypeChecker<'db, DB: TypeCheckDatabase> {
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<BaseTypeChecker<'db, DB>>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
-    results: BaseTypeCheckResults<BaseOnly>,
+    results: TypeCheckResults<BaseOnly>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct BaseTypeCheckResults<F: TypeFamily> {
+crate struct TypeCheckResults<F: TypeFamily> {
     /// FIXME-- this will actually not want `BaseTy` unless we want to
     /// return the unification table too.
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
@@ -50,7 +50,7 @@ crate struct BaseTypeCheckResults<F: TypeFamily> {
     errors: Vec<Error>,
 }
 
-impl<F: TypeFamily> Default for BaseTypeCheckResults<F> {
+impl<F: TypeFamily> Default for TypeCheckResults<F> {
     fn default() -> Self {
         Self {
             types: Default::default(),
