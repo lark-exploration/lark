@@ -61,6 +61,28 @@ trait TypeCheckFamily: TypeFamily {
 
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    fn error_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
+
+    fn require_assignable(
+        this: &mut impl TypeCheckerFields<Self>,
+        expression: hir::Expression,
+        value_ty: Ty<Self>,
+        place_ty: Ty<Self>,
+    );
+
+    fn apply_user_perm(
+        this: &mut impl TypeCheckerFields<Self>,
+        perm: hir::Perm,
+        place_ty: Ty<Self>,
+    ) -> Ty<Self>;
+
+    fn least_upper_bound(
+        this: &mut impl TypeCheckerFields<Self>,
+        if_expression: hir::Expression,
+        true_ty: Ty<Self>,
+        false_ty: Ty<Self>,
+    ) -> Ty<Self>;
+
     // FIXME -- This *almost* could be done generically but that
     // `Substitution` currently requires that `Perm = Erased`; we'll
     // have to push the "perm combination" into `TypeFamily` or

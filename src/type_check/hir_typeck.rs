@@ -83,6 +83,47 @@ impl TypeCheckFamily for BaseOnly {
         }
     }
 
+    fn error_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+        Ty {
+            perm: Erased,
+            base: BaseOnly::intern_base_data(
+                this.db(),
+                BaseData {
+                    kind: BaseKind::Error,
+                    generics: Generics::empty(),
+                },
+            ),
+        }
+    }
+
+    fn apply_user_perm(
+        _this: &mut impl TypeCheckerFields<Self>,
+        _perm: hir::Perm,
+        place_ty: Ty<BaseOnly>,
+    ) -> Ty<BaseOnly> {
+        // In the "erased type check", we don't care about permissions.
+        place_ty
+    }
+
+    fn require_assignable(
+        this: &mut impl TypeCheckerFields<Self>,
+        expression: hir::Expression,
+        value_ty: Ty<BaseOnly>,
+        place_ty: Ty<BaseOnly>,
+    ) {
+        Self::equate_types(this, expression.into(), value_ty, place_ty)
+    }
+
+    fn least_upper_bound(
+        this: &mut impl TypeCheckerFields<Self>,
+        if_expression: hir::Expression,
+        true_ty: Ty<BaseOnly>,
+        false_ty: Ty<BaseOnly>,
+    ) -> Ty<BaseOnly> {
+        Self::equate_types(this, if_expression.into(), true_ty, false_ty);
+        true_ty
+    }
+
     fn substitute<M>(
         this: &mut impl TypeCheckerFields<Self>,
         _location: hir::MetaIndex,
@@ -164,7 +205,7 @@ where
         value_ty: Ty<BaseOnly>,
         place_ty: Ty<BaseOnly>,
     ) {
-        self.equate_types(expression.into(), value_ty, place_ty)
+        BaseOnly::require_assignable(self, expression, value_ty, place_ty)
     }
 
     fn require_boolean(&mut self, expression: hir::Expression, value_ty: Ty<BaseOnly>) {
@@ -177,21 +218,11 @@ where
         true_ty: Ty<BaseOnly>,
         false_ty: Ty<BaseOnly>,
     ) -> Ty<BaseOnly> {
-        self.equate_types(if_expression.into(), true_ty, false_ty);
-        true_ty
+        BaseOnly::least_upper_bound(self, if_expression, true_ty, false_ty)
     }
 
     /// Returns a type used to indicate that an error has been reported.
     fn error_type(&mut self) -> Ty<BaseOnly> {
-        Ty {
-            perm: Erased,
-            base: BaseOnly::intern_base_data(
-                self.db,
-                BaseData {
-                    kind: BaseKind::Error,
-                    generics: Generics::empty(),
-                },
-            ),
-        }
+        BaseOnly::error_type(self)
     }
 }
