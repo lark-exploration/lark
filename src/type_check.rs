@@ -8,16 +8,20 @@ use crate::parser::Span;
 use crate::ty;
 use crate::ty::base_inferred::BaseInferred;
 use crate::ty::base_only::{BaseOnly, BaseTy};
+use crate::ty::declaration::Declaration;
 use crate::ty::interners::{HasTyInternTables, TyInternTables};
+use crate::ty::map_family::Map;
+use crate::ty::BaseData;
+use crate::ty::Generics;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::unify::InferVar;
+use crate::unify::Inferable;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
 use std::sync::Arc;
 
 mod hir_typeck;
-mod infer;
 mod ops;
 mod query_definitions;
 
@@ -32,8 +36,6 @@ salsa::query_group! {
     }
 }
 
-trait TypeCheckFamily: TypeFamily {}
-
 struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     db: &'db DB,
     hir: Arc<hir::FnBody>,
@@ -41,6 +43,65 @@ struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
     results: TypeCheckResults<F>,
+}
+
+trait TypeCheckFamily: TypeFamily {
+    type TcBase: From<Self::Base>
+        + Into<Self::Base>
+        + Inferable<TyInternTables, KnownData = ty::BaseData<Self>>;
+
+    fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self>;
+
+    fn equate_types(
+        this: &mut impl TypeCheckerFields<Self>,
+        cause: hir::MetaIndex,
+        ty1: Ty<Self>,
+        ty2: Ty<Self>,
+    );
+
+    fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
+
+    // FIXME -- This *almost* could be done generically but that
+    // `Substitution` currently requires that `Perm = Erased`; we'll
+    // have to push the "perm combination" into `TypeFamily` or
+    // something.  Cross that bridge when we come to it.
+    fn substitute<M>(
+        this: &mut impl TypeCheckerFields<Self>,
+        location: hir::MetaIndex,
+        owner_perm: Self::Perm,
+        owner_base_data: &BaseData<Self>,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Declaration, Self>;
+}
+
+trait TypeCheckerFields<F: TypeCheckFamily>: HasTyInternTables {
+    type DB: TypeCheckDatabase;
+
+    fn db(&self) -> &Self::DB;
+    fn unify(&mut self) -> &mut UnificationTable<TyInternTables, hir::MetaIndex>;
+    fn results(&mut self) -> &mut TypeCheckResults<F>;
+}
+
+impl<'me, DB, F> TypeCheckerFields<F> for TypeChecker<'me, DB, F>
+where
+    DB: TypeCheckDatabase,
+    F: TypeCheckFamily,
+{
+    type DB = DB;
+
+    fn db(&self) -> &DB {
+        &self.db
+    }
+
+    fn unify(&mut self) -> &mut UnificationTable<TyInternTables, hir::MetaIndex> {
+        &mut self.unify
+    }
+
+    fn results(&mut self) -> &mut TypeCheckResults<F> {
+        &mut self.results
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
