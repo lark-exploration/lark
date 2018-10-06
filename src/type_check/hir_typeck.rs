@@ -1,6 +1,4 @@
 use crate::hir;
-use crate::hir::type_check::ErrorReported;
-use crate::hir::type_check::HirTypeChecker;
 use crate::hir::HirDatabase;
 use crate::ir::DefId;
 use crate::ty;
@@ -24,91 +22,172 @@ use crate::type_check::TypeCheckerFields;
 use crate::unify::{InferVar, UnificationTable};
 use std::sync::Arc;
 
-impl<DB> HirTypeChecker<DB, BaseOnly> for TypeChecker<'_, DB, BaseOnly>
+impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: crate::type_check::TypeCheckDatabase,
+    F: TypeCheckFamily,
 {
-    type FieldId = DefId;
-    type MethodId = DefId;
-
-    fn db(&self) -> &DB {
-        self.db
+    fn check_expression_has_type(&mut self, expected_ty: Ty<F>, expression: hir::Expression) {
+        let actual_ty = self.check_expression(expression);
+        self.require_assignable(expression, actual_ty, expected_ty);
     }
 
-    /// Return the HIR that we are type-checking.
-    fn hir(&self) -> &Arc<hir::FnBody> {
-        &self.hir
+    /// Type-check `expression`, recording and returning the resulting type (which may be
+    /// an inference variable).
+    fn check_expression(&mut self, expression: hir::Expression) -> Ty<F> {
+        let ty = self.compute_expression_ty(expression);
+        self.results.record_ty(expression, ty);
+        ty
     }
 
-    fn report_error(&mut self, location: impl hir::HirIndex) {
-        self.results.errors.push(Error {
-            location: location.into(),
+    /// Helper for `check_expression`: compute the type of the given expression.
+    fn compute_expression_ty(&mut self, expression: hir::Expression) -> Ty<F> {
+        let expression_data = self.hir[expression].clone();
+        match expression_data {
+            hir::ExpressionData::Let {
+                var,
+                initializer,
+                body,
+            } => {
+                let initializer_ty = self.check_expression(initializer);
+                self.results.record_ty(var, initializer_ty);
+                self.check_expression(body)
+            }
+
+            hir::ExpressionData::Place { perm, place } => {
+                let place_ty = self.check_place(place);
+                self.apply_user_perm(perm, place_ty)
+            }
+
+            hir::ExpressionData::Assignment { place, value } => {
+                let place_ty = self.check_place(place);
+                let value_ty = self.check_expression(value);
+                self.require_assignable(expression, value_ty, place_ty);
+                place_ty
+            }
+
+            hir::ExpressionData::MethodCall {
+                owner,
+                method,
+                arguments,
+            } => {
+                let owner_ty = self.check_place(owner);
+                self.compute_method_call_ty(expression, owner_ty, method, arguments)
+            }
+
+            hir::ExpressionData::Sequence { first, second } => {
+                let _ = self.check_expression(first);
+                self.check_expression(second)
+            }
+
+            hir::ExpressionData::If {
+                condition,
+                if_true,
+                if_false,
+            } => {
+                let condition_ty = self.check_expression(condition);
+                self.require_assignable(expression, condition_ty, self.boolean_type());
+                let true_ty = self.check_expression(if_true);
+                let false_ty = self.check_expression(if_false);
+                self.least_upper_bound(expression, true_ty, false_ty)
+            }
+
+            hir::ExpressionData::Unit {} => unimplemented!(),
+        }
+    }
+
+    /// Type-check `place`, recording and returning the resulting type (which may be
+    /// an inference variable).
+    fn check_place(&mut self, place: hir::Place) -> Ty<F> {
+        let ty = self.compute_place_ty(place);
+        self.results.record_ty(place, ty);
+        ty
+    }
+
+    /// Helper for `check_place`.
+    fn compute_place_ty(&mut self, place: hir::Place) -> Ty<F> {
+        let place_data = self.hir[place];
+        match place_data {
+            hir::PlaceData::Variable(var) => self.results.ty(var),
+
+            hir::PlaceData::Temporary(expr) => self.check_expression(expr),
+
+            hir::PlaceData::Field { owner, name } => {
+                let text = self.hir[name].text;
+                let owner_ty = self.check_place(owner);
+                self.with_base_data(place, owner_ty.base.into(), move |this, base_data| {
+                    let BaseData { kind, generics: _ } = base_data;
+                    match kind {
+                        BaseKind::Named(def_id) => {
+                            if let Some(field_def_id) =
+                                this.db()
+                                    .member_def_id((def_id, hir::MemberKind::Field, text))
+                            {
+                                let field_decl_ty = this.db().ty(field_def_id);
+                                this.substitute(place, owner_ty.perm, &base_data, field_decl_ty)
+                            } else {
+                                this.results.record_error(place);
+                                this.error_type()
+                            }
+                        }
+
+                        BaseKind::Error => this.error_type(),
+                    }
+                })
+            }
+        }
+    }
+
+    /// Helper for `check_expression`: Compute the type from a method call.
+    fn compute_method_call_ty(
+        &mut self,
+        expression: hir::Expression,
+        owner_ty: Ty<F>,
+        method_name: hir::Identifier,
+        arguments: Arc<Vec<hir::Expression>>,
+    ) -> Ty<F> {
+        self.with_base_data(expression, owner_ty.base.into(), move |this, base_data| {
+            this.check_method_call(expression, owner_ty, method_name, arguments, base_data)
         })
     }
 
-    fn with_base_data(
-        &mut self,
-        cause: impl hir::HirIndex,
-        base: Base,
-        op: impl FnOnce(&mut Self, BaseData<BaseOnly>) -> Ty<BaseOnly> + 'static,
-    ) -> Ty<BaseOnly> {
-        self.with_base_data(cause.into(), base, op)
-    }
-
-    fn substitute<M>(
-        &mut self,
-        location: impl hir::HirIndex,
-        owner_perm: Erased,
-        owner_base_data: &BaseData<BaseOnly>,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<Declaration, BaseOnly>,
-    {
-        self.substitute(location.into(), owner_perm, owner_base_data, value)
-    }
-
-    /// Records the computed type for an expression, variable, etc.
-    fn record_ty(&mut self, index: impl hir::HirIndex, ty: Ty<BaseOnly>) {
-        let index: hir::MetaIndex = index.into();
-        let old_value = self.results.types.insert(index, ty);
-        assert!(old_value.is_none());
-    }
-
-    /// Lookup the type for a variable.
-    fn variable_ty(&mut self, var: hir::Variable) -> Ty<BaseOnly> {
-        self.results.types[&hir::MetaIndex::from(var)]
-    }
-
-    fn apply_user_perm(&mut self, _perm: hir::Perm, place_ty: Ty<BaseOnly>) -> Ty<BaseOnly> {
-        // In the "erased type check", we don't care about permissions.
-        place_ty
-    }
-
-    fn require_assignable(
+    fn check_method_call(
         &mut self,
         expression: hir::Expression,
-        value_ty: Ty<BaseOnly>,
-        place_ty: Ty<BaseOnly>,
-    ) {
-        BaseOnly::require_assignable(self, expression, value_ty, place_ty)
-    }
+        owner_ty: Ty<F>,
+        method_name: hir::Identifier,
+        arguments: Arc<Vec<hir::Expression>>,
+        base_data: BaseData<F>,
+    ) -> Ty<F> {
+        let BaseData { kind, generics: _ } = base_data;
+        match kind {
+            BaseKind::Named(def_id) => {
+                let text = self.hir[method_name].text;
+                let method_def_id =
+                    match self
+                        .db()
+                        .member_def_id((def_id, hir::MemberKind::Method, text))
+                    {
+                        Some(def_id) => def_id,
+                        None => {
+                            self.results.record_error(expression);
+                            return self.error_type();
+                        }
+                    };
+                let signature_decl = self.db().signature(method_def_id);
+                let signature =
+                    self.substitute(expression, owner_ty.perm, &base_data, signature_decl);
+                if signature.inputs.len() != arguments.len() {
+                    self.results.record_error(expression);
+                }
+                for (&expected_ty, &argument_expr) in signature.inputs.iter().zip(arguments.iter())
+                {
+                    self.check_expression_has_type(expected_ty, argument_expr);
+                }
+                signature.output
+            }
 
-    fn require_boolean(&mut self, expression: hir::Expression, value_ty: Ty<BaseOnly>) {
-        self.equate_types(expression.into(), self.boolean_type(), value_ty)
-    }
-
-    fn least_upper_bound(
-        &mut self,
-        if_expression: hir::Expression,
-        true_ty: Ty<BaseOnly>,
-        false_ty: Ty<BaseOnly>,
-    ) -> Ty<BaseOnly> {
-        BaseOnly::least_upper_bound(self, if_expression, true_ty, false_ty)
-    }
-
-    /// Returns a type used to indicate that an error has been reported.
-    fn error_type(&mut self) -> Ty<BaseOnly> {
-        BaseOnly::error_type(self)
+            BaseKind::Error => self.error_type(),
+        }
     }
 }

@@ -136,6 +136,22 @@ crate struct TypeCheckResults<F: TypeFamily> {
     errors: Vec<Error>,
 }
 
+impl<F: TypeFamily> TypeCheckResults<F> {
+    fn record_ty(&mut self, index: impl Into<hir::MetaIndex>, ty: Ty<F>) {
+        self.types.insert(index.into(), ty);
+    }
+
+    crate fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
+        self.types[&index.into()]
+    }
+
+    fn record_error(&mut self, location: impl Into<hir::MetaIndex>) {
+        self.errors.push(Error {
+            location: location.into(),
+        });
+    }
+}
+
 impl<F: TypeFamily> Default for TypeCheckResults<F> {
     fn default() -> Self {
         Self {

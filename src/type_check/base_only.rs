@@ -1,6 +1,4 @@
 use crate::hir;
-use crate::hir::type_check::ErrorReported;
-use crate::hir::type_check::HirTypeChecker;
 use crate::hir::HirDatabase;
 use crate::ir::DefId;
 use crate::ty;

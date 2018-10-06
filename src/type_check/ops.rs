@@ -52,9 +52,13 @@ where
         F::boolean_type(self)
     }
 
+    pub(super) fn error_type(&self) -> Ty<F> {
+        F::error_type(self)
+    }
+
     pub(super) fn substitute<M>(
         &mut self,
-        location: hir::MetaIndex,
+        location: impl Into<hir::MetaIndex>,
         owner_perm: F::Perm,
         owner_base_data: &BaseData<F>,
         value: M,
@@ -62,7 +66,29 @@ where
     where
         M: Map<Declaration, F>,
     {
-        F::substitute(self, location, owner_perm, owner_base_data, value)
+        F::substitute(self, location.into(), owner_perm, owner_base_data, value)
+    }
+
+    pub(super) fn require_assignable(
+        &mut self,
+        expression: hir::Expression,
+        value_ty: Ty<F>,
+        place_ty: Ty<F>,
+    ) {
+        F::require_assignable(self, expression, value_ty, place_ty)
+    }
+
+    pub(super) fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F> {
+        F::apply_user_perm(self, perm, place_ty)
+    }
+
+    pub(super) fn least_upper_bound(
+        &mut self,
+        if_expression: hir::Expression,
+        true_ty: Ty<F>,
+        false_ty: Ty<F>,
+    ) -> Ty<F> {
+        F::least_upper_bound(self, if_expression, true_ty, false_ty)
     }
 
     /// If `base` can be mapped to a concrete `BaseData`,
@@ -72,10 +98,11 @@ where
     /// invoked and the type variable will be unified.
     pub(super) fn with_base_data(
         &mut self,
-        cause: hir::MetaIndex,
+        cause: impl Into<hir::MetaIndex>,
         base: F::TcBase,
         op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
     ) -> Ty<F> {
+        let cause = cause.into();
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => op(self, data),
 
