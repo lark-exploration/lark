@@ -72,24 +72,17 @@ crate struct FnBody {
     crate identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
 }
 
-/// The HIR has a number of *kinds* of indices that
-/// reach into it. This enum brings them together into
-/// a sort of "meta index". It's useful sometimes.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-crate enum MetaIndex {
-    Expression(Expression),
-    Place(Place),
-    Perm(Perm),
-    Variable(Variable),
-    Identifier(Identifier),
-}
-
+/// Trait implemented by the various kinds of indices that reach into
+/// the HIR; allows us to grab the vector that they correspond to.
 crate trait HirIndex: U32Index + Into<MetaIndex> {
     type Data;
 
     fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>>;
 }
 
+/// Permit indexing the HIR by any of the various index types.
+/// Returns the underlying data from the index, skipping over the
+/// span.
 impl<I> std::ops::Index<I> for FnBody
 where
     I: HirIndex,
@@ -101,41 +94,74 @@ where
     }
 }
 
+/// Trait for the various types for which a span can be had --
+/// corresponds to all the index types plus `MetaIndex`.
+crate trait SpanIndex {
+    fn span_from(self, fn_body: &FnBody) -> Span;
+}
+
 impl FnBody {
     /// Get the span for the given part of the HIR.
-    crate fn span<I>(&self, index: I) -> Span
-    where
-        I: HirIndex,
-    {
-        I::index_vec(self)[index].span
+    crate fn span(&self, index: impl SpanIndex) -> Span {
+        index.span_from(self)
     }
 }
 
-/// Declares impls for each kind of HIR index; this permits
-/// you to do `hir[foo]` as well as `MetaIndex::from(foo)`.
-macro_rules! hir_index_impls {
-    ($index_ty:ident, $data_ty:ty, $field:ident) => {
-        impl HirIndex for $index_ty {
-            type Data = $data_ty;
+impl<I: HirIndex> SpanIndex for I {
+    fn span_from(self, fn_body: &FnBody) -> Span {
+        I::index_vec(fn_body)[self].span
+    }
+}
 
-            fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>> {
-                &hir.$field
+/// Declares impls for each kind of HIR index as well as the
+/// `hir::MetaIndex` enum.
+macro_rules! define_meta_index {
+    ($(($index_ty:ident, $data_ty:ty, $field:ident),)*) => {
+        $(
+            impl HirIndex for $index_ty {
+                type Data = $data_ty;
+
+                fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>> {
+                    &hir.$field
+                }
             }
+
+            impl From<$index_ty> for MetaIndex {
+                fn from(value: $index_ty) -> MetaIndex {
+                    MetaIndex::$index_ty(value)
+                }
+            }
+        )*
+
+        /// The HIR has a number of *kinds* of indices that
+        /// reach into it. This enum brings them together into
+        /// a sort of "meta index". It's useful sometimes.
+        #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        crate enum MetaIndex {
+            $(
+                $index_ty($index_ty),
+            )*
         }
 
-        impl From<$index_ty> for MetaIndex {
-            fn from(value: $index_ty) -> MetaIndex {
-                MetaIndex::$index_ty(value)
+        impl SpanIndex for MetaIndex {
+            fn span_from(self, fn_body: &FnBody) -> Span {
+                match self {
+                    $(
+                        MetaIndex::$index_ty(index) => index.span_from(fn_body),
+                    )*
+                }
             }
         }
     };
 }
 
-hir_index_impls!(Expression, ExpressionData, expressions);
-hir_index_impls!(Place, PlaceData, places);
-hir_index_impls!(Perm, PermData, perms);
-hir_index_impls!(Variable, VariableData, variables);
-hir_index_impls!(Identifier, IdentifierData, identifiers);
+define_meta_index! {
+    (Expression, ExpressionData, expressions),
+    (Place, PlaceData, places),
+    (Perm, PermData, perms),
+    (Variable, VariableData, variables),
+    (Identifier, IdentifierData, identifiers),
+}
 
 index_type! {
     crate struct Expression { .. }
