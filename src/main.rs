@@ -32,6 +32,7 @@ mod ir;
 mod map;
 mod parser;
 mod parser2;
+mod task_manager;
 mod tests;
 mod ty;
 mod type_check;
@@ -48,7 +49,16 @@ fn run(_filename: &str) {}
 fn repl() {}
 
 fn ide() {
-    lsp_serve();
+    let mut task_manager = task_manager::TaskManager::new();
+
+    task_manager.start_type_checker();
+    task_manager.start_lsp_server();
+
+    let send_to_manager_channel = task_manager.send_to_manager.clone();
+    let join_handle = task_manager.start();
+
+    lsp_serve(send_to_manager_channel);
+    let _ = join_handle.join();
 }
 
 fn main() {

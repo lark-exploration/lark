@@ -1,7 +1,11 @@
+use crate::task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager};
 use serde::{Deserialize, Serialize};
 use serde_derive::{Deserialize, Serialize};
 use std::io;
 use std::io::prelude::{Read, Write};
+use std::sync::mpsc::Sender;
+
+pub use languageserver_types::Position;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method")]
@@ -57,7 +61,7 @@ impl<T> LSPResponse<T> {
     }
 }
 
-fn send_result<T: Serialize>(id: usize, result: T) {
+fn sendd_result<T: Serialize>(id: usize, result: T) {
     let response = LSPResponse::new(id, result);
     let response_raw = serde_json::to_string(&response).unwrap();
 
@@ -66,7 +70,92 @@ fn send_result<T: Serialize>(id: usize, result: T) {
     let _ = io::stdout().flush();
 }
 
-pub fn lsp_serve() {
+// The LSP service is split into two parts:
+//   * The server, which handles incoming requests from the IDE
+//   * The responder, which sends out results when they're ready
+// The server sends messages *to* the task manager for work that
+// needs to be done. The responder receives messages *from* the
+// task manager for work that has been accomplished.
+pub struct LspResponder;
+
+impl Actor for LspResponder {
+    type InMessage = LspResponse;
+    type OutMessage = ();
+
+    fn startup(&mut self, _: Box<dyn Fn(Self::OutMessage) -> () + Send>) {}
+
+    fn shutdown(&mut self) {}
+
+    fn receive_message(&mut self, message: Self::InMessage) {
+        match message {
+            LspResponse::Type(id, ty) => {
+                let result = languageserver_types::Hover {
+                    contents: languageserver_types::HoverContents::Scalar(
+                        languageserver_types::MarkedString::from_markdown(ty),
+                    ),
+                    range: None,
+                };
+
+                sendd_result(id, result);
+            }
+            LspResponse::Completions(id, completions) => {
+                let mut completion_items = vec![];
+
+                for completion in completions {
+                    completion_items.push(languageserver_types::CompletionItem::new_simple(
+                        completion.0,
+                        completion.1,
+                    ));
+                }
+
+                let result = languageserver_types::CompletionList {
+                    is_incomplete: false,
+                    items: completion_items,
+                };
+
+                sendd_result(id, result);
+            }
+            LspResponse::Initialized(id) => {
+                let result = languageserver_types::InitializeResult {
+                    capabilities: languageserver_types::ServerCapabilities {
+                        text_document_sync: Some(
+                            languageserver_types::TextDocumentSyncCapability::Kind(
+                                languageserver_types::TextDocumentSyncKind::Incremental,
+                            ),
+                        ),
+                        hover_provider: Some(true),
+                        completion_provider: Some(languageserver_types::CompletionOptions {
+                            resolve_provider: Some(true),
+                            trigger_characters: Some(vec![".".into()]),
+                        }),
+                        signature_help_provider: None,
+                        definition_provider: None,
+                        type_definition_provider: None,
+                        implementation_provider: None,
+                        references_provider: None,
+                        document_highlight_provider: None,
+                        document_symbol_provider: None,
+                        workspace_symbol_provider: None,
+                        code_action_provider: None,
+                        code_lens_provider: None,
+                        document_formatting_provider: None,
+                        document_range_formatting_provider: None,
+                        document_on_type_formatting_provider: None,
+                        rename_provider: None,
+                        color_provider: None,
+                        folding_range_provider: None,
+                        execute_command_provider: None,
+                        workspace: None,
+                    },
+                };
+
+                sendd_result(id, result);
+            }
+        }
+    }
+}
+
+pub fn lsp_serve(send_to_manager_channel: Sender<task_manager::MsgToManager>) {
     loop {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
@@ -78,48 +167,14 @@ pub fn lsp_serve() {
                     let _ = io::stdin().read_exact(&mut buffer);
 
                     let buffer_string = String::from_utf8(buffer).unwrap();
-                    eprintln!("command: {}", buffer_string);
+                    //eprintln!("command: {}", buffer_string);
 
                     let command = serde_json::from_str::<LSPCommand>(&buffer_string);
 
                     match command {
                         Ok(LSPCommand::initialize { id, .. }) => {
-                            let result = languageserver_types::InitializeResult {
-                                capabilities: languageserver_types::ServerCapabilities {
-                                    text_document_sync: Some(
-                                        languageserver_types::TextDocumentSyncCapability::Kind(
-                                            languageserver_types::TextDocumentSyncKind::Incremental,
-                                        ),
-                                    ),
-                                    hover_provider: Some(true),
-                                    completion_provider: Some(
-                                        languageserver_types::CompletionOptions {
-                                            resolve_provider: Some(true),
-                                            trigger_characters: Some(vec![".".into()]),
-                                        },
-                                    ),
-                                    signature_help_provider: None,
-                                    definition_provider: None,
-                                    type_definition_provider: None,
-                                    implementation_provider: None,
-                                    references_provider: None,
-                                    document_highlight_provider: None,
-                                    document_symbol_provider: None,
-                                    workspace_symbol_provider: None,
-                                    code_action_provider: None,
-                                    code_lens_provider: None,
-                                    document_formatting_provider: None,
-                                    document_range_formatting_provider: None,
-                                    document_on_type_formatting_provider: None,
-                                    rename_provider: None,
-                                    color_provider: None,
-                                    folding_range_provider: None,
-                                    execute_command_provider: None,
-                                    workspace: None,
-                                },
-                            };
-
-                            send_result(id, result);
+                            let _ = send_to_manager_channel
+                                .send(MsgToManager::LspRequest(LspRequest::Initialize(id)));
                         }
                         Ok(LSPCommand::initialized) => {
                             eprintln!("Initialized received");
@@ -132,35 +187,19 @@ pub fn lsp_serve() {
                         }
                         Ok(LSPCommand::hover { id, params }) => {
                             eprintln!("hover: id={} {:#?}", id, params);
-                            let result = languageserver_types::Hover {
-                                contents: languageserver_types::HoverContents::Scalar(
-                                    languageserver_types::MarkedString::from_markdown(format!(
-                                        "This *is* a hover at {:?}",
-                                        params.position
-                                    )),
-                                ),
-                                range: None,
-                            };
 
-                            send_result(id, result);
+                            //FIXME: this is using a fake position
+                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
+                                LspRequest::TypeForPos(id, params.position.clone()),
+                            ));
                         }
                         Ok(LSPCommand::completion { id, params }) => {
                             eprintln!("completion: id={} {:#?}", id, params);
-                            let result = languageserver_types::CompletionList {
-                                is_incomplete: false,
-                                items: vec![
-                                    languageserver_types::CompletionItem::new_simple(
-                                        "bar".into(),
-                                        "the first completion item".into(),
-                                    ),
-                                    languageserver_types::CompletionItem::new_simple(
-                                        "foo".into(),
-                                        "the second completion item".into(),
-                                    ),
-                                ],
-                            };
 
-                            send_result(id, result);
+                            //FIXME: this is using a fake position
+                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
+                                LspRequest::Completion(id, params.position.clone()),
+                            ));
                         }
                         Ok(LSPCommand::completionItemResolve { id, params }) => {
                             //Note: this is here in case we need it, though it looks like it's only used
