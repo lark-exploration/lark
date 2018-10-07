@@ -120,6 +120,7 @@ pub struct TaskManager {
 
     //Handles when we shutdown threads,
     handle_for_type_checker: Option<std::thread::JoinHandle<()>>,
+    handle_for_lsp_responder: Option<std::thread::JoinHandle<()>>,
 }
 
 impl TaskManager {
@@ -133,6 +134,7 @@ impl TaskManager {
             send_to_type_checker: None,
             send_to_lsp_responder: None,
             handle_for_type_checker: None,
+            handle_for_lsp_responder: None,
         }
     }
 
@@ -145,85 +147,68 @@ impl TaskManager {
                     match next_step {
                         RecipeStep::GetDefIdForPosition => {
                             if let Ok(position) = argument.downcast::<Position>() {
-                                //let position = (*position).clone();
-                                match &mut self.send_to_type_checker {
-                                    Some(x) => x
-                                        .send(MsgFromManager::Message(TypeMessage::DefIdForPos(
-                                            task_id, *position,
-                                        )))
-                                        .unwrap(),
-                                    None => {}
-                                }
+                                self.send_to_type_checker.as_ref().map(|x| {
+                                    x.send(MsgFromManager::Message(TypeMessage::DefIdForPos(
+                                        task_id, *position,
+                                    )))
+                                    .unwrap()
+                                });
                             } else {
                                 unimplemented!("Internal error: malformed GetDefIdForPosition");
                             }
                         }
                         RecipeStep::GetTypeForDefId => {
                             if let Ok(def_id) = argument.downcast::<DefId>() {
-                                match &mut self.send_to_type_checker {
-                                    Some(x) => x
-                                        .send(MsgFromManager::Message(TypeMessage::TypeForDefId(
-                                            task_id, *def_id,
-                                        )))
-                                        .unwrap(),
-                                    None => {}
-                                }
+                                self.send_to_type_checker.as_ref().map(|x| {
+                                    x.send(MsgFromManager::Message(TypeMessage::TypeForDefId(
+                                        task_id, *def_id,
+                                    )))
+                                    .unwrap()
+                                });
                             } else {
                                 unimplemented!("Internal error: malformed GetDefIdForPosition");
                             }
                         }
                         RecipeStep::GetCompletionsForDefId => {
                             if let Ok(def_id) = argument.downcast::<DefId>() {
-                                match &mut self.send_to_type_checker {
-                                    Some(x) => x
-                                        .send(MsgFromManager::Message(
-                                            TypeMessage::CompletionsForDefId(task_id, *def_id),
-                                        ))
-                                        .unwrap(),
-                                    None => {}
-                                }
+                                self.send_to_type_checker.as_ref().map(|x| {
+                                    x.send(MsgFromManager::Message(
+                                        TypeMessage::CompletionsForDefId(task_id, *def_id),
+                                    ))
+                                    .unwrap()
+                                });
                             } else {
                                 unimplemented!("Internal error: malformed GetCompletionsForDefId");
                             }
                         }
                         RecipeStep::RespondWithType => {
                             if let Ok(ty) = argument.downcast::<String>() {
-                                match &mut self.send_to_lsp_responder {
-                                    Some(x) => x
-                                        .send(MsgFromManager::Message(LspResponse::Type(
-                                            task_id, *ty,
-                                        )))
-                                        .unwrap(),
-                                    None => {}
-                                }
+                                self.send_to_lsp_responder.as_ref().map(|x| {
+                                    x.send(MsgFromManager::Message(LspResponse::Type(task_id, *ty)))
+                                        .unwrap()
+                                });
                             } else {
                                 unimplemented!("Internal error: malformed RespondWithCompletion");
                             }
                         }
                         RecipeStep::RespondWithCompletions => {
                             if let Ok(completions) = argument.downcast::<Vec<(String, String)>>() {
-                                match &mut self.send_to_lsp_responder {
-                                    Some(x) => x
-                                        .send(MsgFromManager::Message(LspResponse::Completions(
-                                            task_id,
-                                            *completions,
-                                        )))
-                                        .unwrap(),
-                                    None => {}
-                                }
+                                self.send_to_lsp_responder.as_ref().map(|x| {
+                                    x.send(MsgFromManager::Message(LspResponse::Completions(
+                                        task_id,
+                                        *completions,
+                                    )))
+                                    .unwrap()
+                                });
                             } else {
                                 unimplemented!("Internal error: malformed RespondWithCompletion");
                             }
                         }
                         RecipeStep::RespondWithInitialized => {
-                            match &mut self.send_to_lsp_responder {
-                                Some(x) => x
-                                    .send(MsgFromManager::Message(LspResponse::Initialized(
-                                        task_id,
-                                    )))
-                                    .unwrap(),
-                                None => {}
-                            }
+                            self.send_to_lsp_responder.as_ref().map(|x| {
+                                x.send(MsgFromManager::Message(LspResponse::Initialized(task_id)))
+                                    .unwrap()
+                            });
                         }
                     }
                 }
@@ -303,6 +288,7 @@ impl TaskManager {
     fn stop(self) {
         // Join all the threads
         let _ = self.handle_for_type_checker.unwrap().join();
+        let _ = self.handle_for_lsp_responder.unwrap().join();
     }
 
     pub fn start_type_checker(&mut self) {
@@ -325,7 +311,7 @@ impl TaskManager {
 
         let (actor_tx, handle) = Self::spawn_actor(lsp_responder);
         self.send_to_lsp_responder = Some(actor_tx);
-        self.handle_for_type_checker = Some(handle);
+        self.handle_for_lsp_responder = Some(handle);
     }
 
     fn spawn_actor<T: Actor + Send + 'static>(
@@ -338,7 +324,7 @@ impl TaskManager {
                 Ok(MsgFromManager::Message(message)) => actor.receive_message(message),
                 Ok(MsgFromManager::Shutdown) => break,
                 Err(_) => {
-                    eprintln!("Failure during toplevel Message receive");
+                    eprintln!("Failure during top-level message receive");
                     break;
                 }
             }
