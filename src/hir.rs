@@ -65,10 +65,27 @@ crate struct Member {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct FnBody {
+    /// List of arguments to the function. The type of each argument
+    /// is given by the function signature (which can be separately queried).
+    crate arguments: Vec<Variable>,
+
+    /// Index of the root expression in the function body. Its result
+    /// will be returned.
+    crate root_expression: Expression,
+
+    /// Map each expression index to its associated data.
     crate expressions: IndexVec<Expression, Spanned<ExpressionData>>,
+
+    /// Map each place index to its associated data.
     crate places: IndexVec<Place, Spanned<PlaceData>>,
+
+    /// Map each perm index to its associated data.
     crate perms: IndexVec<Perm, Spanned<PermData>>,
+
+    /// Map each variable index to its associated data.
     crate variables: IndexVec<Variable, Spanned<VariableData>>,
+
+    /// Map each identifier index to its associated data.
     crate identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
 }
 
