@@ -12,6 +12,7 @@ crate mod base_inferred;
 crate mod base_only;
 crate mod debug;
 crate mod declaration;
+crate mod identity;
 crate mod interners;
 crate mod map_family;
 crate mod substitute;

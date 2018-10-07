@@ -124,7 +124,9 @@ where
                                     .member_def_id((def_id, hir::MemberKind::Field, text))
                             {
                                 let field_decl_ty = this.db().ty(field_def_id);
-                                this.substitute(place, owner_ty.perm, &base_data, field_decl_ty)
+                                let field_ty =
+                                    this.substitute(place, &base_data.generics, field_decl_ty);
+                                this.apply_owner_perm(place, owner_ty.perm, field_ty)
                             } else {
                                 this.results.record_error(place);
                                 this.error_type()
@@ -154,7 +156,7 @@ where
     fn check_method_call(
         &mut self,
         expression: hir::Expression,
-        owner_ty: Ty<F>,
+        _owner_ty: Ty<F>,
         method_name: hir::Identifier,
         arguments: Arc<Vec<hir::Expression>>,
         base_data: BaseData<F>,
@@ -174,9 +176,11 @@ where
                             return self.error_type();
                         }
                     };
+
+                // FIXME -- what role does `owner_ty` place here??
+
                 let signature_decl = self.db().signature(method_def_id);
-                let signature =
-                    self.substitute(expression, owner_ty.perm, &base_data, signature_decl);
+                let signature = self.substitute(expression, &base_data.generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
                     self.results.record_error(expression);
                 }

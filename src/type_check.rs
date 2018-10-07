@@ -92,12 +92,20 @@ trait TypeCheckFamily: TypeFamily {
     fn substitute<M>(
         this: &mut impl TypeCheckerFields<Self>,
         location: hir::MetaIndex,
-        owner_perm: Self::Perm,
-        owner_base_data: &BaseData<Self>,
+        generics: &Generics<Self>,
         value: M,
     ) -> M::Output
     where
         M: Map<Declaration, Self>;
+
+    fn apply_owner_perm<M>(
+        this: &mut impl TypeCheckerFields<Self>,
+        location: impl Into<hir::MetaIndex>,
+        owner_perm: Self::Perm,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Self, Self>;
 }
 
 trait TypeCheckerFields<F: TypeCheckFamily>: HasTyInternTables {

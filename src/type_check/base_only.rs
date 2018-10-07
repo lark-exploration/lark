@@ -4,6 +4,7 @@ use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
 use crate::ty::declaration::Declaration;
+use crate::ty::identity::Identity;
 use crate::ty::interners::HasTyInternTables;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::Map;
@@ -125,13 +126,24 @@ impl TypeCheckFamily for BaseOnly {
     fn substitute<M>(
         this: &mut impl TypeCheckerFields<Self>,
         _location: hir::MetaIndex,
-        _owner_perm: Erased,
-        owner_base_data: &BaseData<Self>,
+        generics: &Generics<Self>,
         value: M,
     ) -> M::Output
     where
         M: Map<Declaration, Self>,
     {
-        value.map(&mut Substitution::new(this, &owner_base_data.generics))
+        value.map(&mut Substitution::new(this, generics))
+    }
+
+    fn apply_owner_perm<M>(
+        this: &mut impl TypeCheckerFields<Self>,
+        _location: impl Into<hir::MetaIndex>,
+        _owner_perm: Erased,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Self, Self>,
+    {
+        value.map(&mut Identity::new(this.db()))
     }
 }

@@ -4,6 +4,7 @@ use crate::ty::declaration::Declaration;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::Map;
 use crate::ty::BaseData;
+use crate::ty::Generics;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::type_check::TypeCheckDatabase;
@@ -59,14 +60,25 @@ where
     pub(super) fn substitute<M>(
         &mut self,
         location: impl Into<hir::MetaIndex>,
-        owner_perm: F::Perm,
-        owner_base_data: &BaseData<F>,
+        generics: &Generics<F>,
         value: M,
     ) -> M::Output
     where
         M: Map<Declaration, F>,
     {
-        F::substitute(self, location.into(), owner_perm, owner_base_data, value)
+        F::substitute(self, location.into(), generics, value)
+    }
+
+    pub(super) fn apply_owner_perm<M>(
+        &mut self,
+        location: impl Into<hir::MetaIndex>,
+        owner_perm: F::Perm,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<F, F>,
+    {
+        F::apply_owner_perm(self, location, owner_perm, value)
     }
 
     pub(super) fn require_assignable(

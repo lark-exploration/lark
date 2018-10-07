@@ -2,7 +2,7 @@ use crate::ty::interners::HasTyInternTables;
 use crate::ty::{self, TypeFamily};
 use std::sync::Arc;
 
-crate trait Map<S: TypeFamily, T: TypeFamily> {
+crate trait Map<S: TypeFamily, T: TypeFamily>: Clone {
     type Output;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output;
