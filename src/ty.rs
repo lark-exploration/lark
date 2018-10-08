@@ -94,7 +94,7 @@ impl<T> InferVarOr<T> {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Placeholder {
     crate universe: Universe,
-    crate index: BoundVar,
+    crate bound_var: BoundVar,
 }
 
 /// A "universe" is a set of names -- the root universe (U(0)) contains all
@@ -157,6 +157,36 @@ impl<F: TypeFamily> Generics<F> {
         match &self.elements {
             Some(e) => &e[..],
             None => &[],
+        }
+    }
+
+    /// Append an item to this vector; if this set of generics is
+    /// shared, this will clone the contents so that we own them
+    /// privately. (Effectively generic lists are a copy-on-write data
+    /// structure.)
+    crate fn push(&mut self, generic: Generic<F>) {
+        self.extend(std::iter::once(generic));
+    }
+}
+
+/// Append items to this generics, cloning if it is shared with
+/// others. (Generics are effectively a simple persistent vector.)
+impl<F> std::iter::Extend<Generic<F>> for Generics<F>
+where
+    F: TypeFamily,
+{
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = Generic<F>>,
+    {
+        match &mut self.elements {
+            None => {
+                self.elements = Some(Arc::new(iter.into_iter().collect()));
+            }
+
+            Some(arc_vec) => {
+                Arc::make_mut(arc_vec).extend(iter);
+            }
         }
     }
 }

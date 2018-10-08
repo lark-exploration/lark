@@ -82,6 +82,10 @@ impl TypeCheckFamily for BaseOnly {
         }
     }
 
+    fn own_perm(_this: &impl TypeCheckerFields<Self>) -> Erased {
+        Erased
+    }
+
     fn error_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
         Ty {
             perm: Erased,

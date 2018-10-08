@@ -1,15 +1,21 @@
 use crate::hir;
+use crate::ir::DefId;
 use crate::ty;
 use crate::ty::declaration::Declaration;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::Map;
 use crate::ty::BaseData;
+use crate::ty::GenericDeclarations;
+use crate::ty::GenericKind;
 use crate::ty::Generics;
+use crate::ty::Placeholder;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
+use crate::ty::Universe;
 use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
+use crate::type_check::UniverseBinder;
 use crate::unify::InferVar;
 use crate::unify::Inferable;
 use generational_arena::Arena;
@@ -94,6 +100,10 @@ where
         F::apply_user_perm(self, perm, place_ty)
     }
 
+    pub(super) fn own_perm(&mut self) -> F::Perm {
+        F::own_perm(self)
+    }
+
     pub(super) fn least_upper_bound(
         &mut self,
         if_expression: hir::Expression,
@@ -101,6 +111,45 @@ where
         false_ty: Ty<F>,
     ) -> Ty<F> {
         F::least_upper_bound(self, if_expression, true_ty, false_ty)
+    }
+
+    pub(super) fn placeholders_for(&mut self, def_id: DefId) -> Generics<F> {
+        let GenericDeclarations {
+            parent_item,
+            declarations,
+        } = &*self.db.generic_declarations(def_id);
+
+        let mut generics = match parent_item {
+            Some(def_id) => self.placeholders_for(*def_id),
+            None => Generics::empty(),
+        };
+
+        if !declarations.is_empty() {
+            let universe = self.fresh_universe(UniverseBinder::FromItem(def_id));
+            generics.extend(
+                declarations
+                    .indices()
+                    .map(|bound_var| Placeholder {
+                        universe,
+                        bound_var,
+                    })
+                    .map(|p| {
+                        GenericKind::Ty(Ty {
+                            perm: self.own_perm(),
+                            base: F::intern_base_data(self, BaseData::from_placeholder(p)),
+                        })
+                    }),
+            );
+        }
+
+        generics
+    }
+
+    /// Create a fresh universe (one that did not exist before) with
+    /// the given binder. This universe will be able to see names
+    /// from all previously existing universes.
+    fn fresh_universe(&mut self, binder: UniverseBinder) -> Universe {
+        self.universe_binders.push(binder)
     }
 
     /// If `base` can be mapped to a concrete `BaseData`,

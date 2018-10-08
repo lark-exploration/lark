@@ -1,6 +1,7 @@
 use codespan_reporting::Diagnostic;
 use crate::hir;
 use crate::hir::HirDatabase;
+use crate::indices::IndexVec;
 use crate::ir::DefId;
 use crate::map::FxIndexMap;
 use crate::parser::Span;
@@ -14,6 +15,7 @@ use crate::ty::TypeFamily;
 use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckResults;
 use crate::type_check::TypeChecker;
+use crate::type_check::UniverseBinder;
 use crate::unify::InferVar;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
@@ -32,6 +34,7 @@ crate fn base_type_check(
         ops_blocked: FxIndexMap::default(),
         unify: UnificationTable::new(db.ty_intern_tables().clone()),
         results: TypeCheckResults::default(),
+        universe_binders: IndexVec::from(vec![UniverseBinder::Root]),
     };
     drop(base_type_checker); // FIXME
     unimplemented!()
