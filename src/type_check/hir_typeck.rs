@@ -1,6 +1,5 @@
 use crate::hir;
 use crate::hir::HirDatabase;
-use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
 use crate::ty::declaration::Declaration;
@@ -20,6 +19,7 @@ use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::type_check::TypeCheckerFields;
 use crate::unify::{InferVar, UnificationTable};
+use ir::DefId;
 use std::sync::Arc;
 
 impl<DB, F> TypeChecker<'_, DB, F>

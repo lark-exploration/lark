@@ -1,6 +1,6 @@
-use crate::codegen::{codegen, RustFile};
-use crate::eval::eval_context;
-use crate::ir::{
+use codegen::{codegen, RustFile};
+use eval::eval_context;
+use ir::{
     builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
     Rvalue, StatementKind, Struct, TerminatorKind,
 };

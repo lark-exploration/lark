@@ -1,6 +1,6 @@
-use crate::ir::{
-    builtin_type, BasicBlock, BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand,
-    Place, Rvalue, Statement, StatementKind, Struct, Terminator, TerminatorKind, Ty, VarId,
+use ir::{
+    builtin_type, BasicBlock, BinOp, BuiltinFn, Context, Definition, Function, Operand, Place,
+    Rvalue, StatementKind, Struct, Terminator, TerminatorKind, Ty, VarId,
 };
 
 pub struct RustFile {

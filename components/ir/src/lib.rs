@@ -26,7 +26,7 @@ pub struct Function {
 }
 
 impl Function {
-    crate fn new(return_ty: Ty, mut args: Vec<LocalDecl>, name: String) -> Function {
+    pub fn new(return_ty: Ty, mut args: Vec<LocalDecl>, name: String) -> Function {
         let arg_count = args.len();
         let mut local_decls = vec![LocalDecl::new_return_place(return_ty)];
         local_decls.append(&mut args);
@@ -39,7 +39,7 @@ impl Function {
         }
     }
 
-    crate fn new_temp(&mut self, ty: Ty) -> VarId {
+    pub fn new_temp(&mut self, ty: Ty) -> VarId {
         self.local_decls.push(LocalDecl::new_temp(ty));
         self.local_decls.len() - 1
     }
@@ -56,7 +56,7 @@ pub struct Struct {
 }
 
 impl Struct {
-    crate fn field(mut self, name: String, ty: Ty) -> Self {
+    pub fn field(mut self, name: String, ty: Ty) -> Self {
         self.fields.push(Field { ty, name });
         self
     }
@@ -71,7 +71,7 @@ impl Struct {
 
 #[derive(Debug)]
 pub struct Field {
-    crate ty: Ty,
+    pub ty: Ty,
     pub name: String,
 }
 
@@ -160,23 +160,23 @@ pub enum BinOp {
 
 #[derive(Debug)]
 pub struct LocalDecl {
-    crate ty: Ty,
+    pub ty: Ty,
     pub name: Option<String>,
 }
 
 impl LocalDecl {
-    crate fn new_return_place(return_ty: Ty) -> LocalDecl {
+    pub fn new_return_place(return_ty: Ty) -> LocalDecl {
         LocalDecl {
             ty: return_ty,
             name: None,
         }
     }
 
-    crate fn new_temp(ty: Ty) -> LocalDecl {
+    pub fn new_temp(ty: Ty) -> LocalDecl {
         LocalDecl { ty, name: None }
     }
 
-    crate fn new(ty: Ty, name: Option<String>) -> LocalDecl {
+    pub fn new(ty: Ty, name: Option<String>) -> LocalDecl {
         LocalDecl { ty, name }
     }
 }
@@ -225,147 +225,11 @@ impl Context {
         self.definitions.len() - 1
     }
 
-    crate fn simple_type_for_def_id(&self, def_id: DefId) -> Ty {
+    pub fn simple_type_for_def_id(&self, def_id: DefId) -> Ty {
         Ty { def_id: def_id }
     }
 
-    crate fn get_def_id_for_ty(&self, ty: Ty) -> Option<DefId> {
+    pub fn get_def_id_for_ty(&self, ty: Ty) -> Option<DefId> {
         Some(ty.def_id)
     }
 }
-
-/*
-use crate::indices::{Index, IndexVec};
-
-pub type DefId = usize;
-pub type VarId = usize;
-
-struct BasicBlock;
-
-#[derive(Debug)]
-pub struct Variable {
-    pub ty: DefId,
-    pub name: String,
-}
-
-#[derive(Debug)]
-pub struct Param {
-    pub ty: DefId,
-    pub name: String,
-    pub var_id: VarId,
-}
-
-#[derive(Debug)]
-pub struct Struct {
-    pub fields: Vec<Variable>,
-    pub name: String,
-}
-
-impl Struct {
-    pub fn field(mut self, name: String, ty: DefId) -> Self {
-        self.fields.push(Variable { ty, name });
-        self
-    }
-
-    pub fn new(name: String) -> Self {
-        Struct {
-            name,
-            fields: vec![],
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Function {
-    pub params: Vec<Param>,
-    pub body: Vec<Command>,
-    pub ret_ty: DefId,
-    pub name: String,
-    pub vars: Vec<Variable>,
-}
-
-impl Function {
-    pub fn param(mut self, name: String, ty: DefId) -> Self {
-        self.vars.push(Variable {
-            ty,
-            name: name.clone(),
-        });
-        let var_id = self.vars.len() - 1;
-        self.params.push(Param { ty, name, var_id });
-        self
-    }
-
-    pub fn new(name: String, ret_ty: DefId) -> Function {
-        Function {
-            params: vec![],
-            body: vec![],
-            ret_ty,
-            name,
-            vars: vec![],
-        }
-    }
-}
-
-pub mod builtin_type {
-    #[allow(unused)]
-    pub const UNKNOWN: usize = 0;
-    pub const VOID: usize = 1;
-    pub const I32: usize = 2;
-    pub const STRING: usize = 3;
-    pub const ERROR: usize = 100;
-}
-
-#[derive(Debug)]
-pub enum BuiltinFn {
-    StringInterpolate,
-}
-
-#[derive(Debug)]
-pub enum Definition {
-    Builtin,
-    BuiltinFn(BuiltinFn),
-    Fn(Function),
-    Struct(Struct),
-    Borrow(DefId),
-    #[allow(unused)]
-    Move(DefId),
-}
-
-#[derive(Debug)]
-pub enum Command {
-    VarUse(VarId),
-    VarDeclWithInit(VarId),
-    ConstInt(i32),
-    ConstString(String),
-    Call(DefId),
-    #[allow(unused)]
-    Add,
-    Sub,
-    Dot(String),
-    ReturnLastStackValue,
-    DebugPrint,
-}
-
-pub struct Context {
-    pub definitions: Vec<Definition>,
-}
-
-impl Context {
-    pub fn new() -> Context {
-        let mut definitions = vec![];
-
-        for _ in 0..(builtin_type::ERROR + 1) {
-            definitions.push(Definition::Builtin); // UNKNOWN
-        }
-
-        definitions.push(Definition::BuiltinFn(BuiltinFn::StringInterpolate));
-
-        Context { definitions }
-    }
-
-    pub fn add_definition(&mut self, def: Definition) -> usize {
-        self.definitions.push(def);
-        self.definitions.len() - 1
-    }
-}
-*/

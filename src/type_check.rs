@@ -3,7 +3,6 @@
 use codespan_reporting::Diagnostic;
 use crate::hir;
 use crate::indices::IndexVec;
-use crate::ir::DefId;
 use crate::map::FxIndexMap;
 use crate::parser::Span;
 use crate::ty;
@@ -22,6 +21,7 @@ use crate::unify::InferVar;
 use crate::unify::Inferable;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
+use ir::DefId;
 use std::sync::Arc;
 
 mod base_only;

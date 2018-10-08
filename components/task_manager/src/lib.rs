@@ -1,9 +1,10 @@
+use languageserver_types::Position;
+
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::thread::{self, JoinHandle};
+use std::thread;
 
-use crate::ide::{LspResponder, Position};
-use crate::ir::DefId;
+use ir::DefId;
 
 type TaskId = usize;
 

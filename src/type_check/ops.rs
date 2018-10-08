@@ -1,5 +1,4 @@
 use crate::hir;
-use crate::ir::DefId;
 use crate::ty;
 use crate::ty::declaration::Declaration;
 use crate::ty::interners::TyInternTables;
@@ -19,6 +18,7 @@ use crate::type_check::UniverseBinder;
 use crate::unify::InferVar;
 use crate::unify::Inferable;
 use generational_arena::Arena;
+use ir::DefId;
 
 #[derive(Copy, Clone, Debug)]
 pub(super) struct OpIndex {
