@@ -70,6 +70,37 @@ impl<T> InferVarOr<T> {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate enum PlaceholderOr<T> {
+    Placeholder(Placeholder),
+    Known(T),
+}
+
+/// A "placeholder" represents a dummy type (or permission, etc) meant to represent
+/// "any type". It is used when you are "inside" a "forall" binder -- so, for example,
+/// when we are type-checking a function like `fn foo<T>`, the `T` is represented by
+/// a placeholder.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+crate struct Placeholder {
+    crate universe: Universe,
+    crate index: BoundVar,
+}
+
+/// A "universe" is a set of names -- the root universe (U(0)) contains all
+/// the "global names"; each time we traverse into a binder, we instantiate a
+/// new universe (e.g., U(1)) that can see all things from lower universes
+/// as well as some new placeholders.
+index_type! {
+    crate struct Universe {
+        debug_name["U"],
+        ..
+    }
+}
+
+impl Universe {
+    crate const ROOT: Universe = Universe::from_u32(0);
+}
+
 /// A "bound variable" refers to one of the generic type parameters in scope
 /// within a declaration. So, for example, if you have `struct Foo<T> { x: T }`,
 /// then the bound var #0 would be `T`.
