@@ -1,3 +1,4 @@
+use crate::ir::DefId;
 use crate::ty::interners::HasTyInternTables;
 use crate::ty::{self, TypeFamily};
 use std::sync::Arc;
@@ -10,6 +11,8 @@ crate trait Map<S: TypeFamily, T: TypeFamily>: Clone {
 
 crate trait FamilyMapper<S: TypeFamily, T: TypeFamily>: HasTyInternTables {
     fn map_ty(&mut self, ty: ty::Ty<S>) -> ty::Ty<T>;
+
+    fn map_placeholder(&mut self, placeholder: S::Placeholder) -> T::Placeholder;
 }
 
 impl<S, T, V> Map<S, T> for &V
@@ -96,15 +99,35 @@ where
     }
 }
 
-impl<S, T> Map<S, T> for ty::BaseKind
+impl<S, T> Map<S, T> for DefId
 where
     S: TypeFamily,
     T: TypeFamily,
 {
-    type Output = ty::BaseKind;
+    type Output = DefId;
 
     fn map(&self, _mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         *self
+    }
+}
+
+impl<S, T> Map<S, T> for ty::BaseKind<S>
+where
+    S: TypeFamily,
+    T: TypeFamily,
+{
+    type Output = ty::BaseKind<T>;
+
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        match self {
+            ty::BaseKind::Named(def_id) => ty::BaseKind::Named(def_id.map(mapper)),
+
+            ty::BaseKind::Placeholder(placeholder) => {
+                ty::BaseKind::Placeholder(mapper.map_placeholder(*placeholder))
+            }
+
+            ty::BaseKind::Error => ty::BaseKind::Error,
+        }
     }
 }
 

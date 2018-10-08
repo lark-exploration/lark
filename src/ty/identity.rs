@@ -17,6 +17,10 @@ where
     fn map_ty(&mut self, ty: Ty<F>) -> Ty<F> {
         ty
     }
+
+    fn map_placeholder(&mut self, placeholder: F::Placeholder) -> F::Placeholder {
+        placeholder
+    }
 }
 
 impl<DB> HasTyInternTables for Identity<'_, DB>

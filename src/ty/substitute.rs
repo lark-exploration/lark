@@ -62,4 +62,8 @@ where
             }
         }
     }
+
+    fn map_placeholder(&mut self, placeholder: !) -> T::Placeholder {
+        placeholder
+    }
 }

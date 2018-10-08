@@ -23,6 +23,8 @@ crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
     type Perm: Copy + Clone + Debug + Eq + Hash;
     type Base: Copy + Clone + Debug + Eq + Hash;
 
+    type Placeholder: Copy + Clone + Debug + Eq + Hash;
+
     fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base;
 }
 
@@ -40,15 +42,28 @@ crate struct Erased;
 /// The "base data" for a type.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct BaseData<F: TypeFamily> {
-    crate kind: BaseKind,
+    crate kind: BaseKind<F>,
     crate generics: Generics<F>,
+}
+
+impl<F: TypeFamily> BaseData<F> {
+    crate fn from_placeholder(p: F::Placeholder) -> Self {
+        BaseData {
+            kind: BaseKind::Placeholder(p),
+            generics: Generics::empty(),
+        }
+    }
 }
 
 /// The *kinds* of base types we have on offer.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum BaseKind {
+crate enum BaseKind<F: TypeFamily> {
     /// A named type (might be value, might be linear, etc).
     Named(DefId),
+
+    /// Instantiated generic type -- exists only in type-check results
+    /// for a function.
+    Placeholder(F::Placeholder),
 
     /// Indicates that a type error was reported.
     Error,
@@ -70,12 +85,6 @@ impl<T> InferVarOr<T> {
             InferVarOr::Known(v) => v,
         }
     }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum PlaceholderOr<T> {
-    Placeholder(Placeholder),
-    Known(T),
 }
 
 /// A "placeholder" represents a dummy type (or permission, etc) meant to represent

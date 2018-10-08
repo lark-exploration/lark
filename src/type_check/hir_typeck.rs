@@ -10,7 +10,6 @@ use crate::ty::map_family::Map;
 use crate::ty::substitute::Substitution;
 use crate::ty::Erased;
 use crate::ty::InferVarOr;
-use crate::ty::PlaceholderOr;
 use crate::ty::Signature;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
@@ -117,26 +116,25 @@ where
                 let text = self.hir[name].text;
                 let owner_ty = self.check_place(owner);
                 self.with_base_data(place, owner_ty.base.into(), move |this, base_data| {
-                    match base_data {
-                        PlaceholderOr::Placeholder(_placeholder) => unimplemented!(),
-
-                        PlaceholderOr::Known(BaseData { kind, generics }) => match kind {
-                            BaseKind::Named(def_id) => {
-                                if let Some(field_def_id) =
-                                    this.db()
-                                        .member_def_id((def_id, hir::MemberKind::Field, text))
-                                {
-                                    let field_decl_ty = this.db().ty(field_def_id);
-                                    let field_ty = this.substitute(place, &generics, field_decl_ty);
-                                    this.apply_owner_perm(place, owner_ty.perm, field_ty)
-                                } else {
-                                    this.results.record_error(place);
-                                    this.error_type()
-                                }
+                    let BaseData { kind, generics } = base_data;
+                    match kind {
+                        BaseKind::Named(def_id) => {
+                            if let Some(field_def_id) =
+                                this.db()
+                                    .member_def_id((def_id, hir::MemberKind::Field, text))
+                            {
+                                let field_decl_ty = this.db().ty(field_def_id);
+                                let field_ty = this.substitute(place, &generics, field_decl_ty);
+                                this.apply_owner_perm(place, owner_ty.perm, field_ty)
+                            } else {
+                                this.results.record_error(place);
+                                this.error_type()
                             }
+                        }
 
-                            BaseKind::Error => this.error_type(),
-                        },
+                        BaseKind::Placeholder(_placeholder) => unimplemented!(),
+
+                        BaseKind::Error => this.error_type(),
                     }
                 })
             }
@@ -162,43 +160,41 @@ where
         _owner_ty: Ty<F>,
         method_name: hir::Identifier,
         arguments: Arc<Vec<hir::Expression>>,
-        base_data: PlaceholderOr<BaseData<F>>,
+        base_data: BaseData<F>,
     ) -> Ty<F> {
-        match base_data {
-            PlaceholderOr::Placeholder(_placeholder) => unimplemented!(),
-
-            PlaceholderOr::Known(BaseData { kind, generics }) => match kind {
-                BaseKind::Named(def_id) => {
-                    let text = self.hir[method_name].text;
-                    let method_def_id =
-                        match self
-                            .db()
-                            .member_def_id((def_id, hir::MemberKind::Method, text))
-                        {
-                            Some(def_id) => def_id,
-                            None => {
-                                self.results.record_error(expression);
-                                return self.error_type();
-                            }
-                        };
-
-                    // FIXME -- what role does `owner_ty` place here??
-
-                    let signature_decl = self.db().signature(method_def_id);
-                    let signature = self.substitute(expression, &generics, signature_decl);
-                    if signature.inputs.len() != arguments.len() {
-                        self.results.record_error(expression);
-                    }
-                    for (&expected_ty, &argument_expr) in
-                        signature.inputs.iter().zip(arguments.iter())
+        let BaseData { kind, generics } = base_data;
+        match kind {
+            BaseKind::Named(def_id) => {
+                let text = self.hir[method_name].text;
+                let method_def_id =
+                    match self
+                        .db()
+                        .member_def_id((def_id, hir::MemberKind::Method, text))
                     {
-                        self.check_expression_has_type(expected_ty, argument_expr);
-                    }
-                    signature.output
-                }
+                        Some(def_id) => def_id,
+                        None => {
+                            self.results.record_error(expression);
+                            return self.error_type();
+                        }
+                    };
 
-                BaseKind::Error => self.error_type(),
-            },
+                // FIXME -- what role does `owner_ty` place here??
+
+                let signature_decl = self.db().signature(method_def_id);
+                let signature = self.substitute(expression, &generics, signature_decl);
+                if signature.inputs.len() != arguments.len() {
+                    self.results.record_error(expression);
+                }
+                for (&expected_ty, &argument_expr) in signature.inputs.iter().zip(arguments.iter())
+                {
+                    self.check_expression_has_type(expected_ty, argument_expr);
+                }
+                signature.output
+            }
+
+            BaseKind::Placeholder(_placeholder) => unimplemented!(),
+
+            BaseKind::Error => self.error_type(),
         }
     }
 }
