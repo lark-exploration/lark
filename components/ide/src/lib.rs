@@ -1,11 +1,9 @@
-use crate::task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
 use std::io;
 use std::io::prelude::{Read, Write};
 use std::sync::mpsc::Sender;
-
-pub use languageserver_types::Position;
+use task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method")]

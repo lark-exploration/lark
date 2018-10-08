@@ -1,6 +1,6 @@
-use crate::ir::{
-    builtin_type, BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand, Place, Rvalue,
-    Statement, StatementKind,
+use ir::{
+    BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand, Place, Rvalue, Statement,
+    StatementKind,
 };
 use std::collections::HashMap;
 use std::fmt;

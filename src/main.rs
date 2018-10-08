@@ -22,17 +22,12 @@ mod lexer;
 #[macro_use]
 mod indices;
 
-mod codegen;
 mod debug;
-mod eval;
 mod hir;
-mod ide;
 mod intern;
-mod ir;
 mod map;
 mod parser;
 mod parser2;
-mod task_manager;
 mod tests;
 mod ty;
 mod type_check;
@@ -40,8 +35,8 @@ mod unify;
 
 use std::{env, io};
 
-use crate::ide::{lsp_serve, LspResponder};
-use crate::task_manager::{Actor, FakeTypeChecker};
+use ide::{lsp_serve, LspResponder};
+use task_manager::{Actor, FakeTypeChecker};
 
 fn build(_filename: &str) {}
 
