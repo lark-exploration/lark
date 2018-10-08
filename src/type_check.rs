@@ -50,7 +50,7 @@ struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
 trait TypeCheckFamily: TypeFamily {
     type TcBase: From<Self::Base>
         + Into<Self::Base>
-        + Inferable<TyInternTables, KnownData = ty::BaseData<Self>>;
+        + Inferable<TyInternTables, KnownData = ty::PlaceholderOr<ty::BaseData<Self>>>;
 
     fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self>;
 

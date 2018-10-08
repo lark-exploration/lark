@@ -5,6 +5,7 @@ use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::Map;
 use crate::ty::BaseData;
 use crate::ty::Generics;
+use crate::ty::PlaceholderOr;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::type_check::TypeCheckDatabase;
@@ -112,7 +113,7 @@ where
         &mut self,
         cause: impl Into<hir::MetaIndex>,
         base: F::TcBase,
-        op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
+        op: impl FnOnce(&mut Self, PlaceholderOr<BaseData<F>>) -> Ty<F> + 'static,
     ) -> Ty<F> {
         let cause = cause.into();
         match self.unify.shallow_resolve_data(base) {
@@ -131,7 +132,7 @@ where
         cause: hir::MetaIndex,
         base: F::TcBase,
         output_ty: Ty<F>,
-        op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
+        op: impl FnOnce(&mut Self, PlaceholderOr<BaseData<F>>) -> Ty<F> + 'static,
     ) {
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => {

@@ -6,6 +6,7 @@ use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::Erased;
 use crate::ty::InferVarOr;
+use crate::ty::PlaceholderOr;
 use crate::ty::TypeFamily;
 use crate::unify::{InferVar, Inferable};
 
@@ -19,7 +20,7 @@ impl TypeFamily for BaseOnly {
     fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base {
         tables
             .ty_intern_tables()
-            .intern(InferVarOr::Known(base_data))
+            .intern(InferVarOr::Known(PlaceholderOr::Known(base_data)))
     }
 }
 
@@ -30,8 +31,8 @@ index_type! {
 }
 
 impl Inferable<TyInternTables> for Base {
-    type KnownData = BaseData<BaseOnly>;
-    type Data = InferVarOr<BaseData<BaseOnly>>;
+    type KnownData = PlaceholderOr<BaseData<BaseOnly>>;
+    type Data = InferVarOr<PlaceholderOr<BaseData<BaseOnly>>>;
 
     /// Check if this is an inference variable and return the inference
     /// index if so.
@@ -44,7 +45,7 @@ impl Inferable<TyInternTables> for Base {
 
     /// Create an inferable representing the inference variable `var`.
     fn from_infer_var(var: InferVar, interners: &TyInternTables) -> Self {
-        let i: InferVarOr<BaseData<BaseOnly>> = InferVarOr::InferVar(var);
+        let i: InferVarOr<PlaceholderOr<BaseData<BaseOnly>>> = InferVarOr::InferVar(var);
         i.intern(interners)
     }
 

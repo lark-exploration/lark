@@ -11,6 +11,7 @@ use crate::ty::map_family::Map;
 use crate::ty::substitute::Substitution;
 use crate::ty::Erased;
 use crate::ty::InferVarOr;
+use crate::ty::PlaceholderOr;
 use crate::ty::Signature;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
@@ -51,7 +52,20 @@ impl TypeCheckFamily for BaseOnly {
         match this.unify().unify(cause, base1, base2) {
             Ok(()) => {}
 
-            Err((data1, data2)) => {
+            Err((
+                PlaceholderOr::Placeholder(placeholder1),
+                PlaceholderOr::Placeholder(placeholder2),
+            )) => {
+                if placeholder1 != placeholder2 {
+                    this.results().errors.push(Error { location: cause });
+                }
+            }
+
+            Err((PlaceholderOr::Placeholder(_), _)) => {
+                this.results().errors.push(Error { location: cause });
+            }
+
+            Err((PlaceholderOr::Known(data1), PlaceholderOr::Known(data2))) => {
                 if data1.kind != data2.kind {
                     this.results().errors.push(Error { location: cause });
                     return;
@@ -64,6 +78,10 @@ impl TypeCheckFamily for BaseOnly {
                         }
                     }
                 }
+            }
+
+            Err((PlaceholderOr::Known(_), _)) => {
+                this.results().errors.push(Error { location: cause });
             }
         }
     }

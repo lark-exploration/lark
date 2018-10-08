@@ -7,6 +7,7 @@ use crate::ty::declaration::{self, Declaration};
 use crate::ty::BaseData;
 use crate::ty::BoundVarOr;
 use crate::ty::InferVarOr;
+use crate::ty::PlaceholderOr;
 use std::sync::Arc;
 
 #[derive(Clone, Default)]
@@ -75,7 +76,7 @@ macro_rules! intern_tables_data {
 
 intern_tables_data! {
     struct TyInternTablesData for TyInternTables {
-        base_only_base: map(base_only::Base, InferVarOr<BaseData<BaseOnly>>),
+        base_only_base: map(base_only::Base, InferVarOr<PlaceholderOr<BaseData<BaseOnly>>>),
         base_inferred_base: map(base_inferred::Base, BaseData<BaseInferred>),
         declaration_base: map(declaration::Base, BoundVarOr<BaseData<Declaration>>),
     }
