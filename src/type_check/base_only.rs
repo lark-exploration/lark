@@ -52,6 +52,18 @@ impl TypeCheckFamily for BaseOnly {
             Ok(()) => {}
 
             Err((data1, data2)) => {
+                match (data1.kind, data2.kind) {
+                    (BaseKind::Error, _) => {
+                        propagate_error(this, cause, data2);
+                        return;
+                    }
+                    (_, BaseKind::Error) => {
+                        propagate_error(this, cause, data1);
+                        return;
+                    }
+                    _ => {}
+                }
+
                 if data1.kind != data2.kind {
                     this.results().errors.push(Error { location: cause });
                     return;
@@ -149,5 +161,21 @@ impl TypeCheckFamily for BaseOnly {
         M: Map<Self, Self>,
     {
         value.map(&mut Identity::new(this.db()))
+    }
+}
+
+fn propagate_error<F: TypeCheckFamily>(
+    this: &mut impl TypeCheckerFields<F>,
+    cause: hir::MetaIndex,
+    data: BaseData<F>,
+) {
+    let BaseData { kind: _, generics } = data;
+
+    let error_type = F::error_type(this);
+
+    for generic in generics.iter() {
+        match generic {
+            GenericKind::Ty(ty) => F::equate_types(this, cause, error_type, ty),
+        }
     }
 }
