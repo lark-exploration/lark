@@ -13,7 +13,7 @@ enum MsgFromManager<T> {
 }
 
 #[derive(Debug)]
-enum TypeMessage {
+pub enum TypeMessage {
     DefIdForPos(TaskId, Position),
     TypeForDefId(TaskId, DefId),
     CompletionsForDefId(TaskId, DefId),
@@ -63,7 +63,12 @@ pub trait Actor {
     fn shutdown(&mut self);
 }
 
-struct FakeTypeChecker {
+pub struct ActorControl<MessageType: Send + Sync + 'static> {
+    pub channel: Sender<MessageType>,
+    pub join_handle: std::thread::JoinHandle<()>,
+}
+
+pub struct FakeTypeChecker {
     send_channel: Option<Box<dyn Fn(TypeResponse) -> () + Send>>,
 }
 
@@ -80,7 +85,7 @@ impl Actor for FakeTypeChecker {
     fn receive_message(&mut self, message: Self::InMessage) {
         match message {
             TypeMessage::DefIdForPos(task_id, pos) => match self.send_channel {
-                Some(ref c) => c(TypeResponse::DefId(task_id, pos.line as usize * 10)),
+                Some(ref c) => c(TypeResponse::DefId(task_id, pos.line as usize * 100)),
                 None => {}
             },
             TypeMessage::TypeForDefId(task_id, def_id) => match self.send_channel {
@@ -102,7 +107,7 @@ impl Actor for FakeTypeChecker {
 }
 
 impl FakeTypeChecker {
-    fn new() -> FakeTypeChecker {
+    pub fn new() -> FakeTypeChecker {
         FakeTypeChecker { send_channel: None }
     }
 }
@@ -111,31 +116,53 @@ pub struct TaskManager {
     live_recipes: HashMap<TaskId, Vec<RecipeStep>>,
     receive_channel: Receiver<MsgToManager>,
 
-    //Channel to send to this task manager
-    pub send_to_manager: Sender<MsgToManager>,
-
-    //Channels to communicate with other subsystems
-    send_to_type_checker: Option<Sender<MsgFromManager<TypeMessage>>>,
-    send_to_lsp_responder: Option<Sender<MsgFromManager<LspResponse>>>,
-
-    //Handles when we shutdown threads,
-    handle_for_type_checker: Option<std::thread::JoinHandle<()>>,
-    handle_for_lsp_responder: Option<std::thread::JoinHandle<()>>,
+    /// Control points to communicate with other subsystems
+    type_checker: ActorControl<MsgFromManager<TypeMessage>>,
+    lsp_responder: ActorControl<MsgFromManager<LspResponse>>,
 }
 
 impl TaskManager {
-    pub fn new() -> TaskManager {
-        let (host_tx, host_rx) = channel();
+    pub fn spawn(
+        mut type_checker: impl Actor<InMessage = TypeMessage, OutMessage = TypeResponse>
+            + Send
+            + 'static,
+        mut lsp_responder: impl Actor<InMessage = LspResponse> + Send + 'static,
+    ) -> ActorControl<MsgToManager> {
+        let (manager_tx, manager_rx) = channel();
 
-        TaskManager {
+        let manager_tx_clone = manager_tx.clone();
+
+        type_checker.startup(Box::new(move |x| {
+            manager_tx_clone
+                .send(MsgToManager::TypeResponse(x))
+                .unwrap()
+        }));
+        lsp_responder.startup(Box::new(move |_| {}));
+
+        let type_checker = TaskManager::spawn_actor(type_checker);
+        let lsp_responder = TaskManager::spawn_actor(lsp_responder);
+
+        let task_manager = TaskManager {
             live_recipes: HashMap::new(),
-            receive_channel: host_rx,
-            send_to_manager: host_tx,
-            send_to_type_checker: None,
-            send_to_lsp_responder: None,
-            handle_for_type_checker: None,
-            handle_for_lsp_responder: None,
+            receive_channel: manager_rx,
+
+            type_checker,
+            lsp_responder,
+        };
+
+        let join_handle = thread::spawn(move || {
+            task_manager.message_loop();
+        });
+
+        ActorControl {
+            channel: manager_tx,
+            join_handle,
         }
+    }
+
+    fn join_worker_threads(self) {
+        let _ = self.type_checker.join_handle.join();
+        let _ = self.lsp_responder.join_handle.join();
     }
 
     fn send_next_step(&mut self, task_id: TaskId, argument: Box<dyn std::any::Any>) {
@@ -147,68 +174,68 @@ impl TaskManager {
                     match next_step {
                         RecipeStep::GetDefIdForPosition => {
                             if let Ok(position) = argument.downcast::<Position>() {
-                                self.send_to_type_checker.as_ref().map(|x| {
-                                    x.send(MsgFromManager::Message(TypeMessage::DefIdForPos(
+                                self.type_checker
+                                    .channel
+                                    .send(MsgFromManager::Message(TypeMessage::DefIdForPos(
                                         task_id, *position,
                                     )))
-                                    .unwrap()
-                                });
+                                    .unwrap();
                             } else {
-                                unimplemented!("Internal error: malformed GetDefIdForPosition");
+                                panic!("Internal error: malformed GetDefIdForPosition");
                             }
                         }
                         RecipeStep::GetTypeForDefId => {
                             if let Ok(def_id) = argument.downcast::<DefId>() {
-                                self.send_to_type_checker.as_ref().map(|x| {
-                                    x.send(MsgFromManager::Message(TypeMessage::TypeForDefId(
+                                self.type_checker
+                                    .channel
+                                    .send(MsgFromManager::Message(TypeMessage::TypeForDefId(
                                         task_id, *def_id,
                                     )))
-                                    .unwrap()
-                                });
+                                    .unwrap();
                             } else {
-                                unimplemented!("Internal error: malformed GetDefIdForPosition");
+                                panic!("Internal error: malformed GetTypeForDefId");
                             }
                         }
                         RecipeStep::GetCompletionsForDefId => {
                             if let Ok(def_id) = argument.downcast::<DefId>() {
-                                self.send_to_type_checker.as_ref().map(|x| {
-                                    x.send(MsgFromManager::Message(
+                                self.type_checker
+                                    .channel
+                                    .send(MsgFromManager::Message(
                                         TypeMessage::CompletionsForDefId(task_id, *def_id),
                                     ))
-                                    .unwrap()
-                                });
+                                    .unwrap();
                             } else {
-                                unimplemented!("Internal error: malformed GetCompletionsForDefId");
+                                panic!("Internal error: malformed GetCompletionsForDefId");
                             }
                         }
                         RecipeStep::RespondWithType => {
                             if let Ok(ty) = argument.downcast::<String>() {
-                                self.send_to_lsp_responder.as_ref().map(|x| {
-                                    x.send(MsgFromManager::Message(LspResponse::Type(task_id, *ty)))
-                                        .unwrap()
-                                });
+                                self.lsp_responder
+                                    .channel
+                                    .send(MsgFromManager::Message(LspResponse::Type(task_id, *ty)))
+                                    .unwrap();
                             } else {
-                                unimplemented!("Internal error: malformed RespondWithCompletion");
+                                panic!("Internal error: malformed RespondWithType");
                             }
                         }
                         RecipeStep::RespondWithCompletions => {
                             if let Ok(completions) = argument.downcast::<Vec<(String, String)>>() {
-                                self.send_to_lsp_responder.as_ref().map(|x| {
-                                    x.send(MsgFromManager::Message(LspResponse::Completions(
+                                self.lsp_responder
+                                    .channel
+                                    .send(MsgFromManager::Message(LspResponse::Completions(
                                         task_id,
                                         *completions,
                                     )))
-                                    .unwrap()
-                                });
+                                    .unwrap();
                             } else {
-                                unimplemented!("Internal error: malformed RespondWithCompletion");
+                                panic!("Internal error: malformed RespondWithCompletion");
                             }
                         }
                         RecipeStep::RespondWithInitialized => {
-                            self.send_to_lsp_responder.as_ref().map(|x| {
-                                x.send(MsgFromManager::Message(LspResponse::Initialized(task_id)))
-                                    .unwrap()
-                            });
+                            self.lsp_responder
+                                .channel
+                                .send(MsgFromManager::Message(LspResponse::Initialized(task_id)))
+                                .unwrap();
                         }
                     }
                 }
@@ -268,6 +295,8 @@ impl TaskManager {
                     self.do_recipe_for_lsp_request(lsp_request);
                 }
                 Ok(MsgToManager::Shutdown) => {
+                    let _ = self.lsp_responder.channel.send(MsgFromManager::Shutdown);
+                    let _ = self.type_checker.channel.send(MsgFromManager::Shutdown);
                     break;
                 }
                 Err(_) => {
@@ -276,47 +305,12 @@ impl TaskManager {
             }
         }
 
-        self.stop();
-    }
-
-    pub fn start(self) -> std::thread::JoinHandle<()> {
-        thread::spawn(move || {
-            self.message_loop();
-        })
-    }
-
-    fn stop(self) {
-        // Join all the threads
-        let _ = self.handle_for_type_checker.unwrap().join();
-        let _ = self.handle_for_lsp_responder.unwrap().join();
-    }
-
-    pub fn start_type_checker(&mut self) {
-        let tx_for_type: Sender<MsgToManager> = self.send_to_manager.clone();
-
-        let mut type_checker = FakeTypeChecker::new();
-        type_checker.startup(Box::new(move |x| {
-            tx_for_type.send(MsgToManager::TypeResponse(x)).unwrap()
-        }));
-
-        let (actor_tx, handle) = Self::spawn_actor(type_checker);
-        self.send_to_type_checker = Some(actor_tx);
-        self.handle_for_type_checker = Some(handle);
-    }
-
-    pub fn start_lsp_server(&mut self) {
-        let mut lsp_responder = LspResponder;
-
-        lsp_responder.startup(Box::new(move |_| {}));
-
-        let (actor_tx, handle) = Self::spawn_actor(lsp_responder);
-        self.send_to_lsp_responder = Some(actor_tx);
-        self.handle_for_lsp_responder = Some(handle);
+        self.join_worker_threads();
     }
 
     fn spawn_actor<T: Actor + Send + 'static>(
         mut actor: T,
-    ) -> (Sender<MsgFromManager<T::InMessage>>, JoinHandle<()>) {
+    ) -> ActorControl<MsgFromManager<T::InMessage>> {
         let (actor_tx, actor_rx) = channel();
 
         let handle = thread::spawn(move || loop {
@@ -330,6 +324,9 @@ impl TaskManager {
             }
         });
 
-        (actor_tx, handle)
+        ActorControl {
+            channel: actor_tx,
+            join_handle: handle,
+        }
     }
 }

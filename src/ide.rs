@@ -46,14 +46,14 @@ enum LSPCommand {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct LSPResponse<T> {
+struct LSPJsonRPC<T> {
     jsonrpc: String,
     id: usize,
     result: T,
 }
-impl<T> LSPResponse<T> {
-    pub fn new(id: usize, result: T) -> LSPResponse<T> {
-        LSPResponse {
+impl<T> LSPJsonRPC<T> {
+    pub fn new(id: usize, result: T) -> LSPJsonRPC<T> {
+        LSPJsonRPC {
             jsonrpc: "2.0".into(),
             id,
             result,
@@ -61,8 +61,8 @@ impl<T> LSPResponse<T> {
     }
 }
 
-fn sendd_result<T: Serialize>(id: usize, result: T) {
-    let response = LSPResponse::new(id, result);
+fn send_result<T: Serialize>(id: usize, result: T) {
+    let response = LSPJsonRPC::new(id, result);
     let response_raw = serde_json::to_string(&response).unwrap();
 
     print!("Content-Length: {}\r\n\r\n", response_raw.len());
@@ -70,12 +70,12 @@ fn sendd_result<T: Serialize>(id: usize, result: T) {
     let _ = io::stdout().flush();
 }
 
-// The LSP service is split into two parts:
-//   * The server, which handles incoming requests from the IDE
-//   * The responder, which sends out results when they're ready
-// The server sends messages *to* the task manager for work that
-// needs to be done. The responder receives messages *from* the
-// task manager for work that has been accomplished.
+/// The LSP service is split into two parts:
+///   * The server, which handles incoming requests from the IDE
+///   * The responder, which sends out results when they're ready
+/// The server sends messages *to* the task manager for work that
+/// needs to be done. The responder receives messages *from* the
+/// task manager for work that has been accomplished.
 pub struct LspResponder;
 
 impl Actor for LspResponder {
@@ -96,7 +96,7 @@ impl Actor for LspResponder {
                     range: None,
                 };
 
-                sendd_result(id, result);
+                send_result(id, result);
             }
             LspResponse::Completions(id, completions) => {
                 let mut completion_items = vec![];
@@ -113,7 +113,7 @@ impl Actor for LspResponder {
                     items: completion_items,
                 };
 
-                sendd_result(id, result);
+                send_result(id, result);
             }
             LspResponse::Initialized(id) => {
                 let result = languageserver_types::InitializeResult {
@@ -149,7 +149,7 @@ impl Actor for LspResponder {
                     },
                 };
 
-                sendd_result(id, result);
+                send_result(id, result);
             }
         }
     }
@@ -167,7 +167,6 @@ pub fn lsp_serve(send_to_manager_channel: Sender<task_manager::MsgToManager>) {
                     let _ = io::stdin().read_exact(&mut buffer);
 
                     let buffer_string = String::from_utf8(buffer).unwrap();
-                    //eprintln!("command: {}", buffer_string);
 
                     let command = serde_json::from_str::<LSPCommand>(&buffer_string);
 
@@ -211,8 +210,6 @@ pub fn lsp_serve(send_to_manager_channel: Sender<task_manager::MsgToManager>) {
                         }
                         Err(e) => eprintln!("Error handling command: {:?}", e),
                     }
-
-                    //eprintln!("Command: {:#?}", command);
                 }
             }
             Err(error) => eprintln!("error: {}", error),

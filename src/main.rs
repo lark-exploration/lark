@@ -40,7 +40,8 @@ mod unify;
 
 use std::{env, io};
 
-use crate::ide::lsp_serve;
+use crate::ide::{lsp_serve, LspResponder};
+use crate::task_manager::{Actor, FakeTypeChecker};
 
 fn build(_filename: &str) {}
 
@@ -49,16 +50,13 @@ fn run(_filename: &str) {}
 fn repl() {}
 
 fn ide() {
-    let mut task_manager = task_manager::TaskManager::new();
+    let type_checker = FakeTypeChecker::new();
+    let lsp_responder = LspResponder;
 
-    task_manager.start_type_checker();
-    task_manager.start_lsp_server();
+    let task_manager = task_manager::TaskManager::spawn(type_checker, lsp_responder);
 
-    let send_to_manager_channel = task_manager.send_to_manager.clone();
-    let join_handle = task_manager.start();
-
-    lsp_serve(send_to_manager_channel);
-    let _ = join_handle.join();
+    lsp_serve(task_manager.channel);
+    let _ = task_manager.join_handle.join();
 }
 
 fn main() {
