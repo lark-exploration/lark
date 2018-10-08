@@ -8,6 +8,7 @@ crate mod keywords;
 crate mod lexer_helpers;
 crate mod pos;
 crate mod program;
+crate mod reporting;
 crate mod token;
 crate mod tokenizer;
 
@@ -93,11 +94,10 @@ mod test {
     use super::parse;
     use super::tokenizer::Tokenizer;
     use super::LineTokenizer;
-    use codespan::ByteOffset;
-    use crate::parser::ast::DebugModuleTable;
 
-    use codespan::ByteIndex;
-    use codespan::CodeMap;
+    use crate::parser::ast::DebugModuleTable;
+    use crate::parser::reporting::print_parse_error;
+
     use crate::parser::ast::{Debuggable, DebuggableVec, Mode};
     use crate::parser::lexer_helpers::ParseError;
     use crate::parser::pos::{Span, Spanned};
@@ -106,6 +106,7 @@ mod test {
     use crate::parser::test_helpers::{self, Token};
     use crate::parser::{self, ast};
 
+    use codespan::{ByteIndex, ByteOffset, CodeMap};
     use derive_new::new;
     use itertools::Itertools;
     use language_reporting::{emit, Diagnostic, Label, Severity};
@@ -254,20 +255,6 @@ mod test {
                 "actual != expected\nactual: {:#?}\nexpected: {:#?}\n\nabbreviated:\n\nactual: {:#?}\n\nexpected: {:#?}\n",
                 actual, expected, Debuggable::from(actual, table), Debuggable::from(expected, table)
             )
-    }
-
-    fn print_parse_error(e: ParseError, codemap: &CodeMap) -> ! {
-        let error = Diagnostic::new(Severity::Error, e.description)
-            .with_label(Label::new_primary(e.span.to_codespan()));
-        let writer = StandardStream::stderr(ColorChoice::Auto);
-        emit(
-            &mut writer.lock(),
-            &codemap,
-            &error,
-            &language_reporting::DefaultConfig,
-        )
-        .unwrap();
-        panic!("Parse Error");
     }
 
     #[derive(Debug, new)]

@@ -1,4 +1,4 @@
-mod debug;
+crate mod debug;
 
 #[cfg(test)]
 mod test_helpers;

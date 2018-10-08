@@ -24,10 +24,13 @@ token! {
 }
 
 impl Spanned<Token> {
-    pub fn as_id(self) -> Spanned<StringId> {
+    pub fn as_id(self) -> Result<Spanned<StringId>, ParseError> {
         match self.node {
-            Token::Identifier(id) => Spanned::wrap_span(id, self.span),
-            other => panic!("Unexpected token {:?}, expected id", other),
+            Token::Identifier(id) => Ok(Spanned::wrap_span(id, self.span)),
+            other => Err(ParseError::new(
+                format!("Unexpected token {:?}, expected id", other),
+                self.span,
+            )),
         }
     }
 }

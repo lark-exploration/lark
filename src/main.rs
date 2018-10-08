@@ -35,6 +35,7 @@ mod intern;
 mod ir;
 mod parser;
 mod parser2;
+mod prelude;
 mod tests;
 mod ty;
 mod typeck;
