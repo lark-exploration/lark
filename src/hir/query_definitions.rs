@@ -41,3 +41,7 @@ crate fn ty(_db: &impl HirDatabase, _key: DefId) -> ty::Ty<Declaration> {
 crate fn signature(_db: &impl HirDatabase, _key: DefId) -> ty::Signature<Declaration> {
     unimplemented!()
 }
+
+crate fn generic_declarations(_db: &impl HirDatabase, _key: DefId) -> Arc<ty::GenericDeclarations> {
+    unimplemented!()
+}

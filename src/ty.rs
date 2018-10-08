@@ -1,6 +1,8 @@
 #![warn(unused_imports)]
 
+use crate::indices::IndexVec;
 use crate::ir::DefId;
+use crate::parser::program::StringId;
 use crate::ty::interners::HasTyInternTables;
 use crate::unify::InferVar;
 use std::fmt::Debug;
@@ -213,4 +215,20 @@ impl<T> GenericKind<T> {
 crate struct Signature<F: TypeFamily> {
     crate inputs: Arc<Vec<Ty<F>>>,
     crate output: Ty<F>,
+}
+
+/// The "generic declarations" list out the generic parameters for a
+/// given item. Since items inherit generic items from one another
+/// (e.g., from their parents),
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate struct GenericDeclarations {
+    crate parent_item: Option<DefId>,
+    crate declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
+}
+
+/// Declaration of an individual generic type parameter.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+crate struct GenericTyDeclaration {
+    crate def_id: DefId,
+    crate name: StringId,
 }

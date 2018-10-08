@@ -47,6 +47,12 @@ salsa::query_group! {
             type SignatureQuery;
             use fn query_definitions::signature;
         }
+
+        /// Get the generic declarations from a particular item.
+        fn generic_declarations(key: DefId) -> Arc<ty::GenericDeclarations> {
+            type GenericDeclarations;
+            use fn query_definitions::generic_declarations;
+        }
     }
 }
 
