@@ -188,15 +188,20 @@ impl<F: TypeFamily> IntoIterator for &'iter Generics<F> {
 
 /// The value of a single generic argument; e.g., in a type like
 /// `Vec<i32>`, this might be the `i32`.
+#[allow(type_alias_bounds)]
+crate type Generic<F: TypeFamily> = GenericKind<Ty<F>>;
+
+/// An enum that lists out the various "kinds" of generic arguments
+/// (currently only types) and a distinct type of value for each kind.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum Generic<F: TypeFamily> {
-    Ty(Ty<F>),
+crate enum GenericKind<T> {
+    Ty(T),
 }
 
-impl<F: TypeFamily> Generic<F> {
-    crate fn assert_ty(self) -> Ty<F> {
+impl<T> GenericKind<T> {
+    crate fn assert_ty(self) -> T {
         match self {
-            Generic::Ty(ty) => ty,
+            GenericKind::Ty(ty) => ty,
         }
     }
 }

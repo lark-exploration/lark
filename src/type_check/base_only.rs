@@ -16,7 +16,7 @@ use crate::ty::Signature;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::ty::{BaseData, BaseKind};
-use crate::ty::{Generic, Generics};
+use crate::ty::{Generic, GenericKind, Generics};
 use crate::type_check::Error;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
@@ -73,7 +73,7 @@ impl TypeCheckFamily for BaseOnly {
 
                 for (generic1, generic2) in data1.generics.iter().zip(&data2.generics) {
                     match (generic1, generic2) {
-                        (Generic::Ty(g1), Generic::Ty(g2)) => {
+                        (GenericKind::Ty(g1), GenericKind::Ty(g2)) => {
                             Self::equate_types(this, cause, g1, g2);
                         }
                     }

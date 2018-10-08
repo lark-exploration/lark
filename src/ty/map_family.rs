@@ -132,7 +132,7 @@ where
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         match self {
-            ty::Generic::Ty(ty) => ty::Generic::Ty(ty.map(mapper)),
+            ty::GenericKind::Ty(ty) => ty::GenericKind::Ty(ty.map(mapper)),
         }
     }
 }

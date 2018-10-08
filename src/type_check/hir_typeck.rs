@@ -118,7 +118,7 @@ where
                 let owner_ty = self.check_place(owner);
                 self.with_base_data(place, owner_ty.base.into(), move |this, base_data| {
                     match base_data {
-                        PlaceholderOr::Placeholder(placeholder) => unimplemented!(),
+                        PlaceholderOr::Placeholder(_placeholder) => unimplemented!(),
 
                         PlaceholderOr::Known(BaseData { kind, generics }) => match kind {
                             BaseKind::Named(def_id) => {
@@ -165,7 +165,7 @@ where
         base_data: PlaceholderOr<BaseData<F>>,
     ) -> Ty<F> {
         match base_data {
-            PlaceholderOr::Placeholder(placeholder) => unimplemented!(),
+            PlaceholderOr::Placeholder(_placeholder) => unimplemented!(),
 
             PlaceholderOr::Known(BaseData { kind, generics }) => match kind {
                 BaseKind::Named(def_id) => {
