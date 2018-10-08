@@ -2,6 +2,7 @@
 
 use codespan_reporting::Diagnostic;
 use crate::hir;
+use crate::indices::IndexVec;
 use crate::ir::DefId;
 use crate::map::FxIndexMap;
 use crate::parser::Span;
@@ -13,8 +14,10 @@ use crate::ty::interners::{HasTyInternTables, TyInternTables};
 use crate::ty::map_family::Map;
 use crate::ty::BaseData;
 use crate::ty::Generics;
+use crate::ty::Placeholder;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
+use crate::ty::Universe;
 use crate::unify::InferVar;
 use crate::unify::Inferable;
 use crate::unify::UnificationTable;
@@ -39,14 +42,23 @@ salsa::query_group! {
 
 struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     db: &'db DB,
+    fn_def_id: DefId,
     hir: Arc<hir::FnBody>,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<Self>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
     unify: UnificationTable<TyInternTables, hir::MetaIndex>,
     results: TypeCheckResults<F>,
+
+    /// Information about each universe that we have created.
+    universe_binders: IndexVec<Universe, UniverseBinder>,
 }
 
-trait TypeCheckFamily: TypeFamily {
+enum UniverseBinder {
+    Root,
+    FromItem(DefId),
+}
+
+trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
     type TcBase: From<Self::Base>
         + Into<Self::Base>
         + Inferable<TyInternTables, KnownData = ty::BaseData<Self>>;
@@ -63,6 +75,8 @@ trait TypeCheckFamily: TypeFamily {
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
     fn error_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
+
+    fn own_perm(this: &impl TypeCheckerFields<Self>) -> Self::Perm;
 
     fn require_assignable(
         this: &mut impl TypeCheckerFields<Self>,
@@ -91,12 +105,20 @@ trait TypeCheckFamily: TypeFamily {
     fn substitute<M>(
         this: &mut impl TypeCheckerFields<Self>,
         location: hir::MetaIndex,
-        owner_perm: Self::Perm,
-        owner_base_data: &BaseData<Self>,
+        generics: &Generics<Self>,
         value: M,
     ) -> M::Output
     where
         M: Map<Declaration, Self>;
+
+    fn apply_owner_perm<M>(
+        this: &mut impl TypeCheckerFields<Self>,
+        location: impl Into<hir::MetaIndex>,
+        owner_perm: Self::Perm,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Self, Self>;
 }
 
 trait TypeCheckerFields<F: TypeCheckFamily>: HasTyInternTables {

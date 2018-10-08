@@ -27,6 +27,17 @@ where
     DB: crate::type_check::TypeCheckDatabase,
     F: TypeCheckFamily,
 {
+    pub(super) fn check_fn_body(&mut self) {
+        let signature = self.db.signature(self.fn_def_id);
+        let placeholders = self.placeholders_for(self.fn_def_id);
+        let signature = self.substitute(self.hir.root_expression, &placeholders, signature);
+        assert_eq!(signature.inputs.len(), self.hir.arguments.len());
+        for (&argument, &input) in self.hir.arguments.iter().zip(signature.inputs.iter()) {
+            self.results.record_ty(argument, input);
+        }
+        self.check_expression_has_type(signature.output, self.hir.root_expression);
+    }
+
     fn check_expression_has_type(&mut self, expected_ty: Ty<F>, expression: hir::Expression) {
         let actual_ty = self.check_expression(expression);
         self.require_assignable(expression, actual_ty, expected_ty);
@@ -116,7 +127,7 @@ where
                 let text = self.hir[name].text;
                 let owner_ty = self.check_place(owner);
                 self.with_base_data(place, owner_ty.base.into(), move |this, base_data| {
-                    let BaseData { kind, generics: _ } = base_data;
+                    let BaseData { kind, generics } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
                             if let Some(field_def_id) =
@@ -124,12 +135,15 @@ where
                                     .member_def_id((def_id, hir::MemberKind::Field, text))
                             {
                                 let field_decl_ty = this.db().ty(field_def_id);
-                                this.substitute(place, owner_ty.perm, &base_data, field_decl_ty)
+                                let field_ty = this.substitute(place, &generics, field_decl_ty);
+                                this.apply_owner_perm(place, owner_ty.perm, field_ty)
                             } else {
                                 this.results.record_error(place);
                                 this.error_type()
                             }
                         }
+
+                        BaseKind::Placeholder(_placeholder) => unimplemented!(),
 
                         BaseKind::Error => this.error_type(),
                     }
@@ -154,12 +168,12 @@ where
     fn check_method_call(
         &mut self,
         expression: hir::Expression,
-        owner_ty: Ty<F>,
+        _owner_ty: Ty<F>,
         method_name: hir::Identifier,
         arguments: Arc<Vec<hir::Expression>>,
         base_data: BaseData<F>,
     ) -> Ty<F> {
-        let BaseData { kind, generics: _ } = base_data;
+        let BaseData { kind, generics } = base_data;
         match kind {
             BaseKind::Named(def_id) => {
                 let text = self.hir[method_name].text;
@@ -174,9 +188,11 @@ where
                             return self.error_type();
                         }
                     };
+
+                // FIXME -- what role does `owner_ty` place here??
+
                 let signature_decl = self.db().signature(method_def_id);
-                let signature =
-                    self.substitute(expression, owner_ty.perm, &base_data, signature_decl);
+                let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
                     self.results.record_error(expression);
                 }
@@ -186,6 +202,8 @@ where
                 }
                 signature.output
             }
+
+            BaseKind::Placeholder(_placeholder) => unimplemented!(),
 
             BaseKind::Error => self.error_type(),
         }

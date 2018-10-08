@@ -6,11 +6,11 @@ use crate::ty;
 use crate::ty::declaration::Declaration;
 use std::sync::Arc;
 
-crate fn boolean_def_id(_query: &impl HirDatabase, _key: ()) -> DefId {
+crate fn boolean_def_id(_db: &impl HirDatabase, _key: ()) -> DefId {
     unimplemented!()
 }
 
-crate fn fn_body(_query: &impl HirDatabase, _key: DefId) -> Arc<hir::FnBody> {
+crate fn fn_body(_db: &impl HirDatabase, _key: DefId) -> Arc<hir::FnBody> {
     unimplemented!()
 }
 
@@ -30,13 +30,18 @@ crate fn member_def_id(
             } else {
                 None
             }
-        }).next()
+        })
+        .next()
 }
 
-crate fn ty(_query: &impl HirDatabase, _key: DefId) -> ty::Ty<Declaration> {
+crate fn ty(_db: &impl HirDatabase, _key: DefId) -> ty::Ty<Declaration> {
     unimplemented!()
 }
 
-crate fn signature(_query: &impl HirDatabase, _key: DefId) -> ty::Signature<Declaration> {
+crate fn signature(_db: &impl HirDatabase, _key: DefId) -> ty::Signature<Declaration> {
+    unimplemented!()
+}
+
+crate fn generic_declarations(_db: &impl HirDatabase, _key: DefId) -> Arc<ty::GenericDeclarations> {
     unimplemented!()
 }

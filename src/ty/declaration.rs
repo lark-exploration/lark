@@ -14,6 +14,7 @@ crate struct Declaration;
 impl TypeFamily for Declaration {
     type Perm = Erased; // Not Yet Implemented
     type Base = Base;
+    type Placeholder = !;
 
     fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base {
         tables

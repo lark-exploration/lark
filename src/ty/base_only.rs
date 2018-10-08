@@ -6,6 +6,7 @@ use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::Erased;
 use crate::ty::InferVarOr;
+use crate::ty::Placeholder;
 use crate::ty::TypeFamily;
 use crate::unify::{InferVar, Inferable};
 
@@ -15,6 +16,7 @@ crate struct BaseOnly;
 impl TypeFamily for BaseOnly {
     type Perm = Erased;
     type Base = Base;
+    type Placeholder = Placeholder;
 
     fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base {
         tables

@@ -4,6 +4,7 @@ use crate::ir::DefId;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
 use crate::ty::declaration::Declaration;
+use crate::ty::identity::Identity;
 use crate::ty::interners::HasTyInternTables;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::Map;
@@ -14,7 +15,7 @@ use crate::ty::Signature;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::ty::{BaseData, BaseKind};
-use crate::ty::{Generic, Generics};
+use crate::ty::{Generic, GenericKind, Generics};
 use crate::type_check::Error;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
@@ -51,6 +52,18 @@ impl TypeCheckFamily for BaseOnly {
             Ok(()) => {}
 
             Err((data1, data2)) => {
+                match (data1.kind, data2.kind) {
+                    (BaseKind::Error, _) => {
+                        propagate_error(this, cause, data2);
+                        return;
+                    }
+                    (_, BaseKind::Error) => {
+                        propagate_error(this, cause, data1);
+                        return;
+                    }
+                    _ => {}
+                }
+
                 if data1.kind != data2.kind {
                     this.results().errors.push(Error { location: cause });
                     return;
@@ -58,7 +71,7 @@ impl TypeCheckFamily for BaseOnly {
 
                 for (generic1, generic2) in data1.generics.iter().zip(&data2.generics) {
                     match (generic1, generic2) {
-                        (Generic::Ty(g1), Generic::Ty(g2)) => {
+                        (GenericKind::Ty(g1), GenericKind::Ty(g2)) => {
                             Self::equate_types(this, cause, g1, g2);
                         }
                     }
@@ -79,6 +92,10 @@ impl TypeCheckFamily for BaseOnly {
                 },
             ),
         }
+    }
+
+    fn own_perm(_this: &impl TypeCheckerFields<Self>) -> Erased {
+        Erased
     }
 
     fn error_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
@@ -125,13 +142,40 @@ impl TypeCheckFamily for BaseOnly {
     fn substitute<M>(
         this: &mut impl TypeCheckerFields<Self>,
         _location: hir::MetaIndex,
-        _owner_perm: Erased,
-        owner_base_data: &BaseData<Self>,
+        generics: &Generics<Self>,
         value: M,
     ) -> M::Output
     where
         M: Map<Declaration, Self>,
     {
-        value.map(&mut Substitution::new(this, &owner_base_data.generics))
+        value.map(&mut Substitution::new(this, generics))
+    }
+
+    fn apply_owner_perm<M>(
+        this: &mut impl TypeCheckerFields<Self>,
+        _location: impl Into<hir::MetaIndex>,
+        _owner_perm: Erased,
+        value: M,
+    ) -> M::Output
+    where
+        M: Map<Self, Self>,
+    {
+        value.map(&mut Identity::new(this.db()))
+    }
+}
+
+fn propagate_error<F: TypeCheckFamily>(
+    this: &mut impl TypeCheckerFields<F>,
+    cause: hir::MetaIndex,
+    data: BaseData<F>,
+) {
+    let BaseData { kind: _, generics } = data;
+
+    let error_type = F::error_type(this);
+
+    for generic in generics.iter() {
+        match generic {
+            GenericKind::Ty(ty) => F::equate_types(this, cause, error_type, ty),
+        }
     }
 }

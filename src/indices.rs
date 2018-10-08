@@ -39,7 +39,7 @@ use std::hash::Hash;
 /// newtype_index! {
 ///     struct Foo {
 ///         debug_name[Bar],
-///         ..
+///         .. // <-- NB always end with `..`
 ///     }
 /// }
 /// ```
