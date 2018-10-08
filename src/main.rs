@@ -32,6 +32,7 @@ mod ir;
 mod map;
 mod parser;
 mod parser2;
+mod task_manager;
 mod tests;
 mod ty;
 mod type_check;
@@ -39,7 +40,8 @@ mod unify;
 
 use std::{env, io};
 
-use crate::ide::lsp_serve;
+use crate::ide::{lsp_serve, LspResponder};
+use crate::task_manager::{Actor, FakeTypeChecker};
 
 fn build(_filename: &str) {}
 
@@ -48,7 +50,13 @@ fn run(_filename: &str) {}
 fn repl() {}
 
 fn ide() {
-    lsp_serve();
+    let type_checker = FakeTypeChecker::new();
+    let lsp_responder = LspResponder;
+
+    let task_manager = task_manager::TaskManager::spawn(type_checker, lsp_responder);
+
+    lsp_serve(task_manager.channel);
+    let _ = task_manager.join_handle.join();
 }
 
 fn main() {
