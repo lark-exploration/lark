@@ -1,4 +1,4 @@
-use ir::{
+use mir::{
     BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand, Place, Rvalue, Statement,
     StatementKind,
 };

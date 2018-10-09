@@ -4,7 +4,7 @@ use crate::indices::IndexVec;
 use crate::parser::program::StringId;
 use crate::ty::interners::HasTyInternTables;
 use crate::unify::InferVar;
-use ir::DefId;
+use mir::DefId;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter::IntoIterator;

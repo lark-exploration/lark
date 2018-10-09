@@ -1,6 +1,6 @@
 use crate::ty::interners::HasTyInternTables;
 use crate::ty::{self, TypeFamily};
-use ir::DefId;
+use mir::DefId;
 use std::sync::Arc;
 
 crate trait Map<S: TypeFamily, T: TypeFamily>: Clone {

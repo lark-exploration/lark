@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 languageserver-types = "0.51.0"
-ir = { path = "../ir" }
+mir = { path = "../mir" }
