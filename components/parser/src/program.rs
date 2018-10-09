@@ -1,5 +1,5 @@
 use codespan::CodeMap;
-use crate::parser::Spanned;
+use crate::Spanned;
 use derive_new::new;
 use smart_default::SmartDefault;
 use std::collections::BTreeMap;

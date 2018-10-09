@@ -16,11 +16,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-#[macro_use]
-mod lexer;
-
 mod hir;
-mod parser;
 mod parser2;
 mod tests;
 mod ty;

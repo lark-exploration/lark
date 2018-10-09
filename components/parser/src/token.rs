@@ -1,6 +1,6 @@
-use crate::parser::ast::DebugModuleTable;
-use crate::parser::pos::Spanned;
-use crate::parser::program::{ModuleTable, StringId};
+use crate::ast::DebugModuleTable;
+use crate::pos::Spanned;
+use crate::program::{ModuleTable, StringId};
 
 use codespan::ByteIndex;
 use std::borrow::Cow;

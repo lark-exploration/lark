@@ -1,11 +1,11 @@
 //! The `Hir` is the "high-level IR". It is a simpified, somewhat resolved version of the bare AST.
 
-use crate::parser::pos::{Span, Spanned};
-use crate::parser::StringId;
 use crate::ty;
 use crate::ty::declaration::Declaration;
 use indices::{IndexVec, U32Index};
 use mir::DefId;
+use parser::pos::{Span, Spanned};
+use parser::StringId;
 use std::sync::Arc;
 
 crate mod query_definitions;

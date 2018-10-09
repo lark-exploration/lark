@@ -18,7 +18,6 @@ codespan = "0.1.3"
 codespan-reporting = "0.1.4"
 derive-new = "0.5.5"
 derive_more = "0.12.0"
-lalrpop-util = "0.16.0"
 lazy_static = "1.1.0"
 log = "0.4.5"
 generational-arena = "0.1.0"
@@ -40,6 +39,7 @@ indices = { path = "components/indices" }
 intern = { path = "components/intern" }
 mir = { path = "components/mir" }
 map = { path = "components/map" }
+parser = { path = "components/parser" }
 task_manager = { path = "components/task_manager" }
 unify = { path = "components/unify" }
 

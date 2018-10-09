@@ -1,8 +1,8 @@
-use crate::parser::{Token, ParseError};
-use crate::parser::grammar_helpers::*;
-use crate::parser::ast::*;
-use crate::parser::pos::{Span, Spanned};
-use crate::parser::program::StringId;
+use crate::{Token, ParseError};
+use crate::grammar_helpers::*;
+use crate::ast::*;
+use crate::pos::{Span, Spanned};
+use crate::program::StringId;
 use codespan::{ByteIndex, ByteOffset};
 
 grammar;

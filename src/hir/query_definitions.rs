@@ -1,9 +1,9 @@
 use crate::hir;
 use crate::hir::HirDatabase;
-use crate::parser::StringId;
 use crate::ty;
 use crate::ty::declaration::Declaration;
 use mir::DefId;
+use parser::StringId;
 use std::sync::Arc;
 
 crate fn boolean_def_id(_db: &impl HirDatabase, _key: ()) -> DefId {

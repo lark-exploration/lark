@@ -1,15 +1,23 @@
+#![feature(box_patterns)]
+#![feature(box_syntax)]
+#![feature(crate_visibility_modifier)]
+#![feature(in_band_lifetimes)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 #![allow(unused_variables)]
-#![allow(unused_mut)]
 
-crate mod ast;
-crate mod grammar;
-crate mod grammar_helpers;
-crate mod keywords;
-crate mod lexer_helpers;
-crate mod pos;
-crate mod program;
-crate mod token;
-crate mod tokenizer;
+#[macro_use]
+pub mod lexer;
+
+pub mod ast;
+pub mod grammar;
+pub mod grammar_helpers;
+pub mod keywords;
+pub mod lexer_helpers;
+pub mod pos;
+pub mod program;
+pub mod token;
+pub mod tokenizer;
 
 #[cfg(test)]
 pub mod test_helpers;
@@ -17,11 +25,11 @@ pub mod test_helpers;
 #[cfg(test)]
 use self::test_helpers::LineTokenizer;
 
-crate use self::grammar::ProgramParser;
-crate use self::lexer_helpers::ParseError;
-crate use self::program::{Environment, Module, ModuleTable, NameId, StringId};
-crate use self::token::Token;
-crate use self::tokenizer::Tokenizer;
+pub use self::grammar::ProgramParser;
+pub use self::lexer_helpers::ParseError;
+pub use self::program::{Environment, Module, ModuleTable, NameId, StringId};
+pub use self::token::Token;
+pub use self::tokenizer::Tokenizer;
 
 pub use self::pos::{Span, Spanned};
 
@@ -94,17 +102,17 @@ mod test {
     use super::tokenizer::Tokenizer;
     use super::LineTokenizer;
     use codespan::ByteOffset;
-    use crate::parser::ast::DebugModuleTable;
+    use crate::ast::DebugModuleTable;
 
     use codespan::ByteIndex;
     use codespan::CodeMap;
-    use crate::parser::ast::{Debuggable, DebuggableVec, Mode};
-    use crate::parser::lexer_helpers::ParseError;
-    use crate::parser::pos::{Span, Spanned};
-    use crate::parser::program::ModuleTable;
-    use crate::parser::program::StringId;
-    use crate::parser::test_helpers::{self, Token};
-    use crate::parser::{self, ast};
+    use crate::ast::{Debuggable, DebuggableVec, Mode};
+    use crate::lexer_helpers::ParseError;
+    use crate::pos::{Span, Spanned};
+    use crate::program::ModuleTable;
+    use crate::program::StringId;
+    use crate::test_helpers::{self, Token};
+    use crate::{self, ast};
 
     use derive_new::new;
     use itertools::Itertools;

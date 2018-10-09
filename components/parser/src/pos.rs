@@ -91,8 +91,8 @@ impl fmt::Display for Span {
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Spanned<T> {
-    crate node: T,
-    crate span: Span,
+    pub node: T,
+    pub span: Span,
 }
 
 impl<T> fmt::Debug for Spanned<T>

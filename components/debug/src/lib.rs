@@ -3,6 +3,7 @@
 //! Implement `DebugWith<Cx>` for your type. Then, when using
 //! `debug!` or whatever, do `debug!("{}", foo.debug_with(cx))`.
 
+#![feature(box_patterns)]
 #![feature(never_type)]
 #![feature(in_band_lifetimes)]
 

@@ -1,16 +1,16 @@
 use codespan::ByteOffset;
-use crate::parser::ast::{DebugModuleTable, Debuggable};
-use crate::parser::keywords::{KEYWORDS, SIGILS};
-use crate::parser::lexer_helpers::{begin, consume, consume_n, reconsume};
-use crate::parser::lexer_helpers::{
-    LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError,
-    Tokenizer as GenericTokenizer,
-};
-use crate::parser::program::StringId;
-use crate::parser::{ModuleTable, Span};
 use derive_new::new;
 use lazy_static::lazy_static;
 use log::{trace, warn};
+use parser::ast::{DebugModuleTable, Debuggable};
+use parser::keywords::{KEYWORDS, SIGILS};
+use parser::lexer_helpers::{begin, consume, consume_n, reconsume};
+use parser::lexer_helpers::{
+    LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError,
+    Tokenizer as GenericTokenizer,
+};
+use parser::program::StringId;
+use parser::{ModuleTable, Span};
 use std::fmt;
 use unicode_xid::UnicodeXID;
 
@@ -31,7 +31,7 @@ impl DebugModuleTable for Token {
     fn debug(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        table: &'table crate::parser::ModuleTable,
+        table: &'table parser::ModuleTable,
     ) -> std::fmt::Result {
         use self::Token::*;
 
@@ -178,10 +178,10 @@ impl LexerDelegateTrait for LexerState {
 #[cfg(test)]
 mod tests {
     use super::{Token, Tokenizer};
-    use crate::parser::ast::DebuggableVec;
-    use crate::parser::lexer_helpers::ParseError;
-    use crate::parser::{Span, Spanned};
     use crate::parser2::test_helpers::{process, Annotations, Position};
+    use parser::ast::DebuggableVec;
+    use parser::lexer_helpers::ParseError;
+    use parser::{Span, Spanned};
 
     use log::trace;
     use unindent::unindent;

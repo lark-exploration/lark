@@ -1,10 +1,10 @@
 #![warn(unused_imports)]
 
-use crate::parser::program::StringId;
 use crate::ty::interners::TyInternTables;
 use indices::IndexVec;
 use intern::Has;
 use mir::DefId;
+use parser::program::StringId;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter::IntoIterator;

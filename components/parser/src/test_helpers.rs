@@ -3,13 +3,13 @@
 
 crate mod annotate_lines;
 
-use crate::parser::ast::DebugModuleTable;
-use crate::parser::lexer_helpers::{consume, consume_n, reconsume};
-use crate::parser::lexer_helpers::{
+use crate::ast::DebugModuleTable;
+use crate::lexer_helpers::{consume, consume_n, reconsume};
+use crate::lexer_helpers::{
     LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError, Tokenizer,
 };
-use crate::parser::program::ModuleTable;
-use crate::parser::program::StringId;
+use crate::program::ModuleTable;
+use crate::program::StringId;
 
 use codespan::ByteSpan;
 use derive_new::new;

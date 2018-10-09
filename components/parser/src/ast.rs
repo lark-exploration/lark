@@ -4,14 +4,14 @@ mod debug;
 mod test_helpers;
 
 use codespan::ByteIndex;
-use crate::parser::pos::HasSpan;
-use crate::parser::pos::Span;
-use crate::parser::pos::Spanned;
-use crate::parser::{Environment, ModuleTable, StringId, Token};
+use crate::pos::HasSpan;
+use crate::pos::Span;
+use crate::pos::Spanned;
+use crate::{Environment, ModuleTable, StringId, Token};
 use derive_new::new;
 use std::fmt;
 
-crate use self::debug::{DebugModuleTable, Debuggable, DebuggableVec};
+pub use self::debug::{DebugModuleTable, Debuggable, DebuggableVec};
 
 pub type Identifier = Spanned<StringId>;
 

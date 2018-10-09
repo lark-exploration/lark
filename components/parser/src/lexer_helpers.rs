@@ -1,8 +1,8 @@
 #![allow(unused_variables)]
 
-use crate::parser::ast::{DebugModuleTable, Debuggable};
-use crate::parser::pos::{Span, Spanned};
-use crate::parser::program::{ModuleTable, StringId};
+use crate::ast::{DebugModuleTable, Debuggable};
+use crate::pos::{Span, Spanned};
+use crate::program::{ModuleTable, StringId};
 
 use codespan::ByteIndex;
 use derive_new::new;

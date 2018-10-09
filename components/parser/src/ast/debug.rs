@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 
 use super::*;
-use crate::parser::ModuleTable;
+use crate::ModuleTable;
 
 use std::fmt;
 
