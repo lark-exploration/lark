@@ -1,26 +1,25 @@
 use crate::hir;
 use crate::hir::HirDatabase;
-use crate::ty;
-use crate::ty::base_only::{Base, BaseOnly, BaseTy};
-use crate::ty::declaration::Declaration;
-use crate::ty::interners::HasTyInternTables;
-use crate::ty::interners::TyInternTables;
-use crate::ty::map_family::Map;
-use crate::ty::substitute::Substitution;
-use crate::ty::Erased;
-use crate::ty::InferVarOr;
-use crate::ty::Signature;
-use crate::ty::Ty;
-use crate::ty::TypeFamily;
-use crate::ty::{BaseData, BaseKind};
-use crate::ty::{Generic, Generics};
+use crate::type_check::substitute::Substitution;
 use crate::type_check::Error;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::type_check::TypeCheckerFields;
-use crate::unify::{InferVar, UnificationTable};
+use intern::Has;
 use mir::DefId;
 use std::sync::Arc;
+use ty::base_only::{Base, BaseOnly, BaseTy};
+use ty::declaration::Declaration;
+use ty::interners::TyInternTables;
+use ty::map_family::Map;
+use ty::Erased;
+use ty::InferVarOr;
+use ty::Signature;
+use ty::Ty;
+use ty::TypeFamily;
+use ty::{BaseData, BaseKind};
+use ty::{Generic, Generics};
+use unify::{InferVar, UnificationTable};
 
 impl<DB, F> TypeChecker<'_, DB, F>
 where

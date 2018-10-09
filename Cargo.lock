@@ -99,6 +99,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "debug"
+version = "0.1.0"
+
+[[package]]
 name = "derive-new"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -228,6 +232,18 @@ version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "indices"
+version = "0.1.0"
+
+[[package]]
+name = "intern"
+version = "0.1.0"
+dependencies = [
+ "indices 0.1.0",
+ "map 0.1.0",
+]
+
+[[package]]
 name = "itertools"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -288,30 +304,34 @@ dependencies = [
  "codegen 0.1.0",
  "codespan 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "codespan-reporting 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "debug 0.1.0",
  "derive-new 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive_more 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "eval 0.1.0",
  "generational-arena 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ide 0.1.0",
- "indexmap 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indices 0.1.0",
+ "intern 0.1.0",
  "itertools 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "lalrpop-util 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "language-reporting 0.1.3 (git+https://github.com/wycats/language-reporting.git)",
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "map 0.1.0",
  "mir 0.1.0",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parser 0.1.0",
  "pretty_env_logger 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-hash 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "salsa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "seahash 3.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "smart-default 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "task_manager 0.1.0",
  "termcolor 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "text-diff 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ty 0.1.0",
  "typed-arena 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unify 0.1.0",
  "unindent 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -343,6 +363,14 @@ version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "map"
+version = "0.1.0"
+dependencies = [
+ "indexmap 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-hash 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -405,6 +433,21 @@ dependencies = [
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "smallvec 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "parser"
+version = "0.1.0"
+dependencies = [
+ "codespan 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "derive-new 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "itertools 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lalrpop-util 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "seahash 3.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "smart-default 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -726,6 +769,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ty"
+version = "0.1.0"
+dependencies = [
+ "derive-new 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indices 0.1.0",
+ "intern 0.1.0",
+ "mir 0.1.0",
+ "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parser 0.1.0",
+ "unify 0.1.0",
+]
+
+[[package]]
 name = "typed-arena"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -762,6 +818,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "unicode-xid"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "unify"
+version = "0.1.0"
+dependencies = [
+ "indices 0.1.0",
+]
 
 [[package]]
 name = "unindent"

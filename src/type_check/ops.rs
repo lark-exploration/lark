@@ -1,24 +1,23 @@
 use crate::hir;
-use crate::ty;
-use crate::ty::declaration::Declaration;
-use crate::ty::interners::TyInternTables;
-use crate::ty::map_family::Map;
-use crate::ty::BaseData;
-use crate::ty::GenericDeclarations;
-use crate::ty::GenericKind;
-use crate::ty::Generics;
-use crate::ty::Placeholder;
-use crate::ty::Ty;
-use crate::ty::TypeFamily;
-use crate::ty::Universe;
 use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::type_check::UniverseBinder;
-use crate::unify::InferVar;
-use crate::unify::Inferable;
 use generational_arena::Arena;
 use mir::DefId;
+use ty::declaration::Declaration;
+use ty::interners::TyInternTables;
+use ty::map_family::Map;
+use ty::BaseData;
+use ty::GenericDeclarations;
+use ty::GenericKind;
+use ty::Generics;
+use ty::Placeholder;
+use ty::Ty;
+use ty::TypeFamily;
+use ty::Universe;
+use unify::InferVar;
+use unify::Inferable;
 
 #[derive(Copy, Clone, Debug)]
 pub(super) struct OpIndex {

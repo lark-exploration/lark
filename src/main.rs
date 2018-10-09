@@ -16,22 +16,10 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-#[macro_use]
-mod lexer;
-
-#[macro_use]
-mod indices;
-
-mod debug;
 mod hir;
-mod intern;
-mod map;
-mod parser;
 mod parser2;
 mod tests;
-mod ty;
 mod type_check;
-mod unify;
 
 use std::{env, io};
 

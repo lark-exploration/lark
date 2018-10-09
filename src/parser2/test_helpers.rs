@@ -1,7 +1,7 @@
 use codespan::ByteIndex;
-use crate::parser::lexer_helpers::ParseError;
-use crate::parser::test_helpers::{LineTokenizer, Token};
-use crate::parser::{ast, ModuleTable, Span, Spanned, StringId};
+use parser::lexer_helpers::ParseError;
+use parser::test_helpers::{LineTokenizer, Token};
+use parser::{ast, ModuleTable, Span, Spanned, StringId};
 
 use codespan::{ByteOffset, CodeMap};
 use derive_new::new;

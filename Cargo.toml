@@ -18,13 +18,10 @@ codespan = "0.1.3"
 codespan-reporting = "0.1.4"
 derive-new = "0.5.5"
 derive_more = "0.12.0"
-lalrpop-util = "0.16.0"
 lazy_static = "1.1.0"
 log = "0.4.5"
-indexmap = "1.0.0"
 generational-arena = "0.1.0"
 parking_lot = "0.6.4"
-rustc-hash = "1.0"
 seahash = "3.0.5"
 smart-default = "0.2.0"
 typed-arena = "1.4"
@@ -35,10 +32,17 @@ languageserver-types = "0.51.0"
 salsa = "0.4.1"
 
 codegen = { path = "components/codegen" }
+debug = { path = "components/debug" }
 eval = { path = "components/eval" }
 ide = { path = "components/ide" }
+indices = { path = "components/indices" }
+intern = { path = "components/intern" }
 mir = { path = "components/mir" }
+map = { path = "components/map" }
+parser = { path = "components/parser" }
 task_manager = { path = "components/task_manager" }
+ty = { path = "components/ty" }
+unify = { path = "components/unify" }
 
 [dev-dependencies]
 unindent = "0.1.3"

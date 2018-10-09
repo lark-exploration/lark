@@ -2,35 +2,36 @@
 
 use codespan_reporting::Diagnostic;
 use crate::hir;
-use crate::indices::IndexVec;
-use crate::map::FxIndexMap;
-use crate::parser::Span;
-use crate::ty;
-use crate::ty::base_inferred::BaseInferred;
-use crate::ty::base_only::{BaseOnly, BaseTy};
-use crate::ty::declaration::Declaration;
-use crate::ty::interners::{HasTyInternTables, TyInternTables};
-use crate::ty::map_family::Map;
-use crate::ty::BaseData;
-use crate::ty::Generics;
-use crate::ty::Placeholder;
-use crate::ty::Ty;
-use crate::ty::TypeFamily;
-use crate::ty::Universe;
-use crate::unify::InferVar;
-use crate::unify::Inferable;
-use crate::unify::UnificationTable;
 use generational_arena::Arena;
+use indices::IndexVec;
+use intern::Has;
+use map::FxIndexMap;
 use mir::DefId;
+use parser::Span;
 use std::sync::Arc;
+use ty::base_inferred::BaseInferred;
+use ty::base_only::{BaseOnly, BaseTy};
+use ty::declaration::Declaration;
+use ty::interners::TyInternTables;
+use ty::map_family::Map;
+use ty::BaseData;
+use ty::Generics;
+use ty::Placeholder;
+use ty::Ty;
+use ty::TypeFamily;
+use ty::Universe;
+use unify::InferVar;
+use unify::Inferable;
+use unify::UnificationTable;
 
 mod base_only;
 mod hir_typeck;
 mod ops;
 mod query_definitions;
+mod substitute;
 
 salsa::query_group! {
-    crate trait TypeCheckDatabase: hir::HirDatabase + HasTyInternTables {
+    crate trait TypeCheckDatabase: hir::HirDatabase + Has<TyInternTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: DefId) -> TypeCheckResults<BaseInferred> {
@@ -121,7 +122,7 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         M: Map<Self, Self>;
 }
 
-trait TypeCheckerFields<F: TypeCheckFamily>: HasTyInternTables {
+trait TypeCheckerFields<F: TypeCheckFamily>: Has<TyInternTables> {
     type DB: TypeCheckDatabase;
 
     fn db(&self) -> &Self::DB;
@@ -188,12 +189,12 @@ crate struct Error {
     location: hir::MetaIndex,
 }
 
-impl<DB, F> HasTyInternTables for TypeChecker<'_, DB, F>
+impl<DB, F> Has<TyInternTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckFamily,
 {
-    fn ty_intern_tables(&self) -> &TyInternTables {
-        self.db.ty_intern_tables()
+    fn intern_tables(&self) -> &TyInternTables {
+        self.db.intern_tables()
     }
 }
