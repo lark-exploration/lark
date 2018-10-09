@@ -1,4 +1,4 @@
-use indices::{IndexVec, U32Index};
+use indices::U32Index;
 use map::FxIndexMap;
 use std::hash::Hash;
 use std::rc::Rc;
@@ -14,8 +14,8 @@ where
     Key: Copy + U32Index,
     Data: Clone + Hash + Eq,
 {
-    vec: IndexVec<Key, Data>,
-    map: FxIndexMap<Data, Key>,
+    map: FxIndexMap<Data, ()>,
+    key: std::marker::PhantomData<Key>,
 }
 
 impl<Key, Data> Default for InternTable<Key, Data>
@@ -25,8 +25,8 @@ where
 {
     fn default() -> Self {
         InternTable {
-            vec: IndexVec::default(),
             map: FxIndexMap::default(),
+            key: std::marker::PhantomData,
         }
     }
 }
@@ -37,14 +37,18 @@ where
     Data: Clone + Hash + Eq,
 {
     crate fn get(&self, key: Key) -> Data {
-        self.vec[key].clone()
+        match self.map.get_index(key.as_usize()) {
+            Some((key, &())) => key.clone(),
+            None => panic!("invalid intern index: `{:?}`", key),
+        }
     }
 
     crate fn intern(&mut self, data: Data) -> Key {
-        let InternTable { vec, map } = self;
-        map.entry(data.clone())
-            .or_insert_with(|| vec.push(data))
-            .clone()
+        let InternTable { map, key: _ } = self;
+        let entry = map.entry(data);
+        let index = entry.index();
+        entry.or_insert(());
+        Key::from_usize(index)
     }
 }
 
