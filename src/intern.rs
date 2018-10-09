@@ -23,6 +23,71 @@ crate trait Has<Tables> {
     }
 }
 
+/// Generate a "intern tables" struct that can intern one or more
+/// types. Input looks like:
+///
+/// ```ignore
+/// struct MyTables {
+///     struct MyTablesData {
+///         field1: map(Key1, Value1),
+///         field2: map(Key2, Value2),
+///         ...
+///         fieldN: map(KeyN, ValueN),
+///     }
+/// }
+/// ```
+///
+/// This will generate the `MyTables` struct which will (internally)
+/// hold a arc to a `MyTablesData` which has N interners. It will also
+/// generate `Intern` and `Untern` impls for each Key/Value type.
+macro_rules! intern_tables {
+    (
+        struct $InternTables:ident {
+            struct $InternTablesData:ident {
+                $(
+                    $field:ident : map($key:ty, $data:ty),
+                )*
+            }
+        }
+    ) => {
+        #[derive(Clone, Default)]
+        crate struct $InternTables {
+            data: Arc<$InternTablesData>,
+        }
+
+        impl $crate::intern::Has<$InternTables> for $InternTables {
+            fn intern_tables(&self) -> &$InternTables {
+                self
+            }
+        }
+
+        #[derive(Default)]
+        struct $InternTablesData {
+            $(
+                $field: parking_lot::RwLock<InternTable<$key, $data>>,
+            )*
+        }
+
+        $(
+            impl $crate::intern::Intern<$InternTables> for $data {
+                type Key = $key;
+
+                fn intern(self, tables: &$InternTables) -> $key {
+                    tables.data.$field.write().intern(self)
+                }
+            }
+
+            impl $crate::intern::Untern<$InternTables> for $key {
+                type Data = $data;
+
+                fn untern(self, tables: &$InternTables) -> $data {
+                    tables.data.$field.read().get(self)
+                }
+            }
+        )*
+    }
+}
+
 /// An "intern table" defines a single interner for
 /// one key-value pair. They're meant to be grouped
 /// into a larger `Interners` struct, a la
