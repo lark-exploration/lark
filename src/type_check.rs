@@ -15,15 +15,15 @@ use crate::ty::Placeholder;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::ty::Universe;
-use crate::unify::InferVar;
-use crate::unify::Inferable;
-use crate::unify::UnificationTable;
 use generational_arena::Arena;
 use indices::IndexVec;
 use intern::Has;
 use map::FxIndexMap;
 use mir::DefId;
 use std::sync::Arc;
+use unify::InferVar;
+use unify::Inferable;
+use unify::UnificationTable;
 
 mod base_only;
 mod hir_typeck;

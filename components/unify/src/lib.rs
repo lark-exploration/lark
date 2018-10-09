@@ -1,11 +1,12 @@
-#![deny(warnings)]
+#![feature(macro_at_most_once_rep)]
+#![feature(min_const_fn)]
+#![feature(const_let)]
+#![feature(const_fn)]
 
 use indices::{IndexVec, U32Index};
-use std::convert::TryFrom;
-use std::fmt;
 
 indices::index_type! {
-    crate struct InferVar {
+    pub struct InferVar {
         debug_name["?"],
         ..
     }
@@ -19,7 +20,7 @@ indices::index_type! {
 /// inference variable (this variable may itself be unified etc). The Inferable
 /// trait lets us check whether this value represents an inference variable
 /// or not (via `as_infer_var`) and also to extract the known data (via `assert_known`).
-crate trait Inferable<Interners>: U32Index {
+pub trait Inferable<Interners>: U32Index {
     type KnownData;
     type Data;
 
@@ -36,7 +37,7 @@ crate trait Inferable<Interners>: U32Index {
 }
 
 #[derive(Clone)]
-crate struct UnificationTable<Interners, Cause> {
+pub struct UnificationTable<Interners, Cause> {
     interners: Interners,
 
     /// Stores the union-find data for each inference variable.
@@ -144,7 +145,7 @@ impl RootData {
 }
 
 impl<Interners, Cause> UnificationTable<Interners, Cause> {
-    crate fn new(interners: Interners) -> Self {
+    pub fn new(interners: Interners) -> Self {
         Self {
             interners: interners,
             infers: IndexVec::new(),
@@ -155,7 +156,7 @@ impl<Interners, Cause> UnificationTable<Interners, Cause> {
 
     /// `value` to a known-value, if possible. Else, it must be an inference variable,
     /// so return that `InferVar`.
-    crate fn shallow_resolve_data<K>(&mut self, value: K) -> Result<K::KnownData, InferVar>
+    pub fn shallow_resolve_data<K>(&mut self, value: K) -> Result<K::KnownData, InferVar>
     where
         K: Inferable<Interners>,
     {
@@ -172,12 +173,12 @@ impl<Interners, Cause> UnificationTable<Interners, Cause> {
     }
 
     /// True if `index` has been assigned to a value, false otherwise.
-    crate fn is_known(&mut self, index: impl Inferable<Interners>) -> bool {
+    pub fn is_known(&mut self, index: impl Inferable<Interners>) -> bool {
         self.shallow_resolve_data(index).is_ok()
     }
 
     /// Creates a new inferable thing.
-    crate fn new_inferable<K>(&mut self) -> K
+    pub fn new_inferable<K>(&mut self) -> K
     where
         K: Inferable<Interners>,
     {
@@ -187,14 +188,14 @@ impl<Interners, Cause> UnificationTable<Interners, Cause> {
 
     /// Read out all the variables that may have been unified
     /// since the last invocation to `drain_events`.
-    crate fn drain_events(&mut self) -> impl Iterator<Item = InferVar> + '_ {
+    pub fn drain_events(&mut self) -> impl Iterator<Item = InferVar> + '_ {
         self.events.drain(..)
     }
 
     /// Tries to unify `key1` and `key2` -- if one or both is an unbound inference variable,
     /// we will record the connection between them. But if they both represent known values,
     /// then we will return the two known values so you can recursively unify those.
-    crate fn unify<K>(
+    pub fn unify<K>(
         &mut self,
         cause: Cause,
         key1: K,
@@ -259,16 +260,6 @@ impl<Interners, Cause> UnificationTable<Interners, Cause> {
     fn probe(&mut self, index: InferVar) -> Option<Value> {
         let (_root, root_data) = self.find(index);
         root_data.value()
-    }
-
-    /// Finds the root data associated with `index1`; does not do path compression,
-    /// so only requires `&self`. Not the fastest thing ever.
-    fn find_without_path_compression(&self, index1: InferVar) -> (InferVar, RootData) {
-        match self.infers[index1] {
-            InferData::Unbound(rank) => (index1, RootData::Rank(rank)),
-            InferData::Value(value1) => (index1, RootData::Value(value1)),
-            InferData::Redirect(index2) => self.find_without_path_compression(index2),
-        }
     }
 
     /// Given two unbound inference variables, unify them for evermore. It is best

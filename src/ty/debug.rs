@@ -3,7 +3,7 @@
 use crate::debug::DebugWith;
 use crate::ir::DefId;
 use crate::ty::*;
-use crate::unify::InferVar;
+use unify::InferVar;
 
 impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for Ty<F> {
     fn fmt_with(

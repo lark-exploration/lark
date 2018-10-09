@@ -18,10 +18,10 @@ use crate::type_check::Error;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::type_check::TypeCheckerFields;
-use crate::unify::{InferVar, UnificationTable};
 use intern::Has;
 use mir::DefId;
 use std::sync::Arc;
+use unify::{InferVar, UnificationTable};
 
 impl TypeCheckFamily for BaseOnly {
     type TcBase = Base;

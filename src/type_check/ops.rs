@@ -15,10 +15,10 @@ use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::type_check::UniverseBinder;
-use crate::unify::InferVar;
-use crate::unify::Inferable;
 use generational_arena::Arena;
 use mir::DefId;
+use unify::InferVar;
+use unify::Inferable;
 
 #[derive(Copy, Clone, Debug)]
 pub(super) struct OpIndex {

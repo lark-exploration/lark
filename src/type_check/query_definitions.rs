@@ -13,14 +13,14 @@ use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckResults;
 use crate::type_check::TypeChecker;
 use crate::type_check::UniverseBinder;
-use crate::unify::InferVar;
-use crate::unify::UnificationTable;
 use generational_arena::Arena;
 use indices::IndexVec;
 use intern::Has;
 use map::FxIndexMap;
 use mir::DefId;
 use std::sync::Arc;
+use unify::InferVar;
+use unify::UnificationTable;
 
 crate fn base_type_check(
     db: &impl TypeCheckDatabase,

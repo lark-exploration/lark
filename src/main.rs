@@ -26,7 +26,6 @@ mod parser2;
 mod tests;
 mod ty;
 mod type_check;
-mod unify;
 
 use std::{env, io};
 

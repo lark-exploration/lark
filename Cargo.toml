@@ -40,6 +40,7 @@ intern = { path = "components/intern" }
 mir = { path = "components/mir" }
 map = { path = "components/map" }
 task_manager = { path = "components/task_manager" }
+unify = { path = "components/unify" }
 
 [dev-dependencies]
 unindent = "0.1.3"

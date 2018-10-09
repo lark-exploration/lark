@@ -6,9 +6,9 @@ use crate::ty::Erased;
 use crate::ty::InferVarOr;
 use crate::ty::Placeholder;
 use crate::ty::TypeFamily;
-use crate::unify::{InferVar, Inferable};
 use intern::Has;
 use intern::{Intern, Untern};
+use unify::{InferVar, Inferable};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct BaseOnly;

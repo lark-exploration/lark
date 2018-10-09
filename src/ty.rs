@@ -2,7 +2,6 @@
 
 use crate::parser::program::StringId;
 use crate::ty::interners::TyInternTables;
-use crate::unify::InferVar;
 use indices::IndexVec;
 use intern::Has;
 use mir::DefId;
@@ -10,6 +9,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter::IntoIterator;
 use std::sync::Arc;
+use unify::InferVar;
 
 crate mod base_inferred;
 crate mod base_only;
