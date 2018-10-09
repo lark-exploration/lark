@@ -1,5 +1,5 @@
+use crate::intern::Has;
 use crate::ty::declaration::Declaration;
-use crate::ty::interners::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::FamilyMapper;
 use crate::ty::map_family::Map;

@@ -1,7 +1,7 @@
 #![warn(unused_imports)]
 
+use crate::intern::Has;
 use crate::parser::program::StringId;
-use crate::ty::interners::Has;
 use crate::ty::interners::TyInternTables;
 use crate::unify::InferVar;
 use indices::IndexVec;

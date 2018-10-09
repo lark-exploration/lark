@@ -1,6 +1,5 @@
-use crate::intern::Intern;
+use crate::intern::Has;
 use crate::intern::InternTable;
-use crate::intern::Untern;
 use crate::ty::base_inferred::{self, BaseInferred};
 use crate::ty::base_only::{self, BaseOnly};
 use crate::ty::declaration::{self, Declaration};
@@ -12,26 +11,6 @@ use std::sync::Arc;
 #[derive(Clone, Default)]
 crate struct TyInternTables {
     data: Arc<TyInternTablesData>,
-}
-
-crate trait Has<Tables> {
-    fn intern_tables(&self) -> &Tables;
-
-    fn intern<V>(&self, value: V) -> V::Key
-    where
-        Self: Sized,
-        V: Intern<Tables>,
-    {
-        value.intern(self.intern_tables())
-    }
-
-    fn untern<K>(&self, key: K) -> K::Data
-    where
-        Self: Sized,
-        K: Untern<Tables>,
-    {
-        key.untern(self.intern_tables())
-    }
 }
 
 impl Has<TyInternTables> for TyInternTables {

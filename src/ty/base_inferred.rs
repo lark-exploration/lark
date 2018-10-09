@@ -1,6 +1,6 @@
 //! A type family where we just erase all permissions and we support inference.
 
-use crate::ty::interners::Has;
+use crate::intern::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::Erased;

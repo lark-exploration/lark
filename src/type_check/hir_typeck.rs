@@ -1,9 +1,9 @@
 use crate::hir;
 use crate::hir::HirDatabase;
+use crate::intern::Has;
 use crate::ty;
 use crate::ty::base_only::{Base, BaseOnly, BaseTy};
 use crate::ty::declaration::Declaration;
-use crate::ty::interners::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::Map;
 use crate::ty::Erased;

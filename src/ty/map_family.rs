@@ -1,4 +1,4 @@
-use crate::ty::interners::Has;
+use crate::intern::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::{self, TypeFamily};
 use mir::DefId;

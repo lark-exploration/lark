@@ -1,12 +1,13 @@
 use codespan_reporting::Diagnostic;
 use crate::hir;
 use crate::hir::HirDatabase;
+use crate::intern::Has;
 use crate::parser::Span;
 use crate::ty;
 use crate::ty::base_inferred::BaseInferred;
 use crate::ty::base_only::{BaseOnly, BaseTy};
 use crate::ty::declaration::Declaration;
-use crate::ty::interners::{Has, TyInternTables};
+use crate::ty::interners::TyInternTables;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use crate::type_check::TypeCheckDatabase;

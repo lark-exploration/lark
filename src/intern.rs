@@ -3,6 +3,26 @@ use map::FxIndexMap;
 use std::hash::Hash;
 use std::rc::Rc;
 
+crate trait Has<Tables> {
+    fn intern_tables(&self) -> &Tables;
+
+    fn intern<V>(&self, value: V) -> V::Key
+    where
+        Self: Sized,
+        V: Intern<Tables>,
+    {
+        value.intern(self.intern_tables())
+    }
+
+    fn untern<K>(&self, key: K) -> K::Data
+    where
+        Self: Sized,
+        K: Untern<Tables>,
+    {
+        key.untern(self.intern_tables())
+    }
+}
+
 /// An "intern table" defines a single interner for
 /// one key-value pair. They're meant to be grouped
 /// into a larger `Interners` struct, a la
