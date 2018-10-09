@@ -1,4 +1,4 @@
-use crate::ty::interners::{HasTyInternTables, TyInternTables};
+use crate::ty::interners::{Has, TyInternTables};
 use crate::ty::map_family::FamilyMapper;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
@@ -11,7 +11,7 @@ crate struct Identity<'me, DB> {
 
 impl<DB, F> FamilyMapper<F, F> for Identity<'_, DB>
 where
-    DB: HasTyInternTables,
+    DB: Has<TyInternTables>,
     F: TypeFamily,
 {
     fn map_ty(&mut self, ty: Ty<F>) -> Ty<F> {
@@ -23,11 +23,11 @@ where
     }
 }
 
-impl<DB> HasTyInternTables for Identity<'_, DB>
+impl<DB> Has<TyInternTables> for Identity<'_, DB>
 where
-    DB: HasTyInternTables,
+    DB: Has<TyInternTables>,
 {
-    fn ty_intern_tables(&self) -> &TyInternTables {
-        self.db.ty_intern_tables()
+    fn intern_tables(&self) -> &TyInternTables {
+        self.db.intern_tables()
     }
 }

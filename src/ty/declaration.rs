@@ -2,7 +2,8 @@
 //! We do not support inference and bases and things may map to bound
 //! variables from generic declarations.
 
-use crate::ty::interners::HasTyInternTables;
+use crate::ty::interners::Has;
+use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::BoundVarOr;
 use crate::ty::Erased;
@@ -16,10 +17,8 @@ impl TypeFamily for Declaration {
     type Base = Base;
     type Placeholder = !;
 
-    fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base {
-        tables
-            .ty_intern_tables()
-            .intern(BoundVarOr::Known(base_data))
+    fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base {
+        tables.intern_tables().intern(BoundVarOr::Known(base_data))
     }
 }
 

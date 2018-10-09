@@ -14,28 +14,28 @@ crate struct TyInternTables {
     data: Arc<TyInternTablesData>,
 }
 
-crate trait HasTyInternTables {
-    fn ty_intern_tables(&self) -> &TyInternTables;
+crate trait Has<Tables> {
+    fn intern_tables(&self) -> &Tables;
 
     fn intern<V>(&self, value: V) -> V::Key
     where
         Self: Sized,
-        V: Intern<TyInternTables>,
+        V: Intern<Tables>,
     {
-        value.intern(self.ty_intern_tables())
+        value.intern(self.intern_tables())
     }
 
     fn untern<K>(&self, key: K) -> K::Data
     where
         Self: Sized,
-        K: Untern<TyInternTables>,
+        K: Untern<Tables>,
     {
-        key.untern(self.ty_intern_tables())
+        key.untern(self.intern_tables())
     }
 }
 
-impl HasTyInternTables for TyInternTables {
-    fn ty_intern_tables(&self) -> &TyInternTables {
+impl Has<TyInternTables> for TyInternTables {
+    fn intern_tables(&self) -> &TyInternTables {
         self
     }
 }

@@ -1,7 +1,7 @@
 //! A type family where we just erase all permissions and we support inference.
 
 use crate::intern::{Intern, Untern};
-use crate::ty::interners::HasTyInternTables;
+use crate::ty::interners::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::Erased;
@@ -18,10 +18,8 @@ impl TypeFamily for BaseOnly {
     type Base = Base;
     type Placeholder = Placeholder;
 
-    fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base {
-        tables
-            .ty_intern_tables()
-            .intern(InferVarOr::Known(base_data))
+    fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base {
+        tables.intern_tables().intern(InferVarOr::Known(base_data))
     }
 }
 

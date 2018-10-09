@@ -1,7 +1,8 @@
 #![warn(unused_imports)]
 
 use crate::parser::program::StringId;
-use crate::ty::interners::HasTyInternTables;
+use crate::ty::interners::Has;
+use crate::ty::interners::TyInternTables;
 use crate::unify::InferVar;
 use indices::IndexVec;
 use mir::DefId;
@@ -24,7 +25,7 @@ crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
 
     type Placeholder: Copy + Clone + Debug + Eq + Hash;
 
-    fn intern_base_data(tables: &dyn HasTyInternTables, base_data: BaseData<Self>) -> Self::Base;
+    fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base;
 }
 
 /// A type is the combination of a *permission* and a *base type*.

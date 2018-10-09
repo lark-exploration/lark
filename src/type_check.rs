@@ -7,7 +7,7 @@ use crate::ty;
 use crate::ty::base_inferred::BaseInferred;
 use crate::ty::base_only::{BaseOnly, BaseTy};
 use crate::ty::declaration::Declaration;
-use crate::ty::interners::{HasTyInternTables, TyInternTables};
+use crate::ty::interners::{Has, TyInternTables};
 use crate::ty::map_family::Map;
 use crate::ty::BaseData;
 use crate::ty::Generics;
@@ -31,7 +31,7 @@ mod query_definitions;
 mod substitute;
 
 salsa::query_group! {
-    crate trait TypeCheckDatabase: hir::HirDatabase + HasTyInternTables {
+    crate trait TypeCheckDatabase: hir::HirDatabase + Has<TyInternTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: DefId) -> TypeCheckResults<BaseInferred> {
@@ -122,7 +122,7 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         M: Map<Self, Self>;
 }
 
-trait TypeCheckerFields<F: TypeCheckFamily>: HasTyInternTables {
+trait TypeCheckerFields<F: TypeCheckFamily>: Has<TyInternTables> {
     type DB: TypeCheckDatabase;
 
     fn db(&self) -> &Self::DB;
@@ -189,12 +189,12 @@ crate struct Error {
     location: hir::MetaIndex,
 }
 
-impl<DB, F> HasTyInternTables for TypeChecker<'_, DB, F>
+impl<DB, F> Has<TyInternTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckFamily,
 {
-    fn ty_intern_tables(&self) -> &TyInternTables {
-        self.db.ty_intern_tables()
+    fn intern_tables(&self) -> &TyInternTables {
+        self.db.intern_tables()
     }
 }

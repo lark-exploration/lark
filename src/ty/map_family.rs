@@ -1,4 +1,5 @@
-use crate::ty::interners::HasTyInternTables;
+use crate::ty::interners::Has;
+use crate::ty::interners::TyInternTables;
 use crate::ty::{self, TypeFamily};
 use mir::DefId;
 use std::sync::Arc;
@@ -9,7 +10,7 @@ crate trait Map<S: TypeFamily, T: TypeFamily>: Clone {
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output;
 }
 
-crate trait FamilyMapper<S: TypeFamily, T: TypeFamily>: HasTyInternTables {
+crate trait FamilyMapper<S: TypeFamily, T: TypeFamily>: Has<TyInternTables> {
     fn map_ty(&mut self, ty: ty::Ty<S>) -> ty::Ty<T>;
 
     fn map_placeholder(&mut self, placeholder: S::Placeholder) -> T::Placeholder;

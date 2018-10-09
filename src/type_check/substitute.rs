@@ -1,5 +1,5 @@
 use crate::ty::declaration::Declaration;
-use crate::ty::interners::HasTyInternTables;
+use crate::ty::interners::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::FamilyMapper;
 use crate::ty::map_family::Map;
@@ -24,20 +24,20 @@ where
     T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
-    crate fn new(intern_tables: &'me dyn HasTyInternTables, values: &'me V) -> Self {
+    crate fn new(intern_tables: &'me dyn Has<TyInternTables>, values: &'me V) -> Self {
         Substitution {
-            intern_tables: intern_tables.ty_intern_tables(),
+            intern_tables: intern_tables.intern_tables(),
             values,
         }
     }
 }
 
-impl<T, V> HasTyInternTables for Substitution<'me, T, V>
+impl<T, V> Has<TyInternTables> for Substitution<'me, T, V>
 where
     T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
-    fn ty_intern_tables(&self) -> &TyInternTables {
+    fn intern_tables(&self) -> &TyInternTables {
         &self.intern_tables
     }
 }
