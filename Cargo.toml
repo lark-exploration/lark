@@ -10,7 +10,11 @@ edition = '2018'
 
 [workspace]
 members = [
+    "components/codegen",
+    "components/eval",
     "components/ide",
+    "components/mir",
+    "components/task_manager"
 ]
 
 [dependencies]
