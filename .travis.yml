@@ -6,6 +6,4 @@ cache:
 script:
 - RUST_BACKTRACE=1 CARGO_INCREMENTAL=0 cargo test --all
 matrix:
-  allow_failures:
-    - rust: nightly
   fast_finish: true
