@@ -28,6 +28,7 @@ mod base_only;
 mod hir_typeck;
 mod ops;
 mod query_definitions;
+mod substitute;
 
 salsa::query_group! {
     crate trait TypeCheckDatabase: hir::HirDatabase + HasTyInternTables {
