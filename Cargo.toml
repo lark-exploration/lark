@@ -21,10 +21,8 @@ derive_more = "0.12.0"
 lalrpop-util = "0.16.0"
 lazy_static = "1.1.0"
 log = "0.4.5"
-indexmap = "1.0.0"
 generational-arena = "0.1.0"
 parking_lot = "0.6.4"
-rustc-hash = "1.0"
 seahash = "3.0.5"
 smart-default = "0.2.0"
 typed-arena = "1.4"
@@ -39,6 +37,7 @@ eval = { path = "components/eval" }
 ide = { path = "components/ide" }
 indices = { path = "components/indices" }
 mir = { path = "components/mir" }
+map = { path = "components/map" }
 task_manager = { path = "components/task_manager" }
 
 [dev-dependencies]

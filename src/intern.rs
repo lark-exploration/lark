@@ -1,5 +1,5 @@
-use crate::map::FxIndexMap;
 use indices::{IndexVec, U32Index};
+use map::FxIndexMap;
 use std::hash::Hash;
 use std::rc::Rc;
 
