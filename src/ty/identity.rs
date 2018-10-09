@@ -1,9 +1,9 @@
-use crate::intern::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::FamilyMapper;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
 use derive_new::new;
+use intern::Has;
 
 #[derive(new)]
 crate struct Identity<'me, DB> {

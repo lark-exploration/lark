@@ -1,11 +1,11 @@
 //! A type family where we just erase all permissions and we support inference.
 
-use crate::intern::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::Erased;
 use crate::ty::Placeholder;
 use crate::ty::TypeFamily;
+use intern::Has;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct BaseInferred;

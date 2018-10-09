@@ -1,6 +1,6 @@
-use crate::intern::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::{self, TypeFamily};
+use intern::Has;
 use mir::DefId;
 use std::sync::Arc;
 

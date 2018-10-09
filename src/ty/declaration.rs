@@ -2,12 +2,12 @@
 //! We do not support inference and bases and things may map to bound
 //! variables from generic declarations.
 
-use crate::intern::Has;
 use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::BoundVarOr;
 use crate::ty::Erased;
 use crate::ty::TypeFamily;
+use intern::Has;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Declaration;

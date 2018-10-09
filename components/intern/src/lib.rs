@@ -1,9 +1,8 @@
 use indices::U32Index;
 use map::FxIndexMap;
 use std::hash::Hash;
-use std::rc::Rc;
 
-crate trait Has<Tables> {
+pub trait Has<Tables> {
     fn intern_tables(&self) -> &Tables;
 
     fn intern<V>(&self, value: V) -> V::Key
@@ -40,9 +39,10 @@ crate trait Has<Tables> {
 /// This will generate the `MyTables` struct which will (internally)
 /// hold a arc to a `MyTablesData` which has N interners. It will also
 /// generate `Intern` and `Untern` impls for each Key/Value type.
+#[macro_export]
 macro_rules! intern_tables {
     (
-        struct $InternTables:ident {
+        $v:vis struct $InternTables:ident {
             struct $InternTablesData:ident {
                 $(
                     $field:ident : map($key:ty, $data:ty),
@@ -51,11 +51,11 @@ macro_rules! intern_tables {
         }
     ) => {
         #[derive(Clone, Default)]
-        crate struct $InternTables {
+        $v struct $InternTables {
             data: Arc<$InternTablesData>,
         }
 
-        impl $crate::intern::Has<$InternTables> for $InternTables {
+        impl $crate::Has<$InternTables> for $InternTables {
             fn intern_tables(&self) -> &$InternTables {
                 self
             }
@@ -69,7 +69,7 @@ macro_rules! intern_tables {
         }
 
         $(
-            impl $crate::intern::Intern<$InternTables> for $data {
+            impl $crate::Intern<$InternTables> for $data {
                 type Key = $key;
 
                 fn intern(self, tables: &$InternTables) -> $key {
@@ -77,7 +77,7 @@ macro_rules! intern_tables {
                 }
             }
 
-            impl $crate::intern::Untern<$InternTables> for $key {
+            impl $crate::Untern<$InternTables> for $key {
                 type Data = $data;
 
                 fn untern(self, tables: &$InternTables) -> $data {
@@ -94,7 +94,7 @@ macro_rules! intern_tables {
 /// `crate::ty::TyInterners`, that define a series
 /// of interners related to some particular area.
 #[derive(Debug)]
-crate struct InternTable<Key, Data>
+pub struct InternTable<Key, Data>
 where
     Key: Copy + U32Index,
     Data: Clone + Hash + Eq,
@@ -121,14 +121,14 @@ where
     Key: Copy + U32Index,
     Data: Clone + Hash + Eq,
 {
-    crate fn get(&self, key: Key) -> Data {
+    pub fn get(&self, key: Key) -> Data {
         match self.map.get_index(key.as_usize()) {
             Some((key, &())) => key.clone(),
             None => panic!("invalid intern index: `{:?}`", key),
         }
     }
 
-    crate fn intern(&mut self, data: Data) -> Key {
+    pub fn intern(&mut self, data: Data) -> Key {
         let InternTable { map, key: _ } = self;
         let entry = map.entry(data);
         let index = entry.index();
@@ -142,7 +142,7 @@ where
 ///
 /// Example: implemented for `crate::ty::PermData` with
 /// key type `crate::ty::Perm`
-crate trait Intern<Interners>: Clone {
+pub trait Intern<Interners>: Clone {
     type Key;
 
     fn intern(self, interner: &Interners) -> Self::Key;
@@ -150,7 +150,7 @@ crate trait Intern<Interners>: Clone {
 
 /// Reverse trait: implemented by the key (`crate::ty::Perm`)
 /// and permits lookup in some `Interners` struct.
-crate trait Untern<Interners>: Clone {
+pub trait Untern<Interners>: Clone {
     type Data;
 
     fn untern(self, interner: &Interners) -> Self::Data;

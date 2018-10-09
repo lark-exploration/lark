@@ -2,7 +2,6 @@
 
 use codespan_reporting::Diagnostic;
 use crate::hir;
-use crate::intern::Has;
 use crate::parser::Span;
 use crate::ty;
 use crate::ty::base_inferred::BaseInferred;
@@ -21,6 +20,7 @@ use crate::unify::Inferable;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
 use indices::IndexVec;
+use intern::Has;
 use map::FxIndexMap;
 use mir::DefId;
 use std::sync::Arc;

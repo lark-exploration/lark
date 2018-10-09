@@ -36,6 +36,7 @@ codegen = { path = "components/codegen" }
 eval = { path = "components/eval" }
 ide = { path = "components/ide" }
 indices = { path = "components/indices" }
+intern = { path = "components/intern" }
 mir = { path = "components/mir" }
 map = { path = "components/map" }
 task_manager = { path = "components/task_manager" }

@@ -1,4 +1,3 @@
-use crate::intern::Has;
 use crate::ty::declaration::Declaration;
 use crate::ty::interners::TyInternTables;
 use crate::ty::map_family::FamilyMapper;
@@ -9,6 +8,7 @@ use crate::ty::Erased;
 use crate::ty::Generic;
 use crate::ty::Ty;
 use crate::ty::TypeFamily;
+use intern::Has;
 
 crate struct Substitution<'me, T, V>
 where

@@ -19,9 +19,6 @@
 #[macro_use]
 mod lexer;
 
-#[macro_use]
-mod intern;
-
 mod debug;
 mod hir;
 mod parser;

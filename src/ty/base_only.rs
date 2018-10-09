@@ -1,7 +1,5 @@
 //! A type family where we just erase all permissions and we support inference.
 
-use crate::intern::Has;
-use crate::intern::{Intern, Untern};
 use crate::ty::interners::TyInternTables;
 use crate::ty::BaseData;
 use crate::ty::Erased;
@@ -9,6 +7,8 @@ use crate::ty::InferVarOr;
 use crate::ty::Placeholder;
 use crate::ty::TypeFamily;
 use crate::unify::{InferVar, Inferable};
+use intern::Has;
+use intern::{Intern, Untern};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 crate struct BaseOnly;
