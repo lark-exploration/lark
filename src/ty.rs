@@ -1,9 +1,9 @@
 #![warn(unused_imports)]
 
-use crate::indices::IndexVec;
 use crate::parser::program::StringId;
 use crate::ty::interners::HasTyInternTables;
 use crate::unify::InferVar;
+use indices::IndexVec;
 use mir::DefId;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -100,7 +100,7 @@ crate struct Placeholder {
 /// the "global names"; each time we traverse into a binder, we instantiate a
 /// new universe (e.g., U(1)) that can see all things from lower universes
 /// as well as some new placeholders.
-index_type! {
+indices::index_type! {
     crate struct Universe {
         debug_name["U"],
         ..
@@ -120,7 +120,7 @@ crate enum BoundVarOr<T> {
     Known(T),
 }
 
-index_type! {
+indices::index_type! {
     crate struct BoundVar { .. }
 }
 

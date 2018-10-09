@@ -27,7 +27,7 @@ impl TypeFamily for BaseOnly {
 
 crate type BaseTy = crate::ty::Ty<BaseOnly>;
 
-index_type! {
+indices::index_type! {
     crate struct Base { .. }
 }
 

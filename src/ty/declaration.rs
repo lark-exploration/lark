@@ -25,6 +25,6 @@ impl TypeFamily for Declaration {
 
 crate type DeclarationTy = crate::ty::Ty<Declaration>;
 
-index_type! {
+indices::index_type! {
     crate struct Base { .. }
 }

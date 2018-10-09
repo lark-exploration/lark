@@ -1,3 +1,5 @@
+#![feature(macro_at_most_once_rep)]
+
 use std::fmt::Debug;
 use std::hash::Hash;
 
@@ -50,10 +52,10 @@ use std::hash::Hash;
 ///   be a string expression, like `"XXX"`. We will print `"XXX"(N)` where `N`
 ///   is the index. If you put just `debug_name[]`, then we will not emit any
 ///   `Debug` impl at all, and you can provide your own.
-#[macro_use]
+#[macro_export]
 macro_rules! index_type {
     ($(#[$attr:meta])* $visibility:vis struct $name:ident { $($tokens:tt)* }) => {
-        index_type! {
+        $crate::index_type! {
             @with {
                 attrs[$($attr)*],
                 visibility[$visibility],
@@ -78,7 +80,7 @@ macro_rules! index_type {
         }
         @tokens {..}
     ) => {
-        index_type! {
+        $crate::index_type! {
             @with {
                 attrs[$($attrs)*],
                 visibility[$visibility],
@@ -103,7 +105,7 @@ macro_rules! index_type {
             $($tokens:tt)*
         }
     ) => {
-        index_type! {
+        $crate::index_type! {
             @with {
                 attrs[$($attrs)*],
                 visibility[$visibility],
@@ -184,7 +186,7 @@ macro_rules! index_type {
             }
         }
 
-        impl crate::indices::U32Index for $name {
+        impl $crate::U32Index for $name {
             #[inline]
             fn as_u32(self) -> u32 {
                 self.as_u32()
@@ -206,7 +208,7 @@ macro_rules! index_type {
             }
         }
 
-        index_type! {
+        $crate::index_type! {
             @debug_impl {
                 name[$name],
                 debug_name[$($debug_name)?]
@@ -240,7 +242,7 @@ macro_rules! index_type {
     };
 }
 
-crate trait U32Index: Copy + Debug + Eq + Hash + 'static {
+pub trait U32Index: Copy + Debug + Eq + Hash + 'static {
     fn as_usize(self) -> usize;
 
     fn from_usize(v: usize) -> Self;
@@ -252,7 +254,7 @@ crate trait U32Index: Copy + Debug + Eq + Hash + 'static {
 
 /// A vector indexable via values of type `I`.
 #[derive(Clone, Eq, PartialEq, Hash)]
-crate struct IndexVec<I, T>
+pub struct IndexVec<I, T>
 where
     I: U32Index,
 {
@@ -264,18 +266,18 @@ impl<I, T> IndexVec<I, T>
 where
     I: U32Index,
 {
-    crate fn new() -> Self {
+    pub fn new() -> Self {
         Default::default()
     }
 
-    crate fn with_capacity(cap: usize) -> Self {
+    pub fn with_capacity(cap: usize) -> Self {
         IndexVec {
             vec: Vec::with_capacity(cap),
             _marker: std::marker::PhantomData,
         }
     }
 
-    crate fn from_elem<S>(elem: T, universe: &IndexVec<I, S>) -> Self
+    pub fn from_elem<S>(elem: T, universe: &IndexVec<I, S>) -> Self
     where
         T: Clone,
     {
@@ -285,7 +287,7 @@ where
         }
     }
 
-    crate fn from_elem_n(elem: T, n: usize) -> Self
+    pub fn from_elem_n(elem: T, n: usize) -> Self
     where
         T: Clone,
     {
@@ -295,93 +297,93 @@ where
         }
     }
 
-    crate fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.vec.len()
     }
 
-    crate fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.vec.is_empty()
     }
 
-    crate fn into_iter(self) -> std::vec::IntoIter<T> {
+    pub fn into_iter(self) -> std::vec::IntoIter<T> {
         self.vec.into_iter()
     }
 
-    crate fn into_iter_enumerated(self) -> impl Iterator<Item = (I, T)> {
+    pub fn into_iter_enumerated(self) -> impl Iterator<Item = (I, T)> {
         self.vec
             .into_iter()
             .enumerate()
             .map(|(i, v)| (I::from_usize(i), v))
     }
 
-    crate fn iter(&self) -> std::slice::Iter<'_, T> {
+    pub fn iter(&self) -> std::slice::Iter<'_, T> {
         self.vec.iter()
     }
 
-    crate fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
         self.vec.iter_mut()
     }
 
-    crate fn iter_enumerated(&self) -> impl Iterator<Item = (I, &T)> {
+    pub fn iter_enumerated(&self) -> impl Iterator<Item = (I, &T)> {
         self.vec
             .iter()
             .enumerate()
             .map(|(i, v)| (I::from_usize(i), v))
     }
 
-    crate fn iter_enumerated_mut(&mut self) -> impl Iterator<Item = (I, &mut T)> {
+    pub fn iter_enumerated_mut(&mut self) -> impl Iterator<Item = (I, &mut T)> {
         self.vec
             .iter_mut()
             .enumerate()
             .map(|(i, v)| (I::from_usize(i), v))
     }
-    crate fn indices(&self) -> impl Iterator<Item = I> {
+    pub fn indices(&self) -> impl Iterator<Item = I> {
         (0..self.len()).map(|v| I::from_usize(v))
     }
-    crate fn last_idx(&self) -> Option<I> {
+    pub fn last_idx(&self) -> Option<I> {
         if self.is_empty() {
             None
         } else {
             Some(I::from_usize(self.len() - 1))
         }
     }
-    crate fn next_idx(&self) -> I {
+    pub fn next_idx(&self) -> I {
         I::from_usize(self.len())
     }
-    crate fn shrink_to_fit(&mut self) {
+    pub fn shrink_to_fit(&mut self) {
         self.vec.shrink_to_fit()
     }
-    crate fn swap(&mut self, l: I, r: I) {
+    pub fn swap(&mut self, l: I, r: I) {
         self.vec.swap(l.as_usize(), r.as_usize())
     }
-    crate fn truncate(&mut self, s: usize) {
+    pub fn truncate(&mut self, s: usize) {
         self.vec.truncate(s)
     }
-    crate fn get(&self, i: I) -> Option<&T> {
+    pub fn get(&self, i: I) -> Option<&T> {
         self.vec.get(i.as_usize())
     }
-    crate fn get_mut(&mut self, i: I) -> Option<&mut T> {
+    pub fn get_mut(&mut self, i: I) -> Option<&mut T> {
         self.vec.get_mut(i.as_usize())
     }
 
-    crate fn last(&self) -> Option<&T> {
+    pub fn last(&self) -> Option<&T> {
         self.vec.last()
     }
-    crate fn last_mut(&mut self) -> Option<&mut T> {
+    pub fn last_mut(&mut self) -> Option<&mut T> {
         self.vec.last_mut()
     }
 
-    crate fn reserve(&mut self, s: usize) {
+    pub fn reserve(&mut self, s: usize) {
         self.vec.reserve(s);
     }
 
-    crate fn resize(&mut self, s: usize, v: T)
+    pub fn resize(&mut self, s: usize, v: T)
     where
         T: Clone,
     {
         self.vec.resize(s, v);
     }
-    crate fn binary_search(&self, v: &T) -> Result<I, I>
+    pub fn binary_search(&self, v: &T) -> Result<I, I>
     where
         T: Ord,
     {
@@ -390,13 +392,13 @@ where
             .map(I::from_usize)
             .map_err(I::from_usize)
     }
-    crate fn push(&mut self, d: T) -> I {
+    pub fn push(&mut self, d: T) -> I {
         let idx = self.next_idx();
         self.vec.push(d);
         idx
     }
 
-    crate fn push_with_idx<F>(&mut self, f: F) -> I
+    pub fn push_with_idx<F>(&mut self, f: F) -> I
     where
         F: FnOnce(I) -> T,
     {

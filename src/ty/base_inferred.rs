@@ -21,6 +21,6 @@ impl TypeFamily for BaseInferred {
 
 crate type BaseTy = crate::ty::Ty<BaseInferred>;
 
-index_type! {
+indices::index_type! {
     crate struct Base { .. }
 }

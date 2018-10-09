@@ -1,10 +1,10 @@
 #![deny(warnings)]
 
-use crate::indices::{IndexVec, U32Index};
+use indices::{IndexVec, U32Index};
 use std::convert::TryFrom;
 use std::fmt;
 
-index_type! {
+indices::index_type! {
     crate struct InferVar {
         debug_name["?"],
         ..

@@ -1,10 +1,10 @@
 //! The `Hir` is the "high-level IR". It is a simpified, somewhat resolved version of the bare AST.
 
-use crate::indices::{IndexVec, U32Index};
 use crate::parser::pos::{Span, Spanned};
 use crate::parser::StringId;
 use crate::ty;
 use crate::ty::declaration::Declaration;
+use indices::{IndexVec, U32Index};
 use mir::DefId;
 use std::sync::Arc;
 
@@ -186,7 +186,7 @@ define_meta_index! {
     (Identifier, IdentifierData, identifiers),
 }
 
-index_type! {
+indices::index_type! {
     crate struct Expression { .. }
 }
 
@@ -229,7 +229,7 @@ crate enum ExpressionData {
     Unit {},
 }
 
-index_type! {
+indices::index_type! {
     crate struct Perm { .. }
 }
 
@@ -242,7 +242,7 @@ crate enum PermData {
     Default,
 }
 
-index_type! {
+indices::index_type! {
     crate struct Place { .. }
 }
 
@@ -253,7 +253,7 @@ crate enum PlaceData {
     Field { owner: Place, name: Identifier },
 }
 
-index_type! {
+indices::index_type! {
     crate struct Variable { .. }
 }
 
@@ -262,7 +262,7 @@ crate struct VariableData {
     crate name: Identifier,
 }
 
-index_type! {
+indices::index_type! {
     crate struct Identifier { .. }
 }
 

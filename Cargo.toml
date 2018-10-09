@@ -37,6 +37,7 @@ salsa = "0.4.1"
 codegen = { path = "components/codegen" }
 eval = { path = "components/eval" }
 ide = { path = "components/ide" }
+indices = { path = "components/indices" }
 mir = { path = "components/mir" }
 task_manager = { path = "components/task_manager" }
 
