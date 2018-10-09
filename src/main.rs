@@ -19,7 +19,6 @@
 #[macro_use]
 mod lexer;
 
-mod debug;
 mod hir;
 mod parser;
 mod parser2;

@@ -3,7 +3,10 @@
 //! Implement `DebugWith<Cx>` for your type. Then, when using
 //! `debug!` or whatever, do `debug!("{}", foo.debug_with(cx))`.
 
-crate trait DebugWith<Cx: ?Sized> {
+#![feature(never_type)]
+#![feature(in_band_lifetimes)]
+
+pub trait DebugWith<Cx: ?Sized> {
     fn debug_with(&'me self, cx: &'me Cx) -> DebugCxPair<'me, Self, Cx> {
         DebugCxPair { value: self, cx }
     }
@@ -11,7 +14,7 @@ crate trait DebugWith<Cx: ?Sized> {
     fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
-crate struct DebugCxPair<'me, Value: ?Sized, Cx: ?Sized>
+pub struct DebugCxPair<'me, Value: ?Sized, Cx: ?Sized>
 where
     Value: DebugWith<Cx>,
 {

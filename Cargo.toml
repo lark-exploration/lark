@@ -33,6 +33,7 @@ languageserver-types = "0.51.0"
 salsa = "0.4.1"
 
 codegen = { path = "components/codegen" }
+debug = { path = "components/debug" }
 eval = { path = "components/eval" }
 ide = { path = "components/ide" }
 indices = { path = "components/indices" }
