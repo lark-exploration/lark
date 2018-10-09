@@ -1,6 +1,6 @@
 use codegen::{codegen, RustFile};
 use eval::eval_context;
-use ir::{
+use mir::{
     builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
     Rvalue, StatementKind, Struct, TerminatorKind,
 };

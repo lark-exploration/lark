@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
-use ir::DefId;
+use mir::DefId;
 
 type TaskId = usize;
 

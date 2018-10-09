@@ -19,7 +19,7 @@ use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::type_check::TypeCheckerFields;
 use crate::unify::{InferVar, UnificationTable};
-use ir::DefId;
+use mir::DefId;
 use std::sync::Arc;
 
 impl<DB, F> TypeChecker<'_, DB, F>

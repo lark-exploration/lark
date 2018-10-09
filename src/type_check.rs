@@ -21,7 +21,7 @@ use crate::unify::InferVar;
 use crate::unify::Inferable;
 use crate::unify::UnificationTable;
 use generational_arena::Arena;
-use ir::DefId;
+use mir::DefId;
 use std::sync::Arc;
 
 mod base_only;

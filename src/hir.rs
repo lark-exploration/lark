@@ -5,7 +5,7 @@ use crate::parser::pos::{Span, Spanned};
 use crate::parser::StringId;
 use crate::ty;
 use crate::ty::declaration::Declaration;
-use ir::DefId;
+use mir::DefId;
 use std::sync::Arc;
 
 crate mod query_definitions;

@@ -18,7 +18,7 @@ use crate::type_check::UniverseBinder;
 use crate::unify::InferVar;
 use crate::unify::Inferable;
 use generational_arena::Arena;
-use ir::DefId;
+use mir::DefId;
 
 #[derive(Copy, Clone, Debug)]
 pub(super) struct OpIndex {

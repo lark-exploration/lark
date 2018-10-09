@@ -1,5 +1,5 @@
 [package]
-name = "ir"
+name = "mir"
 version = "0.1.0"
 authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
 edition = "2018"
