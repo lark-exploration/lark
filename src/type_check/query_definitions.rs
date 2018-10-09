@@ -1,13 +1,6 @@
 use codespan_reporting::Diagnostic;
 use crate::hir;
 use crate::hir::HirDatabase;
-use crate::ty;
-use crate::ty::base_inferred::BaseInferred;
-use crate::ty::base_only::{BaseOnly, BaseTy};
-use crate::ty::declaration::Declaration;
-use crate::ty::interners::TyInternTables;
-use crate::ty::Ty;
-use crate::ty::TypeFamily;
 use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckResults;
 use crate::type_check::TypeChecker;
@@ -19,6 +12,12 @@ use map::FxIndexMap;
 use mir::DefId;
 use parser::Span;
 use std::sync::Arc;
+use ty::base_inferred::BaseInferred;
+use ty::base_only::{BaseOnly, BaseTy};
+use ty::declaration::Declaration;
+use ty::interners::TyInternTables;
+use ty::Ty;
+use ty::TypeFamily;
 use unify::InferVar;
 use unify::UnificationTable;
 

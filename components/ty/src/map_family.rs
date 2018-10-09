@@ -1,17 +1,24 @@
-use crate::ty::interners::TyInternTables;
-use crate::ty::{self, TypeFamily};
+use crate::interners::TyInternTables;
+use crate::BaseData;
+use crate::BaseKind;
+use crate::Generic;
+use crate::GenericKind;
+use crate::Generics;
+use crate::Signature;
+use crate::Ty;
+use crate::TypeFamily;
 use intern::Has;
 use mir::DefId;
 use std::sync::Arc;
 
-crate trait Map<S: TypeFamily, T: TypeFamily>: Clone {
+pub trait Map<S: TypeFamily, T: TypeFamily>: Clone {
     type Output;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output;
 }
 
-crate trait FamilyMapper<S: TypeFamily, T: TypeFamily>: Has<TyInternTables> {
-    fn map_ty(&mut self, ty: ty::Ty<S>) -> ty::Ty<T>;
+pub trait FamilyMapper<S: TypeFamily, T: TypeFamily>: Has<TyInternTables> {
+    fn map_ty(&mut self, ty: Ty<S>) -> Ty<T>;
 
     fn map_placeholder(&mut self, placeholder: S::Placeholder) -> T::Placeholder;
 }
@@ -72,28 +79,28 @@ where
     }
 }
 
-impl<S, T> Map<S, T> for ty::Ty<S>
+impl<S, T> Map<S, T> for Ty<S>
 where
     S: TypeFamily,
     T: TypeFamily,
 {
-    type Output = ty::Ty<T>;
+    type Output = Ty<T>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         mapper.map_ty(*self)
     }
 }
 
-impl<S, T> Map<S, T> for ty::BaseData<S>
+impl<S, T> Map<S, T> for BaseData<S>
 where
     S: TypeFamily,
     T: TypeFamily,
 {
-    type Output = ty::BaseData<T>;
+    type Output = BaseData<T>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
-        let ty::BaseData { kind, generics } = self;
-        ty::BaseData {
+        let BaseData { kind, generics } = self;
+        BaseData {
             kind: kind.map(mapper),
             generics: generics.map(mapper),
         }
@@ -112,65 +119,65 @@ where
     }
 }
 
-impl<S, T> Map<S, T> for ty::BaseKind<S>
+impl<S, T> Map<S, T> for BaseKind<S>
 where
     S: TypeFamily,
     T: TypeFamily,
 {
-    type Output = ty::BaseKind<T>;
+    type Output = BaseKind<T>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         match self {
-            ty::BaseKind::Named(def_id) => ty::BaseKind::Named(def_id.map(mapper)),
+            BaseKind::Named(def_id) => BaseKind::Named(def_id.map(mapper)),
 
-            ty::BaseKind::Placeholder(placeholder) => {
-                ty::BaseKind::Placeholder(mapper.map_placeholder(*placeholder))
+            BaseKind::Placeholder(placeholder) => {
+                BaseKind::Placeholder(mapper.map_placeholder(*placeholder))
             }
 
-            ty::BaseKind::Error => ty::BaseKind::Error,
+            BaseKind::Error => BaseKind::Error,
         }
     }
 }
 
-impl<S, T> Map<S, T> for ty::Generics<S>
+impl<S, T> Map<S, T> for Generics<S>
 where
     S: TypeFamily,
     T: TypeFamily,
 {
-    type Output = ty::Generics<T>;
+    type Output = Generics<T>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
-        let ty::Generics { elements } = self;
-        ty::Generics {
+        let Generics { elements } = self;
+        Generics {
             elements: elements.map(mapper),
         }
     }
 }
 
-impl<S, T> Map<S, T> for ty::Generic<S>
+impl<S, T> Map<S, T> for Generic<S>
 where
     S: TypeFamily,
     T: TypeFamily,
 {
-    type Output = ty::Generic<T>;
+    type Output = Generic<T>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         match self {
-            ty::GenericKind::Ty(ty) => ty::GenericKind::Ty(ty.map(mapper)),
+            GenericKind::Ty(ty) => GenericKind::Ty(ty.map(mapper)),
         }
     }
 }
 
-impl<S, T> Map<S, T> for ty::Signature<S>
+impl<S, T> Map<S, T> for Signature<S>
 where
     S: TypeFamily,
     T: TypeFamily,
 {
-    type Output = ty::Signature<T>;
+    type Output = Signature<T>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
-        let ty::Signature { inputs, output } = self;
-        ty::Signature {
+        let Signature { inputs, output } = self;
+        Signature {
             inputs: inputs.map(mapper),
             output: output.map(mapper),
         }

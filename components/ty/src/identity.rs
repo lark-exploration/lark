@@ -1,12 +1,12 @@
-use crate::ty::interners::TyInternTables;
-use crate::ty::map_family::FamilyMapper;
-use crate::ty::Ty;
-use crate::ty::TypeFamily;
+use crate::interners::TyInternTables;
+use crate::map_family::FamilyMapper;
+use crate::Ty;
+use crate::TypeFamily;
 use derive_new::new;
 use intern::Has;
 
 #[derive(new)]
-crate struct Identity<'me, DB> {
+pub struct Identity<'me, DB> {
     db: &'me DB,
 }
 

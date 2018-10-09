@@ -19,7 +19,6 @@
 mod hir;
 mod parser2;
 mod tests;
-mod ty;
 mod type_check;
 
 use std::{env, io};

@@ -1,14 +1,14 @@
-use crate::ty::declaration::Declaration;
-use crate::ty::interners::TyInternTables;
-use crate::ty::map_family::FamilyMapper;
-use crate::ty::map_family::Map;
-use crate::ty::BoundVar;
-use crate::ty::BoundVarOr;
-use crate::ty::Erased;
-use crate::ty::Generic;
-use crate::ty::Ty;
-use crate::ty::TypeFamily;
 use intern::Has;
+use ty::declaration::Declaration;
+use ty::interners::TyInternTables;
+use ty::map_family::FamilyMapper;
+use ty::map_family::Map;
+use ty::BoundVar;
+use ty::BoundVarOr;
+use ty::Erased;
+use ty::Generic;
+use ty::Ty;
+use ty::TypeFamily;
 
 crate struct Substitution<'me, T, V>
 where

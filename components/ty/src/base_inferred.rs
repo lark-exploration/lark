@@ -1,14 +1,14 @@
 //! A type family where we just erase all permissions and we support inference.
 
-use crate::ty::interners::TyInternTables;
-use crate::ty::BaseData;
-use crate::ty::Erased;
-use crate::ty::Placeholder;
-use crate::ty::TypeFamily;
+use crate::interners::TyInternTables;
+use crate::BaseData;
+use crate::Erased;
+use crate::Placeholder;
+use crate::TypeFamily;
 use intern::Has;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate struct BaseInferred;
+pub struct BaseInferred;
 
 impl TypeFamily for BaseInferred {
     type Perm = Erased;
@@ -20,8 +20,8 @@ impl TypeFamily for BaseInferred {
     }
 }
 
-crate type BaseTy = crate::ty::Ty<BaseInferred>;
+pub type BaseTy = crate::Ty<BaseInferred>;
 
 indices::index_type! {
-    crate struct Base { .. }
+    pub struct Base { .. }
 }

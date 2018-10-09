@@ -1,18 +1,5 @@
 use crate::hir;
 use crate::hir::HirDatabase;
-use crate::ty;
-use crate::ty::base_only::{Base, BaseOnly, BaseTy};
-use crate::ty::declaration::Declaration;
-use crate::ty::identity::Identity;
-use crate::ty::interners::TyInternTables;
-use crate::ty::map_family::Map;
-use crate::ty::Erased;
-use crate::ty::InferVarOr;
-use crate::ty::Signature;
-use crate::ty::Ty;
-use crate::ty::TypeFamily;
-use crate::ty::{BaseData, BaseKind};
-use crate::ty::{Generic, GenericKind, Generics};
 use crate::type_check::substitute::Substitution;
 use crate::type_check::Error;
 use crate::type_check::TypeCheckFamily;
@@ -21,6 +8,18 @@ use crate::type_check::TypeCheckerFields;
 use intern::Has;
 use mir::DefId;
 use std::sync::Arc;
+use ty::base_only::{Base, BaseOnly, BaseTy};
+use ty::declaration::Declaration;
+use ty::identity::Identity;
+use ty::interners::TyInternTables;
+use ty::map_family::Map;
+use ty::Erased;
+use ty::InferVarOr;
+use ty::Signature;
+use ty::Ty;
+use ty::TypeFamily;
+use ty::{BaseData, BaseKind};
+use ty::{Generic, GenericKind, Generics};
 use unify::{InferVar, UnificationTable};
 
 impl TypeCheckFamily for BaseOnly {

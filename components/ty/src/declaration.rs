@@ -2,15 +2,15 @@
 //! We do not support inference and bases and things may map to bound
 //! variables from generic declarations.
 
-use crate::ty::interners::TyInternTables;
-use crate::ty::BaseData;
-use crate::ty::BoundVarOr;
-use crate::ty::Erased;
-use crate::ty::TypeFamily;
+use crate::interners::TyInternTables;
+use crate::BaseData;
+use crate::BoundVarOr;
+use crate::Erased;
+use crate::TypeFamily;
 use intern::Has;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate struct Declaration;
+pub struct Declaration;
 
 impl TypeFamily for Declaration {
     type Perm = Erased; // Not Yet Implemented
@@ -22,8 +22,8 @@ impl TypeFamily for Declaration {
     }
 }
 
-crate type DeclarationTy = crate::ty::Ty<Declaration>;
+pub type DeclarationTy = crate::Ty<Declaration>;
 
 indices::index_type! {
-    crate struct Base { .. }
+    pub struct Base { .. }
 }

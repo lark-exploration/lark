@@ -1,6 +1,12 @@
+#![feature(in_band_lifetimes)]
+#![feature(macro_at_most_once_rep)]
+#![feature(min_const_fn)]
+#![feature(never_type)]
+#![feature(const_fn)]
+#![feature(const_let)]
 #![warn(unused_imports)]
 
-use crate::ty::interners::TyInternTables;
+use crate::interners::TyInternTables;
 use indices::IndexVec;
 use intern::Has;
 use mir::DefId;
@@ -11,14 +17,14 @@ use std::iter::IntoIterator;
 use std::sync::Arc;
 use unify::InferVar;
 
-crate mod base_inferred;
-crate mod base_only;
-crate mod declaration;
-crate mod identity;
-crate mod interners;
-crate mod map_family;
+pub mod base_inferred;
+pub mod base_only;
+pub mod declaration;
+pub mod identity;
+pub mod interners;
+pub mod map_family;
 
-crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
+pub trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
     type Perm: Copy + Clone + Debug + Eq + Hash;
     type Base: Copy + Clone + Debug + Eq + Hash;
 
@@ -29,24 +35,24 @@ crate trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
 
 /// A type is the combination of a *permission* and a *base type*.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate struct Ty<F: TypeFamily> {
-    crate perm: F::Perm,
-    crate base: F::Base,
+pub struct Ty<F: TypeFamily> {
+    pub perm: F::Perm,
+    pub base: F::Base,
 }
 
 /// Indicates something that we've opted not to track statically.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate struct Erased;
+pub struct Erased;
 
 /// The "base data" for a type.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct BaseData<F: TypeFamily> {
-    crate kind: BaseKind<F>,
-    crate generics: Generics<F>,
+pub struct BaseData<F: TypeFamily> {
+    pub kind: BaseKind<F>,
+    pub generics: Generics<F>,
 }
 
 impl<F: TypeFamily> BaseData<F> {
-    crate fn from_placeholder(p: F::Placeholder) -> Self {
+    pub fn from_placeholder(p: F::Placeholder) -> Self {
         BaseData {
             kind: BaseKind::Placeholder(p),
             generics: Generics::empty(),
@@ -56,7 +62,7 @@ impl<F: TypeFamily> BaseData<F> {
 
 /// The *kinds* of base types we have on offer.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum BaseKind<F: TypeFamily> {
+pub enum BaseKind<F: TypeFamily> {
     /// A named type (might be value, might be linear, etc).
     Named(DefId),
 
@@ -72,13 +78,13 @@ crate enum BaseKind<F: TypeFamily> {
 /// a given `Base` (etc) maps to an inference variable or to some
 /// known value.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate enum InferVarOr<T> {
+pub enum InferVarOr<T> {
     InferVar(InferVar),
     Known(T),
 }
 
 impl<T> InferVarOr<T> {
-    crate fn assert_known(self) -> T {
+    pub fn assert_known(self) -> T {
         match self {
             InferVarOr::InferVar(_) => panic!("assert_known invoked on infer var"),
             InferVarOr::Known(v) => v,
@@ -91,9 +97,9 @@ impl<T> InferVarOr<T> {
 /// when we are type-checking a function like `fn foo<T>`, the `T` is represented by
 /// a placeholder.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate struct Placeholder {
-    crate universe: Universe,
-    crate bound_var: BoundVar,
+pub struct Placeholder {
+    pub universe: Universe,
+    pub bound_var: BoundVar,
 }
 
 /// A "universe" is a set of names -- the root universe (U(0)) contains all
@@ -101,58 +107,58 @@ crate struct Placeholder {
 /// new universe (e.g., U(1)) that can see all things from lower universes
 /// as well as some new placeholders.
 indices::index_type! {
-    crate struct Universe {
+    pub struct Universe {
         debug_name["U"],
         ..
     }
 }
 
 impl Universe {
-    crate const ROOT: Universe = Universe::from_u32(0);
+    pub const ROOT: Universe = Universe::from_u32(0);
 }
 
 /// A "bound variable" refers to one of the generic type parameters in scope
 /// within a declaration. So, for example, if you have `struct Foo<T> { x: T }`,
 /// then the bound var #0 would be `T`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate enum BoundVarOr<T> {
+pub enum BoundVarOr<T> {
     BoundVar(BoundVar),
     Known(T),
 }
 
 indices::index_type! {
-    crate struct BoundVar { .. }
+    pub struct BoundVar { .. }
 }
 
 /// A set of generic arguments; e.g., in a type like `Vec<i32>`, this
 /// would be `[i32]`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct Generics<F: TypeFamily> {
+pub struct Generics<F: TypeFamily> {
     elements: Option<Arc<Vec<Generic<F>>>>,
 }
 
 impl<F: TypeFamily> Generics<F> {
-    crate fn empty() -> Self {
+    pub fn empty() -> Self {
         Generics { elements: None }
     }
 
-    crate fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    crate fn is_not_empty(&self) -> bool {
+    pub fn is_not_empty(&self) -> bool {
         self.len() != 0
     }
 
-    crate fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.elements.as_ref().map(|v| v.len()).unwrap_or(0)
     }
 
-    crate fn iter(&self) -> impl Iterator<Item = Generic<F>> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = Generic<F>> + '_ {
         self.into_iter()
     }
 
-    crate fn elements(&self) -> &[Generic<F>] {
+    pub fn elements(&self) -> &[Generic<F>] {
         match &self.elements {
             Some(e) => &e[..],
             None => &[],
@@ -163,7 +169,7 @@ impl<F: TypeFamily> Generics<F> {
     /// shared, this will clone the contents so that we own them
     /// privately. (Effectively generic lists are a copy-on-write data
     /// structure.)
-    crate fn push(&mut self, generic: Generic<F>) {
+    pub fn push(&mut self, generic: Generic<F>) {
         self.extend(std::iter::once(generic));
     }
 }
@@ -229,17 +235,17 @@ impl<F: TypeFamily> IntoIterator for &'iter Generics<F> {
 /// The value of a single generic argument; e.g., in a type like
 /// `Vec<i32>`, this might be the `i32`.
 #[allow(type_alias_bounds)]
-crate type Generic<F: TypeFamily> = GenericKind<Ty<F>>;
+pub type Generic<F: TypeFamily> = GenericKind<Ty<F>>;
 
 /// An enum that lists out the various "kinds" of generic arguments
 /// (currently only types) and a distinct type of value for each kind.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum GenericKind<T> {
+pub enum GenericKind<T> {
     Ty(T),
 }
 
 impl<T> GenericKind<T> {
-    crate fn assert_ty(self) -> T {
+    pub fn assert_ty(self) -> T {
         match self {
             GenericKind::Ty(ty) => ty,
         }
@@ -250,23 +256,23 @@ impl<T> GenericKind<T> {
 /// are the list of the types of the arguments, and `output` is the
 /// return type.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct Signature<F: TypeFamily> {
-    crate inputs: Arc<Vec<Ty<F>>>,
-    crate output: Ty<F>,
+pub struct Signature<F: TypeFamily> {
+    pub inputs: Arc<Vec<Ty<F>>>,
+    pub output: Ty<F>,
 }
 
 /// The "generic declarations" list out the generic parameters for a
 /// given item. Since items inherit generic items from one another
 /// (e.g., from their parents),
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct GenericDeclarations {
-    crate parent_item: Option<DefId>,
-    crate declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
+pub struct GenericDeclarations {
+    pub parent_item: Option<DefId>,
+    pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
 }
 
 /// Declaration of an individual generic type parameter.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct GenericTyDeclaration {
-    crate def_id: DefId,
-    crate name: StringId,
+pub struct GenericTyDeclaration {
+    pub def_id: DefId,
+    pub name: StringId,
 }

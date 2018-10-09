@@ -1,0 +1,15 @@
+[package]
+name = "ty"
+version = "0.1.0"
+authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+edition = "2018"
+
+[dependencies]
+derive-new = "0.5.5"
+parking_lot = "0.6.4"
+
+indices = { path = "../indices" }
+intern = { path = "../intern" }
+mir = { path = "../mir" }
+parser = { path = "../parser" }
+unify = { path = "../unify" }

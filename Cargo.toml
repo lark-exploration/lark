@@ -41,6 +41,7 @@ mir = { path = "components/mir" }
 map = { path = "components/map" }
 parser = { path = "components/parser" }
 task_manager = { path = "components/task_manager" }
+ty = { path = "components/ty" }
 unify = { path = "components/unify" }
 
 [dev-dependencies]
