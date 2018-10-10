@@ -4,8 +4,6 @@ use crate::declaration::{self, Declaration};
 use crate::BaseData;
 use crate::BoundVarOr;
 use crate::InferVarOr;
-use intern::InternTable;
-use std::sync::Arc;
 
 intern::intern_tables! {
     pub struct TyInternTables {

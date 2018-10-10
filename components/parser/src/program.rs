@@ -60,8 +60,8 @@ pub struct ModuleTable {
 }
 
 impl ModuleTable {
-    pub fn get(&self, hashable: impl Seahash) -> Option<StringId> {
-        self.strings.get(&hashable)
+    pub fn get(&self, hashable: &impl Seahash) -> Option<StringId> {
+        self.strings.get(hashable)
     }
 
     pub fn lookup(&self, id: StringId) -> &Arc<String> {
@@ -104,9 +104,8 @@ impl Environment<'parent> {
         self.to_name.get(&name).map(|id| *id)
     }
 
-    crate fn get_str(&self, program: &ModuleTable, key: impl Seahash) -> Option<NameId> {
+    crate fn get_str(&self, program: &ModuleTable, key: &impl Seahash) -> Option<NameId> {
         let id = program.get(key)?;
-
         self.get(id)
     }
 }

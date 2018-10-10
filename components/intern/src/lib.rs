@@ -36,7 +36,7 @@ macro_rules! intern_tables {
     ) => {
         #[derive(Clone, Default)]
         $v struct $InternTables {
-            data: Arc<$InternTablesData>,
+            data: std::sync::Arc<$InternTablesData>,
         }
 
         impl $crate::Has<$InternTables> for $InternTables {
@@ -48,7 +48,7 @@ macro_rules! intern_tables {
         #[derive(Default)]
         struct $InternTablesData {
             $(
-                $field: parking_lot::RwLock<InternTable<$key, $data>>,
+                $field: parking_lot::RwLock<$crate::InternTable<$key, $data>>,
             )*
         }
 

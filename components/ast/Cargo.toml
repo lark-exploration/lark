@@ -1,5 +1,5 @@
 [package]
-name = "hir"
+name = "ast"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
@@ -8,8 +8,8 @@ edition = "2018"
 parking_lot = "0.6.4"
 salsa = "0.4.1"
 
-ast = { path = "../ast" }
 indices = { path = "../indices" }
-mir = { path = "../mir" }
+intern = { path = "../intern" }
 parser = { path = "../parser" }
-ty = { path = "../ty" }
+
+

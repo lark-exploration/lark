@@ -5,6 +5,7 @@
 #![feature(const_let)]
 #![feature(macro_at_most_once_rep)]
 
+use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
 use mir::DefId;
 use parser::pos::{Span, Spanned};
@@ -15,7 +16,7 @@ use ty::declaration::Declaration;
 mod query_definitions;
 
 salsa::query_group! {
-    pub trait HirDatabase: salsa::Database {
+    pub trait HirDatabase: AstDatabase {
         /// Get the def-id for the built-in boolean type.
         fn boolean_def_id(key: ()) -> DefId {
             type BooleanDefIdQuery;
