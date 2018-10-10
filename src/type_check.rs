@@ -1,8 +1,8 @@
 #![warn(warnings)]
 
 use codespan_reporting::Diagnostic;
-use crate::hir;
 use generational_arena::Arena;
+use hir;
 use indices::IndexVec;
 use intern::Has;
 use map::FxIndexMap;

@@ -1,11 +1,11 @@
 use codespan_reporting::Diagnostic;
-use crate::hir;
-use crate::hir::HirDatabase;
 use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckResults;
 use crate::type_check::TypeChecker;
 use crate::type_check::UniverseBinder;
 use generational_arena::Arena;
+use hir;
+use hir::HirDatabase;
 use indices::IndexVec;
 use intern::Has;
 use map::FxIndexMap;

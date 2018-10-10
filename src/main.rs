@@ -16,7 +16,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-mod hir;
 mod parser2;
 mod tests;
 mod type_check;

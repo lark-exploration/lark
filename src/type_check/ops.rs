@@ -1,9 +1,9 @@
-use crate::hir;
 use crate::type_check::TypeCheckDatabase;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::type_check::UniverseBinder;
 use generational_arena::Arena;
+use hir;
 use mir::DefId;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;

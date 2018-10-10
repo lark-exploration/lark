@@ -1,0 +1,13 @@
+[package]
+name = "hir"
+version = "0.1.0"
+authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+edition = "2018"
+
+[dependencies]
+salsa = "0.4.1"
+
+indices = { path = "../indices" }
+mir = { path = "../mir" }
+parser = { path = "../parser" }
+ty = { path = "../ty" }

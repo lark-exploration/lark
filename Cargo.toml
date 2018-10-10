@@ -37,6 +37,7 @@ eval = { path = "components/eval" }
 ide = { path = "components/ide" }
 indices = { path = "components/indices" }
 intern = { path = "components/intern" }
+hir = { path = "components/hir" }
 mir = { path = "components/mir" }
 map = { path = "components/map" }
 parser = { path = "components/parser" }

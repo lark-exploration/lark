@@ -1,10 +1,10 @@
-use crate::hir;
-use crate::hir::HirDatabase;
 use crate::type_check::substitute::Substitution;
 use crate::type_check::Error;
 use crate::type_check::TypeCheckFamily;
 use crate::type_check::TypeChecker;
 use crate::type_check::TypeCheckerFields;
+use hir;
+use hir::HirDatabase;
 use intern::Has;
 use mir::DefId;
 use std::sync::Arc;

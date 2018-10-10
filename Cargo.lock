@@ -198,6 +198,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "hir"
+version = "0.1.0"
+dependencies = [
+ "indices 0.1.0",
+ "mir 0.1.0",
+ "parser 0.1.0",
+ "salsa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ty 0.1.0",
+]
+
+[[package]]
 name = "humantime"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -309,6 +320,7 @@ dependencies = [
  "derive_more 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "eval 0.1.0",
  "generational-arena 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hir 0.1.0",
  "ide 0.1.0",
  "indices 0.1.0",
  "intern 0.1.0",

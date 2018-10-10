@@ -1,5 +1,4 @@
-use crate::hir;
-use crate::hir::HirDatabase;
+use crate::HirDatabase;
 use mir::DefId;
 use parser::StringId;
 use std::sync::Arc;
@@ -9,17 +8,17 @@ crate fn boolean_def_id(_db: &impl HirDatabase, _key: ()) -> DefId {
     unimplemented!()
 }
 
-crate fn fn_body(_db: &impl HirDatabase, _key: DefId) -> Arc<hir::FnBody> {
+crate fn fn_body(_db: &impl HirDatabase, _key: DefId) -> Arc<crate::FnBody> {
     unimplemented!()
 }
 
-crate fn members(_db: &impl HirDatabase, _key: DefId) -> Arc<Vec<hir::Member>> {
+crate fn members(_db: &impl HirDatabase, _key: DefId) -> Arc<Vec<crate::Member>> {
     unimplemented!()
 }
 
 crate fn member_def_id(
     db: &impl HirDatabase,
-    (owner, kind, name): (DefId, hir::MemberKind, StringId),
+    (owner, kind, name): (DefId, crate::MemberKind, StringId),
 ) -> Option<DefId> {
     db.members(owner)
         .iter()
