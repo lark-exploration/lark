@@ -1,23 +1,14 @@
-use codespan_reporting::Diagnostic;
-use crate::type_check::TypeCheckDatabase;
-use crate::type_check::TypeCheckResults;
-use crate::type_check::TypeChecker;
-use crate::type_check::UniverseBinder;
+use crate::TypeCheckDatabase;
+use crate::TypeCheckResults;
+use crate::TypeChecker;
+use crate::UniverseBinder;
 use generational_arena::Arena;
-use hir;
-use hir::HirDatabase;
 use indices::IndexVec;
-use intern::Has;
 use map::FxIndexMap;
 use mir::DefId;
-use parser::Span;
-use std::sync::Arc;
 use ty::base_inferred::BaseInferred;
-use ty::base_only::{BaseOnly, BaseTy};
-use ty::declaration::Declaration;
+use ty::base_only::BaseOnly;
 use ty::interners::TyInternTables;
-use ty::Ty;
-use ty::TypeFamily;
 use unify::InferVar;
 use unify::UnificationTable;
 
@@ -26,16 +17,28 @@ crate fn base_type_check(
     fn_def_id: DefId,
 ) -> TypeCheckResults<BaseInferred> {
     let fn_body = db.fn_body(fn_def_id);
-    let base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
+    let interners: &TyInternTables = db.intern_tables();
+    let mut base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
         db,
         fn_def_id,
         hir: fn_body,
         ops_arena: Arena::new(),
         ops_blocked: FxIndexMap::default(),
-        unify: UnificationTable::new(db.intern_tables().clone()),
+        unify: UnificationTable::new(interners.clone()),
         results: TypeCheckResults::default(),
         universe_binders: IndexVec::from(vec![UniverseBinder::Root]),
     };
-    drop(base_type_checker); // FIXME
+    base_type_checker.check_fn_body();
+
+    loop {
+        let vars: Vec<InferVar> = base_type_checker.unify.drain_events().collect();
+        if vars.is_empty() {
+            break;
+        }
+        for var in vars {
+            base_type_checker.trigger_ops(var);
+        }
+    }
+
     unimplemented!()
 }

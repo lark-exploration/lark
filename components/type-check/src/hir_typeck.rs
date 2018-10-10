@@ -1,29 +1,15 @@
-use crate::type_check::substitute::Substitution;
-use crate::type_check::Error;
-use crate::type_check::TypeCheckFamily;
-use crate::type_check::TypeChecker;
-use crate::type_check::TypeCheckerFields;
+use crate::TypeCheckDatabase;
+use crate::TypeCheckFamily;
+use crate::TypeChecker;
+use crate::TypeCheckerFields;
 use hir;
-use hir::HirDatabase;
-use intern::Has;
-use mir::DefId;
 use std::sync::Arc;
-use ty::base_only::{Base, BaseOnly, BaseTy};
-use ty::declaration::Declaration;
-use ty::interners::TyInternTables;
-use ty::map_family::Map;
-use ty::Erased;
-use ty::InferVarOr;
-use ty::Signature;
 use ty::Ty;
-use ty::TypeFamily;
 use ty::{BaseData, BaseKind};
-use ty::{Generic, Generics};
-use unify::{InferVar, UnificationTable};
 
 impl<DB, F> TypeChecker<'_, DB, F>
 where
-    DB: crate::type_check::TypeCheckDatabase,
+    DB: TypeCheckDatabase,
     F: TypeCheckFamily,
 {
     pub(super) fn check_fn_body(&mut self) {

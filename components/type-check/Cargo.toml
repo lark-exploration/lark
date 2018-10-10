@@ -1,0 +1,18 @@
+[package]
+name = "type-check"
+version = "0.1.0"
+authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+edition = "2018"
+
+[dependencies]
+generational-arena = "0.1.0"
+salsa = "0.4.1"
+
+hir = { path = "../hir" }
+indices = { path = "../indices" }
+intern = { path = "../intern" }
+map = { path = "../map" }
+mir = { path = "../mir" }
+parser = { path = "../parser" }
+ty = { path = "../ty" }
+unify = { path = "../unify" }

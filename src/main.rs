@@ -7,7 +7,6 @@
 #![feature(self_in_typedefs)]
 #![feature(never_type)]
 #![feature(nll)]
-#![feature(min_const_fn)]
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(try_from)]
@@ -18,7 +17,6 @@
 
 mod parser2;
 mod tests;
-mod type_check;
 
 use std::{env, io};
 

@@ -43,6 +43,7 @@ map = { path = "components/map" }
 parser = { path = "components/parser" }
 task_manager = { path = "components/task_manager" }
 ty = { path = "components/ty" }
+type-check = { path = "components/type-check" }
 unify = { path = "components/unify" }
 
 [dev-dependencies]

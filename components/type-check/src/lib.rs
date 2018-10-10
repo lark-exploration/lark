@@ -1,20 +1,19 @@
-#![warn(warnings)]
+#![feature(crate_visibility_modifier)]
+#![feature(never_type)]
+#![feature(self_in_typedefs)]
+#![feature(in_band_lifetimes)]
 
-use codespan_reporting::Diagnostic;
 use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
 use intern::Has;
 use map::FxIndexMap;
 use mir::DefId;
-use parser::Span;
 use std::sync::Arc;
 use ty::base_inferred::BaseInferred;
-use ty::base_only::{BaseOnly, BaseTy};
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
 use ty::map_family::Map;
-use ty::BaseData;
 use ty::Generics;
 use ty::Placeholder;
 use ty::Ty;
@@ -31,7 +30,7 @@ mod query_definitions;
 mod substitute;
 
 salsa::query_group! {
-    crate trait TypeCheckDatabase: hir::HirDatabase + Has<TyInternTables> {
+    pub trait TypeCheckDatabase: hir::HirDatabase + Has<TyInternTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: DefId) -> TypeCheckResults<BaseInferred> {
@@ -151,7 +150,7 @@ where
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct TypeCheckResults<F: TypeFamily> {
+pub struct TypeCheckResults<F: TypeFamily> {
     /// FIXME-- this will actually not want `BaseTy` unless we want to
     /// return the unification table too.
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
@@ -164,7 +163,7 @@ impl<F: TypeFamily> TypeCheckResults<F> {
         self.types.insert(index.into(), ty);
     }
 
-    crate fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
+    pub fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
         self.types[&index.into()]
     }
 

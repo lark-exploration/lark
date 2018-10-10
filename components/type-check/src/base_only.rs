@@ -1,26 +1,18 @@
-use crate::type_check::substitute::Substitution;
-use crate::type_check::Error;
-use crate::type_check::TypeCheckFamily;
-use crate::type_check::TypeChecker;
-use crate::type_check::TypeCheckerFields;
+use crate::substitute::Substitution;
+use crate::Error;
+use crate::TypeCheckFamily;
+use crate::TypeCheckerFields;
 use hir;
 use hir::HirDatabase;
-use intern::Has;
-use mir::DefId;
-use std::sync::Arc;
 use ty::base_only::{Base, BaseOnly, BaseTy};
 use ty::declaration::Declaration;
 use ty::identity::Identity;
-use ty::interners::TyInternTables;
 use ty::map_family::Map;
 use ty::Erased;
-use ty::InferVarOr;
-use ty::Signature;
 use ty::Ty;
 use ty::TypeFamily;
 use ty::{BaseData, BaseKind};
-use ty::{Generic, GenericKind, Generics};
-use unify::{InferVar, UnificationTable};
+use ty::{GenericKind, Generics};
 
 impl TypeCheckFamily for BaseOnly {
     type TcBase = Base;

@@ -341,6 +341,7 @@ dependencies = [
  "termcolor 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "text-diff 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ty 0.1.0",
+ "type-check 0.1.0",
  "typed-arena 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "unify 0.1.0",
@@ -790,6 +791,22 @@ dependencies = [
  "mir 0.1.0",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parser 0.1.0",
+ "unify 0.1.0",
+]
+
+[[package]]
+name = "type-check"
+version = "0.1.0"
+dependencies = [
+ "generational-arena 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hir 0.1.0",
+ "indices 0.1.0",
+ "intern 0.1.0",
+ "map 0.1.0",
+ "mir 0.1.0",
+ "parser 0.1.0",
+ "salsa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ty 0.1.0",
  "unify 0.1.0",
 ]
 
