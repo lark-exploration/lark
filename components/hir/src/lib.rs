@@ -3,7 +3,6 @@
 #![feature(crate_visibility_modifier)]
 #![feature(const_fn)]
 #![feature(const_let)]
-#![feature(min_const_fn)]
 #![feature(macro_at_most_once_rep)]
 
 use indices::{IndexVec, U32Index};

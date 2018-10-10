@@ -1,6 +1,5 @@
 #![feature(in_band_lifetimes)]
 #![feature(macro_at_most_once_rep)]
-#![feature(min_const_fn)]
 #![feature(never_type)]
 #![feature(const_fn)]
 #![feature(const_let)]
