@@ -1,4 +1,5 @@
 use intern::Has;
+use intern::Untern;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
 use ty::map_family::FamilyMapper;
@@ -50,7 +51,7 @@ where
     fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<T> {
         let Ty { perm: Erased, base } = ty;
 
-        match self.untern(base) {
+        match base.untern(self) {
             BoundVarOr::BoundVar(var) => self.values[var].assert_ty(),
 
             BoundVarOr::Known(base_data) => {

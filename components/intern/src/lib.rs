@@ -4,22 +4,6 @@ use std::hash::Hash;
 
 pub trait Has<Tables> {
     fn intern_tables(&self) -> &Tables;
-
-    fn intern<V>(&self, value: V) -> V::Key
-    where
-        Self: Sized,
-        V: Intern<Tables>,
-    {
-        value.intern(self.intern_tables())
-    }
-
-    fn untern<K>(&self, key: K) -> K::Data
-    where
-        Self: Sized,
-        K: Untern<Tables>,
-    {
-        key.untern(self.intern_tables())
-    }
 }
 
 /// Generate a "intern tables" struct that can intern one or more
@@ -72,7 +56,8 @@ macro_rules! intern_tables {
             impl $crate::Intern<$InternTables> for $data {
                 type Key = $key;
 
-                fn intern(self, tables: &$InternTables) -> $key {
+                fn intern(self, tables: &dyn $crate::Has<$InternTables>) -> $key {
+                    let tables = $crate::Has::<$InternTables>::intern_tables(tables);
                     tables.data.$field.write().intern(self)
                 }
             }
@@ -80,7 +65,8 @@ macro_rules! intern_tables {
             impl $crate::Untern<$InternTables> for $key {
                 type Data = $data;
 
-                fn untern(self, tables: &$InternTables) -> $data {
+                fn untern(self, tables: &dyn $crate::Has<$InternTables>) -> $data {
+                    let tables = $crate::Has::<$InternTables>::intern_tables(tables);
                     tables.data.$field.read().get(self)
                 }
             }
@@ -145,7 +131,7 @@ where
 pub trait Intern<Interners>: Clone {
     type Key;
 
-    fn intern(self, interner: &Interners) -> Self::Key;
+    fn intern(self, interner: &dyn Has<Interners>) -> Self::Key;
 }
 
 /// Reverse trait: implemented by the key (`crate::ty::Perm`)
@@ -153,5 +139,5 @@ pub trait Intern<Interners>: Clone {
 pub trait Untern<Interners>: Clone {
     type Data;
 
-    fn untern(self, interner: &Interners) -> Self::Data;
+    fn untern(self, interner: &dyn Has<Interners>) -> Self::Data;
 }

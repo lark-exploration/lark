@@ -19,7 +19,7 @@ impl TypeFamily for BaseOnly {
     type Placeholder = Placeholder;
 
     fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base {
-        tables.intern_tables().intern(InferVarOr::Known(base_data))
+        InferVarOr::Known(base_data).intern(tables)
     }
 }
 
