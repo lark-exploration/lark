@@ -4,6 +4,7 @@ use crate::ast::*;
 use crate::pos::{Span, Spanned};
 use crate::program::StringId;
 use codespan::{ByteIndex, ByteOffset};
+use std::sync::Arc;
 
 grammar;
 
@@ -17,13 +18,13 @@ pub Program: Module = {
     }
 }
 
-Item: Item = {
-    Struct => Item::Struct(<>),
-    Def => Item::Def(<>)
+Item: Arc<Item> = {
+    Struct => Arc::new(Item::Struct(<>)),
+    Def => Arc::new(Item::Def(<>))
 }
 
 Struct: Struct = {
-    <l: @L> struct <name: Identifier> "{" Newlines? <fields: Fields> "}" <r: @R> => 
+    <l: @L> struct <name: Identifier> "{" Newlines? <fields: Fields> "}" <r: @R> =>
         Struct::new(name, fields, Span::from(l, r))
 }
 

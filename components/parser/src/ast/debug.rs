@@ -152,6 +152,12 @@ impl<T: DebugModuleTable> DebugModuleTable for Spanned<T> {
     }
 }
 
+impl<T: DebugModuleTable> DebugModuleTable for Arc<T> {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        T::debug(self, f, table)
+    }
+}
+
 impl DebugModuleTable for Block {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         write!(f, "{:#?}", DebuggableVec::from(&self.expressions, table))
