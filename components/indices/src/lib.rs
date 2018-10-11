@@ -6,7 +6,7 @@ use std::hash::Hash;
 /// Use to declare a "newtype'd" index that can be used with `IndexVec`.
 /// The simplest usage is just:
 ///
-/// ```
+/// ```ignore
 /// index_type! {
 ///     $v struct Foo { .. }
 /// }
@@ -37,8 +37,8 @@ use std::hash::Hash;
 ///
 /// Before the `..` you can also add some configuration options. Example:
 ///
-/// ```
-/// newtype_index! {
+/// ```ignore
+/// index_type! {
 ///     struct Foo {
 ///         debug_name[Bar],
 ///         .. // <-- NB always end with `..`
