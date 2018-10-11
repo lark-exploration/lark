@@ -17,6 +17,7 @@ use std::sync::Arc;
 pub mod item_id;
 mod parser_state;
 mod query_definitions;
+mod test;
 
 salsa::query_group! {
     pub trait AstDatabase: HasParserState + Has<ItemIdTables> + salsa::Database {
@@ -38,6 +39,11 @@ salsa::query_group! {
             use fn query_definitions::ast_of_file;
         }
 
+        fn items_in_file(path: StringId) -> Arc<Vec<ItemId>> {
+            type ItemsInFile;
+            use fn query_definitions::items_in_file;
+        }
+
         fn ast_of_item(item: ItemId) -> Result<Arc<ast::Item>, ParseError> {
             type AstOfItem;
             use fn query_definitions::ast_of_item;
@@ -47,7 +53,7 @@ salsa::query_group! {
 
 /// Trait encapsulating the String interner. This should be
 /// synchronized with the `intern` crate eventually.
-pub trait HasParserState {
+pub trait HasParserState: parser::program::LookupStringId {
     fn parser_state(&self) -> &ParserState;
 
     fn untern_string(&self, string_id: StringId) -> Arc<String> {

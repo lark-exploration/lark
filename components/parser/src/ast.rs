@@ -22,6 +22,15 @@ pub enum Item {
     Def(Def),
 }
 
+impl Item {
+    pub fn name(&self) -> StringId {
+        match self {
+            Item::Struct(s) => s.name.node,
+            Item::Def(d) => d.name.node,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum BlockItem {
     Item(Arc<Item>),
@@ -46,14 +55,14 @@ pub enum Declaration {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Module {
-    crate items: Vec<Arc<Item>>,
+    pub items: Vec<Arc<Item>>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Struct {
-    name: Spanned<StringId>,
-    fields: Vec<Field>,
-    span: Span,
+    pub name: Spanned<StringId>,
+    pub fields: Vec<Field>,
+    pub span: Span,
 }
 
 impl HasSpan for Struct {
@@ -79,8 +88,8 @@ pub enum ConstructField {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Type {
-    mode: Option<Spanned<Mode>>,
-    name: Spanned<StringId>,
+    pub mode: Option<Spanned<Mode>>,
+    pub name: Spanned<StringId>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -119,18 +128,18 @@ pub enum Pattern {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Path {
-    components: Vec<Identifier>,
+    pub components: Vec<Identifier>,
 }
 
 pub enum Statement {}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Def {
-    crate name: Identifier,
-    crate parameters: Vec<Field>,
-    crate ret: Option<Spanned<Type>>,
-    crate body: Spanned<Block>,
-    crate span: Span,
+    pub name: Identifier,
+    pub parameters: Vec<Field>,
+    pub ret: Option<Spanned<Type>>,
+    pub body: Spanned<Block>,
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]

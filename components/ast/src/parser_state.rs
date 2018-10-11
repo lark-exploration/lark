@@ -37,3 +37,9 @@ impl ParserState {
         module_table.intern(hashable)
     }
 }
+
+impl parser::program::LookupStringId for ParserState {
+    fn lookup(&self, id: StringId) -> Arc<String> {
+        self.untern_string(id)
+    }
+}
