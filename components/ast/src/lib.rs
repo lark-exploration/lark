@@ -38,6 +38,11 @@ salsa::query_group! {
             use fn query_definitions::ast_of_file;
         }
 
+        fn items_in_file(path: StringId) -> Arc<Vec<ItemId>> {
+            type ItemsInFile;
+            use fn query_definitions::items_in_file;
+        }
+
         fn ast_of_item(item: ItemId) -> Result<Arc<ast::Item>, ParseError> {
             type AstOfItem;
             use fn query_definitions::ast_of_item;
