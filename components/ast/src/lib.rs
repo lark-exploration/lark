@@ -17,6 +17,7 @@ use std::sync::Arc;
 pub mod item_id;
 mod parser_state;
 mod query_definitions;
+mod test;
 
 salsa::query_group! {
     pub trait AstDatabase: HasParserState + Has<ItemIdTables> + salsa::Database {
