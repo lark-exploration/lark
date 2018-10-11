@@ -1,5 +1,4 @@
 #![feature(macro_at_most_once_rep)]
-#![feature(min_const_fn)]
 #![feature(const_let)]
 #![feature(const_fn)]
 

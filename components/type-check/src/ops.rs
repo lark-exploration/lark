@@ -1,9 +1,7 @@
-use crate::hir;
-use crate::type_check::TypeCheckDatabase;
-use crate::type_check::TypeCheckFamily;
-use crate::type_check::TypeChecker;
-use crate::type_check::UniverseBinder;
-use generational_arena::Arena;
+use crate::TypeCheckFamily;
+use crate::TypeChecker;
+use crate::UniverseBinder;
+use hir;
 use mir::DefId;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
@@ -14,7 +12,6 @@ use ty::GenericKind;
 use ty::Generics;
 use ty::Placeholder;
 use ty::Ty;
-use ty::TypeFamily;
 use ty::Universe;
 use unify::InferVar;
 use unify::Inferable;
@@ -41,9 +38,9 @@ where
     }
 }
 
-impl<DB, F> TypeChecker<'q, DB, F>
+impl<DB, F> TypeChecker<'_, DB, F>
 where
-    DB: crate::type_check::TypeCheckDatabase,
+    DB: crate::TypeCheckDatabase,
     F: TypeCheckFamily,
 {
     pub(super) fn new_infer_ty(&mut self) -> Ty<F> {

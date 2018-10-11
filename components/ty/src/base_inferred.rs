@@ -6,6 +6,7 @@ use crate::Erased;
 use crate::Placeholder;
 use crate::TypeFamily;
 use intern::Has;
+use intern::Intern;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct BaseInferred;
@@ -16,7 +17,7 @@ impl TypeFamily for BaseInferred {
     type Placeholder = Placeholder;
 
     fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base {
-        tables.intern_tables().intern(base_data)
+        base_data.intern(tables)
     }
 }
 

@@ -8,6 +8,7 @@ use crate::BoundVarOr;
 use crate::Erased;
 use crate::TypeFamily;
 use intern::Has;
+use intern::Intern;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Declaration;
@@ -18,7 +19,7 @@ impl TypeFamily for Declaration {
     type Placeholder = !;
 
     fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base {
-        tables.intern_tables().intern(BoundVarOr::Known(base_data))
+        BoundVarOr::Known(base_data).intern(tables)
     }
 }
 

@@ -59,7 +59,7 @@ pub fn parse(
     Ok(module?)
 }
 
-pub fn lalrpop_err(
+crate fn lalrpop_err(
     err: lalrpop_util::ParseError<ByteIndex, Token, ParseError>,
     table: &ModuleTable,
 ) -> ParseError {

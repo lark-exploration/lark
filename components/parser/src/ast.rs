@@ -10,6 +10,7 @@ use crate::pos::Spanned;
 use crate::{Environment, ModuleTable, StringId, Token};
 use derive_new::new;
 use std::fmt;
+use std::sync::Arc;
 
 pub use self::debug::{DebugModuleTable, Debuggable, DebuggableVec};
 
@@ -23,7 +24,7 @@ pub enum Item {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum BlockItem {
-    Item(Item),
+    Item(Arc<Item>),
     Decl(Declaration),
     Expr(Expression),
 }
@@ -45,7 +46,7 @@ pub enum Declaration {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Module {
-    crate items: Vec<Item>,
+    crate items: Vec<Arc<Item>>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]

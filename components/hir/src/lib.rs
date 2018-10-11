@@ -1,5 +1,11 @@
 //! The `Hir` is the "high-level IR". It is a simpified, somewhat resolved version of the bare AST.
 
+#![feature(crate_visibility_modifier)]
+#![feature(const_fn)]
+#![feature(const_let)]
+#![feature(macro_at_most_once_rep)]
+
+use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
 use mir::DefId;
 use parser::pos::{Span, Spanned};
@@ -7,10 +13,10 @@ use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 
-crate mod query_definitions;
+mod query_definitions;
 
 salsa::query_group! {
-    crate trait HirDatabase: salsa::Database {
+    pub trait HirDatabase: AstDatabase {
         /// Get the def-id for the built-in boolean type.
         fn boolean_def_id(key: ()) -> DefId {
             type BooleanDefIdQuery;
@@ -56,47 +62,47 @@ salsa::query_group! {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum MemberKind {
+pub enum MemberKind {
     Field,
     Method,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate struct Member {
-    crate name: StringId,
-    crate kind: MemberKind,
-    crate def_id: DefId,
+pub struct Member {
+    pub name: StringId,
+    pub kind: MemberKind,
+    pub def_id: DefId,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct FnBody {
+pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
-    crate arguments: Vec<Variable>,
+    pub arguments: Vec<Variable>,
 
     /// Index of the root expression in the function body. Its result
     /// will be returned.
-    crate root_expression: Expression,
+    pub root_expression: Expression,
 
     /// Map each expression index to its associated data.
-    crate expressions: IndexVec<Expression, Spanned<ExpressionData>>,
+    pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
 
     /// Map each place index to its associated data.
-    crate places: IndexVec<Place, Spanned<PlaceData>>,
+    pub places: IndexVec<Place, Spanned<PlaceData>>,
 
     /// Map each perm index to its associated data.
-    crate perms: IndexVec<Perm, Spanned<PermData>>,
+    pub perms: IndexVec<Perm, Spanned<PermData>>,
 
     /// Map each variable index to its associated data.
-    crate variables: IndexVec<Variable, Spanned<VariableData>>,
+    pub variables: IndexVec<Variable, Spanned<VariableData>>,
 
     /// Map each identifier index to its associated data.
-    crate identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
+    pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
 }
 
 /// Trait implemented by the various kinds of indices that reach into
 /// the HIR; allows us to grab the vector that they correspond to.
-crate trait HirIndex: U32Index + Into<MetaIndex> {
+pub trait HirIndex: U32Index + Into<MetaIndex> {
     type Data;
 
     fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>>;
@@ -118,13 +124,13 @@ where
 
 /// Trait for the various types for which a span can be had --
 /// corresponds to all the index types plus `MetaIndex`.
-crate trait SpanIndex {
+pub trait SpanIndex {
     fn span_from(self, fn_body: &FnBody) -> Span;
 }
 
 impl FnBody {
     /// Get the span for the given part of the HIR.
-    crate fn span(&self, index: impl SpanIndex) -> Span {
+    pub fn span(&self, index: impl SpanIndex) -> Span {
         index.span_from(self)
     }
 }
@@ -159,7 +165,7 @@ macro_rules! define_meta_index {
         /// reach into it. This enum brings them together into
         /// a sort of "meta index". It's useful sometimes.
         #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-        crate enum MetaIndex {
+        pub enum MetaIndex {
             $(
                 $index_ty($index_ty),
             )*
@@ -186,11 +192,11 @@ define_meta_index! {
 }
 
 indices::index_type! {
-    crate struct Expression { .. }
+    pub struct Expression { .. }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate enum ExpressionData {
+pub enum ExpressionData {
     /// `let <var> = <initializer> in <body>`
     Let {
         var: Variable,
@@ -229,11 +235,11 @@ crate enum ExpressionData {
 }
 
 indices::index_type! {
-    crate struct Perm { .. }
+    pub struct Perm { .. }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum PermData {
+pub enum PermData {
     Share,
     Borrow,
     Own,
@@ -242,30 +248,30 @@ crate enum PermData {
 }
 
 indices::index_type! {
-    crate struct Place { .. }
+    pub struct Place { .. }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate enum PlaceData {
+pub enum PlaceData {
     Variable(Variable),
     Temporary(Expression),
     Field { owner: Place, name: Identifier },
 }
 
 indices::index_type! {
-    crate struct Variable { .. }
+    pub struct Variable { .. }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate struct VariableData {
-    crate name: Identifier,
+pub struct VariableData {
+    pub name: Identifier,
 }
 
 indices::index_type! {
-    crate struct Identifier { .. }
+    pub struct Identifier { .. }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-crate struct IdentifierData {
-    crate text: StringId,
+pub struct IdentifierData {
+    pub text: StringId,
 }

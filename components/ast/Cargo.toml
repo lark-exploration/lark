@@ -1,0 +1,15 @@
+[package]
+name = "ast"
+version = "0.1.0"
+authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+edition = "2018"
+
+[dependencies]
+parking_lot = "0.6.4"
+salsa = "0.4.1"
+
+indices = { path = "../indices" }
+intern = { path = "../intern" }
+parser = { path = "../parser" }
+
+
