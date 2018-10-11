@@ -1,3 +1,5 @@
+#![cfg(broken)] // disable for now
+
 use super::*;
 
 impl Struct {
