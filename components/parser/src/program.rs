@@ -1,5 +1,6 @@
 use codespan::CodeMap;
 use crate::Spanned;
+use debug::DebugWith;
 use derive_new::new;
 use smart_default::SmartDefault;
 use std::collections::BTreeMap;
@@ -9,6 +10,16 @@ use std::sync::Arc;
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct StringId {
     position: usize,
+}
+
+pub trait LookupStringId {
+    fn lookup(&self, id: StringId) -> Arc<String>;
+}
+
+impl<Cx: LookupStringId> DebugWith<Cx> for StringId {
+    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt::Debug::fmt(&cx.lookup(*self), fmt)
+    }
 }
 
 impl fmt::Debug for StringId {

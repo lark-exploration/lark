@@ -18,6 +18,7 @@ dependencies = [
 name = "ast"
 version = "0.1.0"
 dependencies = [
+ "debug 0.1.0",
  "indices 0.1.0",
  "intern 0.1.0",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -466,6 +467,7 @@ name = "parser"
 version = "0.1.0"
 dependencies = [
  "codespan 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "debug 0.1.0",
  "derive-new 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "itertools 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "lalrpop-util 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",

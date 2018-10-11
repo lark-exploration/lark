@@ -14,3 +14,5 @@ itertools = "0.7.8"
 seahash = "3.0.5"
 smart-default = "0.2.0"
 unicode-xid = "0.1.0"
+
+debug = { path = "../debug" }

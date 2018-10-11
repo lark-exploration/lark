@@ -52,7 +52,7 @@ salsa::query_group! {
 
 /// Trait encapsulating the String interner. This should be
 /// synchronized with the `intern` crate eventually.
-pub trait HasParserState {
+pub trait HasParserState: parser::program::LookupStringId {
     fn parser_state(&self) -> &ParserState;
 
     fn untern_string(&self, string_id: StringId) -> Arc<String> {
