@@ -72,13 +72,13 @@ impl TypeCheckFamily for BaseOnly {
     }
 
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
-        let boolean_def_id = this.db().boolean_def_id(());
+        let boolean_item_id = this.db().boolean_item_id(());
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
                 this.db(),
                 BaseData {
-                    kind: BaseKind::Named(boolean_def_id),
+                    kind: BaseKind::Named(boolean_item_id),
                     generics: Generics::empty(),
                 },
             ),

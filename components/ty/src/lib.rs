@@ -5,10 +5,10 @@
 #![feature(const_let)]
 #![warn(unused_imports)]
 
+use ast::item_id::ItemId;
 use crate::interners::TyInternTables;
 use indices::IndexVec;
 use intern::Has;
-use mir::DefId;
 use parser::program::StringId;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -63,7 +63,7 @@ impl<F: TypeFamily> BaseData<F> {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum BaseKind<F: TypeFamily> {
     /// A named type (might be value, might be linear, etc).
-    Named(DefId),
+    Named(ItemId),
 
     /// Instantiated generic type -- exists only in type-check results
     /// for a function.
@@ -265,13 +265,13 @@ pub struct Signature<F: TypeFamily> {
 /// (e.g., from their parents),
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GenericDeclarations {
-    pub parent_item: Option<DefId>,
+    pub parent_item: Option<ItemId>,
     pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
 }
 
 /// Declaration of an individual generic type parameter.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GenericTyDeclaration {
-    pub def_id: DefId,
+    pub def_id: ItemId,
     pub name: StringId,
 }

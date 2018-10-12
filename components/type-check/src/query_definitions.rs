@@ -1,3 +1,4 @@
+use ast::item_id::ItemId;
 use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
 use crate::TypeChecker;
@@ -5,7 +6,6 @@ use crate::UniverseBinder;
 use generational_arena::Arena;
 use indices::IndexVec;
 use map::FxIndexMap;
-use mir::DefId;
 use ty::base_inferred::BaseInferred;
 use ty::base_only::BaseOnly;
 use ty::interners::TyInternTables;
@@ -14,13 +14,13 @@ use unify::UnificationTable;
 
 crate fn base_type_check(
     db: &impl TypeCheckDatabase,
-    fn_def_id: DefId,
+    fn_item_id: ItemId,
 ) -> TypeCheckResults<BaseInferred> {
-    let fn_body = db.fn_body(fn_def_id);
+    let fn_body = db.fn_body(fn_item_id);
     let interners: &TyInternTables = db.intern_tables();
     let mut base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
         db,
-        fn_def_id,
+        fn_item_id,
         hir: fn_body,
         ops_arena: Arena::new(),
         ops_blocked: FxIndexMap::default(),

@@ -13,8 +13,8 @@ where
     F: TypeCheckFamily,
 {
     pub(super) fn check_fn_body(&mut self) {
-        let signature = self.db.signature(self.fn_def_id);
-        let placeholders = self.placeholders_for(self.fn_def_id);
+        let signature = self.db.signature(self.fn_item_id);
+        let placeholders = self.placeholders_for(self.fn_item_id);
         let signature = self.substitute(self.hir.root_expression, &placeholders, signature);
         assert_eq!(signature.inputs.len(), self.hir.arguments.len());
         for (&argument, &input) in self.hir.arguments.iter().zip(signature.inputs.iter()) {
@@ -115,11 +115,11 @@ where
                     let BaseData { kind, generics } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
-                            if let Some(field_def_id) =
+                            if let Some(field_item_id) =
                                 this.db()
-                                    .member_def_id((def_id, hir::MemberKind::Field, text))
+                                    .member_item_id((def_id, hir::MemberKind::Field, text))
                             {
-                                let field_decl_ty = this.db().ty(field_def_id);
+                                let field_decl_ty = this.db().ty(field_item_id);
                                 let field_ty = this.substitute(place, &generics, field_decl_ty);
                                 this.apply_owner_perm(place, owner_ty.perm, field_ty)
                             } else {
@@ -162,10 +162,10 @@ where
         match kind {
             BaseKind::Named(def_id) => {
                 let text = self.hir[method_name].text;
-                let method_def_id =
+                let method_item_id =
                     match self
                         .db()
-                        .member_def_id((def_id, hir::MemberKind::Method, text))
+                        .member_item_id((def_id, hir::MemberKind::Method, text))
                     {
                         Some(def_id) => def_id,
                         None => {
@@ -176,7 +176,7 @@ where
 
                 // FIXME -- what role does `owner_ty` place here??
 
-                let signature_decl = self.db().signature(method_def_id);
+                let signature_decl = self.db().signature(method_item_id);
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
                     self.results.record_error(expression);
