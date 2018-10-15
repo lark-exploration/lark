@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 parking_lot = "0.6.4"
-salsa = "0.4.1"
+salsa = "0.5.0"
 
 ast = { path = "../ast" }
 indices = { path = "../indices" }

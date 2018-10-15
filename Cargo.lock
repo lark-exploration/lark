@@ -23,7 +23,7 @@ dependencies = [
  "intern 0.1.0",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parser 0.1.0",
- "salsa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "salsa 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -217,7 +217,7 @@ dependencies = [
  "indices 0.1.0",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parser 0.1.0",
- "salsa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "salsa 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ty 0.1.0",
 ]
 
@@ -347,7 +347,7 @@ dependencies = [
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parser 0.1.0",
  "pretty_env_logger 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "salsa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "salsa 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "seahash 3.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "smart-default 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "task_manager 0.1.0",
@@ -606,7 +606,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "salsa"
-version = "0.4.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "derive-new 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -614,6 +614,7 @@ dependencies = [
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hash 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "smallvec 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -819,7 +820,7 @@ dependencies = [
  "intern 0.1.0",
  "map 0.1.0",
  "parser 0.1.0",
- "salsa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "salsa 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ty 0.1.0",
  "unify 0.1.0",
 ]
@@ -1030,7 +1031,7 @@ dependencies = [
 "checksum rustc-hash 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7540fc8b0c49f096ee9c961cda096467dce8084bec6bdca2fc83895fd9b28cb8"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 "checksum ryu 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "7153dd96dade874ab973e098cb62fcdbb89a03682e46b144fd09550998d4a4a7"
-"checksum salsa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b7a4bcb8e4e81d092709a98130025666d255c8821970dcb9347d05f928e3d505"
+"checksum salsa 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8301c563959d6d50fe0a34817f0d9ff08fe12eda7456e01e2bbde1588ea30602"
 "checksum scopeguard 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "94258f53601af11e6a49f722422f6e3425c52b06245a5cf9bc09908b174f5e27"
 "checksum seahash 3.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e048636bed25842fcdc36e5ad1ec6295b72d4b5b8a4b759b64915a4ce2b9d09d"
 "checksum semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
