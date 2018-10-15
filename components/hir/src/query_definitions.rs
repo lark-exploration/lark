@@ -1,25 +1,25 @@
+use ast::item_id::ItemId;
 use crate::HirDatabase;
-use mir::DefId;
 use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 
-crate fn boolean_def_id(_db: &impl HirDatabase, _key: ()) -> DefId {
+crate fn boolean_item_id(_db: &impl HirDatabase, _key: ()) -> ItemId {
     unimplemented!()
 }
 
-crate fn fn_body(_db: &impl HirDatabase, _key: DefId) -> Arc<crate::FnBody> {
+crate fn fn_body(_db: &impl HirDatabase, _key: ItemId) -> Arc<crate::FnBody> {
     unimplemented!()
 }
 
-crate fn members(_db: &impl HirDatabase, _key: DefId) -> Arc<Vec<crate::Member>> {
+crate fn members(_db: &impl HirDatabase, _key: ItemId) -> Arc<Vec<crate::Member>> {
     unimplemented!()
 }
 
-crate fn member_def_id(
+crate fn member_item_id(
     db: &impl HirDatabase,
-    (owner, kind, name): (DefId, crate::MemberKind, StringId),
-) -> Option<DefId> {
+    (owner, kind, name): (ItemId, crate::MemberKind, StringId),
+) -> Option<ItemId> {
     db.members(owner)
         .iter()
         .filter_map(|member| {
@@ -32,14 +32,17 @@ crate fn member_def_id(
         .next()
 }
 
-crate fn ty(_db: &impl HirDatabase, _key: DefId) -> ty::Ty<Declaration> {
+crate fn ty(_db: &impl HirDatabase, _key: ItemId) -> ty::Ty<Declaration> {
     unimplemented!()
 }
 
-crate fn signature(_db: &impl HirDatabase, _key: DefId) -> ty::Signature<Declaration> {
+crate fn signature(_db: &impl HirDatabase, _key: ItemId) -> ty::Signature<Declaration> {
     unimplemented!()
 }
 
-crate fn generic_declarations(_db: &impl HirDatabase, _key: DefId) -> Arc<ty::GenericDeclarations> {
+crate fn generic_declarations(
+    _db: &impl HirDatabase,
+    _key: ItemId,
+) -> Arc<ty::GenericDeclarations> {
     unimplemented!()
 }

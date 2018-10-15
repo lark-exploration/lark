@@ -1,8 +1,8 @@
+use ast::item_id::ItemId;
 use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::UniverseBinder;
 use hir;
-use mir::DefId;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
 use ty::map_family::Map;
@@ -109,7 +109,7 @@ where
         F::least_upper_bound(self, if_expression, true_ty, false_ty)
     }
 
-    pub(super) fn placeholders_for(&mut self, def_id: DefId) -> Generics<F> {
+    pub(super) fn placeholders_for(&mut self, def_id: ItemId) -> Generics<F> {
         let GenericDeclarations {
             parent_item,
             declarations,

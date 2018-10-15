@@ -5,9 +5,9 @@
 #![feature(const_let)]
 #![feature(macro_at_most_once_rep)]
 
+use ast::item_id::ItemId;
 use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
-use mir::DefId;
 use parser::pos::{Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
@@ -18,43 +18,43 @@ mod query_definitions;
 salsa::query_group! {
     pub trait HirDatabase: AstDatabase {
         /// Get the def-id for the built-in boolean type.
-        fn boolean_def_id(key: ()) -> DefId {
-            type BooleanDefIdQuery;
-            use fn query_definitions::boolean_def_id;
+        fn boolean_item_id(key: ()) -> ItemId {
+            type BooleanItemIdQuery;
+            use fn query_definitions::boolean_item_id;
         }
 
         /// Get the fn-body for a given def-id.
-        fn fn_body(key: DefId) -> Arc<FnBody> {
+        fn fn_body(key: ItemId) -> Arc<FnBody> {
             type FnBodyQuery;
             use fn query_definitions::fn_body;
         }
 
         /// Get the list of member names and their def-ids for a given struct.
-        fn members(key: DefId) -> Arc<Vec<Member>> {
+        fn members(key: ItemId) -> Arc<Vec<Member>> {
             type MembersQuery;
             use fn query_definitions::members;
         }
 
         /// Gets the def-id for a field of a given class.
-        fn member_def_id(m: (DefId, MemberKind, StringId)) -> Option<DefId> {
-            type MemberDefIdQuery;
-            use fn query_definitions::member_def_id;
+        fn member_item_id(m: (ItemId, MemberKind, StringId)) -> Option<ItemId> {
+            type MemberItemIdQuery;
+            use fn query_definitions::member_item_id;
         }
 
         /// Get the type of something.
-        fn ty(key: DefId) -> ty::Ty<Declaration> {
+        fn ty(key: ItemId) -> ty::Ty<Declaration> {
             type TyQuery;
             use fn query_definitions::ty;
         }
 
         /// Get the signature of a method or function -- defined for fields and structs.
-        fn signature(key: DefId) -> ty::Signature<Declaration> {
+        fn signature(key: ItemId) -> ty::Signature<Declaration> {
             type SignatureQuery;
             use fn query_definitions::signature;
         }
 
         /// Get the generic declarations from a particular item.
-        fn generic_declarations(key: DefId) -> Arc<ty::GenericDeclarations> {
+        fn generic_declarations(key: ItemId) -> Arc<ty::GenericDeclarations> {
             type GenericDeclarations;
             use fn query_definitions::generic_declarations;
         }
@@ -71,7 +71,7 @@ pub enum MemberKind {
 pub struct Member {
     pub name: StringId,
     pub kind: MemberKind,
-    pub def_id: DefId,
+    pub def_id: ItemId,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -243,7 +243,7 @@ pub enum PermData {
     Share,
     Borrow,
     Own,
-    Other(DefId),
+    Other(ItemId),
     Default,
 }
 
