@@ -1,3 +1,4 @@
+use ast::ast as a;
 use ast::item_id::ItemId;
 use crate::HirDatabase;
 use parser::StringId;
@@ -8,8 +9,16 @@ crate fn boolean_item_id(_db: &impl HirDatabase, _key: ()) -> ItemId {
     unimplemented!()
 }
 
-crate fn members(_db: &impl HirDatabase, _key: ItemId) -> Arc<Vec<crate::Member>> {
-    unimplemented!()
+crate fn members(db: &impl HirDatabase, item_id: ItemId) -> Arc<Vec<crate::Member>> {
+    match db.ast_of_item(item_id) {
+        Ok(ast) => match &*ast {
+            a::Item::Struct(_s) => unimplemented!(),
+
+            a::Item::Def(_) => panic!("asked for fn-body of struct {:?}", item_id),
+        },
+
+        Err(_parse_error) => unimplemented!(),
+    }
 }
 
 crate fn member_item_id(
