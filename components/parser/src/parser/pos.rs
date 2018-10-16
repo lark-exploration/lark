@@ -93,7 +93,7 @@ impl fmt::Display for Span {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Spanned<T>(crate T, crate Span);
+pub struct Spanned<T>(pub T, pub Span);
 
 impl<T> std::ops::Deref for Spanned<T> {
     type Target = T;
@@ -133,11 +133,16 @@ impl<T> Spanned<T> {
 pub trait HasSpan {
     type Inner;
     fn span(&self) -> Span;
+    fn node(&self) -> &Self::Inner;
 }
 
 impl<T> HasSpan for Spanned<T> {
     type Inner = T;
     fn span(&self) -> Span {
         self.1
+    }
+
+    fn node(&self) -> &T {
+        &self.0
     }
 }

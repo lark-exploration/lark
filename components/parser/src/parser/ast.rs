@@ -72,6 +72,10 @@ impl HasSpan for Struct {
     fn span(&self) -> Span {
         self.span
     }
+
+    fn node(&self) -> &Struct {
+        self
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
@@ -136,11 +140,11 @@ pub enum Statement {}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Def {
-    crate name: Identifier,
-    crate parameters: Vec<Field>,
-    crate ret: Option<Spanned<Type>>,
-    crate body: Spanned<Block>,
-    crate span: Span,
+    pub name: Identifier,
+    pub parameters: Vec<Field>,
+    pub ret: Option<Spanned<Type>>,
+    pub body: Spanned<Block>,
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -186,6 +190,10 @@ impl HasSpan for Expression {
             Literal(lit) => lit.span(),
         }
     }
+
+    fn node(&self) -> &Expression {
+        self
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -230,6 +238,10 @@ impl HasSpan for Literal {
             Literal::String(string) => string.span(),
         }
     }
+
+    fn node(&self) -> &Literal {
+        self
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
@@ -245,7 +257,12 @@ impl HasSpan for ConstructStruct {
     fn span(&self) -> Span {
         self.span
     }
+
+    fn node(&self) -> &ConstructStruct {
+        self
+    }
 }
+
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 
 pub struct Call {

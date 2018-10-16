@@ -1,3 +1,5 @@
+use parser::prelude::*;
+
 use ast::ast as a;
 use ast::item_id::ItemId;
 use crate as hir;
@@ -31,7 +33,7 @@ where
     }
 
     fn add<D: hir::HirIndexData>(&mut self, span: Span, node: D) -> D::Index {
-        D::index_vec_mut(&mut self.fn_body_tables).push(Spanned { span, node })
+        D::index_vec_mut(&mut self.fn_body_tables).push(Spanned(node, span))
     }
 
     fn span(&self, index: impl hir::SpanIndex) -> Span {
@@ -95,9 +97,9 @@ where
             .iter()
             .map(|parameter| {
                 let name = self.add(
-                    parameter.name.span,
+                    parameter.name.span(),
                     hir::IdentifierData {
-                        text: parameter.name.node,
+                        text: *parameter.name,
                     },
                 );
                 self.add(parameter.span, hir::VariableData { name })
@@ -106,8 +108,8 @@ where
     }
 
     fn lower_block(&mut self, block: &Spanned<a::Block>) -> hir::Expression {
-        self.lower_block_items(&block.node.expressions)
-            .unwrap_or_else(|| self.unit_expression(block.span))
+        self.lower_block_items(&block.expressions)
+            .unwrap_or_else(|| self.unit_expression(block.span()))
     }
 
     fn lower_block_items(&mut self, block_items: &[a::BlockItem]) -> Option<hir::Expression> {
@@ -146,17 +148,12 @@ where
             init,
         } = let_decl;
 
-        let variable = match &pattern.node {
+        let variable = match **pattern {
             a::Pattern::Underscore => unimplemented!(),
 
             a::Pattern::Identifier(identifier, _mode) => {
-                let name = self.add(
-                    identifier.span,
-                    hir::IdentifierData {
-                        text: identifier.node,
-                    },
-                );
-                self.add(identifier.span, hir::VariableData { name })
+                let name = self.add(identifier.span(), hir::IdentifierData { text: *identifier });
+                self.add(identifier.span(), hir::VariableData { name })
             }
         };
 
@@ -209,18 +206,21 @@ where
 
     fn lower_place(&mut self, expr: &a::Expression) -> hir::Place {
         match expr {
-            a::Expression::Ref(identifier) => match self.variables.get(&identifier.node) {
-                Some(&variable) => self.add(identifier.span, hir::PlaceData::Variable(variable)),
+            a::Expression::Ref(identifier) => match self.variables.get(identifier.node()) {
+                Some(&variable) => self.add(identifier.span(), hir::PlaceData::Variable(variable)),
 
                 None => {
                     let error_expression = self.error_expression(
-                        identifier.span,
+                        identifier.span(),
                         hir::ErrorData::UnknownIdentifier {
-                            text: identifier.node,
+                            text: *identifier.node(),
                         },
                     );
 
-                    self.add(identifier.span, hir::PlaceData::Temporary(error_expression))
+                    self.add(
+                        identifier.span(),
+                        hir::PlaceData::Temporary(error_expression),
+                    )
                 }
             },
 
