@@ -84,6 +84,13 @@ pub struct FnBody {
     /// will be returned.
     pub root_expression: Expression,
 
+    /// Contains all the data.
+    pub tables: FnBodyTables,
+}
+
+/// All the data for a fn-body is stored in these tables.a
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct FnBodyTables {
     /// Map each expression index to its associated data.
     pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
 
@@ -105,13 +112,24 @@ pub struct FnBody {
 pub trait HirIndex: U32Index + Into<MetaIndex> {
     type Data;
 
-    fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>>;
 }
 
 /// Permit indexing the HIR by any of the various index types.
 /// Returns the underlying data from the index, skipping over the
 /// span.
 impl<I> std::ops::Index<I> for FnBody
+where
+    I: HirIndex,
+{
+    type Output = I::Data;
+
+    fn index(&self, index: I) -> &I::Data {
+        &self.tables[index]
+    }
+}
+
+impl<I> std::ops::Index<I> for FnBodyTables
 where
     I: HirIndex,
 {
@@ -125,10 +143,17 @@ where
 /// Trait for the various types for which a span can be had --
 /// corresponds to all the index types plus `MetaIndex`.
 pub trait SpanIndex {
-    fn span_from(self, fn_body: &FnBody) -> Span;
+    fn span_from(self, tables: &FnBodyTables) -> Span;
 }
 
 impl FnBody {
+    /// Get the span for the given part of the HIR.
+    pub fn span(&self, index: impl SpanIndex) -> Span {
+        index.span_from(&self.tables)
+    }
+}
+
+impl FnBodyTables {
     /// Get the span for the given part of the HIR.
     pub fn span(&self, index: impl SpanIndex) -> Span {
         index.span_from(self)
@@ -136,8 +161,8 @@ impl FnBody {
 }
 
 impl<I: HirIndex> SpanIndex for I {
-    fn span_from(self, fn_body: &FnBody) -> Span {
-        I::index_vec(fn_body)[self].span
+    fn span_from(self, tables: &FnBodyTables) -> Span {
+        I::index_vec(tables)[self].span
     }
 }
 
@@ -149,7 +174,7 @@ macro_rules! define_meta_index {
             impl HirIndex for $index_ty {
                 type Data = $data_ty;
 
-                fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>> {
+                fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>> {
                     &hir.$field
                 }
             }
@@ -172,10 +197,10 @@ macro_rules! define_meta_index {
         }
 
         impl SpanIndex for MetaIndex {
-            fn span_from(self, fn_body: &FnBody) -> Span {
+            fn span_from(self, tables: &FnBodyTables) -> Span {
                 match self {
                     $(
-                        MetaIndex::$index_ty(index) => index.span_from(fn_body),
+                        MetaIndex::$index_ty(index) => index.span_from(tables),
                     )*
                 }
             }
