@@ -34,6 +34,10 @@ where
         D::index_vec_mut(&mut self.fn_body_tables).push(Spanned { span, node })
     }
 
+    fn span(&self, index: impl hir::SpanIndex) -> Span {
+        index.span_from(&self.fn_body_tables)
+    }
+
     fn save_scope(&self) -> FxIndexMap<StringId, hir::Variable> {
         self.variables.clone()
     }
@@ -70,15 +74,12 @@ where
             },
 
             Err(parse_error) => {
-                let error = self.add(
+                let root_expression = self.error_expression(
                     parse_error.span,
                     hir::ErrorData::ParseError {
                         description: parse_error.description,
                     },
                 );
-
-                let root_expression =
-                    self.add(parse_error.span, hir::ExpressionData::Error { error });
 
                 hir::FnBody {
                     arguments: vec![],
@@ -128,11 +129,11 @@ where
 
             a::BlockItem::Decl(_decl) => unimplemented!(),
 
-            a::BlockItem::Expr(expr) => Some(self.lower_expr(expr)),
+            a::BlockItem::Expr(expr) => Some(self.lower_expression(expr)),
         }
     }
 
-    fn lower_expr(&mut self, expr: &a::Expression) -> hir::Expression {
+    fn lower_expression(&mut self, expr: &a::Expression) -> hir::Expression {
         match expr {
             a::Expression::Block(block) => self.lower_block(block),
 
@@ -140,7 +141,12 @@ where
 
             a::Expression::Call(_) => unimplemented!(),
 
-            a::Expression::Ref(_) => unimplemented!(),
+            a::Expression::Ref(_) => {
+                let place = self.lower_place(expr);
+                let span = self.span(place);
+                let perm = self.add(span, hir::PermData::Default);
+                self.add(span, hir::ExpressionData::Place { perm, place })
+            }
 
             a::Expression::Binary(..) => unimplemented!(),
 
@@ -148,6 +154,41 @@ where
 
             a::Expression::Literal(..) => unimplemented!(),
         }
+    }
+
+    fn lower_place(&mut self, expr: &a::Expression) -> hir::Place {
+        match expr {
+            a::Expression::Ref(identifier) => match self.variables.get(&identifier.node) {
+                Some(&variable) => self.add(identifier.span, hir::PlaceData::Variable(variable)),
+
+                None => {
+                    let error_expression = self.error_expression(
+                        identifier.span,
+                        hir::ErrorData::UnknownIdentifier {
+                            text: identifier.node,
+                        },
+                    );
+
+                    self.add(identifier.span, hir::PlaceData::Temporary(error_expression))
+                }
+            },
+
+            a::Expression::Block(_)
+            | a::Expression::ConstructStruct(_)
+            | a::Expression::Call(_)
+            | a::Expression::Binary(..)
+            | a::Expression::Interpolation(..)
+            | a::Expression::Literal(..) => {
+                let expression = self.lower_expression(expr);
+                let span = self.span(expression);
+                self.add(span, hir::PlaceData::Temporary(expression))
+            }
+        }
+    }
+
+    fn error_expression(&mut self, span: Span, data: hir::ErrorData) -> hir::Expression {
+        let error = self.add(span, data);
+        self.add(span, hir::ExpressionData::Error { error })
     }
 }
 
