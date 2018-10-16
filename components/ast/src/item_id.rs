@@ -3,17 +3,16 @@ use debug::DebugWith;
 use intern::Has;
 use intern::Untern;
 use parser::StringId;
-use std::sync::Arc;
 
 indices::index_type! {
     pub struct ItemId { .. }
 }
 
-/// Eventually this would be a richer notion of path.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ItemIdData {
-    pub input_file: StringId,
-    pub path: Arc<Vec<StringId>>,
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ItemIdData {
+    InputFile { file: StringId },
+    ItemName { base: ItemId, id: StringId },
+    MemberName { base: ItemId, id: StringId },
 }
 
 intern::intern_tables! {
@@ -30,9 +29,25 @@ where
 {
     fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = self.untern(cx);
-        fmt.debug_struct("ItemIdData")
-            .field("input_file", &data.input_file.debug_with(cx))
-            .field("path", &data.path.debug_with(cx))
-            .finish()
+        data.fmt_with(cx, fmt)
+    }
+}
+
+impl<Cx> DebugWith<Cx> for ItemIdData
+where
+    Cx: Has<ItemIdTables> + HasParserState,
+{
+    fn fmt_with(&self, _cx: &Cx, _fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unimplemented!() // FIXME
+    }
+}
+
+impl ItemId {
+    pub fn input_file(self, db: &dyn Has<ItemIdTables>) -> StringId {
+        match self.untern(db) {
+            ItemIdData::InputFile { file } => file,
+            ItemIdData::ItemName { base, id: _ } => base.input_file(db),
+            ItemIdData::MemberName { base, id: _ } => base.input_file(db),
+        }
     }
 }
