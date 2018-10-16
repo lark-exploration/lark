@@ -106,7 +106,7 @@ mod test {
     use crate::parser::test_helpers::{self, Token};
     use crate::parser::{self, ast};
 
-    use codespan::{ByteIndex, ByteOffset, CodeMap};
+    use codespan::{ByteIndex, ByteOffset, ByteSpan, CodeMap};
     use derive_new::new;
     use itertools::Itertools;
     use language_reporting::{emit, Diagnostic, Label, Severity};
@@ -261,7 +261,7 @@ mod test {
     struct Annotations {
         codemap: CodeMap,
         table: ModuleTable,
-        spans: HashMap<u32, Vec<Span>>,
+        spans: HashMap<u32, Vec<ByteSpan>>,
         lines: HashMap<String, u32>,
     }
 
@@ -276,7 +276,7 @@ mod test {
     }
 
     impl Annotations {
-        fn get(&self, pos: impl Position) -> Span {
+        fn get(&self, pos: impl Position) -> ByteSpan {
             let (name, pos) = pos.pos();
 
             let line = self.lines.get(name).expect(&format!(
@@ -309,7 +309,7 @@ mod test {
         }
 
         fn wrap_one<T>(&self, value: T, pos: impl Position) -> Spanned<T> {
-            Spanned::wrap_span(value, self.get(pos))
+            Spanned::wrap_span(value, Span::Real(self.get(pos)))
         }
 
         fn mode(&self, pos: impl Position) -> Spanned<Mode> {
@@ -392,33 +392,23 @@ mod test {
         fn ident(&self, pos: impl Position) -> Spanned<StringId> {
             let span = self.get(pos);
 
-            let file = self
-                .codemap
-                .find_file(span.to_codespan().start())
-                .expect("Missing file");
+            let file = self.codemap.find_file(span.start()).expect("Missing file");
 
-            let src = file
-                .src_slice(span.to_codespan())
-                .expect("Missing src_slice");
+            let src = file.src_slice(span).expect("Missing src_slice");
 
             let id = self
                 .table
                 .get(src)
                 .expect(&format!("Missing intern for {:?}", src));
 
-            Spanned::wrap_span(id, span)
+            Spanned::wrap_codespan(id, span)
         }
 
         fn src(&self, pos: impl Position) -> &str {
             let span = self.get(pos);
-            let file = self
-                .codemap
-                .find_file(span.to_codespan().start())
-                .expect("Missing file");
+            let file = self.codemap.find_file(span.start()).expect("Missing file");
 
-            let src = file
-                .src_slice(span.to_codespan())
-                .expect("Missing src_slice");
+            let src = file.src_slice(span).expect("Missing src_slice");
 
             src
         }
@@ -427,7 +417,7 @@ mod test {
             let left = self.get(from);
             let right = self.get(to);
 
-            left.to(right)
+            Span::Real(left.to(right))
         }
     }
 
@@ -463,7 +453,7 @@ mod test {
                 match token {
                     Err(err) => panic!(err),
                     Ok((start, token, end)) => match token {
-                        Token::Underline => spans.push(Span::from(
+                        Token::Underline => spans.push(ByteSpan::new(
                             start + ByteOffset(codespan_start as i64),
                             end + ByteOffset(codespan_start as i64),
                         )),
@@ -478,7 +468,7 @@ mod test {
                 }
             }
 
-            let name = t2.lookup(name.expect("Annotation line must have a name"));
+            let name = t2.lookup(&name.expect("Annotation line must have a name"));
             lines.insert(name.to_string(), i as u32);
             span_map.insert(i as u32, spans);
 

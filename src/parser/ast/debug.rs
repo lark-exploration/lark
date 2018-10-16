@@ -18,14 +18,25 @@ impl<T: DebugModuleTable + 'owner> DebuggableVec<'owner, T> {
 
 impl<T: DebugModuleTable> fmt::Debug for DebuggableVec<'table, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{:?}",
-            self.inner
-                .iter()
-                .map(|f| Debuggable::from(f, self.table))
-                .collect::<Vec<_>>()
-        )
+        if f.alternate() {
+            write!(
+                f,
+                "{:#?}",
+                self.inner
+                    .iter()
+                    .map(|f| Debuggable::from(f, self.table))
+                    .collect::<Vec<_>>()
+            )
+        } else {
+            write!(
+                f,
+                "{:?}",
+                self.inner
+                    .iter()
+                    .map(|f| Debuggable::from(f, self.table))
+                    .collect::<Vec<_>>()
+            )
+        }
     }
 }
 
@@ -74,7 +85,7 @@ impl DebugModuleTable for Module {
 impl DebugModuleTable for Struct {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         f.debug_struct("Struct")
-            .field("name", &table.lookup(self.name.node))
+            .field("name", &table.lookup(&self.name))
             .field("fields", &DebuggableVec::from(&self.fields, table))
             .finish()
     }
@@ -85,8 +96,8 @@ impl DebugModuleTable for Field {
         write!(
             f,
             "{}: {:?}",
-            &table.lookup(self.name.node),
-            &Debuggable::from(&self.ty.node, table)
+            &table.lookup(&self.name),
+            &Debuggable::from(&self.ty, table)
         )
     }
 }
@@ -94,12 +105,12 @@ impl DebugModuleTable for Field {
 impl DebugModuleTable for Type {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         match self.mode {
-            None => write!(f, "{:?}", &Debuggable::from(&self.name.node, table)),
+            None => write!(f, "{:?}", &Debuggable::from(&self.name, table)),
             Some(mode) => write!(
                 f,
                 "{:?} {:?}",
                 &Debuggable::from(&self.mode, table),
-                &Debuggable::from(&self.name.node, table)
+                &Debuggable::from(&self.name, table)
             ),
         }
     }
@@ -109,20 +120,20 @@ impl DebugModuleTable for Option<Spanned<Type>> {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         match self {
             None => write!(f, "none"),
-            Some(ty) => ty.node.debug(f, table),
+            Some(ty) => ty.debug(f, table),
         }
     }
 }
 
 impl DebugModuleTable for StringId {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
-        write!(f, "{}", table.lookup(*self))
+        write!(f, "{}", table.lookup(&self))
     }
 }
 
 impl DebugModuleTable for Option<Spanned<Mode>> {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
-        let mode = self.map(|i| i.node);
+        let mode = self.map(|i| *i);
 
         let result = match mode {
             Some(Mode::Owned) => "owned",
@@ -138,7 +149,7 @@ impl DebugModuleTable for Option<Spanned<Mode>> {
 impl DebugModuleTable for Def {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         f.debug_struct("Def")
-            .field("name", &table.lookup(self.name.node))
+            .field("name", &table.lookup(&self.name))
             .field("parameters", &DebuggableVec::from(&self.parameters, table))
             .field("ret", &Debuggable::from(&self.ret, table))
             .field("body", &Debuggable::from(&self.body, table))
@@ -148,7 +159,7 @@ impl DebugModuleTable for Def {
 
 impl<T: DebugModuleTable> DebugModuleTable for Spanned<T> {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
-        self.node.debug(f, table)
+        (&**self).debug(f, table)
     }
 }
 
@@ -179,7 +190,7 @@ impl DebugModuleTable for Declaration {
 impl DebugModuleTable for Let {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         write!(f, "let ")?;
-        self.pattern.node.debug(f, table)?;
+        self.pattern.debug(f, table)?;
 
         match &self.ty {
             None => {}
@@ -233,7 +244,7 @@ impl DebugModuleTable for Expression {
             Ref(id) => id.debug(f, table),
             Binary(op, box left, box right) => {
                 left.debug(f, table)?;
-                write!(f, " {} ", op.node)?;
+                write!(f, " {} ", **op)?;
                 right.debug(f, table)
             }
             Interpolation(elements, span) => write!(f, "<interpolation>"),

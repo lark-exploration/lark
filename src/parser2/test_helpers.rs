@@ -122,7 +122,7 @@ fn ident(
     let pos = anns.len();
     let span = spans[pos];
 
-    let name = table.lookup(id);
+    let name = table.lookup(&id);
     let snip = &source[span.to_range(-1)];
 
     trace!(target: "lark::parser::test::extract",

@@ -1,2 +1,2 @@
-crate use crate::parser::ast::debug::{DebugModuleTable, Debuggable};
-crate use crate::parser::pos::Span;
+crate use crate::parser::ast::debug::{DebugModuleTable, Debuggable, DebuggableVec};
+crate use crate::parser::pos::{HasSpan, Span};

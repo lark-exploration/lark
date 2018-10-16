@@ -21,15 +21,51 @@ token! {
     Comment: String,
     String: String,
     Newline,
+    EOF,
+}
+
+impl Token {
+    pub fn data(&self) -> StringId {
+        match *self {
+            Token::Whitespace(s) => s,
+            Token::Identifier(s) => s,
+            Token::Sigil(s) => s,
+            Token::Comment(s) => s,
+            Token::String(s) => s,
+            Token::Newline => panic!("Can't get data from newline (TODO?)"),
+            Token::EOF => panic!("Can't get data from EOF (TODO?)"),
+        }
+    }
+
+    pub fn is_id(&self) -> bool {
+        match self {
+            Token::Identifier(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_id_named(&self, name: StringId) -> bool {
+        match self {
+            Token::Identifier(id) if *id == name => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_sigil_named(&self, name: StringId) -> bool {
+        match self {
+            Token::Sigil(id) if *id == name => true,
+            _ => false,
+        }
+    }
 }
 
 impl Spanned<Token> {
     pub fn as_id(self) -> Result<Spanned<StringId>, ParseError> {
-        match self.node {
-            Token::Identifier(id) => Ok(Spanned::wrap_span(id, self.span)),
+        match self.0 {
+            Token::Identifier(id) => Ok(Spanned::wrap_span(id, self.1)),
             other => Err(ParseError::new(
                 format!("Unexpected token {:?}, expected id", other),
-                self.span,
+                self.1,
             )),
         }
     }
@@ -45,11 +81,12 @@ impl DebugModuleTable for Token {
 
         match self {
             Whitespace(_) => write!(f, "<whitespace>"),
-            Identifier(s) => write!(f, "{:?}", Debuggable::from(s, table)),
+            Identifier(s) => s.debug(f, table),
             Sigil(s) => write!(f, "#{:?}#", Debuggable::from(s, table)),
             Comment(_) => write!(f, "/* ... */"),
             String(s) => write!(f, "\"{:?}\"", Debuggable::from(s, table)),
             Newline => write!(f, "<newline>"),
+            EOF => write!(f, "<EOF>"),
         }
     }
 }
@@ -201,8 +238,8 @@ mod tests {
             r##"
             struct Diagnostic {
             ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
-              msg: own String,
-              ^^^~^~~~^~~~~~~^ @msg@ #:# ws @own@ ws @String@ #,#
+              msg: String,
+              ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
               level: String,
               ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
             }

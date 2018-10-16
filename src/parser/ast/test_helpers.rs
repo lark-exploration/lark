@@ -15,7 +15,7 @@ impl Struct {
     }
 
     crate fn name_spanned(mut self, start: u32, end: u32) -> Struct {
-        self.name.span = Span::from(ByteIndex(start), ByteIndex(end));
+        self.name.1 = Span::from(ByteIndex(start), ByteIndex(end));
         self
     }
 

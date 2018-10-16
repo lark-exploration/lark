@@ -63,8 +63,8 @@ impl ModuleTable {
         self.strings.get(&hashable)
     }
 
-    crate fn lookup(&self, id: StringId) -> &str {
-        &self.strings.to_string[id.position].node
+    crate fn lookup(&self, id: &StringId) -> &str {
+        &self.strings.to_string[id.position]
     }
 
     crate fn intern(&mut self, hashable: impl Seahash) -> StringId {
@@ -76,7 +76,7 @@ impl ModuleTable {
             .to_string
             .iter()
             .cloned()
-            .map(|s| s.node)
+            .map(|s| s.0)
             .collect()
     }
 }
@@ -140,13 +140,13 @@ impl Seahash for &str {
 
 impl Into<String> for Spanned<String> {
     fn into(self) -> String {
-        self.node
+        self.0
     }
 }
 
 impl Seahash for Spanned<String> {
     fn seahash(&self) -> u64 {
-        seahash::hash(self.node.as_bytes())
+        seahash::hash(self.0.as_bytes())
     }
 
     fn into_spanned_string(self) -> Spanned<String> {

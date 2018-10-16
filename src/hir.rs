@@ -42,7 +42,7 @@ where
     type Output = I::Data;
 
     fn index(&self, index: I) -> &I::Data {
-        &I::index_vec(self)[index].node
+        &I::index_vec(self)[index].0
     }
 }
 
@@ -52,7 +52,7 @@ impl Hir {
     where
         I: HirIndex,
     {
-        I::index_vec(self)[index].span
+        I::index_vec(self)[index].1
     }
 }
 

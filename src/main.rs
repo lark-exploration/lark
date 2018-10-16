@@ -5,7 +5,6 @@
 #![feature(crate_visibility_modifier)]
 #![feature(existential_type)]
 #![feature(nll)]
-#![feature(min_const_fn)]
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(try_from)]
