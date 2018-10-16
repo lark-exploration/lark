@@ -100,17 +100,17 @@ def new(msg: own String, level: String) -> Diagnostic {
     assert_eq!(
         format!("{:#?}", items_in_file.debug_with(&db)),
         r#"[
-    ItemIdData {
-        input_file: "path1",
-        path: [
-            "Diagnostic"
-        ]
+    ItemName {
+        base: InputFile {
+            file: "path1"
+        },
+        id: "Diagnostic"
     },
-    ItemIdData {
-        input_file: "path1",
-        path: [
-            "new"
-        ]
+    ItemName {
+        base: InputFile {
+            file: "path1"
+        },
+        id: "new"
     }
 ]"#
     );

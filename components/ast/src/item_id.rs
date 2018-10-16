@@ -37,8 +37,23 @@ impl<Cx> DebugWith<Cx> for ItemIdData
 where
     Cx: Has<ItemIdTables> + HasParserState,
 {
-    fn fmt_with(&self, _cx: &Cx, _fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        unimplemented!() // FIXME
+    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ItemIdData::InputFile { file } => fmt
+                .debug_struct("InputFile")
+                .field("file", &file.debug_with(cx))
+                .finish(),
+            ItemIdData::ItemName { base, id } => fmt
+                .debug_struct("ItemName")
+                .field("base", &base.debug_with(cx))
+                .field("id", &id.debug_with(cx))
+                .finish(),
+            ItemIdData::MemberName { base, id } => fmt
+                .debug_struct("MemberName")
+                .field("base", &base.debug_with(cx))
+                .field("id", &id.debug_with(cx))
+                .finish(),
+        }
     }
 }
 
