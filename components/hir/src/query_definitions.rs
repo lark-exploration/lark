@@ -8,10 +8,6 @@ crate fn boolean_item_id(_db: &impl HirDatabase, _key: ()) -> ItemId {
     unimplemented!()
 }
 
-crate fn fn_body(_db: &impl HirDatabase, _key: ItemId) -> Arc<crate::FnBody> {
-    unimplemented!()
-}
-
 crate fn members(_db: &impl HirDatabase, _key: ItemId) -> Arc<Vec<crate::Member>> {
     unimplemented!()
 }

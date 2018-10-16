@@ -13,6 +13,7 @@ use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 
+mod fn_body;
 mod query_definitions;
 
 salsa::query_group! {
@@ -26,7 +27,7 @@ salsa::query_group! {
         /// Get the fn-body for a given def-id.
         fn fn_body(key: ItemId) -> Arc<FnBody> {
             type FnBodyQuery;
-            use fn query_definitions::fn_body;
+            use fn fn_body::fn_body;
         }
 
         /// Get the list of member names and their def-ids for a given struct.
