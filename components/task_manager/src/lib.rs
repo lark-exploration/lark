@@ -41,6 +41,7 @@ pub enum LspResponse {
 pub enum MsgToManager {
     TypeResponse(TypeResponse),
     LspRequest(LspRequest),
+    Cancel(TaskId),
     Shutdown,
 }
 
@@ -294,6 +295,10 @@ impl TaskManager {
                 }
                 Ok(MsgToManager::LspRequest(lsp_request)) => {
                     self.do_recipe_for_lsp_request(lsp_request);
+                }
+                Ok(MsgToManager::Cancel(task_id)) => {
+                    //Note: In the future we may have multiple steps to cancel a task
+                    self.live_recipes.remove(&task_id);
                 }
                 Ok(MsgToManager::Shutdown) => {
                     let _ = self.lsp_responder.channel.send(MsgFromManager::Shutdown);

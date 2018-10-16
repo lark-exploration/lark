@@ -203,9 +203,18 @@ pub fn lsp_serve(send_to_manager_channel: Sender<task_manager::MsgToManager>) {
                             //for more expensive computations on a completion (like fetching the docs)
                             eprintln!("resolve completion item: id={} {:#?}", id, params);
                         }
-                        Ok(LSPCommand::cancelRequest { params }) => {
-                            eprintln!("cancel request: {:#?}", params);
-                        }
+                        Ok(LSPCommand::cancelRequest {
+                            params: languageserver_types::CancelParams { id },
+                        }) => match id {
+                            languageserver_types::NumberOrString::Number(num) => {
+                                eprintln!("cancelling item: id={}", num);
+                                let _ = send_to_manager_channel
+                                    .send(MsgToManager::Cancel(num as usize));
+                            }
+                            _ => unimplemented!(
+                                "Non-number cancellation IDs not currently supported"
+                            ),
+                        },
                         Err(e) => eprintln!("Error handling command: {:?}", e),
                     }
                 }
