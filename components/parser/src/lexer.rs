@@ -1,4 +1,4 @@
 #[macro_use]
-pub mod matchers;
+crate mod matchers;
 
-pub use self::matchers::{KeywordList, TokenMatches};
+crate use self::matchers::{KeywordList, TokenMatches};

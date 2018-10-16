@@ -15,7 +15,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-mod parser2;
 mod tests;
 
 use std::{env, io};

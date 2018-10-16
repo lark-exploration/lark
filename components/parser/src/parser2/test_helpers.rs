@@ -1,9 +1,7 @@
-#![cfg(broken)] // disable for now
-
 use codespan::ByteIndex;
-use parser::lexer_helpers::ParseError;
-use parser::test_helpers::{LineTokenizer, Token};
-use parser::{ast, ModuleTable, Span, Spanned, StringId};
+use crate::parser::lexer_helpers::ParseError;
+use crate::parser::test_helpers::{LineTokenizer, Token};
+use crate::parser::{ast, ModuleTable, Span, Spanned, StringId};
 
 use codespan::{ByteOffset, CodeMap};
 use derive_new::new;
@@ -124,8 +122,8 @@ fn ident(
     let pos = anns.len();
     let span = spans[pos];
 
-    let name = table.lookup(id);
-    let snip = unimplemented!(); // FIXME &source[span.to_range(-1)];
+    let name = table.lookup(&id);
+    let snip = &source[span.to_range(-1)];
 
     trace!(target: "lark::parser::test::extract",
         "name={:?} snip={:?} span={:?} source={:?}",
@@ -139,7 +137,7 @@ fn sigil(anns: &[Annotation], spans: &[Span], source: &'source str) -> (&'source
     let pos = anns.len();
     let span = spans[pos];
 
-    let snip = unimplemented!(); // FIXME &source[span.to_range(-1)];
+    let snip = &source[span.to_range(-1)];
 
     trace!(target: "lark::parser::test::extract",
         "snip={:?} span={:?} source={:?}",

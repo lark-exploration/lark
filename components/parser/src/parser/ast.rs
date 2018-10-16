@@ -1,18 +1,19 @@
-mod debug;
+crate mod debug;
 
 #[cfg(test)]
 mod test_helpers;
 
+use crate::parser::pos::HasSpan;
+use crate::parser::pos::Span;
+use crate::parser::pos::Spanned;
+use crate::parser::{Environment, ModuleTable, StringId, Token};
+
 use codespan::ByteIndex;
-use crate::pos::HasSpan;
-use crate::pos::Span;
-use crate::pos::Spanned;
-use crate::{Environment, ModuleTable, StringId, Token};
 use derive_new::new;
 use std::fmt;
 use std::sync::Arc;
 
-pub use self::debug::{DebugModuleTable, Debuggable, DebuggableVec};
+crate use self::debug::{DebugModuleTable, Debuggable, DebuggableVec};
 
 pub type Identifier = Spanned<StringId>;
 
@@ -25,15 +26,15 @@ pub enum Item {
 impl Item {
     pub fn name(&self) -> StringId {
         match self {
-            Item::Struct(s) => s.name.node,
-            Item::Def(d) => d.name.node,
+            Item::Struct(s) => *s.name,
+            Item::Def(d) => *d.name,
         }
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum BlockItem {
-    Item(Arc<Item>),
+    Item(Item),
     Decl(Declaration),
     Expr(Expression),
 }
@@ -60,9 +61,9 @@ pub struct Module {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Struct {
-    pub name: Spanned<StringId>,
-    pub fields: Vec<Field>,
-    pub span: Span,
+    name: Spanned<StringId>,
+    fields: Vec<Field>,
+    span: Span,
 }
 
 impl HasSpan for Struct {
@@ -88,8 +89,8 @@ pub enum ConstructField {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Type {
-    pub mode: Option<Spanned<Mode>>,
-    pub name: Spanned<StringId>,
+    mode: Option<Spanned<Mode>>,
+    name: Spanned<StringId>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -128,18 +129,18 @@ pub enum Pattern {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Path {
-    pub components: Vec<Identifier>,
+    components: Vec<Identifier>,
 }
 
 pub enum Statement {}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Def {
-    pub name: Identifier,
-    pub parameters: Vec<Field>,
-    pub ret: Option<Spanned<Type>>,
-    pub body: Spanned<Block>,
-    pub span: Span,
+    crate name: Identifier,
+    crate parameters: Vec<Field>,
+    crate ret: Option<Spanned<Type>>,
+    crate body: Spanned<Block>,
+    crate span: Span,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]

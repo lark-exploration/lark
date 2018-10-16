@@ -1,8 +1,7 @@
-use crate::{Token, ParseError};
-use crate::grammar_helpers::*;
-use crate::ast::*;
-use crate::pos::{Span, Spanned};
-use crate::program::StringId;
+use crate::{Token, ParseError, StringId};
+use crate::parser::grammar_helpers::*;
+use crate::parser::ast::*;
+use crate::parser::pos::{Span, Spanned};
 use codespan::{ByteIndex, ByteOffset};
 use std::sync::Arc;
 
@@ -88,12 +87,6 @@ Block: Spanned<Block> = {
 BlockItem: BlockItem = {
     Decl => BlockItem::Decl(<>),
     Expr => BlockItem::Expr(<>)
-}
-
-BlockOrIf: BlockOrIf = {
-    Block => unimplemented!("BlockOrIf::Block"),
-    //ExprIf => unimplemented!("BlockOrIf::ExprIf"),
-    //ExprIfLet => unimplemented!("BlockOrIf::ExprIfLet")
 }
 
 Let: Let = {

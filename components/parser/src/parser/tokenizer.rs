@@ -1,11 +1,11 @@
 use codespan::ByteOffset;
-use crate::keywords::{KEYWORDS, SIGILS};
-use crate::lexer_helpers::{
+use crate::parser::keywords::{KEYWORDS, SIGILS};
+use crate::parser::lexer_helpers::{
     LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError,
     Tokenizer as GenericTokenizer,
 };
-use crate::program::StringId;
-use crate::{ModuleTable, Span, Token};
+use crate::parser::program::StringId;
+use crate::parser::{ModuleTable, Span, Token};
 use derive_new::new;
 use lazy_static::lazy_static;
 use log::{trace, warn};

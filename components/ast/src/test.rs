@@ -48,7 +48,7 @@ impl crate::HasParserState for TestDatabaseImpl {
 // FIXME: This whole "indirect through `LookupStringId` thing" is a
 // workaround for the fact that I don't want to be touching the parser
 // module very much right now.
-impl parser::program::LookupStringId for TestDatabaseImpl {
+impl parser::LookupStringId for TestDatabaseImpl {
     fn lookup(&self, id: parser::StringId) -> Arc<String> {
         self.parser_state.untern_string(id)
     }

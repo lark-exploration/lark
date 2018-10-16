@@ -42,15 +42,18 @@ impl Span {
         }
     }
 
-    crate fn to_codespan(&self) -> ByteSpan {
-        match self {
-            Span::Real(span) => *span,
-            other => unimplemented!("{:?}", other),
-        }
-    }
+    // crate fn to_codespan(&self) -> ByteSpan {
+    //     match self {
+    //         Span::Real(span) => *span,
+    //         other => unimplemented!("{:?}", other),
+    //     }
+    // }
 
     crate fn to_range(&self, start: i32) -> std::ops::Range<usize> {
-        let span = self.to_codespan();
+        let span = match self {
+            Span::Real(span) => *span,
+            other => unimplemented!("Can't turn {:?} into range", other),
+        };
 
         let start_pos = span.start() + ByteOffset(start as i64);
         let end_pos = span.end() + ByteOffset(start as i64);
@@ -90,9 +93,14 @@ impl fmt::Display for Span {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Spanned<T> {
-    pub node: T,
-    pub span: Span,
+pub struct Spanned<T>(crate T, crate Span);
+
+impl<T> std::ops::Deref for Spanned<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.0
+    }
 }
 
 impl<T> fmt::Debug for Spanned<T>
@@ -100,38 +108,29 @@ where
     T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?} at {:?}", self.node, self.span)
+        write!(f, "{:?} at {:?}", self.0, self.1)
     }
 }
 
 impl<T> Spanned<T> {
     crate fn wrap_codespan(node: T, span: ByteSpan) -> Spanned<T> {
-        Spanned {
-            node,
-            span: Span::Real(span),
-        }
+        Spanned(node, Span::Real(span))
     }
 
     crate fn wrap_span(node: T, span: Span) -> Spanned<T> {
-        Spanned { node, span }
+        Spanned(node, span)
     }
 
     crate fn from(node: T, left: ByteIndex, right: ByteIndex) -> Spanned<T> {
-        Spanned {
-            node,
-            span: Span::Real(ByteSpan::new(left, right)),
-        }
+        Spanned(node, Span::Real(ByteSpan::new(left, right)))
     }
 
     crate fn synthetic(node: T) -> Spanned<T> {
-        Spanned {
-            node,
-            span: Span::Synthetic,
-        }
+        Spanned(node, Span::Synthetic)
     }
 }
 
-crate trait HasSpan {
+pub trait HasSpan {
     type Inner;
     fn span(&self) -> Span;
 }
@@ -139,6 +138,6 @@ crate trait HasSpan {
 impl<T> HasSpan for Spanned<T> {
     type Inner = T;
     fn span(&self) -> Span {
-        self.span
+        self.1
     }
 }

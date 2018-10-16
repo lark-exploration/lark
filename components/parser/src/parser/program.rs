@@ -1,5 +1,6 @@
+use crate::parser::Spanned;
+
 use codespan::CodeMap;
-use crate::Spanned;
 use debug::DebugWith;
 use derive_new::new;
 use smart_default::SmartDefault;
@@ -41,7 +42,7 @@ pub struct Strings {
 
     #[new(default)]
     #[default = "vec![]"]
-    to_string: Vec<Arc<String>>,
+    to_string: Vec<Spanned<String>>,
 }
 
 impl Strings {
@@ -49,8 +50,8 @@ impl Strings {
         self.to_id.get(&hashable.seahash()).map(|id| *id)
     }
 
-    crate fn intern(&mut self, hashable: impl Seahash) -> StringId {
-        if let Some(existing) = self.get(&hashable) {
+    crate fn intern(&mut self, hashable: &impl Seahash) -> StringId {
+        if let Some(existing) = self.get(hashable) {
             existing
         } else {
             let id = StringId {
@@ -58,7 +59,7 @@ impl Strings {
             };
 
             self.to_id.insert(hashable.seahash(), id);
-            self.to_string.push(hashable.into_arc_string());
+            self.to_string.push(hashable.to_spanned_string());
             id
         }
     }
@@ -75,16 +76,21 @@ impl ModuleTable {
         self.strings.get(hashable)
     }
 
-    pub fn lookup(&self, id: StringId) -> &Arc<String> {
+    pub fn lookup(&self, id: &StringId) -> &str {
         &self.strings.to_string[id.position]
     }
 
-    pub fn intern(&mut self, hashable: impl Seahash) -> StringId {
+    pub fn intern(&mut self, hashable: &impl Seahash) -> StringId {
         self.strings.intern(hashable)
     }
 
-    pub fn values(&self) -> Vec<Arc<String>> {
-        self.strings.to_string.iter().cloned().collect()
+    pub fn values(&self) -> Vec<String> {
+        self.strings
+            .to_string
+            .iter()
+            .cloned()
+            .map(|s| s.0)
+            .collect()
     }
 }
 
@@ -117,16 +123,14 @@ impl Environment<'parent> {
 
     crate fn get_str(&self, program: &ModuleTable, key: &impl Seahash) -> Option<NameId> {
         let id = program.get(key)?;
+
         self.get(id)
     }
 }
 
-pub trait Seahash: Into<String> {
+pub trait Seahash {
     fn seahash(&self) -> u64;
-    fn into_arc_string(self) -> Arc<String> {
-        let s: String = self.into();
-        Arc::new(s)
-    }
+    fn to_spanned_string(&self) -> Spanned<String>;
 }
 
 impl Seahash for String {
@@ -134,8 +138,18 @@ impl Seahash for String {
         seahash::hash(self.as_bytes())
     }
 
-    fn into_arc_string(self) -> Arc<String> {
-        Arc::new(self)
+    fn to_spanned_string(&self) -> Spanned<String> {
+        Spanned::synthetic(self.clone())
+    }
+}
+
+impl Seahash for str {
+    fn seahash(&self) -> u64 {
+        seahash::hash(self.as_bytes())
+    }
+
+    fn to_spanned_string(&self) -> Spanned<String> {
+        Spanned::synthetic(self.to_string())
     }
 }
 
@@ -143,21 +157,19 @@ impl Seahash for &str {
     fn seahash(&self) -> u64 {
         seahash::hash(self.as_bytes())
     }
-}
 
-impl Into<String> for Spanned<String> {
-    fn into(self) -> String {
-        self.node
+    fn to_spanned_string(&self) -> Spanned<String> {
+        Spanned::synthetic(self.to_string())
     }
 }
 
 impl Seahash for Spanned<String> {
     fn seahash(&self) -> u64 {
-        seahash::hash(self.node.as_bytes())
+        seahash::hash(self.0.as_bytes())
     }
 
-    fn into_arc_string(self) -> Arc<String> {
-        Arc::new(self.node)
+    fn to_spanned_string(&self) -> Spanned<String> {
+        self.clone()
     }
 }
 

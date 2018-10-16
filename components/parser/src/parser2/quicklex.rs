@@ -1,16 +1,16 @@
 use codespan::ByteOffset;
-use derive_new::new;
-use lazy_static::lazy_static;
-use log::{trace, warn};
-use parser::ast::{DebugModuleTable, Debuggable};
-use parser::keywords::{KEYWORDS, SIGILS};
-use parser::lexer_helpers::{begin, consume, consume_n, reconsume};
-use parser::lexer_helpers::{
+use crate::parser::ast::{DebugModuleTable, Debuggable};
+use crate::parser::keywords::{KEYWORDS, SIGILS};
+use crate::parser::lexer_helpers::{begin, consume, consume_n, reconsume};
+use crate::parser::lexer_helpers::{
     LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError,
     Tokenizer as GenericTokenizer,
 };
-use parser::program::StringId;
-use parser::{ModuleTable, Span};
+use crate::parser::program::StringId;
+use crate::parser::{ModuleTable, Span, Spanned};
+use derive_new::new;
+use lazy_static::lazy_static;
+use log::{trace, warn};
 use std::fmt;
 use unicode_xid::UnicodeXID;
 
@@ -20,37 +20,85 @@ token! {
     Sigil: String,
     Comment: String,
     String: String,
-    OpenCurly,
-    CloseCurly,
-    OpenParen,
-    CloseParen,
     Newline,
+    EOF,
+}
+
+impl Token {
+    pub fn data(&self) -> StringId {
+        match *self {
+            Token::Whitespace(s) => s,
+            Token::Identifier(s) => s,
+            Token::Sigil(s) => s,
+            Token::Comment(s) => s,
+            Token::String(s) => s,
+            Token::Newline => panic!("Can't get data from newline (TODO?)"),
+            Token::EOF => panic!("Can't get data from EOF (TODO?)"),
+        }
+    }
+
+    pub fn is_id(&self) -> bool {
+        match self {
+            Token::Identifier(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_id_named(&self, name: StringId) -> bool {
+        match self {
+            Token::Identifier(id) if *id == name => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_sigil_named(&self, name: StringId) -> bool {
+        match self {
+            Token::Sigil(id) if *id == name => true,
+            _ => false,
+        }
+    }
+}
+
+impl Spanned<Token> {
+    pub fn as_id(self) -> Result<Spanned<StringId>, ParseError> {
+        match self.0 {
+            Token::Identifier(id) => Ok(Spanned::wrap_span(id, self.1)),
+            other => Err(ParseError::new(
+                format!("Unexpected token {:?}, expected id", other),
+                self.1,
+            )),
+        }
+    }
 }
 
 impl DebugModuleTable for Token {
     fn debug(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        table: &'table parser::ModuleTable,
+        table: &'table crate::parser::ModuleTable,
     ) -> std::fmt::Result {
         use self::Token::*;
 
         match self {
             Whitespace(_) => write!(f, "<whitespace>"),
-            Identifier(s) => write!(f, "{:?}", Debuggable::from(s, table)),
+            Identifier(s) => s.debug(f, table),
             Sigil(s) => write!(f, "#{:?}#", Debuggable::from(s, table)),
             Comment(_) => write!(f, "/* ... */"),
             String(s) => write!(f, "\"{:?}\"", Debuggable::from(s, table)),
-            OpenCurly => write!(f, "#{{#"),
-            CloseCurly => write!(f, "#}}#"),
-            OpenParen => write!(f, "#(#"),
-            CloseParen => write!(f, "#)#"),
             Newline => write!(f, "<newline>"),
+            EOF => write!(f, "<EOF>"),
         }
     }
 }
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
+
+// impl Tokenizer<'table> {
+//     fn tokens(self) -> Result<Vec<Spanned<Token>>, ParseError> {
+//         self.map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
+//             .collect()
+//     }
+// }
 
 #[derive(Debug, Copy, Clone)]
 pub enum LexerState {
@@ -81,11 +129,7 @@ impl LexerDelegateTrait for LexerState {
                 None => LexerNext::EOF,
                 Some(c) => match c {
                     c if UnicodeXID::is_xid_start(c) => LexerNext::begin(StartIdent),
-                    '{' => LexerNext::sigil(Token::OpenCurly),
-                    '}' => LexerNext::sigil(Token::CloseCurly),
-                    '(' => LexerNext::sigil(Token::OpenParen),
-                    ')' => LexerNext::sigil(Token::CloseParen),
-                    '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' => {
+                    '{' | '}' | '(' | ')' | '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' => {
                         LexerNext::dynamic_sigil(Token::Sigil)
                     }
                     '"' => consume().and_transition(StringLiteral),
@@ -177,27 +221,25 @@ impl LexerDelegateTrait for LexerState {
 
 #[cfg(test)]
 mod tests {
-    #![cfg(broken)] // disable for now
-
     use super::{Token, Tokenizer};
+    use crate::parser::ast::DebuggableVec;
+    use crate::parser::lexer_helpers::ParseError;
+    use crate::parser::{Span, Spanned};
     use crate::parser2::test_helpers::{process, Annotations, Position};
-    use parser::ast::DebuggableVec;
-    use parser::lexer_helpers::ParseError;
-    use parser::{Span, Spanned};
 
     use log::trace;
     use unindent::unindent;
 
     #[test]
     fn test_quicklex() -> Result<(), ParseError> {
-        pretty_env_logger::init();
+        crate::init_logger();
 
         let source = unindent(
             r##"
             struct Diagnostic {
             ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
-              msg: own String,
-              ^^^~^~~~^~~~~~~^ @msg@ #:# ws @own@ ws @String@ #,#
+              msg: String,
+              ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
               level: String,
               ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
             }
@@ -216,7 +258,7 @@ mod tests {
             .map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
             .collect();
 
-        //FIXME trace!("{:#?}", DebuggableVec::from(&tokens.clone()?, ann.table()));
+        trace!("{:#?}", DebuggableVec::from(&tokens.clone()?, ann.table()));
 
         Ok(())
     }

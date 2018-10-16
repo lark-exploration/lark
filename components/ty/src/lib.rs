@@ -9,7 +9,7 @@ use ast::item_id::ItemId;
 use crate::interners::TyInternTables;
 use indices::IndexVec;
 use intern::Has;
-use parser::program::StringId;
+use parser::StringId;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter::IntoIterator;

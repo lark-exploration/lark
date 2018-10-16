@@ -1,8 +1,8 @@
 #![allow(unused_variables)]
 
-use crate::ast::{DebugModuleTable, Debuggable};
-use crate::pos::{Span, Spanned};
-use crate::program::{ModuleTable, StringId};
+use crate::parser::ast::{DebugModuleTable, Debuggable};
+use crate::parser::pos::{Span, Spanned};
+use crate::parser::program::{ModuleTable, StringId};
 
 use codespan::ByteIndex;
 use derive_new::new;
@@ -380,10 +380,10 @@ enum LoopCompletion<T> {
 
 impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
     fn intern(&mut self, source: &str) -> StringId {
-        self.table.intern(source)
+        self.table.intern(&source)
     }
 
-    fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, ParseError> {
+    pub fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, ParseError> {
         self.map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
             .collect()
     }

@@ -1,6 +1,6 @@
-use crate::ast::DebugModuleTable;
-use crate::pos::Spanned;
-use crate::program::{ModuleTable, StringId};
+use crate::parser::ast::DebugModuleTable;
+use crate::parser::pos::Spanned;
+use crate::parser::program::{ModuleTable, StringId};
 
 use codespan::ByteIndex;
 use std::borrow::Cow;
@@ -81,10 +81,10 @@ impl Token {
             KeywordOwn => "own",
             KeywordBorrow => "borrow",
             KeywordSelf => "self",
-            Identifier(id) => table.lookup(*id),
-            StringLiteral(id) => return Cow::Owned(format!("String({})", table.lookup(*id))),
+            Identifier(id) => table.lookup(id),
+            StringLiteral(id) => return Cow::Owned(format!("String({})", table.lookup(id))),
             StringFragment(id) => {
-                return Cow::Owned(format!("StringFragment({})", table.lookup(*id)))
+                return Cow::Owned(format!("StringFragment({})", table.lookup(id)))
             }
             EndString(id) => "closequote",
             Newline => "newline",

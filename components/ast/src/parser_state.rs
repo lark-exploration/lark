@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 #[derive(Default)]
 pub struct ParserState {
-    module_table: RwLock<parser::program::ModuleTable>,
+    module_table: RwLock<parser::ModuleTable>,
 }
 
 impl ParserState {
@@ -17,15 +17,15 @@ impl ParserState {
         input_text: StringId,
     ) -> Result<ast::Module, ParseError> {
         let mut module_table = self.module_table.write();
-        let input_text = module_table.lookup(input_text).clone();
-        parser::parse(Cow::Borrowed(&**input_text), &mut module_table, 0)
+        let input_text = module_table.lookup(&input_text).to_string();
+        parser::parse(Cow::Borrowed(&*input_text), &mut module_table, 0)
     }
 
     crate fn untern_string(&self, string_id: StringId) -> Arc<String> {
-        self.module_table.read().lookup(string_id).clone()
+        Arc::new(self.module_table.read().lookup(&string_id).to_string())
     }
 
-    crate fn intern_string(&self, hashable: impl parser::program::Seahash) -> StringId {
+    crate fn intern_string(&self, hashable: impl parser::Seahash) -> StringId {
         {
             let module_table = self.module_table.read();
             if let Some(id) = module_table.get(&hashable) {
@@ -34,11 +34,11 @@ impl ParserState {
         }
 
         let mut module_table = self.module_table.write();
-        module_table.intern(hashable)
+        module_table.intern(&hashable)
     }
 }
 
-impl parser::program::LookupStringId for ParserState {
+impl parser::LookupStringId for ParserState {
     fn lookup(&self, id: StringId) -> Arc<String> {
         self.untern_string(id)
     }

@@ -1,5 +1,5 @@
 use crate::lexer::TokenMatches;
-use crate::Token;
+use crate::parser::Token;
 
 use lazy_static::lazy_static;
 use std::fmt;
@@ -9,14 +9,14 @@ use derive_new::new;
 tokens! {
     type Token = Token;
 
-    declare(pub) KEYWORDS {
+    declare KEYWORDS {
         "struct" => KeywordStruct,
         "own"    => KeywordOwn,
         "def"    => KeywordDef,
         "let"    => KeywordLet
     }
 
-    declare(pub) SIGILS {
+    declare SIGILS {
         "{"  => CurlyBraceOpen,
         "}"  => CurlyBraceClose,
         "("  => ParenOpen,

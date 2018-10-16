@@ -8,7 +8,7 @@
 use ast::item_id::ItemId;
 use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
-use parser::pos::{Span, Spanned};
+use parser::pos::{HasSpan, Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
@@ -153,7 +153,7 @@ where
     type Output = I::Data;
 
     fn index(&self, index: I) -> &I::Data {
-        &I::index_vec(self)[index].node
+        &I::index_vec(self)[index]
     }
 }
 
@@ -179,7 +179,7 @@ impl FnBodyTables {
 
 impl<I: HirIndex> SpanIndex for I {
     fn span_from(self, tables: &FnBodyTables) -> Span {
-        I::index_vec(tables)[self].span
+        I::index_vec(tables)[self].span()
     }
 }
 
