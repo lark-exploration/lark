@@ -252,8 +252,8 @@ indices::index_type! {
 pub enum ExpressionData {
     /// `let <var> = <initializer> in <body>`
     Let {
-        var: Variable,
-        initializer: Expression,
+        variable: Variable,
+        initializer: Option<Expression>,
         body: Expression,
     },
 

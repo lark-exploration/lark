@@ -106,31 +106,82 @@ where
     }
 
     fn lower_block(&mut self, block: &Spanned<a::Block>) -> hir::Expression {
-        let mut block_expr: hir::Expression = self.add(block.span, hir::ExpressionData::Unit {});
-        for block_item in &block.node.expressions {
-            if let Some(item_expr) = self.lower_block_item(block_item) {
-                let item_expr_span = self.fn_body_tables.span(item_expr);
-                block_expr = self.add(
-                    item_expr_span,
-                    hir::ExpressionData::Sequence {
-                        first: block_expr,
-                        second: item_expr,
-                    },
-                );
-            }
-        }
-        block_expr
+        self.lower_block_items(&block.node.expressions)
+            .unwrap_or_else(|| self.unit_expression(block.span))
     }
 
-    fn lower_block_item(&mut self, block_item: &a::BlockItem) -> Option<hir::Expression> {
-        match block_item {
-            // ignore nested block items
-            a::BlockItem::Item(_) => None,
-
-            a::BlockItem::Decl(_decl) => unimplemented!(),
-
-            a::BlockItem::Expr(expr) => Some(self.lower_expression(expr)),
+    fn lower_block_items(&mut self, block_items: &[a::BlockItem]) -> Option<hir::Expression> {
+        if block_items.is_empty() {
+            return None;
         }
+
+        match &block_items[0] {
+            a::BlockItem::Item(_) => return self.lower_block_items(&block_items[1..]),
+
+            a::BlockItem::Decl(decl) => match decl {
+                a::Declaration::Let(l) => Some(self.lower_let(l, block_items)),
+            },
+
+            a::BlockItem::Expr(expr) => {
+                let first = self.lower_expression(expr);
+
+                match self.lower_block_items(&block_items[1..]) {
+                    None => Some(first),
+
+                    Some(second) => {
+                        let span = self.span(second);
+                        Some(self.add(span, hir::ExpressionData::Sequence { first, second }))
+                    }
+                }
+            }
+        }
+    }
+
+    fn lower_let(&mut self, let_decl: &a::Let, block_items: &[a::BlockItem]) -> hir::Expression {
+        let saved_scope = self.save_scope();
+
+        let a::Let {
+            pattern,
+            ty: _, /* FIXME */
+            init,
+        } = let_decl;
+
+        let variable = match &pattern.node {
+            a::Pattern::Underscore => unimplemented!(),
+
+            a::Pattern::Identifier(identifier, _mode) => {
+                let name = self.add(
+                    identifier.span,
+                    hir::IdentifierData {
+                        text: identifier.node,
+                    },
+                );
+                self.add(identifier.span, hir::VariableData { name })
+            }
+        };
+
+        let variable_span = self.span(variable);
+
+        let initializer = init
+            .as_ref()
+            .map(|expression| self.lower_expression(expression));
+
+        self.bring_into_scope(variable);
+
+        let body = self
+            .lower_block_items(block_items)
+            .unwrap_or_else(|| self.unit_expression(variable_span)); // FIXME: wrong span
+
+        self.restore_scope(saved_scope);
+
+        self.add(
+            variable_span,
+            hir::ExpressionData::Let {
+                variable,
+                initializer,
+                body,
+            },
+        )
     }
 
     fn lower_expression(&mut self, expr: &a::Expression) -> hir::Expression {
@@ -189,6 +240,10 @@ where
     fn error_expression(&mut self, span: Span, data: hir::ErrorData) -> hir::Expression {
         let error = self.add(span, data);
         self.add(span, hir::ExpressionData::Error { error })
+    }
+
+    fn unit_expression(&mut self, span: Span) -> hir::Expression {
+        self.add(span, hir::ExpressionData::Unit {})
     }
 }
 

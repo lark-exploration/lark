@@ -265,9 +265,9 @@ impl From<Identifier> for Callee {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Let {
-    pattern: Spanned<Pattern>,
-    ty: Option<Spanned<Type>>,
-    init: Option<Expression>,
+    pub pattern: Spanned<Pattern>,
+    pub ty: Option<Spanned<Type>>,
+    pub init: Option<Expression>,
 }
 
 pub enum If {
