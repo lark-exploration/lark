@@ -113,6 +113,19 @@ pub trait HirIndex: U32Index + Into<MetaIndex> {
     type Data;
 
     fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Spanned<Self::Data>>;
+}
+
+pub trait HirIndexData: Sized {
+    type Index: HirIndex<Data = Self>;
+
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Spanned<Self>> {
+        <<Self as HirIndexData>::Index as HirIndex>::index_vec(hir)
+    }
+
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Spanned<Self>> {
+        <<Self as HirIndexData>::Index as HirIndex>::index_vec_mut(hir)
+    }
 }
 
 /// Permit indexing the HIR by any of the various index types.
@@ -177,6 +190,16 @@ macro_rules! define_meta_index {
                 fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>> {
                     &hir.$field
                 }
+
+                fn index_vec_mut(
+                    hir: &mut FnBodyTables,
+                ) -> &mut IndexVec<Self, Spanned<Self::Data>> {
+                    &mut hir.$field
+                }
+            }
+
+            impl HirIndexData for $data_ty {
+                type Index = $index_ty;
             }
 
             impl From<$index_ty> for MetaIndex {
