@@ -89,6 +89,8 @@ where
             }
 
             hir::ExpressionData::Unit {} => unimplemented!(),
+
+            hir::ExpressionData::Error { error: _ } => self.error_type(),
         }
     }
 

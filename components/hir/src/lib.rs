@@ -106,6 +106,9 @@ pub struct FnBodyTables {
 
     /// Map each identifier index to its associated data.
     pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
+
+    /// Errors we encountered constructing the hir
+    pub errors: IndexVec<Error, Spanned<ErrorData>>,
 }
 
 /// Trait implemented by the various kinds of indices that reach into
@@ -238,6 +241,7 @@ define_meta_index! {
     (Perm, PermData, perms),
     (Variable, VariableData, variables),
     (Identifier, IdentifierData, identifiers),
+    (Error, ErrorData, errors),
 }
 
 indices::index_type! {
@@ -281,6 +285,9 @@ pub enum ExpressionData {
 
     /// `()`
     Unit {},
+
+    /// `Error` -- some error condition
+    Error { error: Error },
 }
 
 indices::index_type! {
@@ -323,4 +330,14 @@ indices::index_type! {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct IdentifierData {
     pub text: StringId,
+}
+
+indices::index_type! {
+    pub struct Error { .. }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ErrorData {
+    ParseError { description: String },
+    Misc,
 }

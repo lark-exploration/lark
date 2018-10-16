@@ -8,39 +8,28 @@ use parser::StringId;
 use std::sync::Arc;
 
 crate fn fn_body(db: &impl HirDatabase, item_id: ItemId) -> Arc<crate::FnBody> {
-    match db.ast_of_item(item_id) {
-        Ok(ast) => match &*ast {
-            a::Item::Struct(_) => panic!("asked for fn-body of struct {:?}", item_id),
-            a::Item::Def(def) => {
-                let mut lower = HirLower::default();
-
-                let arguments = lower.lower_parameters(&def.parameters);
-
-                for &argument in &arguments {
-                    lower.bring_into_scope(argument);
-                }
-
-                let root_expression = lower.lower_block(&def.body);
-
-                Arc::new(hir::FnBody {
-                    arguments,
-                    root_expression,
-                    tables: lower.fn_body_tables,
-                })
-            }
-        },
-
-        Err(_error) => unimplemented!(),
-    }
+    let lower = HirLower::new(db);
+    Arc::new(lower.lower_ast_of_item(item_id))
 }
 
-#[derive(Default)]
-struct HirLower {
+struct HirLower<'db, DB: HirDatabase> {
+    db: &'db DB,
     fn_body_tables: hir::FnBodyTables,
     variables: FxIndexMap<StringId, hir::Variable>,
 }
 
-impl HirLower {
+impl<'db, DB> HirLower<'db, DB>
+where
+    DB: HirDatabase,
+{
+    fn new(db: &'db DB) -> Self {
+        HirLower {
+            db,
+            fn_body_tables: Default::default(),
+            variables: Default::default(),
+        }
+    }
+
     fn add<D: hir::HirIndexData>(&mut self, span: Span, node: D) -> D::Index {
         D::index_vec_mut(&mut self.fn_body_tables).push(Spanned { span, node })
     }
@@ -57,6 +46,47 @@ impl HirLower {
     fn bring_into_scope(&mut self, variable: hir::Variable) {
         let name = self[variable].name;
         self.variables.insert(self[name].text, variable);
+    }
+
+    fn lower_ast_of_item(mut self, item_id: ItemId) -> hir::FnBody {
+        match self.db.ast_of_item(item_id) {
+            Ok(ast) => match &*ast {
+                a::Item::Struct(_) => panic!("asked for fn-body of struct {:?}", item_id),
+                a::Item::Def(def) => {
+                    let arguments = self.lower_parameters(&def.parameters);
+
+                    for &argument in &arguments {
+                        self.bring_into_scope(argument);
+                    }
+
+                    let root_expression = self.lower_block(&def.body);
+
+                    hir::FnBody {
+                        arguments,
+                        root_expression,
+                        tables: self.fn_body_tables,
+                    }
+                }
+            },
+
+            Err(parse_error) => {
+                let error = self.add(
+                    parse_error.span,
+                    hir::ErrorData::ParseError {
+                        description: parse_error.description,
+                    },
+                );
+
+                let root_expression =
+                    self.add(parse_error.span, hir::ExpressionData::Error { error });
+
+                hir::FnBody {
+                    arguments: vec![],
+                    root_expression,
+                    tables: self.fn_body_tables,
+                }
+            }
+        }
     }
 
     fn lower_parameters(&mut self, parameters: &Vec<a::Field>) -> Vec<hir::Variable> {
@@ -121,8 +151,9 @@ impl HirLower {
     }
 }
 
-impl<I> std::ops::Index<I> for HirLower
+impl<'db, DB, I> std::ops::Index<I> for HirLower<'db, DB>
 where
+    DB: HirDatabase,
     I: hir::HirIndex,
 {
     type Output = I::Data;
