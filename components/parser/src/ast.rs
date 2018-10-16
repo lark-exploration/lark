@@ -75,9 +75,9 @@ impl HasSpan for Struct {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Field {
-    name: Identifier,
-    ty: Spanned<Type>,
-    span: Span,
+    pub name: Identifier,
+    pub ty: Spanned<Type>,
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -282,7 +282,7 @@ pub enum ChainedElse {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Block {
-    expressions: Vec<BlockItem>,
+    pub expressions: Vec<BlockItem>,
 }
 
 impl Block {
