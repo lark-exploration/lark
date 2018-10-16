@@ -13,6 +13,7 @@ use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 
+mod fn_body;
 mod query_definitions;
 
 salsa::query_group! {
@@ -26,7 +27,7 @@ salsa::query_group! {
         /// Get the fn-body for a given def-id.
         fn fn_body(key: ItemId) -> Arc<FnBody> {
             type FnBodyQuery;
-            use fn query_definitions::fn_body;
+            use fn fn_body::fn_body;
         }
 
         /// Get the list of member names and their def-ids for a given struct.
@@ -84,6 +85,13 @@ pub struct FnBody {
     /// will be returned.
     pub root_expression: Expression,
 
+    /// Contains all the data.
+    pub tables: FnBodyTables,
+}
+
+/// All the data for a fn-body is stored in these tables.a
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct FnBodyTables {
     /// Map each expression index to its associated data.
     pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
 
@@ -98,6 +106,9 @@ pub struct FnBody {
 
     /// Map each identifier index to its associated data.
     pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
+
+    /// Errors we encountered constructing the hir
+    pub errors: IndexVec<Error, Spanned<ErrorData>>,
 }
 
 /// Trait implemented by the various kinds of indices that reach into
@@ -105,13 +116,37 @@ pub struct FnBody {
 pub trait HirIndex: U32Index + Into<MetaIndex> {
     type Data;
 
-    fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Spanned<Self::Data>>;
+}
+
+pub trait HirIndexData: Sized {
+    type Index: HirIndex<Data = Self>;
+
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Spanned<Self>> {
+        <<Self as HirIndexData>::Index as HirIndex>::index_vec(hir)
+    }
+
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Spanned<Self>> {
+        <<Self as HirIndexData>::Index as HirIndex>::index_vec_mut(hir)
+    }
 }
 
 /// Permit indexing the HIR by any of the various index types.
 /// Returns the underlying data from the index, skipping over the
 /// span.
 impl<I> std::ops::Index<I> for FnBody
+where
+    I: HirIndex,
+{
+    type Output = I::Data;
+
+    fn index(&self, index: I) -> &I::Data {
+        &self.tables[index]
+    }
+}
+
+impl<I> std::ops::Index<I> for FnBodyTables
 where
     I: HirIndex,
 {
@@ -125,10 +160,17 @@ where
 /// Trait for the various types for which a span can be had --
 /// corresponds to all the index types plus `MetaIndex`.
 pub trait SpanIndex {
-    fn span_from(self, fn_body: &FnBody) -> Span;
+    fn span_from(self, tables: &FnBodyTables) -> Span;
 }
 
 impl FnBody {
+    /// Get the span for the given part of the HIR.
+    pub fn span(&self, index: impl SpanIndex) -> Span {
+        index.span_from(&self.tables)
+    }
+}
+
+impl FnBodyTables {
     /// Get the span for the given part of the HIR.
     pub fn span(&self, index: impl SpanIndex) -> Span {
         index.span_from(self)
@@ -136,8 +178,8 @@ impl FnBody {
 }
 
 impl<I: HirIndex> SpanIndex for I {
-    fn span_from(self, fn_body: &FnBody) -> Span {
-        I::index_vec(fn_body)[self].span
+    fn span_from(self, tables: &FnBodyTables) -> Span {
+        I::index_vec(tables)[self].span
     }
 }
 
@@ -149,9 +191,19 @@ macro_rules! define_meta_index {
             impl HirIndex for $index_ty {
                 type Data = $data_ty;
 
-                fn index_vec(hir: &FnBody) -> &IndexVec<Self, Spanned<Self::Data>> {
+                fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>> {
                     &hir.$field
                 }
+
+                fn index_vec_mut(
+                    hir: &mut FnBodyTables,
+                ) -> &mut IndexVec<Self, Spanned<Self::Data>> {
+                    &mut hir.$field
+                }
+            }
+
+            impl HirIndexData for $data_ty {
+                type Index = $index_ty;
             }
 
             impl From<$index_ty> for MetaIndex {
@@ -172,10 +224,10 @@ macro_rules! define_meta_index {
         }
 
         impl SpanIndex for MetaIndex {
-            fn span_from(self, fn_body: &FnBody) -> Span {
+            fn span_from(self, tables: &FnBodyTables) -> Span {
                 match self {
                     $(
-                        MetaIndex::$index_ty(index) => index.span_from(fn_body),
+                        MetaIndex::$index_ty(index) => index.span_from(tables),
                     )*
                 }
             }
@@ -189,6 +241,7 @@ define_meta_index! {
     (Perm, PermData, perms),
     (Variable, VariableData, variables),
     (Identifier, IdentifierData, identifiers),
+    (Error, ErrorData, errors),
 }
 
 indices::index_type! {
@@ -199,8 +252,8 @@ indices::index_type! {
 pub enum ExpressionData {
     /// `let <var> = <initializer> in <body>`
     Let {
-        var: Variable,
-        initializer: Expression,
+        variable: Variable,
+        initializer: Option<Expression>,
         body: Expression,
     },
 
@@ -232,6 +285,9 @@ pub enum ExpressionData {
 
     /// `()`
     Unit {},
+
+    /// `Error` -- some error condition
+    Error { error: Error },
 }
 
 indices::index_type! {
@@ -274,4 +330,14 @@ indices::index_type! {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct IdentifierData {
     pub text: StringId,
+}
+
+indices::index_type! {
+    pub struct Error { .. }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ErrorData {
+    ParseError { description: String },
+    UnknownIdentifier { text: StringId },
 }

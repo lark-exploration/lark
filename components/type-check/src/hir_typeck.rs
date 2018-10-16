@@ -41,13 +41,21 @@ where
         let expression_data = self.hir[expression].clone();
         match expression_data {
             hir::ExpressionData::Let {
-                var,
-                initializer,
+                variable,
+                initializer: Some(initializer),
                 body,
             } => {
                 let initializer_ty = self.check_expression(initializer);
-                self.results.record_ty(var, initializer_ty);
+                self.results.record_ty(variable, initializer_ty);
                 self.check_expression(body)
+            }
+
+            hir::ExpressionData::Let {
+                variable: _,
+                initializer: None,
+                body: _,
+            } => {
+                unimplemented!() // FIXME
             }
 
             hir::ExpressionData::Place { perm, place } => {
@@ -89,6 +97,8 @@ where
             }
 
             hir::ExpressionData::Unit {} => unimplemented!(),
+
+            hir::ExpressionData::Error { error: _ } => self.error_type(),
         }
     }
 

@@ -27,13 +27,15 @@ crate fn items_in_file(db: &impl AstDatabase, input_file: StringId) -> Arc<Vec<I
         Err(_) => return Arc::new(vec![]),
     };
 
+    let input_file_id = ItemIdData::InputFile { file: input_file }.intern(db);
+
     let items: Vec<_> = ast_of_file
         .items
         .iter()
         .map(|item| {
-            ItemIdData {
-                input_file,
-                path: Arc::new(vec![item.name()]),
+            ItemIdData::ItemName {
+                base: input_file_id,
+                id: item.name(),
             }
             .intern(db)
         })
@@ -42,21 +44,30 @@ crate fn items_in_file(db: &impl AstDatabase, input_file: StringId) -> Arc<Vec<I
 }
 
 crate fn ast_of_item(db: &impl AstDatabase, item_id: ItemId) -> Result<Arc<ast::Item>, ParseError> {
-    let ItemIdData { input_file, path } = item_id.untern(db);
-    let module = db.ast_of_file(input_file)?;
+    match item_id.untern(db) {
+        ItemIdData::ItemName { base, id: path_id } => {
+            match base.untern(db) {
+                ItemIdData::InputFile { file: input_file } => {
+                    // Base case: root item in a file
 
-    // have to follow `path` through `module`; for now we'll just support lenth-1 paths
-    // (no nested items)
-    if path.len() != 1 {
-        unimplemented!();
-    }
-    let path_id = path[0];
+                    let module = db.ast_of_file(input_file)?;
 
-    for item in &module.items {
-        if item.name() == path_id {
-            return Ok(item.clone());
+                    for item in &module.items {
+                        if item.name() == path_id {
+                            return Ok(item.clone());
+                        }
+                    }
+
+                    panic!("no such item")
+                }
+
+                _ => {
+                    // Nested items -- don't implement for now, too lazy =)
+                    unimplemented!()
+                }
+            }
         }
-    }
 
-    panic!("no such item")
+        d => panic!("ast-of-item invoked with non-item {:?}", d),
+    }
 }
