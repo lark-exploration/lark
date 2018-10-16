@@ -6,9 +6,10 @@ use crate::parser::program::StringId;
 use crate::parser::{ParseError, Spanned};
 use crate::parser2::lite_parse::{
     AllowPolicy, BindingId, Expected, ExpectedId, LiteParser, MaybeTerminator, RelativePosition,
-    Token, TokenSpan, ALLOW_EOF, ALLOW_NEWLINE, ALLOW_NONE,
+    Token, ALLOW_EOF, ALLOW_NEWLINE, ALLOW_NONE,
 };
 use crate::parser2::quicklex::Token as LexToken;
+use crate::parser2::token_tree::Handle;
 
 use derive_new::new;
 use log::trace;
@@ -44,7 +45,7 @@ impl Macros {
 #[derive(Debug)]
 struct Field {
     name: Spanned<Token>,
-    ty: TokenSpan,
+    ty: Handle,
 }
 
 pub fn struct_decl(

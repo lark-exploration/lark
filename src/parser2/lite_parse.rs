@@ -3,18 +3,14 @@ use crate::prelude::*;
 use crate::parser::{ModuleTable, ParseError, Span, Spanned, StringId};
 use crate::parser2::macros::{macros, struct_decl, MacroRead, Macros};
 use crate::parser2::quicklex::Token as LexToken;
+use crate::parser2::token_tree::Handle;
+use crate::parser2::token_tree::TokenTree;
 
 use codespan::CodeMap;
 use std::collections::HashMap;
 use std::fmt;
 
 use derive_new::new;
-
-#[derive(Debug, Copy, Clone)]
-pub struct TokenSpan {
-    start: usize,
-    end: usize,
-}
 
 #[derive(Debug, Copy, Clone)]
 enum NextAction {
@@ -172,18 +168,6 @@ pub enum NonSemantic {
     Newline,
 }
 
-enum TokenGroup {
-    Single(Token),
-    Grouped(GroupKind, Vec<Token>),
-}
-
-enum GroupKind {
-    Brace,
-    Paren,
-}
-
-pub struct TokenTree(Vec<TokenGroup>);
-
 struct AnnotatedShape {
     tokens: Vec<AnnotatedToken>,
 }
@@ -206,6 +190,9 @@ pub struct LiteParser<'codemap> {
 
     #[new(value = "vec![]")]
     out_tokens: Vec<Spanned<Token>>,
+
+    #[new(value = "TokenTree::new()")]
+    tree: TokenTree,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -320,15 +307,23 @@ impl AllowPolicy {
 
 const EOF: Spanned<Token> = Spanned(Token::EOF, Span::EOF);
 
+pub struct ParseResult {
+    tree: TokenTree,
+    tokens: Vec<Spanned<Token>>,
+}
+
 impl LiteParser<'codemap> {
-    pub fn process(mut self) -> Result<TokenTree, ParseError> {
+    pub fn process(mut self) -> Result<ParseResult, ParseError> {
         while self.pos < self.tokens.len() {
             self.process_macro(self.root_scope())?;
         }
 
         println!("{:#?}", DebuggableVec::from(&self.out_tokens, self.table()));
 
-        Ok(TokenTree(vec![]))
+        Ok(ParseResult {
+            tree: self.tree,
+            tokens: self.out_tokens,
+        })
     }
 
     pub fn table(&self) -> &ModuleTable {
@@ -409,13 +404,13 @@ impl LiteParser<'codemap> {
         &mut self,
         whitespace: AllowPolicy,
         scope: ScopeId,
-    ) -> Result<TokenSpan, ParseError> {
-        let start = self.pos;
+    ) -> Result<Handle, ParseError> {
+        self.tree.start();
+        self.tree.mark_type();
         self.consume_next_id(IdPolicy::Refer(scope), whitespace)?;
-        // TODO: Scope
-        let end = self.pos;
+        let handle = self.tree.end();
 
-        Ok(TokenSpan { start, end })
+        Ok(handle)
     }
 
     pub fn expect_sigil(&mut self, sigil: &str, allow: AllowPolicy) -> Result<(), ParseError> {
@@ -578,6 +573,8 @@ impl LiteParser<'codemap> {
 
         Ok(Some(token))
     }
+
+    fn push_single(&mut self, token: Spanned<Token>) {}
 
     fn push_out(&mut self, token: Spanned<Token>) {
         println!("Pushing token: {:?}", token);
