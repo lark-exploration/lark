@@ -128,26 +128,6 @@ pub trait Seahash {
     fn to_seahashed_string(&self) -> String;
 }
 
-impl Seahash for String {
-    fn seahash(&self) -> u64 {
-        seahash::hash(self.as_bytes())
-    }
-
-    fn to_seahashed_string(&self) -> String {
-        self.clone()
-    }
-}
-
-impl Seahash for str {
-    fn seahash(&self) -> u64 {
-        seahash::hash(self.as_bytes())
-    }
-
-    fn to_seahashed_string(&self) -> String {
-        self.to_string()
-    }
-}
-
 impl Seahash for &str {
     fn seahash(&self) -> u64 {
         seahash::hash(self.as_bytes())
@@ -155,16 +135,6 @@ impl Seahash for &str {
 
     fn to_seahashed_string(&self) -> String {
         self.to_string()
-    }
-}
-
-impl Seahash for Spanned<String> {
-    fn seahash(&self) -> u64 {
-        seahash::hash(self.0.as_bytes())
-    }
-
-    fn to_seahashed_string(&self) -> String {
-        (**self).clone()
     }
 }
 
