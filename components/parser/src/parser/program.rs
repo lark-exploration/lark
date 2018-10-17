@@ -42,7 +42,7 @@ pub struct Strings {
 
     #[new(default)]
     #[default = "vec![]"]
-    to_string: Vec<Spanned<String>>,
+    to_string: Vec<String>,
 }
 
 impl Strings {
@@ -59,7 +59,7 @@ impl Strings {
             };
 
             self.to_id.insert(hashable.seahash(), id);
-            self.to_string.push(hashable.to_spanned_string());
+            self.to_string.push(hashable.to_seahashed_string());
             id
         }
     }
@@ -85,12 +85,7 @@ impl ModuleTable {
     }
 
     pub fn values(&self) -> Vec<String> {
-        self.strings
-            .to_string
-            .iter()
-            .cloned()
-            .map(|s| s.0)
-            .collect()
+        self.strings.to_string.iter().cloned().collect()
     }
 }
 
@@ -130,7 +125,7 @@ impl Environment<'parent> {
 
 pub trait Seahash {
     fn seahash(&self) -> u64;
-    fn to_spanned_string(&self) -> Spanned<String>;
+    fn to_seahashed_string(&self) -> String;
 }
 
 impl Seahash for String {
@@ -138,8 +133,8 @@ impl Seahash for String {
         seahash::hash(self.as_bytes())
     }
 
-    fn to_spanned_string(&self) -> Spanned<String> {
-        Spanned::synthetic(self.clone())
+    fn to_seahashed_string(&self) -> String {
+        self.clone()
     }
 }
 
@@ -148,8 +143,8 @@ impl Seahash for str {
         seahash::hash(self.as_bytes())
     }
 
-    fn to_spanned_string(&self) -> Spanned<String> {
-        Spanned::synthetic(self.to_string())
+    fn to_seahashed_string(&self) -> String {
+        self.to_string()
     }
 }
 
@@ -158,8 +153,8 @@ impl Seahash for &str {
         seahash::hash(self.as_bytes())
     }
 
-    fn to_spanned_string(&self) -> Spanned<String> {
-        Spanned::synthetic(self.to_string())
+    fn to_seahashed_string(&self) -> String {
+        self.to_string()
     }
 }
 
@@ -168,8 +163,8 @@ impl Seahash for Spanned<String> {
         seahash::hash(self.0.as_bytes())
     }
 
-    fn to_spanned_string(&self) -> Spanned<String> {
-        self.clone()
+    fn to_seahashed_string(&self) -> String {
+        (**self).clone()
     }
 }
 
