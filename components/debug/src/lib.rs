@@ -8,9 +8,7 @@
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 
-use std::fmt::Debug;
-
-pub trait DebugWith<Cx: ?Sized>: Debug {
+pub trait DebugWith<Cx: ?Sized> {
     fn debug_with(&'me self, cx: &'me Cx) -> DebugCxPair<'me, Self, Cx> {
         DebugCxPair { value: self, cx }
     }
@@ -88,11 +86,38 @@ impl<Cx: ?Sized> DebugWith<Cx> for ! {
     }
 }
 
-impl<T, Cx: ?Sized> DebugWith<Cx> for T
-where
-    T: Debug,
-{
-    default fn fmt_with(&self, _cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(self, fmt)
-    }
+/// Generates a `DebugWith` impl that accepts any `Cx` and uses the
+/// built-in `Debug` trait.
+#[macro_export]
+macro_rules! debug_fallback_impl {
+    ($($t:ty),* $(,)*) => {
+        $(
+            impl<Cx: ?Sized> DebugWith<Cx> for $t {
+                default fn fmt_with(
+                    &self,
+                    _cx: &Cx,
+                    fmt: &mut std::fmt::Formatter<'_>,
+                ) -> std::fmt::Result {
+                    std::fmt::Debug::fmt(self, fmt)
+                }
+            }
+        )*
+    };
+}
+
+debug_fallback_impl! {
+    i8,
+    i16,
+    i32,
+    i64,
+    isize,
+    u8,
+    u16,
+    u32,
+    u64,
+    usize,
+    char,
+    bool,
+    String,
+    str,
 }

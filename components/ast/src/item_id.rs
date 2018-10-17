@@ -9,6 +9,8 @@ indices::index_type! {
     pub struct ItemId { .. }
 }
 
+debug::debug_fallback_impl!(ItemId);
+
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ItemIdData {
     InputFile { file: StringId },

@@ -13,6 +13,8 @@ pub struct StringId {
     position: usize,
 }
 
+debug::debug_fallback_impl!(StringId);
+
 pub trait LookupStringId {
     fn lookup(&self, id: StringId) -> Arc<String>;
 }

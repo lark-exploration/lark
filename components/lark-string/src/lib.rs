@@ -15,6 +15,8 @@ indices::index_type! {
     pub struct StringId { .. }
 }
 
+debug::debug_fallback_impl!(StringId);
+
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct StringData {
     data: Arc<String>,
