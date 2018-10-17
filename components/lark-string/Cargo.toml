@@ -1,0 +1,11 @@
+[package]
+name = "lark-string"
+version = "0.1.0"
+authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+edition = "2018"
+
+[dependencies]
+debug = { path = "../debug" }
+intern = { path = "../intern" }
+indices = { path = "../indices" }
+parking_lot = "0.6.4"

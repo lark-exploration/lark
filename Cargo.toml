@@ -38,6 +38,7 @@ ide = { path = "components/ide" }
 indices = { path = "components/indices" }
 intern = { path = "components/intern" }
 hir = { path = "components/hir" }
+lark-string = { path = "components/lark-string" } 
 mir = { path = "components/mir" }
 map = { path = "components/map" }
 parser = { path = "components/parser" }

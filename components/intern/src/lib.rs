@@ -54,12 +54,20 @@ macro_rules! intern_tables {
         }
 
         $(
+            impl $crate::InternDirect<$InternTables> for $data {
+                fn table(
+                    tables: &dyn $crate::Has<$InternTables>,
+                ) -> &parking_lot::RwLock<$crate::InternTable<$key, $data>> {
+                    let tables = $crate::Has::<$InternTables>::intern_tables(tables);
+                    &tables.data.$field
+                }
+            }
+
             impl $crate::Intern<$InternTables> for $data {
                 type Key = $key;
 
                 fn intern(self, tables: &dyn $crate::Has<$InternTables>) -> $key {
-                    let tables = $crate::Has::<$InternTables>::intern_tables(tables);
-                    $crate::intern_impl(&tables.data.$field, self, |v| v)
+                    $crate::intern_impl(self, tables, |v| v, |v| v)
                 }
             }
 
@@ -117,7 +125,7 @@ where
 
     pub fn intern_check<D>(&self, data: &D) -> Option<Key>
     where
-        D: Equivalent<Data> + Hash,
+        D: ?Sized + Equivalent<Data> + Hash,
     {
         let InternTable { map, key: _ } = self;
         let (index, _, _) = map.get_full(data)?;
@@ -138,8 +146,8 @@ where
 ///
 /// Example: implemented for `crate::ty::PermData` with
 /// key type `crate::ty::Perm`
-pub trait Intern<Interners>: Clone {
-    type Key;
+pub trait Intern<Interners> {
+    type Key: U32Index;
 
     fn intern(self, interner: &dyn Has<Interners>) -> Self::Key;
 }
@@ -152,26 +160,34 @@ pub trait Untern<Interners>: Clone {
     fn untern(self, interner: &dyn Has<Interners>) -> Self::Data;
 }
 
+/// Trait for something that is *directly* interned into an interning
+/// table. For example, this might be implemented by `String`.
+pub trait InternDirect<Interners>: Clone + Hash + Eq + Intern<Interners> {
+    fn table(interner: &dyn Has<Interners>) -> &RwLock<InternTable<Self::Key, Self>>;
+}
+
 /// Helper for `Intern` implementations: interns `data` into `table`,
 /// returning the intern key. Note that the data stored in table is of
 /// type `TableData`, which may not be the same as `Data` -- the
 /// `convert` closure will be used to convert `Data` into `TableData`
 /// as needed.
-pub fn intern_impl<Data, TableData, Key>(
-    table: &RwLock<InternTable<Key, TableData>>,
+pub fn intern_impl<Data, Interners, EquivData, TableData>(
     data: Data,
-    convert: impl FnOnce(Data) -> TableData,
-) -> Key
+    interners: &dyn Has<Interners>,
+    to_lookup_data: impl FnOnce(&Data) -> &EquivData,
+    to_table_data: impl FnOnce(Data) -> TableData,
+) -> TableData::Key
 where
-    Data: Equivalent<TableData> + Hash,
-    TableData: Clone + Hash + Eq,
-    Key: U32Index,
+    EquivData: ?Sized + Equivalent<TableData> + Hash,
+    TableData: InternDirect<Interners>,
 {
+    let table = TableData::table(interners);
+
     let table = table.upgradable_read();
-    if let Some(key) = table.intern_check(&data) {
+    if let Some(key) = table.intern_check(to_lookup_data(&data)) {
         return key;
     }
 
     let mut table = RwLockUpgradableReadGuard::upgrade(table);
-    table.intern(convert(data))
+    table.intern(to_table_data(data))
 }
