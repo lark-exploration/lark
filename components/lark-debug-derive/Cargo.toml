@@ -1,10 +1,13 @@
 [package]
-name = "intern"
+name = "lark-debug-derive"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
+[lib]
+proc-macro = true
+
 [dependencies]
-indices = { path = "../indices" }
-map = { path = "../map" }
-parking_lot = "0.6.4"
+proc-macro2 = "0.4"
+quote = "0.6"
+syn = "0.15"

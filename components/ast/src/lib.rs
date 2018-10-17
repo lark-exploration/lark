@@ -4,6 +4,7 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(macro_at_most_once_rep)]
+#![feature(specialization)]
 
 use crate::item_id::ItemId;
 use crate::item_id::ItemIdTables;

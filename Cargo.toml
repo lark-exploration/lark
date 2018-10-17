@@ -33,11 +33,13 @@ salsa = "0.5.0"
 
 codegen = { path = "components/codegen" }
 debug = { path = "components/debug" }
+lark-debug-derive = { path = "components/lark-debug-derive" }
 eval = { path = "components/eval" }
 ide = { path = "components/ide" }
 indices = { path = "components/indices" }
 intern = { path = "components/intern" }
 hir = { path = "components/hir" }
+lark-string = { path = "components/lark-string" } 
 mir = { path = "components/mir" }
 map = { path = "components/map" }
 parser = { path = "components/parser" }
