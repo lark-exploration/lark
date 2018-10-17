@@ -1,5 +1,6 @@
 use indices::U32Index;
 use map::{Equivalent, FxIndexMap};
+use parking_lot::{RwLock, RwLockUpgradableReadGuard};
 use std::hash::Hash;
 
 pub trait Has<Tables> {
@@ -58,14 +59,7 @@ macro_rules! intern_tables {
 
                 fn intern(self, tables: &dyn $crate::Has<$InternTables>) -> $key {
                     let tables = $crate::Has::<$InternTables>::intern_tables(tables);
-
-                    let table = tables.data.$field.upgradable_read();
-                    if let Some(key) = table.intern_check(&self) {
-                        return key;
-                    }
-
-                    let mut table = parking_lot::RwLockUpgradableReadGuard::upgrade(table);
-                    table.intern(self)
+                    $crate::intern_impl(&tables.data.$field, self, |v| v)
                 }
             }
 
@@ -156,4 +150,28 @@ pub trait Untern<Interners>: Clone {
     type Data;
 
     fn untern(self, interner: &dyn Has<Interners>) -> Self::Data;
+}
+
+/// Helper for `Intern` implementations: interns `data` into `table`,
+/// returning the intern key. Note that the data stored in table is of
+/// type `TableData`, which may not be the same as `Data` -- the
+/// `convert` closure will be used to convert `Data` into `TableData`
+/// as needed.
+pub fn intern_impl<Data, TableData, Key>(
+    table: &RwLock<InternTable<Key, TableData>>,
+    data: Data,
+    convert: impl FnOnce(Data) -> TableData,
+) -> Key
+where
+    Data: Equivalent<TableData> + Hash,
+    TableData: Clone + Hash + Eq,
+    Key: U32Index,
+{
+    let table = table.upgradable_read();
+    if let Some(key) = table.intern_check(&data) {
+        return key;
+    }
+
+    let mut table = RwLockUpgradableReadGuard::upgrade(table);
+    table.intern(convert(data))
 }
