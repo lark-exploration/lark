@@ -2,13 +2,14 @@ use crate::HasParserState;
 use debug::DebugWith;
 use intern::Has;
 use intern::Untern;
+use lark_debug_derive::DebugWith;
 use parser::StringId;
 
 indices::index_type! {
     pub struct ItemId { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ItemIdData {
     InputFile { file: StringId },
     ItemName { base: ItemId, id: StringId },
@@ -30,30 +31,6 @@ where
     fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = self.untern(cx);
         data.fmt_with(cx, fmt)
-    }
-}
-
-impl<Cx> DebugWith<Cx> for ItemIdData
-where
-    Cx: Has<ItemIdTables> + HasParserState,
-{
-    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ItemIdData::InputFile { file } => fmt
-                .debug_struct("InputFile")
-                .field("file", &file.debug_with(cx))
-                .finish(),
-            ItemIdData::ItemName { base, id } => fmt
-                .debug_struct("ItemName")
-                .field("base", &base.debug_with(cx))
-                .field("id", &id.debug_with(cx))
-                .finish(),
-            ItemIdData::MemberName { base, id } => fmt
-                .debug_struct("MemberName")
-                .field("base", &base.debug_with(cx))
-                .field("id", &id.debug_with(cx))
-                .finish(),
-        }
     }
 }
 

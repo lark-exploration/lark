@@ -3,6 +3,7 @@
 #![feature(box_patterns)]
 #![feature(nll)]
 #![feature(in_band_lifetimes)]
+#![feature(specialization)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
