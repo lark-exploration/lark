@@ -1,5 +1,5 @@
 use indices::U32Index;
-use map::FxIndexMap;
+use map::{Equivalent, FxIndexMap};
 use std::hash::Hash;
 
 pub trait Has<Tables> {
@@ -58,7 +58,14 @@ macro_rules! intern_tables {
 
                 fn intern(self, tables: &dyn $crate::Has<$InternTables>) -> $key {
                     let tables = $crate::Has::<$InternTables>::intern_tables(tables);
-                    tables.data.$field.write().intern(self)
+
+                    let table = tables.data.$field.upgradable_read();
+                    if let Some(key) = table.intern_check(&self) {
+                        return key;
+                    }
+
+                    let mut table = parking_lot::RwLockUpgradableReadGuard::upgrade(table);
+                    table.intern(self)
                 }
             }
 
@@ -112,6 +119,15 @@ where
             Some((key, &())) => key.clone(),
             None => panic!("invalid intern index: `{:?}`", key),
         }
+    }
+
+    pub fn intern_check<D>(&self, data: &D) -> Option<Key>
+    where
+        D: Equivalent<Data> + Hash,
+    {
+        let InternTable { map, key: _ } = self;
+        let (index, _, _) = map.get_full(data)?;
+        Some(Key::from_usize(index))
     }
 
     pub fn intern(&mut self, data: Data) -> Key {
