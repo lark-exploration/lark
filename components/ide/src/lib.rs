@@ -122,10 +122,13 @@ impl Actor for LspResponder {
                             ),
                         ),
                         hover_provider: Some(true),
+                        /*
                         completion_provider: Some(languageserver_types::CompletionOptions {
                             resolve_provider: Some(true),
                             trigger_characters: Some(vec![".".into()]),
                         }),
+                        */
+                        completion_provider: None,
                         signature_help_provider: None,
                         definition_provider: None,
                         type_definition_provider: None,
@@ -178,6 +181,13 @@ pub fn lsp_serve(send_to_manager_channel: Sender<task_manager::MsgToManager>) {
                         }
                         Ok(LSPCommand::didOpen { params }) => {
                             eprintln!("didOpen: {:#?}", params);
+
+                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
+                                LspRequest::OpenFile(
+                                    params.text_document.uri.clone(),
+                                    params.text_document.text.clone(),
+                                ),
+                            ));
                         }
                         Ok(LSPCommand::didChange { params }) => {
                             eprintln!("didChange: {:#?}", params);
@@ -185,18 +195,16 @@ pub fn lsp_serve(send_to_manager_channel: Sender<task_manager::MsgToManager>) {
                         Ok(LSPCommand::hover { id, params }) => {
                             eprintln!("hover: id={} {:#?}", id, params);
 
-                            //FIXME: this is using a fake position
                             let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
-                                LspRequest::TypeForPos(id, params.position.clone()),
+                                LspRequest::TypeForPos(
+                                    id,
+                                    params.text_document.uri.clone(),
+                                    params.position.clone(),
+                                ),
                             ));
                         }
                         Ok(LSPCommand::completion { id, params }) => {
                             eprintln!("completion: id={} {:#?}", id, params);
-
-                            //FIXME: this is using a fake position
-                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
-                                LspRequest::Completion(id, params.position.clone()),
-                            ));
                         }
                         Ok(LSPCommand::completionItemResolve { id, params }) => {
                             //Note: this is here in case we need it, though it looks like it's only used
