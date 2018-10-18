@@ -1,16 +1,12 @@
 [package]
-name = "hir"
+name = "lark-entity"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-parking_lot = "0.6.4"
-salsa = "0.5.0"
-
-ast = { path = "../ast" }
+debug = { path = "../debug" }
 indices = { path = "../indices" }
-lark-entity = { path = "../lark-entity" }
-map = { path = "../map" }
+intern = { path = "../intern" }
+parking_lot = "0.6.4"
 parser = { path = "../parser" }
-ty = { path = "../ty" }

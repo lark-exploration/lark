@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use ast::{
-    AstDatabase, AstOfFile, AstOfItem, HasParserState, InputFiles, InputText, ItemIdTables,
-    ItemsInFile, ParserState,
+    AstDatabase, AstOfFile, AstOfItem, HasParserState, InputFiles, InputText, ItemsInFile,
+    ParserState,
 };
 use intern::Has;
+use lark_entity::ItemIdTables;
 use salsa::Database;
 use task_manager::{Actor, QueryRequest, QueryResponse};
 

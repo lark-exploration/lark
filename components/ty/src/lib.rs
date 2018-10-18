@@ -5,10 +5,10 @@
 #![feature(const_let)]
 #![warn(unused_imports)]
 
-use ast::item_id::ItemId;
 use crate::interners::TyInternTables;
 use indices::IndexVec;
 use intern::Has;
+use lark_entity::ItemId;
 use parser::StringId;
 use std::fmt::Debug;
 use std::hash::Hash;

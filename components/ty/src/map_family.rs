@@ -1,4 +1,3 @@
-use ast::item_id::ItemId;
 use crate::interners::TyInternTables;
 use crate::BaseData;
 use crate::BaseKind;
@@ -9,6 +8,7 @@ use crate::Signature;
 use crate::Ty;
 use crate::TypeFamily;
 use intern::Has;
+use lark_entity::ItemId;
 use std::sync::Arc;
 
 pub trait Map<S: TypeFamily, T: TypeFamily>: Clone {

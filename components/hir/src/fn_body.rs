@@ -1,9 +1,9 @@
 use parser::prelude::*;
 
 use ast::ast as a;
-use ast::item_id::ItemId;
 use crate as hir;
 use crate::HirDatabase;
+use lark_entity::ItemId;
 use map::FxIndexMap;
 use parser::pos::{Span, Spanned};
 use parser::StringId;

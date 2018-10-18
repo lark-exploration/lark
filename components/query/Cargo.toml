@@ -10,5 +10,6 @@ salsa = "0.5.0"
 
 ast = { path = "../ast" }
 intern = { path = "../intern" }
+lark-entity = { path = "../lark-entity" }
 parser = { path = "../parser" }
 task_manager = { path = "../task_manager" }

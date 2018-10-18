@@ -1,8 +1,8 @@
-use crate::item_id::ItemId;
-use crate::item_id::ItemIdData;
 use crate::AstDatabase;
 use intern::Intern;
 use intern::Untern;
+use lark_entity::ItemId;
+use lark_entity::ItemIdData;
 use parser::ast;
 use parser::ParseError;
 use parser::StringId;

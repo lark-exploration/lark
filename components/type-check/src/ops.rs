@@ -1,8 +1,8 @@
-use ast::item_id::ItemId;
 use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::UniverseBinder;
 use hir;
+use lark_entity::ItemId;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
 use ty::map_family::Map;

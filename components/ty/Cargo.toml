@@ -11,5 +11,6 @@ parking_lot = "0.6.4"
 ast = { path = "../ast" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }
+lark-entity = { path = "../lark-entity" }
 parser = { path = "../parser" }
 unify = { path = "../unify" }

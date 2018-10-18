@@ -6,16 +6,15 @@
 #![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 
-use crate::item_id::ItemId;
-pub use crate::item_id::ItemIdTables;
 pub use crate::parser_state::ParserState;
 use intern::Has;
+use lark_entity::ItemId;
+use lark_entity::ItemIdTables;
 pub use parser::ast;
 use parser::ParseError;
 use parser::StringId;
 use std::sync::Arc;
 
-pub mod item_id;
 mod parser_state;
 mod query_definitions;
 mod test;

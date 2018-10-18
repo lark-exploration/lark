@@ -5,9 +5,9 @@
 #![feature(const_let)]
 #![feature(macro_at_most_once_rep)]
 
-use ast::item_id::ItemId;
 use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
+use lark_entity::ItemId;
 use parser::pos::{HasSpan, Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;

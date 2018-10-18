@@ -1,10 +1,10 @@
-use ast::item_id::ItemId;
 use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
 use crate::TypeChecker;
 use crate::UniverseBinder;
 use generational_arena::Arena;
 use indices::IndexVec;
+use lark_entity::ItemId;
 use map::FxIndexMap;
 use ty::base_inferred::BaseInferred;
 use ty::base_only::BaseOnly;
