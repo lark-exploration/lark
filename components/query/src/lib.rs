@@ -35,7 +35,7 @@ salsa::database_storage! {
 
 impl parser::LookupStringId for LarkDatabase {
     fn lookup(&self, id: parser::StringId) -> Arc<String> {
-        self.parser_state.untern_string(id)
+        self.untern_string(id)
     }
 }
 
