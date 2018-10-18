@@ -352,6 +352,7 @@ dependencies = [
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parser 0.1.0",
  "pretty_env_logger 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "query 0.1.0",
  "salsa 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "seahash 3.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "smart-default 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -526,6 +527,18 @@ version = "0.4.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "query"
+version = "0.1.0"
+dependencies = [
+ "ast 0.1.0",
+ "intern 0.1.0",
+ "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parser 0.1.0",
+ "salsa 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "task_manager 0.1.0",
 ]
 
 [[package]]
@@ -770,6 +783,7 @@ version = "0.1.0"
 dependencies = [
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "mir 0.1.0",
+ "url 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

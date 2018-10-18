@@ -21,7 +21,7 @@ impl ParserState {
         parser::parse(Cow::Borrowed(&*input_text), &mut module_table, 0)
     }
 
-    crate fn untern_string(&self, string_id: StringId) -> Arc<String> {
+    pub fn untern_string(&self, string_id: StringId) -> Arc<String> {
         Arc::new(self.module_table.read().lookup(&string_id).to_string())
     }
 

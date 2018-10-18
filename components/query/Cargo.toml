@@ -1,0 +1,14 @@
+[package]
+name = "query"
+version = "0.1.0"
+authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+languageserver-types = "0.51.0"
+salsa = "0.5.0"
+
+ast = { path = "../ast" }
+intern = { path = "../intern" }
+parser = { path = "../parser" }
+task_manager = { path = "../task_manager" }

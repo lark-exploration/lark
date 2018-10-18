@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 languageserver-types = "0.51.0"
 mir = { path = "../mir" }
+url = "1.7"

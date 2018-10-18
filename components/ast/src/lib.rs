@@ -7,8 +7,8 @@
 #![feature(specialization)]
 
 use crate::item_id::ItemId;
-use crate::item_id::ItemIdTables;
-use crate::parser_state::ParserState;
+pub use crate::item_id::ItemIdTables;
+pub use crate::parser_state::ParserState;
 use intern::Has;
 pub use parser::ast;
 use parser::ParseError;

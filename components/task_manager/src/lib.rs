@@ -1,34 +1,20 @@
-use languageserver_types::Position;
-
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+use url::Url;
 
-use mir::DefId;
+use languageserver_types::Position;
 
-type TaskId = usize;
+pub type TaskId = usize;
 
 enum MsgFromManager<T> {
     Shutdown,
     Message(T),
 }
 
-#[derive(Debug)]
-pub enum TypeMessage {
-    DefIdForPos(TaskId, Position),
-    TypeForDefId(TaskId, DefId),
-    CompletionsForDefId(TaskId, DefId),
-}
-
-pub enum TypeResponse {
-    DefId(TaskId, DefId),
-    Type(TaskId, String),
-    Completions(TaskId, Vec<(String, String)>),
-}
-
 pub enum LspRequest {
-    TypeForPos(TaskId, Position),
-    Completion(TaskId, Position),
+    TypeForPos(TaskId, Url, Position),
+    OpenFile(Url, String),
     Initialize(TaskId),
 }
 
@@ -39,20 +25,27 @@ pub enum LspResponse {
 }
 
 pub enum MsgToManager {
-    TypeResponse(TypeResponse),
+    QueryResponse(QueryResponse),
     LspRequest(LspRequest),
     Cancel(TaskId),
     Shutdown,
 }
 
-enum RecipeStep {
-    GetDefIdForPosition,
+pub enum QueryRequest {
+    /// URI followed by contents
+    OpenFile(Url, String),
+    EditFile(String),
+    TypeAtPosition(TaskId, Url, Position),
+}
 
-    GetTypeForDefId,
-    GetCompletionsForDefId,
+pub enum QueryResponse {
+    Type(TaskId, String),
+}
+
+enum RecipeStep {
+    GetTextForFile,
 
     RespondWithType,
-    RespondWithCompletions,
     RespondWithInitialized,
 }
 
@@ -70,62 +63,18 @@ pub struct ActorControl<MessageType: Send + Sync + 'static> {
     pub join_handle: std::thread::JoinHandle<()>,
 }
 
-pub struct FakeTypeChecker {
-    send_channel: Option<Box<dyn Fn(TypeResponse) -> () + Send>>,
-}
-
-impl Actor for FakeTypeChecker {
-    type InMessage = TypeMessage;
-    type OutMessage = TypeResponse;
-
-    fn startup(&mut self, send_channel: Box<dyn Fn(Self::OutMessage) -> () + Send>) {
-        self.send_channel = Some(send_channel);
-    }
-
-    fn shutdown(&mut self) {}
-
-    fn receive_message(&mut self, message: Self::InMessage) {
-        match message {
-            TypeMessage::DefIdForPos(task_id, pos) => match self.send_channel {
-                Some(ref c) => c(TypeResponse::DefId(task_id, pos.line as usize * 100)),
-                None => {}
-            },
-            TypeMessage::TypeForDefId(task_id, def_id) => match self.send_channel {
-                Some(ref c) => c(TypeResponse::Type(task_id, format!("<type:{}>", def_id))),
-                None => {}
-            },
-            TypeMessage::CompletionsForDefId(task_id, def_id) => match self.send_channel {
-                Some(ref c) => c(TypeResponse::Completions(
-                    task_id,
-                    vec![
-                        ("bar".into(), format!("First option for {}", def_id)),
-                        ("foo".into(), format!("Second option for {}", def_id)),
-                    ],
-                )),
-                None => {}
-            },
-        }
-    }
-}
-
-impl FakeTypeChecker {
-    pub fn new() -> FakeTypeChecker {
-        FakeTypeChecker { send_channel: None }
-    }
-}
-
 pub struct TaskManager {
     live_recipes: HashMap<TaskId, Vec<RecipeStep>>,
     receive_channel: Receiver<MsgToManager>,
 
     /// Control points to communicate with other subsystems
-    type_checker: ActorControl<MsgFromManager<TypeMessage>>,
+    query_system: ActorControl<MsgFromManager<QueryRequest>>,
     lsp_responder: ActorControl<MsgFromManager<LspResponse>>,
 }
 
 impl TaskManager {
     pub fn spawn(
-        mut type_checker: impl Actor<InMessage = TypeMessage, OutMessage = TypeResponse>
+        mut query_system: impl Actor<InMessage = QueryRequest, OutMessage = QueryResponse>
             + Send
             + 'static,
         mut lsp_responder: impl Actor<InMessage = LspResponse> + Send + 'static,
@@ -134,22 +83,22 @@ impl TaskManager {
 
         let manager_tx_clone = manager_tx.clone();
 
-        type_checker.startup(Box::new(move |x| {
+        query_system.startup(Box::new(move |x| {
             manager_tx_clone
-                .send(MsgToManager::TypeResponse(x))
+                .send(MsgToManager::QueryResponse(x))
                 .unwrap()
         }));
         lsp_responder.startup(Box::new(move |_| {}));
 
-        let type_checker = TaskManager::spawn_actor(type_checker);
-        let lsp_responder = TaskManager::spawn_actor(lsp_responder);
+        let query_system_actor = TaskManager::spawn_actor(query_system);
+        let lsp_responder_actor = TaskManager::spawn_actor(lsp_responder);
 
         let task_manager = TaskManager {
             live_recipes: HashMap::new(),
             receive_channel: manager_rx,
 
-            type_checker,
-            lsp_responder,
+            query_system: query_system_actor,
+            lsp_responder: lsp_responder_actor,
         };
 
         let join_handle = thread::spawn(move || {
@@ -163,7 +112,7 @@ impl TaskManager {
     }
 
     fn join_worker_threads(self) {
-        let _ = self.type_checker.join_handle.join();
+        let _ = self.query_system.join_handle.join();
         let _ = self.lsp_responder.join_handle.join();
     }
 
@@ -174,40 +123,14 @@ impl TaskManager {
                     let next_step = x.remove(0);
 
                     match next_step {
-                        RecipeStep::GetDefIdForPosition => {
-                            if let Ok(position) = argument.downcast::<Position>() {
-                                self.type_checker
+                        RecipeStep::GetTextForFile => {
+                            if let Ok(location) = argument.downcast::<(Url, Position)>() {
+                                self.query_system
                                     .channel
-                                    .send(MsgFromManager::Message(TypeMessage::DefIdForPos(
-                                        task_id, *position,
+                                    .send(MsgFromManager::Message(QueryRequest::TypeAtPosition(
+                                        task_id, location.0, location.1,
                                     )))
                                     .unwrap();
-                            } else {
-                                panic!("Internal error: malformed GetDefIdForPosition");
-                            }
-                        }
-                        RecipeStep::GetTypeForDefId => {
-                            if let Ok(def_id) = argument.downcast::<DefId>() {
-                                self.type_checker
-                                    .channel
-                                    .send(MsgFromManager::Message(TypeMessage::TypeForDefId(
-                                        task_id, *def_id,
-                                    )))
-                                    .unwrap();
-                            } else {
-                                panic!("Internal error: malformed GetTypeForDefId");
-                            }
-                        }
-                        RecipeStep::GetCompletionsForDefId => {
-                            if let Ok(def_id) = argument.downcast::<DefId>() {
-                                self.type_checker
-                                    .channel
-                                    .send(MsgFromManager::Message(
-                                        TypeMessage::CompletionsForDefId(task_id, *def_id),
-                                    ))
-                                    .unwrap();
-                            } else {
-                                panic!("Internal error: malformed GetCompletionsForDefId");
                             }
                         }
                         RecipeStep::RespondWithType => {
@@ -218,19 +141,6 @@ impl TaskManager {
                                     .unwrap();
                             } else {
                                 panic!("Internal error: malformed RespondWithType");
-                            }
-                        }
-                        RecipeStep::RespondWithCompletions => {
-                            if let Ok(completions) = argument.downcast::<Vec<(String, String)>>() {
-                                self.lsp_responder
-                                    .channel
-                                    .send(MsgFromManager::Message(LspResponse::Completions(
-                                        task_id,
-                                        *completions,
-                                    )))
-                                    .unwrap();
-                            } else {
-                                panic!("Internal error: malformed RespondWithCompletion");
                             }
                         }
                         RecipeStep::RespondWithInitialized => {
@@ -250,28 +160,20 @@ impl TaskManager {
 
     fn do_recipe_for_lsp_request(&mut self, lsp_request: LspRequest) {
         match lsp_request {
-            LspRequest::TypeForPos(task_id, position) => {
-                let recipe = vec![
-                    RecipeStep::GetDefIdForPosition,
-                    RecipeStep::GetTypeForDefId,
-                    RecipeStep::RespondWithType,
-                ];
+            LspRequest::TypeForPos(task_id, url, position) => {
+                let recipe = vec![RecipeStep::GetTextForFile, RecipeStep::RespondWithType];
 
                 self.live_recipes.insert(task_id, recipe);
-                self.send_next_step(task_id, Box::new(position));
+                self.send_next_step(task_id, Box::new((url, position)));
             }
-
-            LspRequest::Completion(task_id, position) => {
-                let recipe = vec![
-                    RecipeStep::GetDefIdForPosition,
-                    RecipeStep::GetCompletionsForDefId,
-                    RecipeStep::RespondWithCompletions,
-                ];
-
-                self.live_recipes.insert(task_id, recipe);
-                self.send_next_step(task_id, Box::new(position));
+            LspRequest::OpenFile(url, contents) => {
+                self.query_system
+                    .channel
+                    .send(MsgFromManager::Message(QueryRequest::OpenFile(
+                        url, contents,
+                    )))
+                    .unwrap();
             }
-
             LspRequest::Initialize(task_id) => {
                 let recipe = vec![RecipeStep::RespondWithInitialized];
 
@@ -284,14 +186,8 @@ impl TaskManager {
     fn message_loop(mut self) {
         loop {
             match self.receive_channel.recv() {
-                Ok(MsgToManager::TypeResponse(TypeResponse::DefId(task_id, def_id))) => {
-                    self.send_next_step(task_id, Box::new(def_id));
-                }
-                Ok(MsgToManager::TypeResponse(TypeResponse::Type(task_id, type_id))) => {
-                    self.send_next_step(task_id, Box::new(type_id));
-                }
-                Ok(MsgToManager::TypeResponse(TypeResponse::Completions(task_id, completions))) => {
-                    self.send_next_step(task_id, Box::new(completions));
+                Ok(MsgToManager::QueryResponse(QueryResponse::Type(task_id, contents))) => {
+                    self.send_next_step(task_id, Box::new(contents));
                 }
                 Ok(MsgToManager::LspRequest(lsp_request)) => {
                     self.do_recipe_for_lsp_request(lsp_request);
@@ -302,7 +198,7 @@ impl TaskManager {
                 }
                 Ok(MsgToManager::Shutdown) => {
                     let _ = self.lsp_responder.channel.send(MsgFromManager::Shutdown);
-                    let _ = self.type_checker.channel.send(MsgFromManager::Shutdown);
+                    let _ = self.query_system.channel.send(MsgFromManager::Shutdown);
                     break;
                 }
                 Err(_) => {

@@ -20,7 +20,8 @@ mod tests;
 use std::{env, io};
 
 use ide::{lsp_serve, LspResponder};
-use task_manager::{Actor, FakeTypeChecker};
+use query::QuerySystem;
+use task_manager::Actor;
 
 fn build(_filename: &str) {}
 
@@ -29,10 +30,10 @@ fn run(_filename: &str) {}
 fn repl() {}
 
 fn ide() {
-    let type_checker = FakeTypeChecker::new();
+    let query_system = QuerySystem::new();
     let lsp_responder = LspResponder;
 
-    let task_manager = task_manager::TaskManager::spawn(type_checker, lsp_responder);
+    let task_manager = task_manager::TaskManager::spawn(query_system, lsp_responder);
 
     lsp_serve(task_manager.channel);
     let _ = task_manager.join_handle.join();
