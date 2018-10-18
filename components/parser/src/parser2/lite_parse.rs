@@ -9,6 +9,7 @@ use crate::parser2::token_tree::TokenTree;
 use codespan::CodeMap;
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::Arc;
 
 use derive_new::new;
 
@@ -334,7 +335,7 @@ impl LiteParser<'codemap> {
         self.scopes.root()
     }
 
-    fn get_macro(&mut self, id: Spanned<StringId>) -> Result<MacroRead, ParseError> {
+    fn get_macro(&mut self, id: Spanned<StringId>) -> Result<Arc<MacroRead>, ParseError> {
         self.macros.get(*id).ok_or_else(|| {
             ParseError::new(
                 format!("No macro in scope {:?}", Debuggable::from(&id, &self.table)),
@@ -349,7 +350,7 @@ impl LiteParser<'codemap> {
             Some(id) => {
                 let macro_def = self.get_macro(id)?;
 
-                macro_def(scope, self)?;
+                macro_def.read(scope, self)?;
 
                 Ok(())
             }

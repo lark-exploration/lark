@@ -17,6 +17,7 @@ unicode-xid = "0.1.0"
 language-reporting = { git = "https://github.com/wycats/language-reporting.git" }
 termcolor = "1.0.4"
 debug = { path = "../debug" }
+map = { path = "../map" }
 
 [dev-dependencies]
 unindent = "0.1.3"
