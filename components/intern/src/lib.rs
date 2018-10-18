@@ -3,10 +3,6 @@ use map::{Equivalent, FxIndexMap};
 use parking_lot::{RwLock, RwLockUpgradableReadGuard};
 use std::hash::Hash;
 
-pub trait Has<Tables> {
-    fn intern_tables(&self) -> &Tables;
-}
-
 /// Generate a "intern tables" struct that can intern one or more
 /// types. Input looks like:
 ///
@@ -40,12 +36,6 @@ macro_rules! intern_tables {
             data: std::sync::Arc<$InternTablesData>,
         }
 
-        impl $crate::Has<$InternTables> for $InternTables {
-            fn intern_tables(&self) -> &$InternTables {
-                self
-            }
-        }
-
         #[derive(Default)]
         struct $InternTablesData {
             $(
@@ -53,12 +43,18 @@ macro_rules! intern_tables {
             )*
         }
 
+        impl AsRef<$InternTables> for $InternTables {
+            fn as_ref(&self) -> &Self {
+                self
+            }
+        }
+
         $(
             impl $crate::InternDirect<$InternTables> for $data {
                 fn table(
-                    tables: &dyn $crate::Has<$InternTables>,
+                    tables: &dyn AsRef<$InternTables>,
                 ) -> &parking_lot::RwLock<$crate::InternTable<$key, $data>> {
-                    let tables = $crate::Has::<$InternTables>::intern_tables(tables);
+                    let tables: &$InternTables = tables.as_ref();
                     &tables.data.$field
                 }
             }
@@ -66,7 +62,7 @@ macro_rules! intern_tables {
             impl $crate::Intern<$InternTables> for $data {
                 type Key = $key;
 
-                fn intern(self, tables: &dyn $crate::Has<$InternTables>) -> $key {
+                fn intern(self, tables: &dyn AsRef<$InternTables>) -> $key {
                     $crate::intern_impl(self, tables, |v| v, |v| v)
                 }
             }
@@ -74,8 +70,8 @@ macro_rules! intern_tables {
             impl $crate::Untern<$InternTables> for $key {
                 type Data = $data;
 
-                fn untern(self, tables: &dyn $crate::Has<$InternTables>) -> $data {
-                    let tables = $crate::Has::<$InternTables>::intern_tables(tables);
+                fn untern(self, tables: &dyn AsRef<$InternTables>) -> $data {
+                    let tables: &$InternTables = tables.as_ref();
                     tables.data.$field.read().get(self)
                 }
             }
@@ -149,7 +145,7 @@ where
 pub trait Intern<Interners> {
     type Key: U32Index;
 
-    fn intern(self, interner: &dyn Has<Interners>) -> Self::Key;
+    fn intern(self, interner: &dyn AsRef<Interners>) -> Self::Key;
 }
 
 /// Reverse trait: implemented by the key (`crate::ty::Perm`)
@@ -157,13 +153,13 @@ pub trait Intern<Interners> {
 pub trait Untern<Interners>: Clone {
     type Data;
 
-    fn untern(self, interner: &dyn Has<Interners>) -> Self::Data;
+    fn untern(self, interner: &dyn AsRef<Interners>) -> Self::Data;
 }
 
 /// Trait for something that is *directly* interned into an interning
 /// table. For example, this might be implemented by `String`.
 pub trait InternDirect<Interners>: Clone + Hash + Eq + Intern<Interners> {
-    fn table(interner: &dyn Has<Interners>) -> &RwLock<InternTable<Self::Key, Self>>;
+    fn table(interner: &dyn AsRef<Interners>) -> &RwLock<InternTable<Self::Key, Self>>;
 }
 
 /// Helper for `Intern` implementations: interns `data` into `table`,
@@ -173,7 +169,7 @@ pub trait InternDirect<Interners>: Clone + Hash + Eq + Intern<Interners> {
 /// as needed.
 pub fn intern_impl<Data, Interners, EquivData, TableData>(
     data: Data,
-    interners: &dyn Has<Interners>,
+    interners: &dyn AsRef<Interners>,
     to_lookup_data: impl FnOnce(&Data) -> &EquivData,
     to_table_data: impl FnOnce(Data) -> TableData,
 ) -> TableData::Key

@@ -4,7 +4,6 @@
 #![feature(const_let)]
 
 use debug::DebugWith;
-use intern::Has;
 use intern::Untern;
 use lark_debug_derive::DebugWith;
 use parser::StringId;
@@ -47,7 +46,7 @@ debug::debug_fallback_impl!(Entity);
 
 impl<Cx> DebugWith<Cx> for Entity
 where
-    Cx: Has<EntityTables>,
+    Cx: AsRef<EntityTables>,
 {
     fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = self.untern(cx);
@@ -56,7 +55,7 @@ where
 }
 
 impl Entity {
-    pub fn input_file(self, db: &dyn Has<EntityTables>) -> StringId {
+    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> StringId {
         match self.untern(db) {
             EntityData::InputFile { file } => file,
             EntityData::ItemName { base, .. } => base.input_file(db),

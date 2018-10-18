@@ -7,7 +7,6 @@
 
 use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
-use intern::Has;
 use lark_entity::Entity;
 use parser::pos::{HasSpan, Span, Spanned};
 use parser::StringId;
@@ -19,7 +18,7 @@ mod fn_body;
 mod query_definitions;
 
 salsa::query_group! {
-    pub trait HirDatabase: AstDatabase + Has<TyInternTables> {
+    pub trait HirDatabase: AstDatabase + AsRef<TyInternTables> {
         /// Get the def-id for the built-in boolean type.
         fn boolean_item_id(key: ()) -> Entity {
             type BooleanEntityQuery;

@@ -9,7 +9,6 @@ use crate::InputText;
 use crate::ItemsInFile;
 use crate::ParserState;
 use debug::DebugWith;
-use intern::Has;
 use lark_entity::EntityTables;
 use salsa::Database;
 use std::sync::Arc;
@@ -54,8 +53,8 @@ impl parser::LookupStringId for TestDatabaseImpl {
     }
 }
 
-impl Has<EntityTables> for TestDatabaseImpl {
-    fn intern_tables(&self) -> &EntityTables {
+impl AsRef<EntityTables> for TestDatabaseImpl {
+    fn as_ref(&self) -> &EntityTables {
         &self.item_id_tables
     }
 }

@@ -7,7 +7,6 @@
 #![feature(specialization)]
 
 pub use crate::parser_state::ParserState;
-use intern::Has;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 pub use parser::ast;
@@ -20,7 +19,7 @@ mod query_definitions;
 mod test;
 
 salsa::query_group! {
-    pub trait AstDatabase: HasParserState + Has<EntityTables> + salsa::Database {
+    pub trait AstDatabase: HasParserState + AsRef<EntityTables> + salsa::Database {
         // These queries don't properly belong here -- probably in
         // parser -- but I want to minimize merge conflicts.
 

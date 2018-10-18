@@ -4,7 +4,6 @@ use ast::{
     AstDatabase, AstOfFile, AstOfItem, HasParserState, InputFiles, InputText, ItemsInFile,
     ParserState,
 };
-use intern::Has;
 use lark_entity::EntityTables;
 use salsa::Database;
 use task_manager::{Actor, QueryRequest, QueryResponse};
@@ -40,8 +39,8 @@ impl parser::LookupStringId for LarkDatabase {
     }
 }
 
-impl Has<EntityTables> for LarkDatabase {
-    fn intern_tables(&self) -> &EntityTables {
+impl AsRef<EntityTables> for LarkDatabase {
+    fn as_ref(&self) -> &EntityTables {
         &self.item_id_tables
     }
 }

@@ -1,4 +1,3 @@
-use intern::Has;
 use intern::Untern;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
@@ -25,20 +24,20 @@ where
     T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
-    crate fn new(intern_tables: &'me dyn Has<TyInternTables>, values: &'me V) -> Self {
+    crate fn new(intern_tables: &'me dyn AsRef<TyInternTables>, values: &'me V) -> Self {
         Substitution {
-            intern_tables: intern_tables.intern_tables(),
+            intern_tables: intern_tables.as_ref(),
             values,
         }
     }
 }
 
-impl<T, V> Has<TyInternTables> for Substitution<'me, T, V>
+impl<T, V> AsRef<TyInternTables> for Substitution<'me, T, V>
 where
     T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
-    fn intern_tables(&self) -> &TyInternTables {
+    fn as_ref(&self) -> &TyInternTables {
         &self.intern_tables
     }
 }

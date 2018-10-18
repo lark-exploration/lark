@@ -17,7 +17,7 @@ crate fn base_type_check(
     fn_item_id: Entity,
 ) -> TypeCheckResults<BaseInferred> {
     let fn_body = db.fn_body(fn_item_id);
-    let interners: &TyInternTables = db.intern_tables();
+    let interners: &TyInternTables = db.as_ref();
     let mut base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
         db,
         fn_item_id,

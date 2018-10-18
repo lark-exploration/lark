@@ -7,7 +7,6 @@
 
 use crate::interners::TyInternTables;
 use indices::IndexVec;
-use intern::Has;
 use lark_entity::Entity;
 use parser::StringId;
 use std::fmt::Debug;
@@ -29,18 +28,21 @@ pub trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
 
     type Placeholder: Copy + Clone + Debug + Eq + Hash;
 
-    fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base;
+    fn intern_base_data(
+        tables: &dyn AsRef<TyInternTables>,
+        base_data: BaseData<Self>,
+    ) -> Self::Base;
 
-    fn own_perm(tables: &dyn Has<TyInternTables>) -> Self::Perm;
+    fn own_perm(tables: &dyn AsRef<TyInternTables>) -> Self::Perm;
 
-    fn error_ty(tables: &dyn Has<TyInternTables>) -> Ty<Self> {
+    fn error_ty(tables: &dyn AsRef<TyInternTables>) -> Ty<Self> {
         Ty {
             perm: Self::own_perm(tables),
             base: Self::error_base_data(tables),
         }
     }
 
-    fn error_base_data(tables: &dyn Has<TyInternTables>) -> Self::Base {
+    fn error_base_data(tables: &dyn AsRef<TyInternTables>) -> Self::Base {
         Self::intern_base_data(
             tables,
             BaseData {

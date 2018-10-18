@@ -6,7 +6,6 @@
 use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
-use intern::Has;
 use lark_entity::Entity;
 use map::FxIndexMap;
 use std::sync::Arc;
@@ -30,7 +29,7 @@ mod query_definitions;
 mod substitute;
 
 salsa::query_group! {
-    pub trait TypeCheckDatabase: hir::HirDatabase + Has<TyInternTables> {
+    pub trait TypeCheckDatabase: hir::HirDatabase + AsRef<TyInternTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: Entity) -> TypeCheckResults<BaseInferred> {
@@ -119,7 +118,7 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         M: Map<Self, Self>;
 }
 
-trait TypeCheckerFields<F: TypeCheckFamily>: Has<TyInternTables> {
+trait TypeCheckerFields<F: TypeCheckFamily>: AsRef<TyInternTables> {
     type DB: TypeCheckDatabase;
 
     fn db(&self) -> &Self::DB;
@@ -186,12 +185,12 @@ crate struct Error {
     location: hir::MetaIndex,
 }
 
-impl<DB, F> Has<TyInternTables> for TypeChecker<'_, DB, F>
+impl<DB, F> AsRef<TyInternTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckFamily,
 {
-    fn intern_tables(&self) -> &TyInternTables {
-        self.db.intern_tables()
+    fn as_ref(&self) -> &TyInternTables {
+        self.db.as_ref()
     }
 }

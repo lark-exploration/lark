@@ -6,7 +6,6 @@
 #![feature(specialization)]
 
 use debug::DebugWith;
-use intern::Has;
 use intern::Intern;
 use intern::Untern;
 use std::sync::Arc;
@@ -53,7 +52,7 @@ intern::intern_tables! {
 impl Intern<StringTables> for &str {
     type Key = StringId;
 
-    fn intern(self, interner: &dyn Has<StringTables>) -> Self::Key {
+    fn intern(self, interner: &dyn AsRef<StringTables>) -> Self::Key {
         intern::intern_impl(
             self,
             interner,
@@ -68,7 +67,7 @@ impl Intern<StringTables> for &str {
 impl Intern<StringTables> for String {
     type Key = StringId;
 
-    fn intern(self, interner: &dyn Has<StringTables>) -> Self::Key {
+    fn intern(self, interner: &dyn AsRef<StringTables>) -> Self::Key {
         intern::intern_impl(
             self,
             interner,
@@ -80,7 +79,7 @@ impl Intern<StringTables> for String {
 
 impl<Cx> DebugWith<Cx> for StringId
 where
-    Cx: Has<StringTables>,
+    Cx: AsRef<StringTables>,
 {
     fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = self.untern(cx);
