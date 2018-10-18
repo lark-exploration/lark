@@ -37,6 +37,10 @@ pub fn derive_debug_with(input: proc_macro::TokenStream) -> proc_macro::TokenStr
         }
     };
 
+    if std::env::var("LARK_DEBUG_DERIVE").is_ok() {
+        eprintln!("expanded = {}", expanded);
+    }
+
     // Hand the output tokens back to the compiler.
     proc_macro::TokenStream::from(expanded)
 }
@@ -48,7 +52,7 @@ fn add_trait_bounds(mut generics: syn::Generics) -> syn::Generics {
         if let syn::GenericParam::Type(ref mut type_param) = *param {
             type_param
                 .bounds
-                .push(syn::parse_quote!(::debug::DebugWith));
+                .push(syn::parse_quote!(::debug::DebugWith<Cx>));
         }
     }
 
@@ -86,13 +90,18 @@ fn debug_with_variants(type_name: &syn::Ident, data: &syn::DataEnum) -> TokenStr
                 }
 
                 syn::Fields::Unnamed(fields) => {
-                    let all_names = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i"];
+                    let all_names: Vec<syn::Ident> = vec![
+                        syn::parse_quote!(a),
+                        syn::parse_quote!(b),
+                        syn::parse_quote!(c),
+                        syn::parse_quote!(d),
+                    ];
                     if fields.unnamed.len() > all_names.len() {
                         unimplemented!("too many variants")
                     }
                     let names = &all_names[0..fields.unnamed.len()];
                     quote! {
-                        #type_name :: #variant_name { #(#names),* } => {
+                        #type_name :: #variant_name(#(#names),*) => {
                             fmt.debug_tuple(stringify!(#variant_name))
                                 #(
                                     .field(&#names.debug_with(cx))
