@@ -15,9 +15,24 @@ indices::index_type! {
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum EntityData {
-    InputFile { file: StringId },
-    ItemName { base: Entity, id: StringId },
-    MemberName { base: Entity, id: StringId },
+    InputFile {
+        file: StringId,
+    },
+    ItemName {
+        base: Entity,
+        kind: ItemKind,
+        id: StringId,
+    },
+    MemberName {
+        base: Entity,
+        id: StringId,
+    },
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum ItemKind {
+    Struct,
+    Function,
 }
 
 intern::intern_tables! {
@@ -44,8 +59,8 @@ impl Entity {
     pub fn input_file(self, db: &dyn Has<EntityTables>) -> StringId {
         match self.untern(db) {
             EntityData::InputFile { file } => file,
-            EntityData::ItemName { base, id: _ } => base.input_file(db),
-            EntityData::MemberName { base, id: _ } => base.input_file(db),
+            EntityData::ItemName { base, .. } => base.input_file(db),
+            EntityData::MemberName { base, .. } => base.input_file(db),
         }
     }
 }

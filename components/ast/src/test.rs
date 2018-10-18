@@ -104,12 +104,14 @@ def new(msg: own String, level: String) -> Diagnostic {
         base: InputFile {
             file: "path1"
         },
+        kind: Struct,
         id: "Diagnostic"
     },
     ItemName {
         base: InputFile {
             file: "path1"
         },
+        kind: Function,
         id: "new"
     }
 ]"#

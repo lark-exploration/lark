@@ -3,6 +3,7 @@ use intern::Intern;
 use intern::Untern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
+use lark_entity::ItemKind;
 use parser::ast;
 use parser::ParseError;
 use parser::StringId;
@@ -33,8 +34,13 @@ crate fn items_in_file(db: &impl AstDatabase, input_file: StringId) -> Arc<Vec<E
         .items
         .iter()
         .map(|item| {
+            let kind = match **item {
+                ast::Item::Struct(_) => ItemKind::Struct,
+                ast::Item::Def(_) => ItemKind::Function,
+            };
             EntityData::ItemName {
                 base: input_file_id,
+                kind,
                 id: item.name(),
             }
             .intern(db)
@@ -45,7 +51,11 @@ crate fn items_in_file(db: &impl AstDatabase, input_file: StringId) -> Arc<Vec<E
 
 crate fn ast_of_item(db: &impl AstDatabase, item_id: Entity) -> Result<Arc<ast::Item>, ParseError> {
     match item_id.untern(db) {
-        EntityData::ItemName { base, id: path_id } => {
+        EntityData::ItemName {
+            base,
+            kind: _,
+            id: path_id,
+        } => {
             match base.untern(db) {
                 EntityData::InputFile { file: input_file } => {
                     // Base case: root item in a file
