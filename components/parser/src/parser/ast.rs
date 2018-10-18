@@ -61,9 +61,9 @@ pub struct Module {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Struct {
-    name: Spanned<StringId>,
-    fields: Vec<Field>,
-    span: Span,
+    pub name: Spanned<StringId>,
+    pub fields: Vec<Field>,
+    pub span: Span,
 }
 
 impl HasSpan for Struct {
@@ -93,8 +93,8 @@ pub enum ConstructField {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Type {
-    mode: Option<Spanned<Mode>>,
-    name: Spanned<StringId>,
+    pub mode: Option<Spanned<Mode>>,
+    pub name: Spanned<StringId>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]

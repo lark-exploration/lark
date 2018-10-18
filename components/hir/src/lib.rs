@@ -4,9 +4,11 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(macro_at_most_once_rep)]
+#![feature(specialization)]
 
 use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
+use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use parser::pos::{HasSpan, Span, Spanned};
 use parser::StringId;
@@ -63,20 +65,20 @@ salsa::query_group! {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum MemberKind {
     Field,
     Method,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Member {
     pub name: StringId,
     pub kind: MemberKind,
     pub def_id: Entity,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
@@ -91,7 +93,7 @@ pub struct FnBody {
 }
 
 /// All the data for a fn-body is stored in these tables.a
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
 pub struct FnBodyTables {
     /// Map each expression index to its associated data.
     pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
@@ -207,6 +209,8 @@ macro_rules! define_meta_index {
                 type Index = $index_ty;
             }
 
+            debug::debug_fallback_impl!($index_ty);
+
             impl From<$index_ty> for MetaIndex {
                 fn from(value: $index_ty) -> MetaIndex {
                     MetaIndex::$index_ty(value)
@@ -217,7 +221,7 @@ macro_rules! define_meta_index {
         /// The HIR has a number of *kinds* of indices that
         /// reach into it. This enum brings them together into
         /// a sort of "meta index". It's useful sometimes.
-        #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub enum MetaIndex {
             $(
                 $index_ty($index_ty),
@@ -249,7 +253,7 @@ indices::index_type! {
     pub struct Expression { .. }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ExpressionData {
     /// `let <var> = <initializer> in <body>`
     Let {
@@ -295,7 +299,7 @@ indices::index_type! {
     pub struct Perm { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum PermData {
     Share,
     Borrow,
@@ -308,7 +312,7 @@ indices::index_type! {
     pub struct Place { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum PlaceData {
     Variable(Variable),
     Temporary(Expression),
@@ -319,7 +323,7 @@ indices::index_type! {
     pub struct Variable { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct VariableData {
     pub name: Identifier,
 }
@@ -328,7 +332,7 @@ indices::index_type! {
     pub struct Identifier { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct IdentifierData {
     pub text: StringId,
 }
@@ -337,7 +341,7 @@ indices::index_type! {
     pub struct Error { .. }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ErrorData {
     ParseError { description: String },
     UnknownIdentifier { text: StringId },

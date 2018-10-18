@@ -12,6 +12,7 @@ ast = { path = "../ast" }
 debug = { path = "../debug" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }
+lark-debug-derive = { path = "../lark-debug-derive" }
 lark-entity = { path = "../lark-entity" }
 map = { path = "../map" }
 parser = { path = "../parser" }
