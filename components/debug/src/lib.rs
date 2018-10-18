@@ -53,6 +53,18 @@ where
     }
 }
 
+impl<I, T, Cx: ?Sized> DebugWith<Cx> for indices::IndexVec<I, T>
+where
+    I: indices::U32Index,
+    T: DebugWith<Cx>,
+{
+    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_list()
+            .entries(self.iter().map(|elem| elem.debug_with(cx)))
+            .finish()
+    }
+}
+
 impl<T, Cx: ?Sized> DebugWith<Cx> for std::sync::Arc<T>
 where
     T: DebugWith<Cx>,
@@ -92,7 +104,7 @@ impl<Cx: ?Sized> DebugWith<Cx> for ! {
 macro_rules! debug_fallback_impl {
     ($($t:ty),* $(,)*) => {
         $(
-            impl<Cx: ?Sized> DebugWith<Cx> for $t {
+            impl<Cx: ?Sized> $crate::DebugWith<Cx> for $t {
                 default fn fmt_with(
                     &self,
                     _cx: &Cx,
