@@ -3,6 +3,8 @@ use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::TypeCheckerFields;
 use hir;
+use hir::ErrorReported;
+use lark_entity::MemberKind;
 use std::sync::Arc;
 use ty::Ty;
 use ty::{BaseData, BaseKind};
@@ -13,8 +15,8 @@ where
     F: TypeCheckFamily,
 {
     pub(super) fn check_fn_body(&mut self) {
-        let signature = self.db.signature(self.fn_item_id);
-        let placeholders = self.placeholders_for(self.fn_item_id);
+        let signature = self.db.signature(self.fn_entity);
+        let placeholders = self.placeholders_for(self.fn_entity);
         let signature = self.substitute(self.hir.root_expression, &placeholders, signature);
         assert_eq!(signature.inputs.len(), self.hir.arguments.len());
         for (&argument, &input) in self.hir.arguments.iter().zip(signature.inputs.iter()) {
@@ -125,16 +127,19 @@ where
                     let BaseData { kind, generics } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
-                            if let Some(field_item_id) =
-                                this.db()
-                                    .member_item_id((def_id, hir::MemberKind::Field, text))
-                            {
-                                let field_decl_ty = this.db().ty(field_item_id);
-                                let field_ty = this.substitute(place, &generics, field_decl_ty);
-                                this.apply_owner_perm(place, owner_ty.perm, field_ty)
-                            } else {
-                                this.results.record_error(place);
-                                this.error_type()
+                            match this.db().member_entity((def_id, MemberKind::Field, text)) {
+                                Ok(Some(field_entity)) => {
+                                    let field_decl_ty = this.db().ty(field_entity);
+                                    let field_ty = this.substitute(place, &generics, field_decl_ty);
+                                    this.apply_owner_perm(place, owner_ty.perm, field_ty)
+                                }
+
+                                Ok(None) => {
+                                    this.results.record_error(place);
+                                    this.error_type()
+                                }
+
+                                Err(ErrorReported) => this.error_type(),
                             }
                         }
 
@@ -172,21 +177,19 @@ where
         match kind {
             BaseKind::Named(def_id) => {
                 let text = self.hir[method_name].text;
-                let method_item_id =
-                    match self
-                        .db()
-                        .member_item_id((def_id, hir::MemberKind::Method, text))
-                    {
-                        Some(def_id) => def_id,
-                        None => {
+                let method_entity =
+                    match self.db().member_entity((def_id, MemberKind::Method, text)) {
+                        Ok(Some(def_id)) => def_id,
+                        Ok(None) => {
                             self.results.record_error(expression);
                             return self.error_type();
                         }
+                        Err(ErrorReported) => return self.error_type(),
                     };
 
                 // FIXME -- what role does `owner_ty` place here??
 
-                let signature_decl = self.db().signature(method_item_id);
+                let signature_decl = self.db().signature(method_entity);
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
                     self.results.record_error(expression);

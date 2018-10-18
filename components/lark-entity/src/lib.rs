@@ -24,6 +24,7 @@ pub enum EntityData {
     },
     MemberName {
         base: Entity,
+        kind: MemberKind,
         id: StringId,
     },
 }
@@ -32,6 +33,12 @@ pub enum EntityData {
 pub enum ItemKind {
     Struct,
     Function,
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum MemberKind {
+    Field,
+    Method,
 }
 
 intern::intern_tables! {

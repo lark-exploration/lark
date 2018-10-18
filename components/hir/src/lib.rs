@@ -10,6 +10,7 @@ use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
+use lark_entity::MemberKind;
 use parser::pos::{HasSpan, Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
@@ -22,9 +23,9 @@ mod query_definitions;
 salsa::query_group! {
     pub trait HirDatabase: AstDatabase + AsRef<TyInternTables> {
         /// Get the def-id for the built-in boolean type.
-        fn boolean_item_id(key: ()) -> Entity {
+        fn boolean_entity(key: ()) -> Entity {
             type BooleanEntityQuery;
-            use fn query_definitions::boolean_item_id;
+            use fn query_definitions::boolean_entity;
         }
 
         /// Get the fn-body for a given def-id.
@@ -34,15 +35,15 @@ salsa::query_group! {
         }
 
         /// Get the list of member names and their def-ids for a given struct.
-        fn members(key: Entity) -> Arc<Vec<Member>> {
+        fn members(key: Entity) -> Result<Arc<Vec<Member>>, ErrorReported> {
             type MembersQuery;
             use fn query_definitions::members;
         }
 
         /// Gets the def-id for a field of a given class.
-        fn member_item_id(m: (Entity, MemberKind, StringId)) -> Option<Entity> {
+        fn member_entity(m: (Entity, MemberKind, StringId)) -> Result<Option<Entity>, ErrorReported> {
             type MemberEntityQuery;
-            use fn query_definitions::member_item_id;
+            use fn query_definitions::member_entity;
         }
 
         /// Get the type of something.
@@ -66,16 +67,10 @@ salsa::query_group! {
 }
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum MemberKind {
-    Field,
-    Method,
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Member {
     pub name: StringId,
     pub kind: MemberKind,
-    pub def_id: Entity,
+    pub entity: Entity,
 }
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -346,3 +341,8 @@ pub enum ErrorData {
     ParseError { description: String },
     UnknownIdentifier { text: StringId },
 }
+
+/// Unit type used in `Result` to indicate a value derived from other
+/// value where an error was already reported.
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ErrorReported;

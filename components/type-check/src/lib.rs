@@ -41,7 +41,7 @@ salsa::query_group! {
 
 struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     db: &'db DB,
-    fn_item_id: Entity,
+    fn_entity: Entity,
     hir: Arc<hir::FnBody>,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<Self>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
