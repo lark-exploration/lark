@@ -3,11 +3,11 @@
 #![feature(self_in_typedefs)]
 #![feature(in_band_lifetimes)]
 
-use ast::item_id::ItemId;
 use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
 use intern::Has;
+use lark_entity::ItemId;
 use map::FxIndexMap;
 use std::sync::Arc;
 use ty::base_inferred::BaseInferred;

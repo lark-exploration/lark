@@ -1,6 +1,6 @@
 use ast::ast as a;
-use ast::item_id::ItemId;
 use crate::HirDatabase;
+use lark_entity::ItemId;
 use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;

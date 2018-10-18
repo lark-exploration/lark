@@ -1,6 +1,5 @@
 #![cfg(test)]
 
-use crate::item_id::ItemIdTables;
 use crate::AstDatabase;
 use crate::AstOfFile;
 use crate::AstOfItem;
@@ -11,6 +10,7 @@ use crate::ItemsInFile;
 use crate::ParserState;
 use debug::DebugWith;
 use intern::Has;
+use lark_entity::ItemIdTables;
 use salsa::Database;
 use std::sync::Arc;
 
