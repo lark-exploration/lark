@@ -53,6 +53,18 @@ where
     }
 }
 
+impl<T, Cx: ?Sized> DebugWith<Cx> for Option<T>
+where
+    T: DebugWith<Cx>,
+{
+    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            None => fmt.debug_struct("None").finish(),
+            Some(v) => v.fmt_with(cx, fmt),
+        }
+    }
+}
+
 impl<I, T, Cx: ?Sized> DebugWith<Cx> for indices::IndexVec<I, T>
 where
     I: indices::U32Index,
