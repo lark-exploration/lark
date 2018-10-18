@@ -8,5 +8,6 @@ edition = "2018"
 debug = { path = "../debug" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }
+lark-debug-derive = { path = "../lark-debug-derive" }
 parking_lot = "0.6.4"
 parser = { path = "../parser" }

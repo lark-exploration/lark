@@ -6,13 +6,14 @@
 use debug::DebugWith;
 use intern::Has;
 use intern::Untern;
+use lark_debug_derive::DebugWith;
 use parser::StringId;
 
 indices::index_type! {
     pub struct Entity { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum EntityData {
     InputFile { file: StringId },
     ItemName { base: Entity, id: StringId },
@@ -27,6 +28,8 @@ intern::intern_tables! {
     }
 }
 
+debug::debug_fallback_impl!(Entity);
+
 impl<Cx> DebugWith<Cx> for Entity
 where
     Cx: Has<EntityTables>,
@@ -34,30 +37,6 @@ where
     fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = self.untern(cx);
         data.fmt_with(cx, fmt)
-    }
-}
-
-impl<Cx> DebugWith<Cx> for EntityData
-where
-    Cx: Has<EntityTables>,
-{
-    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            EntityData::InputFile { file } => fmt
-                .debug_struct("InputFile")
-                .field("file", &file.debug_with(cx))
-                .finish(),
-            EntityData::ItemName { base, id } => fmt
-                .debug_struct("ItemName")
-                .field("base", &base.debug_with(cx))
-                .field("id", &id.debug_with(cx))
-                .finish(),
-            EntityData::MemberName { base, id } => fmt
-                .debug_struct("MemberName")
-                .field("base", &base.debug_with(cx))
-                .field("id", &id.debug_with(cx))
-                .finish(),
-        }
     }
 }
 
