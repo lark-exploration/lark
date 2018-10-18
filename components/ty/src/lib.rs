@@ -8,7 +8,7 @@
 use crate::interners::TyInternTables;
 use indices::IndexVec;
 use intern::Has;
-use lark_entity::ItemId;
+use lark_entity::Entity;
 use parser::StringId;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -63,7 +63,7 @@ impl<F: TypeFamily> BaseData<F> {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum BaseKind<F: TypeFamily> {
     /// A named type (might be value, might be linear, etc).
-    Named(ItemId),
+    Named(Entity),
 
     /// Instantiated generic type -- exists only in type-check results
     /// for a function.
@@ -265,13 +265,13 @@ pub struct Signature<F: TypeFamily> {
 /// (e.g., from their parents),
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GenericDeclarations {
-    pub parent_item: Option<ItemId>,
+    pub parent_item: Option<Entity>,
     pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
 }
 
 /// Declaration of an individual generic type parameter.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GenericTyDeclaration {
-    pub def_id: ItemId,
+    pub def_id: Entity,
     pub name: StringId,
 }

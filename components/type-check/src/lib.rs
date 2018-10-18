@@ -7,7 +7,7 @@ use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
 use intern::Has;
-use lark_entity::ItemId;
+use lark_entity::Entity;
 use map::FxIndexMap;
 use std::sync::Arc;
 use ty::base_inferred::BaseInferred;
@@ -33,7 +33,7 @@ salsa::query_group! {
     pub trait TypeCheckDatabase: hir::HirDatabase + Has<TyInternTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
-        fn base_type_check(key: ItemId) -> TypeCheckResults<BaseInferred> {
+        fn base_type_check(key: Entity) -> TypeCheckResults<BaseInferred> {
             type BaseTypeCheckQuery;
             use fn query_definitions::base_type_check;
         }
@@ -42,7 +42,7 @@ salsa::query_group! {
 
 struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     db: &'db DB,
-    fn_item_id: ItemId,
+    fn_item_id: Entity,
     hir: Arc<hir::FnBody>,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<Self>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
@@ -55,7 +55,7 @@ struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
 
 enum UniverseBinder {
     Root,
-    FromItem(ItemId),
+    FromItem(Entity),
 }
 
 trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {

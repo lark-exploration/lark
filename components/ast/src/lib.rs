@@ -8,8 +8,8 @@
 
 pub use crate::parser_state::ParserState;
 use intern::Has;
-use lark_entity::ItemId;
-use lark_entity::ItemIdTables;
+use lark_entity::Entity;
+use lark_entity::EntityTables;
 pub use parser::ast;
 use parser::ParseError;
 use parser::StringId;
@@ -20,7 +20,7 @@ mod query_definitions;
 mod test;
 
 salsa::query_group! {
-    pub trait AstDatabase: HasParserState + Has<ItemIdTables> + salsa::Database {
+    pub trait AstDatabase: HasParserState + Has<EntityTables> + salsa::Database {
         // These queries don't properly belong here -- probably in
         // parser -- but I want to minimize merge conflicts.
 
@@ -39,12 +39,12 @@ salsa::query_group! {
             use fn query_definitions::ast_of_file;
         }
 
-        fn items_in_file(path: StringId) -> Arc<Vec<ItemId>> {
+        fn items_in_file(path: StringId) -> Arc<Vec<Entity>> {
             type ItemsInFile;
             use fn query_definitions::items_in_file;
         }
 
-        fn ast_of_item(item: ItemId) -> Result<Arc<ast::Item>, ParseError> {
+        fn ast_of_item(item: Entity) -> Result<Arc<ast::Item>, ParseError> {
             type AstOfItem;
             use fn query_definitions::ast_of_item;
         }

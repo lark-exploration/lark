@@ -10,7 +10,7 @@ use crate::ItemsInFile;
 use crate::ParserState;
 use debug::DebugWith;
 use intern::Has;
-use lark_entity::ItemIdTables;
+use lark_entity::EntityTables;
 use salsa::Database;
 use std::sync::Arc;
 
@@ -18,7 +18,7 @@ use std::sync::Arc;
 struct TestDatabaseImpl {
     runtime: salsa::runtime::Runtime<TestDatabaseImpl>,
     parser_state: ParserState,
-    item_id_tables: ItemIdTables,
+    item_id_tables: EntityTables,
 }
 
 salsa::database_storage! {
@@ -54,8 +54,8 @@ impl parser::LookupStringId for TestDatabaseImpl {
     }
 }
 
-impl Has<ItemIdTables> for TestDatabaseImpl {
-    fn intern_tables(&self) -> &ItemIdTables {
+impl Has<EntityTables> for TestDatabaseImpl {
+    fn intern_tables(&self) -> &EntityTables {
         &self.item_id_tables
     }
 }

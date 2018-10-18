@@ -5,7 +5,7 @@ use ast::{
     ParserState,
 };
 use intern::Has;
-use lark_entity::ItemIdTables;
+use lark_entity::EntityTables;
 use salsa::Database;
 use task_manager::{Actor, QueryRequest, QueryResponse};
 
@@ -13,7 +13,7 @@ use task_manager::{Actor, QueryRequest, QueryResponse};
 struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
     parser_state: ParserState,
-    item_id_tables: ItemIdTables,
+    item_id_tables: EntityTables,
 }
 
 impl salsa::Database for LarkDatabase {
@@ -40,8 +40,8 @@ impl parser::LookupStringId for LarkDatabase {
     }
 }
 
-impl Has<ItemIdTables> for LarkDatabase {
-    fn intern_tables(&self) -> &ItemIdTables {
+impl Has<EntityTables> for LarkDatabase {
+    fn intern_tables(&self) -> &EntityTables {
         &self.item_id_tables
     }
 }

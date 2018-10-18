@@ -4,7 +4,7 @@ use crate::TypeChecker;
 use crate::UniverseBinder;
 use generational_arena::Arena;
 use indices::IndexVec;
-use lark_entity::ItemId;
+use lark_entity::Entity;
 use map::FxIndexMap;
 use ty::base_inferred::BaseInferred;
 use ty::base_only::BaseOnly;
@@ -14,7 +14,7 @@ use unify::UnificationTable;
 
 crate fn base_type_check(
     db: &impl TypeCheckDatabase,
-    fn_item_id: ItemId,
+    fn_item_id: Entity,
 ) -> TypeCheckResults<BaseInferred> {
     let fn_body = db.fn_body(fn_item_id);
     let interners: &TyInternTables = db.intern_tables();
