@@ -30,6 +30,25 @@ pub trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
     type Placeholder: Copy + Clone + Debug + Eq + Hash;
 
     fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base;
+
+    fn own_perm(tables: &dyn Has<TyInternTables>) -> Self::Perm;
+
+    fn error_ty(tables: &dyn Has<TyInternTables>) -> Ty<Self> {
+        Ty {
+            perm: Self::own_perm(tables),
+            base: Self::error_base_data(tables),
+        }
+    }
+
+    fn error_base_data(tables: &dyn Has<TyInternTables>) -> Self::Base {
+        Self::intern_base_data(
+            tables,
+            BaseData {
+                kind: BaseKind::Error,
+                generics: Generics::empty(),
+            },
+        )
+    }
 }
 
 /// A type is the combination of a *permission* and a *base type*.

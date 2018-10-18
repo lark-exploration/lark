@@ -76,8 +76,6 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
 
     fn error_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
-    fn own_perm(this: &impl TypeCheckerFields<Self>) -> Self::Perm;
-
     fn require_assignable(
         this: &mut impl TypeCheckerFields<Self>,
         expression: hir::Expression,

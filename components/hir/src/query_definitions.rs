@@ -7,6 +7,12 @@ use lark_entity::EntityData;
 use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
+use ty::BaseData;
+use ty::BaseKind;
+use ty::Erased;
+use ty::Generics;
+use ty::Ty;
+use ty::TypeFamily;
 
 crate fn boolean_item_id(_db: &impl HirDatabase, _key: ()) -> Entity {
     unimplemented!()
@@ -42,7 +48,18 @@ crate fn member_item_id(
 
 crate fn ty(db: &impl HirDatabase, entity: Entity) -> ty::Ty<Declaration> {
     match entity.untern(db) {
-        EntityData::ItemName { .. } => unimplemented!(),
+        EntityData::ItemName { .. } => {
+            let ast = match db.ast_of_item(entity) {
+                Ok(ast) => ast,
+                Err(_) => return Declaration::error_ty(db),
+            };
+            let kind = match &*ast {
+                a::Item::Struct(_) | a::Item::Def(_) => BaseKind::Named(entity),
+            };
+            let generics = Generics::empty();
+            let base = Declaration::intern_base_data(db, BaseData { kind, generics });
+            Ty { perm: Erased, base }
+        }
 
         EntityData::MemberName { .. } => unimplemented!(),
 

@@ -18,6 +18,10 @@ impl TypeFamily for BaseOnly {
     type Base = Base;
     type Placeholder = Placeholder;
 
+    fn own_perm(_tables: &dyn Has<TyInternTables>) -> Erased {
+        Erased
+    }
+
     fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base {
         InferVarOr::Known(base_data).intern(tables)
     }
