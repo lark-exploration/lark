@@ -6,7 +6,7 @@ use ast::{
 };
 use lark_entity::EntityTables;
 use salsa::Database;
-use task_manager::{Actor, QueryRequest, QueryResponse};
+use task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 
 #[derive(Default)]
 struct LarkDatabase {
@@ -52,14 +52,14 @@ impl HasParserState for LarkDatabase {
 }
 
 pub struct QuerySystem {
-    send_channel: Option<Box<dyn Fn(QueryResponse) -> () + Send>>,
+    send_channel: Box<dyn SendChannel<QueryResponse>>,
     lark_db: LarkDatabase,
 }
 
 impl QuerySystem {
     pub fn new() -> QuerySystem {
         QuerySystem {
-            send_channel: None,
+            send_channel: Box::new(NoopSendChannel),
             lark_db: LarkDatabase::default(),
         }
     }
@@ -69,8 +69,8 @@ impl Actor for QuerySystem {
     type InMessage = QueryRequest;
     type OutMessage = QueryResponse;
 
-    fn startup(&mut self, send_channel: Box<dyn Fn(Self::OutMessage) -> () + Send>) {
-        self.send_channel = Some(send_channel);
+    fn startup(&mut self, send_channel: &dyn SendChannel<QueryResponse>) {
+        self.send_channel = send_channel.clone_send_channel();
     }
 
     fn shutdown(&mut self) {}
@@ -93,10 +93,8 @@ impl Actor for QuerySystem {
                 let result = self.lark_db.query(InputText).get(interned_path);
 
                 let contents = self.lark_db.untern_string(result.unwrap());
-                match self.send_channel {
-                    Some(ref c) => c(QueryResponse::Type(task_id, contents.to_string())),
-                    None => {}
-                }
+                self.send_channel
+                    .send(QueryResponse::Type(task_id, contents.to_string()));
             }
         }
     }

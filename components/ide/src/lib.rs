@@ -3,7 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::io;
 use std::io::prelude::{Read, Write};
 use std::sync::mpsc::Sender;
-use task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager};
+use task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method")]
@@ -80,7 +80,7 @@ impl Actor for LspResponder {
     type InMessage = LspResponse;
     type OutMessage = ();
 
-    fn startup(&mut self, _: Box<dyn Fn(Self::OutMessage) -> () + Send>) {}
+    fn startup(&mut self, _: &dyn SendChannel<Self::OutMessage>) {}
 
     fn shutdown(&mut self) {}
 
