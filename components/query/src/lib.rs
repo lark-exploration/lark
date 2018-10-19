@@ -4,20 +4,31 @@ use ast::{
     AstDatabase, AstOfFile, AstOfItem, HasParserState, InputFiles, InputText, ItemsInFile,
     ParserState,
 };
+use languageserver_types::Position;
 use lark_entity::EntityTables;
-use salsa::Database;
+use salsa::{Database, ParallelDatabase};
 use task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 
 #[derive(Default)]
 struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
-    parser_state: ParserState,
-    item_id_tables: EntityTables,
+    parser_state: Arc<ParserState>,
+    item_id_tables: Arc<EntityTables>,
 }
 
-impl salsa::Database for LarkDatabase {
+impl Database for LarkDatabase {
     fn salsa_runtime(&self) -> &salsa::Runtime<LarkDatabase> {
         &self.runtime
+    }
+}
+
+impl ParallelDatabase for LarkDatabase {
+    fn fork(&self) -> Self {
+        LarkDatabase {
+            runtime: self.runtime.fork(),
+            parser_state: self.parser_state.clone(),
+            item_id_tables: self.item_id_tables.clone(),
+        }
     }
 }
 
@@ -88,16 +99,42 @@ impl Actor for QuerySystem {
                     .set(interned_path, Some(interned_contents));
             }
             QueryRequest::EditFile(_) => {}
-            QueryRequest::TypeAtPosition(task_id, url, _position) => {
-                let interned_path = self.lark_db.intern_string(url.as_str());
-                let result = self.lark_db.query(InputText).get(interned_path);
-
-                let contents = self.lark_db.untern_string(result.unwrap());
-                self.send_channel
-                    .send(QueryResponse::Type(task_id, contents.to_string()));
+            QueryRequest::TypeAtPosition(task_id, url, position) => {
+                std::thread::spawn({
+                    let db = self.lark_db.fork();
+                    let send_channel = self.send_channel.clone_send_channel();
+                    move || {
+                        match type_at_position(&db, url.as_str(), position) {
+                            Ok(v) => {
+                                send_channel.send(QueryResponse::Type(task_id, v.to_string()));
+                            }
+                            Err(Cancelled) => {
+                                // Not sure what to send here, if anything.
+                                send_channel
+                                    .send(QueryResponse::Type(task_id, format!("<cancelled>")));
+                            }
+                        }
+                    }
+                });
             }
         }
     }
+}
+
+struct Cancelled;
+
+fn type_at_position(
+    db: &impl AstDatabase,
+    url: &str,
+    _position: Position,
+) -> Result<String, Cancelled> {
+    let interned_path = db.intern_string(url);
+    let result = db.input_text(interned_path);
+    let contents = db.untern_string(result.unwrap());
+    if db.salsa_runtime().is_current_revision_canceled() {
+        return Err(Cancelled);
+    }
+    Ok(contents.to_string())
 }
 
 #[cfg(test)]
