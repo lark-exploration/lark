@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 #[derive(Default)]
 struct TestDatabaseImpl {
-    runtime: salsa::runtime::Runtime<TestDatabaseImpl>,
+    runtime: salsa::Runtime<TestDatabaseImpl>,
     parser_state: ParserState,
     item_id_tables: EntityTables,
 }
@@ -33,7 +33,7 @@ salsa::database_storage! {
 }
 
 impl Database for TestDatabaseImpl {
-    fn salsa_runtime(&self) -> &salsa::runtime::Runtime<TestDatabaseImpl> {
+    fn salsa_runtime(&self) -> &salsa::Runtime<TestDatabaseImpl> {
         &self.runtime
     }
 }
