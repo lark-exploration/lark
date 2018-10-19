@@ -13,16 +13,21 @@ use crate::parser2::token_tree::Handle;
 
 use derive_new::new;
 use log::trace;
-use std::collections::HashMap;
+use map::FxIndexMap;
 use std::fmt::{self, Debug};
+use std::sync::Arc;
 
-pub type MacroRead =
-    fn(scope: ScopeId, reader: &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>;
-
-#[derive(new)]
+#[derive(Default)]
 pub struct Macros {
-    #[new(value = "HashMap::new()")]
-    named: HashMap<StringId, MacroRead>,
+    named: FxIndexMap<StringId, Arc<MacroRead>>,
+}
+
+pub trait MacroRead {
+    fn read(
+        &self,
+        scope: ScopeId,
+        reader: &mut LiteParser<'_>,
+    ) -> Result<Box<dyn Term>, ParseError>;
 }
 
 impl Debug for Macros {
@@ -32,13 +37,34 @@ impl Debug for Macros {
 }
 
 impl Macros {
-    pub fn add(mut self, name: StringId, macro_def: MacroRead) -> Macros {
-        self.named.insert(name, macro_def);
+    pub fn add(mut self, name: StringId, macro_def: impl MacroRead + 'static) -> Macros {
+        self.named.insert(name, Arc::new(macro_def));
         self
     }
 
-    pub fn get(&self, name: StringId) -> Option<MacroRead> {
-        self.named.get(&name).map(|r| *r)
+    pub fn get(&self, name: StringId) -> Option<Arc<dyn MacroRead>> {
+        self.named.get(&name).cloned()
+    }
+}
+
+#[derive(new)]
+pub struct MacroReadFn<F>
+where
+    F: Fn(ScopeId, &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>,
+{
+    func: F,
+}
+
+impl<F> MacroRead for MacroReadFn<F>
+where
+    F: Fn(ScopeId, &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>,
+{
+    fn read(
+        &self,
+        scope: ScopeId,
+        reader: &mut LiteParser<'_>,
+    ) -> Result<Box<dyn Term>, ParseError> {
+        (self.func)(scope, reader)
     }
 }
 
@@ -82,7 +108,7 @@ pub fn struct_decl(
 }
 
 pub fn macros(table: &mut ModuleTable) -> Macros {
-    Macros::new().add(table.intern(&"struct"), struct_decl)
+    Macros::default().add(table.intern(&"struct"), MacroReadFn::new(struct_decl))
 }
 
 pub trait Term {}
