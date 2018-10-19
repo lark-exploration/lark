@@ -26,7 +26,7 @@ mod type_conversion;
 salsa::query_group! {
     pub trait HirDatabase: AstDatabase + AsRef<TyInternTables> {
         /// Get the def-id for the built-in boolean type.
-        fn boolean_entity(key: ()) -> Entity {
+        fn boolean_entity() -> Entity {
             type BooleanEntityQuery;
             use fn query_definitions::boolean_entity;
         }
@@ -44,7 +44,7 @@ salsa::query_group! {
         }
 
         /// Gets the def-id for a field of a given class.
-        fn member_entity(m: (Entity, MemberKind, StringId)) -> Result<Option<Entity>, ErrorReported> {
+        fn member_entity(entity: Entity, kind: MemberKind, id: StringId) -> Result<Option<Entity>, ErrorReported> {
             type MemberEntityQuery;
             use fn query_definitions::member_entity;
         }
@@ -68,7 +68,7 @@ salsa::query_group! {
         }
 
         /// Resolve a type name that appears in the given entity.
-        fn resolve_name(key: (Entity, StringId)) -> Result<Option<Entity>, ErrorReported> {
+        fn resolve_name(scope: Entity, name: StringId) -> Result<Option<Entity>, ErrorReported> {
             type ResolveName;
             use fn scope::resolve_name;
         }

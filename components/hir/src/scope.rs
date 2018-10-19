@@ -7,7 +7,8 @@ use parser::StringId;
 
 crate fn resolve_name(
     db: &impl HirDatabase,
-    (scope, name): (Entity, StringId),
+    scope: Entity,
+    name: StringId,
 ) -> Result<Option<Entity>, ErrorReported> {
     match scope.untern(db) {
         EntityData::InputFile { file } => {
@@ -27,9 +28,9 @@ crate fn resolve_name(
 
         EntityData::ItemName { base, .. } => {
             // In principle, we could support nested items here, but whatevs.
-            db.resolve_name((base, name))
+            db.resolve_name(base, name)
         }
 
-        EntityData::MemberName { base, .. } => db.resolve_name((base, name)),
+        EntityData::MemberName { base, .. } => db.resolve_name(base, name),
     }
 }

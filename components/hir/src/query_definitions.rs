@@ -10,7 +10,7 @@ use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 
-crate fn boolean_entity(_db: &impl HirDatabase, _key: ()) -> Entity {
+crate fn boolean_entity(_db: &impl HirDatabase) -> Entity {
     unimplemented!()
 }
 
@@ -46,7 +46,9 @@ crate fn members(db: &impl HirDatabase, owner: Entity) -> Result<Arc<Vec<Member>
 
 crate fn member_entity(
     db: &impl HirDatabase,
-    (owner, kind, name): (Entity, MemberKind, StringId),
+    owner: Entity,
+    kind: MemberKind,
+    name: StringId,
 ) -> Result<Option<Entity>, ErrorReported> {
     Ok(db
         .members(owner)?

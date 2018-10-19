@@ -129,7 +129,7 @@ where
                     let BaseData { kind, generics } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
-                            match this.db().member_entity((def_id, MemberKind::Field, text)) {
+                            match this.db().member_entity(def_id, MemberKind::Field, text) {
                                 Ok(Some(field_entity)) => {
                                     let field_decl_ty = this.db().ty(field_entity).unwrap_or_else(
                                         |ErrorReported| Declaration::error_ty(this),
@@ -181,15 +181,15 @@ where
         match kind {
             BaseKind::Named(def_id) => {
                 let text = self.hir[method_name].text;
-                let method_entity =
-                    match self.db().member_entity((def_id, MemberKind::Method, text)) {
-                        Ok(Some(def_id)) => def_id,
-                        Ok(None) => {
-                            self.results.record_error(expression);
-                            return self.error_type();
-                        }
-                        Err(ErrorReported) => return self.error_type(),
-                    };
+                let method_entity = match self.db().member_entity(def_id, MemberKind::Method, text)
+                {
+                    Ok(Some(def_id)) => def_id,
+                    Ok(None) => {
+                        self.results.record_error(expression);
+                        return self.error_type();
+                    }
+                    Err(ErrorReported) => return self.error_type(),
+                };
 
                 // FIXME -- what role does `owner_ty` place here??
 
