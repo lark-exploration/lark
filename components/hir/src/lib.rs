@@ -12,6 +12,7 @@ use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::MemberKind;
 use parser::pos::{HasSpan, Span, Spanned};
+use parser::ParseError;
 use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
@@ -19,6 +20,8 @@ use ty::interners::TyInternTables;
 
 mod fn_body;
 mod query_definitions;
+mod scope;
+mod type_conversion;
 
 salsa::query_group! {
     pub trait HirDatabase: AstDatabase + AsRef<TyInternTables> {
@@ -47,9 +50,9 @@ salsa::query_group! {
         }
 
         /// Get the type of something.
-        fn ty(key: Entity) -> ty::Ty<Declaration> {
+        fn ty(key: Entity) -> Result<ty::Ty<Declaration>, ErrorReported> {
             type TyQuery;
-            use fn query_definitions::ty;
+            use fn type_conversion::ty;
         }
 
         /// Get the signature of a method or function -- defined for fields and structs.
@@ -62,6 +65,12 @@ salsa::query_group! {
         fn generic_declarations(key: Entity) -> Arc<ty::GenericDeclarations> {
             type GenericDeclarations;
             use fn query_definitions::generic_declarations;
+        }
+
+        /// Resolve a type name that appears in the given entity.
+        fn resolve_name(key: (Entity, StringId)) -> Result<Option<Entity>, ErrorReported> {
+            type ResolveName;
+            use fn scope::resolve_name;
         }
     }
 }
@@ -346,3 +355,9 @@ pub enum ErrorData {
 /// value where an error was already reported.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ErrorReported;
+
+impl From<ParseError> for ErrorReported {
+    fn from(_: ParseError) -> ErrorReported {
+        ErrorReported
+    }
+}

@@ -6,7 +6,9 @@ use hir;
 use hir::ErrorReported;
 use lark_entity::MemberKind;
 use std::sync::Arc;
+use ty::declaration::Declaration;
 use ty::Ty;
+use ty::TypeFamily;
 use ty::{BaseData, BaseKind};
 
 impl<DB, F> TypeChecker<'_, DB, F>
@@ -129,7 +131,9 @@ where
                         BaseKind::Named(def_id) => {
                             match this.db().member_entity((def_id, MemberKind::Field, text)) {
                                 Ok(Some(field_entity)) => {
-                                    let field_decl_ty = this.db().ty(field_entity);
+                                    let field_decl_ty = this.db().ty(field_entity).unwrap_or_else(
+                                        |ErrorReported| Declaration::error_ty(this),
+                                    );
                                     let field_ty = this.substitute(place, &generics, field_decl_ty);
                                     this.apply_owner_perm(place, owner_ty.perm, field_ty)
                                 }
