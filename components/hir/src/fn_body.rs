@@ -3,13 +3,13 @@ use parser::prelude::*;
 use ast::ast as a;
 use crate as hir;
 use crate::HirDatabase;
-use lark_entity::ItemId;
+use lark_entity::Entity;
 use map::FxIndexMap;
 use parser::pos::{Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
 
-crate fn fn_body(db: &impl HirDatabase, item_id: ItemId) -> Arc<crate::FnBody> {
+crate fn fn_body(db: &impl HirDatabase, item_id: Entity) -> Arc<crate::FnBody> {
     let lower = HirLower::new(db);
     Arc::new(lower.lower_ast_of_item(item_id))
 }
@@ -54,7 +54,7 @@ where
         self.variables.insert(self[name].text, variable);
     }
 
-    fn lower_ast_of_item(mut self, item_id: ItemId) -> hir::FnBody {
+    fn lower_ast_of_item(mut self, item_id: Entity) -> hir::FnBody {
         match self.db.ast_of_item(item_id) {
             Ok(ast) => match &*ast {
                 a::Item::Struct(_) => panic!("asked for fn-body of struct {:?}", item_id),

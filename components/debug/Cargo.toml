@@ -5,3 +5,4 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
+indices = { path = "../indices" }

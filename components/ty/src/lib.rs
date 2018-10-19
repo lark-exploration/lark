@@ -7,8 +7,7 @@
 
 use crate::interners::TyInternTables;
 use indices::IndexVec;
-use intern::Has;
-use lark_entity::ItemId;
+use lark_entity::Entity;
 use parser::StringId;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -29,7 +28,29 @@ pub trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
 
     type Placeholder: Copy + Clone + Debug + Eq + Hash;
 
-    fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base;
+    fn intern_base_data(
+        tables: &dyn AsRef<TyInternTables>,
+        base_data: BaseData<Self>,
+    ) -> Self::Base;
+
+    fn own_perm(tables: &dyn AsRef<TyInternTables>) -> Self::Perm;
+
+    fn error_ty(tables: &dyn AsRef<TyInternTables>) -> Ty<Self> {
+        Ty {
+            perm: Self::own_perm(tables),
+            base: Self::error_base_data(tables),
+        }
+    }
+
+    fn error_base_data(tables: &dyn AsRef<TyInternTables>) -> Self::Base {
+        Self::intern_base_data(
+            tables,
+            BaseData {
+                kind: BaseKind::Error,
+                generics: Generics::empty(),
+            },
+        )
+    }
 }
 
 /// A type is the combination of a *permission* and a *base type*.
@@ -63,7 +84,7 @@ impl<F: TypeFamily> BaseData<F> {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum BaseKind<F: TypeFamily> {
     /// A named type (might be value, might be linear, etc).
-    Named(ItemId),
+    Named(Entity),
 
     /// Instantiated generic type -- exists only in type-check results
     /// for a function.
@@ -265,13 +286,13 @@ pub struct Signature<F: TypeFamily> {
 /// (e.g., from their parents),
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GenericDeclarations {
-    pub parent_item: Option<ItemId>,
+    pub parent_item: Option<Entity>,
     pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
 }
 
 /// Declaration of an individual generic type parameter.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GenericTyDeclaration {
-    pub def_id: ItemId,
+    pub def_id: Entity,
     pub name: StringId,
 }

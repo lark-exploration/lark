@@ -6,8 +6,7 @@
 use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
-use intern::Has;
-use lark_entity::ItemId;
+use lark_entity::Entity;
 use map::FxIndexMap;
 use std::sync::Arc;
 use ty::base_inferred::BaseInferred;
@@ -30,10 +29,10 @@ mod query_definitions;
 mod substitute;
 
 salsa::query_group! {
-    pub trait TypeCheckDatabase: hir::HirDatabase + Has<TyInternTables> {
+    pub trait TypeCheckDatabase: hir::HirDatabase + AsRef<TyInternTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
-        fn base_type_check(key: ItemId) -> TypeCheckResults<BaseInferred> {
+        fn base_type_check(key: Entity) -> TypeCheckResults<BaseInferred> {
             type BaseTypeCheckQuery;
             use fn query_definitions::base_type_check;
         }
@@ -42,7 +41,7 @@ salsa::query_group! {
 
 struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     db: &'db DB,
-    fn_item_id: ItemId,
+    fn_entity: Entity,
     hir: Arc<hir::FnBody>,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<Self>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
@@ -55,7 +54,7 @@ struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
 
 enum UniverseBinder {
     Root,
-    FromItem(ItemId),
+    FromItem(Entity),
 }
 
 trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
@@ -75,8 +74,6 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
     fn error_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
-
-    fn own_perm(this: &impl TypeCheckerFields<Self>) -> Self::Perm;
 
     fn require_assignable(
         this: &mut impl TypeCheckerFields<Self>,
@@ -121,7 +118,7 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         M: Map<Self, Self>;
 }
 
-trait TypeCheckerFields<F: TypeCheckFamily>: Has<TyInternTables> {
+trait TypeCheckerFields<F: TypeCheckFamily>: AsRef<TyInternTables> {
     type DB: TypeCheckDatabase;
 
     fn db(&self) -> &Self::DB;
@@ -188,12 +185,12 @@ crate struct Error {
     location: hir::MetaIndex,
 }
 
-impl<DB, F> Has<TyInternTables> for TypeChecker<'_, DB, F>
+impl<DB, F> AsRef<TyInternTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckFamily,
 {
-    fn intern_tables(&self) -> &TyInternTables {
-        self.db.intern_tables()
+    fn as_ref(&self) -> &TyInternTables {
+        self.db.as_ref()
     }
 }

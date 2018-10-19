@@ -6,7 +6,6 @@ use crate::Erased;
 use crate::InferVarOr;
 use crate::Placeholder;
 use crate::TypeFamily;
-use intern::Has;
 use intern::{Intern, Untern};
 use unify::{InferVar, Inferable};
 
@@ -18,7 +17,14 @@ impl TypeFamily for BaseOnly {
     type Base = Base;
     type Placeholder = Placeholder;
 
-    fn intern_base_data(tables: &dyn Has<TyInternTables>, base_data: BaseData<Self>) -> Self::Base {
+    fn own_perm(_tables: &dyn AsRef<TyInternTables>) -> Erased {
+        Erased
+    }
+
+    fn intern_base_data(
+        tables: &dyn AsRef<TyInternTables>,
+        base_data: BaseData<Self>,
+    ) -> Self::Base {
         InferVarOr::Known(base_data).intern(tables)
     }
 }

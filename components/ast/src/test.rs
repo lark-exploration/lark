@@ -9,16 +9,15 @@ use crate::InputText;
 use crate::ItemsInFile;
 use crate::ParserState;
 use debug::DebugWith;
-use intern::Has;
-use lark_entity::ItemIdTables;
+use lark_entity::EntityTables;
 use salsa::Database;
 use std::sync::Arc;
 
 #[derive(Default)]
 struct TestDatabaseImpl {
-    runtime: salsa::runtime::Runtime<TestDatabaseImpl>,
+    runtime: salsa::Runtime<TestDatabaseImpl>,
     parser_state: ParserState,
-    item_id_tables: ItemIdTables,
+    item_id_tables: EntityTables,
 }
 
 salsa::database_storage! {
@@ -34,7 +33,7 @@ salsa::database_storage! {
 }
 
 impl Database for TestDatabaseImpl {
-    fn salsa_runtime(&self) -> &salsa::runtime::Runtime<TestDatabaseImpl> {
+    fn salsa_runtime(&self) -> &salsa::Runtime<TestDatabaseImpl> {
         &self.runtime
     }
 }
@@ -54,8 +53,8 @@ impl parser::LookupStringId for TestDatabaseImpl {
     }
 }
 
-impl Has<ItemIdTables> for TestDatabaseImpl {
-    fn intern_tables(&self) -> &ItemIdTables {
+impl AsRef<EntityTables> for TestDatabaseImpl {
+    fn as_ref(&self) -> &EntityTables {
         &self.item_id_tables
     }
 }
@@ -104,12 +103,14 @@ def new(msg: own String, level: String) -> Diagnostic {
         base: InputFile {
             file: "path1"
         },
+        kind: Struct,
         id: "Diagnostic"
     },
     ItemName {
         base: InputFile {
             file: "path1"
         },
+        kind: Function,
         id: "new"
     }
 ]"#

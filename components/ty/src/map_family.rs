@@ -7,8 +7,7 @@ use crate::Generics;
 use crate::Signature;
 use crate::Ty;
 use crate::TypeFamily;
-use intern::Has;
-use lark_entity::ItemId;
+use lark_entity::Entity;
 use std::sync::Arc;
 
 pub trait Map<S: TypeFamily, T: TypeFamily>: Clone {
@@ -17,7 +16,7 @@ pub trait Map<S: TypeFamily, T: TypeFamily>: Clone {
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output;
 }
 
-pub trait FamilyMapper<S: TypeFamily, T: TypeFamily>: Has<TyInternTables> {
+pub trait FamilyMapper<S: TypeFamily, T: TypeFamily>: AsRef<TyInternTables> {
     fn map_ty(&mut self, ty: Ty<S>) -> Ty<T>;
 
     fn map_placeholder(&mut self, placeholder: S::Placeholder) -> T::Placeholder;
@@ -107,12 +106,12 @@ where
     }
 }
 
-impl<S, T> Map<S, T> for ItemId
+impl<S, T> Map<S, T> for Entity
 where
     S: TypeFamily,
     T: TypeFamily,
 {
-    type Output = ItemId;
+    type Output = Entity;
 
     fn map(&self, _mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         *self

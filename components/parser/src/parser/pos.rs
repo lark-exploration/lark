@@ -1,4 +1,5 @@
 use codespan::{ByteIndex, ByteOffset, ByteSpan};
+use lark_debug_derive::DebugWith;
 use std::fmt;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -25,6 +26,8 @@ impl fmt::Debug for Span {
         }
     }
 }
+
+debug::debug_fallback_impl!(Span);
 
 impl Span {
     crate fn from(left: ByteIndex, right: ByteIndex) -> Span {
@@ -92,7 +95,7 @@ impl fmt::Display for Span {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Copy, Clone, DebugWith, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Spanned<T>(pub T, pub Span);
 
 impl<T> std::ops::Deref for Spanned<T> {

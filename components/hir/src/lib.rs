@@ -4,78 +4,85 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(macro_at_most_once_rep)]
+#![feature(specialization)]
 
 use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
-use lark_entity::ItemId;
+use lark_debug_derive::DebugWith;
+use lark_entity::Entity;
+use lark_entity::MemberKind;
 use parser::pos::{HasSpan, Span, Spanned};
+use parser::ParseError;
 use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
+use ty::interners::TyInternTables;
 
 mod fn_body;
 mod query_definitions;
+mod scope;
+mod type_conversion;
 
 salsa::query_group! {
-    pub trait HirDatabase: AstDatabase {
+    pub trait HirDatabase: AstDatabase + AsRef<TyInternTables> {
         /// Get the def-id for the built-in boolean type.
-        fn boolean_item_id(key: ()) -> ItemId {
-            type BooleanItemIdQuery;
-            use fn query_definitions::boolean_item_id;
+        fn boolean_entity() -> Entity {
+            type BooleanEntityQuery;
+            use fn query_definitions::boolean_entity;
         }
 
         /// Get the fn-body for a given def-id.
-        fn fn_body(key: ItemId) -> Arc<FnBody> {
+        fn fn_body(key: Entity) -> Arc<FnBody> {
             type FnBodyQuery;
             use fn fn_body::fn_body;
         }
 
         /// Get the list of member names and their def-ids for a given struct.
-        fn members(key: ItemId) -> Arc<Vec<Member>> {
+        fn members(key: Entity) -> Result<Arc<Vec<Member>>, ErrorReported> {
             type MembersQuery;
             use fn query_definitions::members;
         }
 
         /// Gets the def-id for a field of a given class.
-        fn member_item_id(m: (ItemId, MemberKind, StringId)) -> Option<ItemId> {
-            type MemberItemIdQuery;
-            use fn query_definitions::member_item_id;
+        fn member_entity(entity: Entity, kind: MemberKind, id: StringId) -> Result<Option<Entity>, ErrorReported> {
+            type MemberEntityQuery;
+            use fn query_definitions::member_entity;
         }
 
         /// Get the type of something.
-        fn ty(key: ItemId) -> ty::Ty<Declaration> {
+        fn ty(key: Entity) -> Result<ty::Ty<Declaration>, ErrorReported> {
             type TyQuery;
-            use fn query_definitions::ty;
+            use fn type_conversion::ty;
         }
 
         /// Get the signature of a method or function -- defined for fields and structs.
-        fn signature(key: ItemId) -> ty::Signature<Declaration> {
+        fn signature(key: Entity) -> ty::Signature<Declaration> {
             type SignatureQuery;
             use fn query_definitions::signature;
         }
 
         /// Get the generic declarations from a particular item.
-        fn generic_declarations(key: ItemId) -> Arc<ty::GenericDeclarations> {
+        fn generic_declarations(key: Entity) -> Arc<ty::GenericDeclarations> {
             type GenericDeclarations;
             use fn query_definitions::generic_declarations;
+        }
+
+        /// Resolve a type name that appears in the given entity.
+        fn resolve_name(scope: Entity, name: StringId) -> Result<Option<Entity>, ErrorReported> {
+            type ResolveName;
+            use fn scope::resolve_name;
         }
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum MemberKind {
-    Field,
-    Method,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Member {
     pub name: StringId,
     pub kind: MemberKind,
-    pub def_id: ItemId,
+    pub entity: Entity,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
@@ -90,7 +97,7 @@ pub struct FnBody {
 }
 
 /// All the data for a fn-body is stored in these tables.a
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
 pub struct FnBodyTables {
     /// Map each expression index to its associated data.
     pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
@@ -206,6 +213,8 @@ macro_rules! define_meta_index {
                 type Index = $index_ty;
             }
 
+            debug::debug_fallback_impl!($index_ty);
+
             impl From<$index_ty> for MetaIndex {
                 fn from(value: $index_ty) -> MetaIndex {
                     MetaIndex::$index_ty(value)
@@ -216,7 +225,7 @@ macro_rules! define_meta_index {
         /// The HIR has a number of *kinds* of indices that
         /// reach into it. This enum brings them together into
         /// a sort of "meta index". It's useful sometimes.
-        #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub enum MetaIndex {
             $(
                 $index_ty($index_ty),
@@ -248,7 +257,7 @@ indices::index_type! {
     pub struct Expression { .. }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ExpressionData {
     /// `let <var> = <initializer> in <body>`
     Let {
@@ -294,12 +303,12 @@ indices::index_type! {
     pub struct Perm { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum PermData {
     Share,
     Borrow,
     Own,
-    Other(ItemId),
+    Other(Entity),
     Default,
 }
 
@@ -307,7 +316,7 @@ indices::index_type! {
     pub struct Place { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum PlaceData {
     Variable(Variable),
     Temporary(Expression),
@@ -318,7 +327,7 @@ indices::index_type! {
     pub struct Variable { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct VariableData {
     pub name: Identifier,
 }
@@ -327,7 +336,7 @@ indices::index_type! {
     pub struct Identifier { .. }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct IdentifierData {
     pub text: StringId,
 }
@@ -336,8 +345,19 @@ indices::index_type! {
     pub struct Error { .. }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ErrorData {
     ParseError { description: String },
     UnknownIdentifier { text: StringId },
+}
+
+/// Unit type used in `Result` to indicate a value derived from other
+/// value where an error was already reported.
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ErrorReported;
+
+impl From<ParseError> for ErrorReported {
+    fn from(_: ParseError) -> ErrorReported {
+        ErrorReported
+    }
 }
