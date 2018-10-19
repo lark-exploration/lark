@@ -1,11 +1,15 @@
 use crate::prelude::*;
 
 use crate::parser::{ModuleTable, ParseError, Span, Spanned, StringId};
-use crate::parser2::macros::{macros, struct_decl, MacroRead, Macros};
+use crate::parser2::builtins;
+use crate::parser2::entity_tree::{EntityTree, EntityTreeBuilder};
+use crate::parser2::macros::{macros, MacroRead, Macros};
 use crate::parser2::quicklex::Token as LexToken;
 use crate::parser2::token_tree::Handle;
 use crate::parser2::token_tree::TokenTree;
+use crate::parser2::token_tree::{TokenPos, TokenSpan};
 
+use bimap::BiMap;
 use codespan::CodeMap;
 use std::collections::HashMap;
 use std::fmt;
@@ -24,7 +28,7 @@ pub struct ScopeId {
     id: usize,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct BindingId {
     id: usize,
 }
@@ -38,12 +42,12 @@ pub struct ReferenceId {
 pub struct Scope {
     id: ScopeId,
     parent: Option<ScopeId>,
-    bindings: HashMap<StringId, BindingId>,
+    bindings: BiMap<StringId, BindingId>,
 }
 
 impl Scope {
     fn has(&self, name: &StringId) -> bool {
-        self.bindings.contains_key(&name)
+        self.bindings.contains_left(&name)
     }
 
     fn bind(&mut self, name: &StringId, binding: BindingId) {
@@ -62,7 +66,7 @@ impl Scopes {
         let root = Scope {
             id: ScopeId { id: 0 },
             parent: None,
-            bindings: HashMap::new(),
+            bindings: BiMap::new(),
         };
 
         Scopes {
@@ -99,6 +103,15 @@ impl Scopes {
         scope.bind(name, binding);
     }
 
+    fn get_binding_name(&self, scope: &ScopeId, name: &BindingId) -> StringId {
+        let scope = self.get(scope);
+
+        *scope
+            .bindings
+            .get_by_right(name)
+            .expect(&format!("Can't find a binding with id {:?}", name))
+    }
+
     fn root(&self) -> ScopeId {
         ScopeId { id: 0 }
     }
@@ -110,7 +123,7 @@ impl Scopes {
         let scope = Scope {
             id,
             parent: Some(*parent),
-            bindings: HashMap::new(),
+            bindings: BiMap::new(),
         };
 
         self.list.push(scope);
@@ -183,6 +196,9 @@ pub struct LiteParser<'codemap> {
     #[new(value = "Scopes::new()")]
     scopes: Scopes,
 
+    #[new(value = "EntityTreeBuilder::new()")]
+    entity_tree: EntityTreeBuilder,
+
     #[new(value = "vec![]")]
     annotated: Vec<AnnotatedToken>,
 
@@ -246,7 +262,11 @@ pub enum Expected {
 }
 
 impl Expected {
-    fn translate(&self, lex_token: Spanned<LexToken>, id: fn(StringId) -> Token) -> Spanned<Token> {
+    fn translate(
+        &self,
+        lex_token: Spanned<LexToken>,
+        id: impl Fn(StringId) -> Token,
+    ) -> Spanned<Token> {
         let token = match self {
             Expected::AnyIdentifier | Expected::Identifier(_) => id(lex_token.data()),
             Expected::Sigil(_) => Token::Sigil(lex_token.data()),
@@ -311,6 +331,7 @@ const EOF: Spanned<Token> = Spanned(Token::EOF, Span::EOF);
 pub struct ParseResult {
     tree: TokenTree,
     tokens: Vec<Spanned<Token>>,
+    entity_tree: EntityTree,
 }
 
 impl LiteParser<'codemap> {
@@ -324,11 +345,16 @@ impl LiteParser<'codemap> {
         Ok(ParseResult {
             tree: self.tree,
             tokens: self.out_tokens,
+            entity_tree: self.entity_tree.finalize(),
         })
     }
 
     pub fn table(&self) -> &ModuleTable {
         &self.table
+    }
+
+    pub fn child_scope(&mut self, scope: &ScopeId) -> ScopeId {
+        self.scopes.child(scope)
     }
 
     fn root_scope(&self) -> ScopeId {
@@ -361,7 +387,7 @@ impl LiteParser<'codemap> {
         &mut self,
         allow: AllowPolicy,
         expected: ExpectedId,
-        _token: fn(StringId) -> Token,
+        token: impl Fn(StringId) -> Token,
         terminator: Expected,
     ) -> Result<MaybeTerminator, ParseError> {
         let next = self.consume_next_token(allow)?;
@@ -373,7 +399,7 @@ impl LiteParser<'codemap> {
             }
             Spanned(id, ..) => match id {
                 _ if terminator.matches(&id) => {
-                    let token = terminator.translate(next, Token::Label);
+                    let token = terminator.translate(next, token);
                     self.push_out(token);
                     Ok(MaybeTerminator::Terminator(token))
                 }
@@ -437,6 +463,10 @@ impl LiteParser<'codemap> {
         }
     }
 
+    pub fn get_binding_name(&self, scope: &ScopeId, name: &BindingId) -> StringId {
+        self.scopes.get_binding_name(scope, name)
+    }
+
     pub fn export_name(
         &mut self,
         scope_id: ScopeId,
@@ -469,6 +499,14 @@ impl LiteParser<'codemap> {
             }
             RelativePosition::After => unimplemented!(),
         }
+    }
+
+    pub fn start_entity(&mut self, name: StringId) {
+        self.entity_tree.push(name, TokenPos(self.pos));
+    }
+
+    pub fn end_entity(&mut self) {
+        self.entity_tree.finish(TokenPos(self.pos));
     }
 
     fn consume(&mut self) -> Spanned<LexToken> {
@@ -631,6 +669,25 @@ mod tests {
             ^ #}#
             "##,
         );
+
+        // let source = unindent(
+        //     r##"
+        //     struct Diagnostic {
+        //     ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
+        //       msg: String,
+        //       ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
+        //       level: String,
+        //       ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
+        //     }
+        //     ^ #}#
+        //     def new(msg: String, level: String) -> Diagnostic {
+        //     ^^^~^^^~^^^~^~~~~~~^~^^^^^~^~~~~~~^~^^~^^^^^^^^^^~^ @def@ ws @new@ #(# @msg@ #:# ws @String@ #,# ws @level@ #:# ws @String@ #)# ws #-># ws @Diagnostic@ ws #{#
+        //       Diagnostic { msg, level }
+        //       ^^^^^^^^^^~^~^^^~^~~~~~^~ @Diagnostic@ ws #{# ws @msg@ #,# ws @level@ ws #}#
+        //     }
+        //     ^ #}#
+        //     "##,
+        // );
 
         let (source, mut ann) = process(&source);
 
