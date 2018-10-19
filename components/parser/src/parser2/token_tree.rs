@@ -3,10 +3,10 @@ use crate::parser::program::StringId;
 use derive_new::new;
 
 #[derive(Debug, Copy, Clone)]
-pub struct TokenSpan(usize, usize);
+pub struct TokenSpan(pub TokenPos, pub TokenPos);
 
 #[derive(Debug, Copy, Clone)]
-pub struct TokenPos(usize);
+pub struct TokenPos(pub usize);
 
 #[derive(Debug, Copy, Clone)]
 pub enum TokenNode {
@@ -43,7 +43,8 @@ pub struct Handle(usize);
 
 impl TokenTree {
     pub fn start(&mut self) {
-        self.stack.push(TokenSpan(self.current, self.current));
+        self.stack
+            .push(TokenSpan(TokenPos(self.current), TokenPos(self.current)));
         self.tick();
     }
 
@@ -70,7 +71,7 @@ impl TokenTree {
             .pop()
             .expect("Can't end an event if none is started");
 
-        current.1 = self.current;
+        current.1 = TokenPos(self.current);
         self.tick();
 
         let node = match self

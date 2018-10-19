@@ -1,6 +1,8 @@
 #[macro_use]
 mod token;
 
+mod builtins;
+mod entity_tree;
 mod lite_parse;
 mod macros;
 mod quicklex;

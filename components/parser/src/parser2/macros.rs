@@ -1,9 +1,12 @@
+use crate::prelude::*;
+
 use super::lite_parse::ScopeId;
 
 use crate::parser::ast::Debuggable;
 use crate::parser::program::ModuleTable;
 use crate::parser::program::StringId;
 use crate::parser::{ParseError, Spanned};
+use crate::parser2::builtins;
 use crate::parser2::lite_parse::{
     AllowPolicy, BindingId, Expected, ExpectedId, LiteParser, MaybeTerminator, RelativePosition,
     Token, ALLOW_EOF, ALLOW_NEWLINE, ALLOW_NONE,
@@ -68,54 +71,11 @@ where
     }
 }
 
-#[derive(Debug)]
-struct Field {
-    name: Spanned<Token>,
-    ty: Handle,
-}
-
-pub fn struct_decl(
-    scope: ScopeId,
-    reader: &mut LiteParser<'_>,
-) -> Result<Box<dyn Term>, ParseError> {
-    let name = reader.export_name(scope, RelativePosition::Hoist, false)?;
-    reader.expect_sigil("{", ALLOW_NEWLINE)?;
-
-    let mut fields: Vec<Field> = vec![];
-
-    loop {
-        let field = reader.expect_id_until(
-            ALLOW_NEWLINE,
-            ExpectedId::AnyIdentifier,
-            Token::Label,
-            reader.sigil("}"),
-        )?;
-
-        match field {
-            MaybeTerminator::Terminator(_) => break,
-            MaybeTerminator::Token(name) => {
-                reader.expect_sigil(":", ALLOW_NEWLINE)?;
-                let ty = reader.expect_type(ALLOW_NEWLINE, scope)?;
-                fields.push(Field { name, ty });
-                reader.expect_sigil(",", ALLOW_NEWLINE)?;
-            }
-        }
-    }
-
-    trace!("StructDecl {{ name: {:?}, fields: {:?} }}", name, fields);
-
-    Ok(Box::new(StructDecl { name, fields }))
-}
-
 pub fn macros(table: &mut ModuleTable) -> Macros {
-    Macros::default().add(table.intern(&"struct"), MacroReadFn::new(struct_decl))
+    Macros::default().add(
+        table.intern(&"struct"),
+        MacroReadFn::new(builtins::struct_def),
+    )
 }
 
 pub trait Term {}
-
-struct StructDecl {
-    name: Spanned<BindingId>,
-    fields: Vec<Field>,
-}
-
-impl Term for StructDecl {}
