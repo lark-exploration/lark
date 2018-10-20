@@ -738,19 +738,6 @@ mod tests {
     fn test_lite_parse() {
         crate::init_logger();
 
-        // let source = unindent(
-        //     r##"
-        //     struct Diagnostic {
-        //     ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
-        //       msg: String,
-        //       ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
-        //       level: String,
-        //       ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
-        //     }
-        //     ^ #}#
-        //     "##,
-        // );
-
         let source = unindent(
             r##"
             struct Diagnostic {
@@ -761,14 +748,27 @@ mod tests {
               ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
             }
             ^ #}#
-            def new(msg: String, level: String) -> Diagnostic {
-            ^^^~^^^~^^^~^~~~~~~^~^^^^^~^~~~~~~^~^^~^^^^^^^^^^~^ @def@ ws @new@ #(# @msg@ #:# ws @String@ #,# ws @level@ #:# ws @String@ #)# ws #-># ws @Diagnostic@ ws #{#
-              Diagnostic { msg, level }
-              ^^^^^^^^^^~^~^^^~^~~~~~^~ @Diagnostic@ ws #{# ws @msg@ #,# ws @level@ ws #}#
-            }
-            ^ #}#
             "##,
         );
+
+        // let source = unindent(
+        //     r##"
+        //     struct Diagnostic {
+        //     ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
+        //       msg: String,
+        //       ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
+        //       level: String,
+        //       ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
+        //     }
+        //     ^ #}#
+        //     def new(msg: String, level: String) -> Diagnostic {
+        //     ^^^~^^^~^^^~^~~~~~~^~^^^^^~^~~~~~~^~^^~^^^^^^^^^^~^ @def@ ws @new@ #(# @msg@ #:# ws @String@ #,# ws @level@ #:# ws @String@ #)# ws #-># ws @Diagnostic@ ws #{#
+        //       Diagnostic { msg, level }
+        //       ^^^^^^^^^^~^~^^^~^~~~~~^~ @Diagnostic@ ws #{# ws @msg@ #,# ws @level@ ws #}#
+        //     }
+        //     ^ #}#
+        //     "##,
+        // );
 
         let (source, mut ann) = process(&source);
 
