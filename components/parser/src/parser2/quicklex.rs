@@ -107,6 +107,7 @@ pub enum LexerState {
     StartIdent,
     ContinueIdent,
     StringLiteral,
+    Sigil,
     Comment(u32),
 }
 
@@ -129,8 +130,9 @@ impl LexerDelegateTrait for LexerState {
                 None => LexerNext::EOF,
                 Some(c) => match c {
                     c if UnicodeXID::is_xid_start(c) => LexerNext::begin(StartIdent),
-                    '{' | '}' | '(' | ')' | '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' => {
-                        LexerNext::dynamic_sigil(Token::Sigil)
+                    c if is_sigil_char(c) => {
+                        LexerNext::begin(Sigil)
+                        // LexerNext::dynamic_sigil(Token::Sigil)
                     }
                     '"' => consume().and_transition(StringLiteral),
                     '\n' => LexerNext::sigil(Token::Newline),
@@ -138,6 +140,16 @@ impl LexerDelegateTrait for LexerState {
                     _ if rest.starts_with("/*") => consume_n(2).and_push(Comment(1)),
                     c => LexerNext::Error(Some(c)),
                 },
+            },
+
+            LexerState::Sigil => match c {
+                None => reconsume()
+                    .and_emit_dynamic(Token::Sigil)
+                    .and_transition(LexerState::Top),
+                Some(c) if is_sigil_char(c) => consume().and_remain(),
+                _ => reconsume()
+                    .and_emit_dynamic(Token::Sigil)
+                    .and_transition(LexerState::Top),
             },
 
             LexerState::StringLiteral => match c {
@@ -216,6 +228,13 @@ impl LexerDelegateTrait for LexerState {
         };
 
         Ok(out)
+    }
+}
+
+fn is_sigil_char(c: char) -> bool {
+    match c {
+        '{' | '}' | '(' | ')' | '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' => true,
+        _ => false,
     }
 }
 
