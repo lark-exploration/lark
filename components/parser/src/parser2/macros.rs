@@ -72,10 +72,12 @@ where
 }
 
 pub fn macros(table: &mut ModuleTable) -> Macros {
-    Macros::default().add(
-        table.intern(&"struct"),
-        MacroReadFn::new(builtins::struct_def),
-    )
+    Macros::default()
+        .add(
+            table.intern(&"struct"),
+            MacroReadFn::new(builtins::struct_def),
+        )
+        .add(table.intern(&"def"), MacroReadFn::new(builtins::def_def))
 }
 
 pub trait Term {}

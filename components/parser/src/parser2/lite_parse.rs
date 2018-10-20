@@ -175,6 +175,28 @@ impl DebugModuleTable for Token {
     }
 }
 
+impl Token {
+    fn as_id(&self) -> Option<StringId> {
+        match self {
+            Token::Binding { name, .. } => Some(*name),
+            Token::Reference { name, .. } => Some(*name),
+            Token::Export { name, .. } => Some(*name),
+            Token::Label(name) => Some(*name),
+            _ => None,
+        }
+    }
+
+    fn is_id(&self) -> bool {
+        match self {
+            Token::Binding { .. }
+            | Token::Reference { .. }
+            | Token::Export { .. }
+            | Token::Label(..) => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum NonSemantic {
     Comment(StringId),
@@ -371,15 +393,25 @@ impl LiteParser<'codemap> {
     }
 
     fn process_macro(&mut self, scope: ScopeId) -> Result<(), ParseError> {
-        match self.consume_next_id(IdPolicy::Label, ALLOW_NEWLINE | ALLOW_EOF)? {
-            None => Ok(()),
-            Some(id) => {
-                let macro_def = self.get_macro(id)?;
+        let token = self.consume_next_id(IdPolicy::Label, ALLOW_NEWLINE | ALLOW_EOF)?;
 
-                macro_def.read(scope, self)?;
+        if let Token::EOF = token.node() {
+            return Ok(());
+        } else if token.is_id() {
+            let id = Spanned::wrap_span(token.as_id().unwrap(), token.span());
+            let macro_def = self.get_macro(id)?;
 
-                Ok(())
-            }
+            macro_def.read(scope, self)?;
+
+            Ok(())
+        } else {
+            Err(ParseError::new(
+                format!(
+                    "Expected identifier, found {:?}",
+                    Debuggable::from(&token, self.table())
+                ),
+                token.span(),
+            ))
         }
     }
 
@@ -440,27 +472,50 @@ impl LiteParser<'codemap> {
         Ok(handle)
     }
 
-    pub fn expect_sigil(&mut self, sigil: &str, allow: AllowPolicy) -> Result<(), ParseError> {
+    pub fn maybe_sigil(
+        &mut self,
+        sigil: &str,
+        allow: AllowPolicy,
+    ) -> Result<(bool, Spanned<LexToken>), ParseError> {
         let id = self.table.get(&sigil);
 
         match id {
             None => unimplemented!(),
 
             Some(id) => match self.consume_next_token(allow)? {
-                Spanned(LexToken::EOF, ..) => Ok(()),
+                eof @ Spanned(LexToken::EOF, ..) => Ok((true, eof)),
 
                 Spanned(LexToken::Sigil(sigil), span) if sigil == id => {
                     let token = Token::Sigil(id);
                     self.push_out(Spanned::wrap_span(token, span));
-                    Ok(())
+                    Ok((true, Spanned::wrap_span(LexToken::Sigil(sigil), span)))
                 }
 
-                other => Err(ParseError::new(
-                    format!("Unexpected {:?}", *other),
-                    other.span(),
-                )),
+                other => {
+                    self.pos -= 1;
+                    Ok((false, other))
+                }
             },
         }
+    }
+
+    pub fn expect_sigil(&mut self, sigil: &str, allow: AllowPolicy) -> Result<(), ParseError> {
+        match self.maybe_sigil(sigil, allow)? {
+            (true, _) => Ok(()),
+            (false, token) => Err(ParseError::new(
+                format!("Unexpected {:?}", *token),
+                token.span(),
+            )),
+        }
+    }
+
+    pub fn expect_expr(&mut self, scope: &ScopeId) -> Result<Handle, ParseError> {
+        let mut expr = ExprParser {
+            reader: self,
+            scope: *scope,
+        };
+
+        expr.expect()
     }
 
     pub fn get_binding_name(&self, scope: &ScopeId, name: &BindingId) -> StringId {
@@ -473,7 +528,7 @@ impl LiteParser<'codemap> {
         relative: RelativePosition,
         _allow_newline: bool,
     ) -> Result<Spanned<BindingId>, ParseError> {
-        let id = self.consume_next_id(
+        let id_token = self.consume_next_id(
             IdPolicy::Export {
                 hoist: true,
                 scope: scope_id,
@@ -481,7 +536,9 @@ impl LiteParser<'codemap> {
             ALLOW_NEWLINE,
         )?;
 
-        let id = id.expect("BUG: EOF is not allowed in export_name");
+        let id = id_token
+            .as_id()
+            .expect("BUG: EOF is not allowed in export_name");
 
         match relative {
             RelativePosition::Hoist => {
@@ -490,12 +547,12 @@ impl LiteParser<'codemap> {
                 if scope.has(&id) {
                     return Err(ParseError::new(
                         format!("Cannot create two instances of {}", self.table.lookup(&id)),
-                        id.span(),
+                        id_token.span(),
                     ));
                 }
                 let binding = self.scopes.next_binding();
                 self.scopes.bind(&scope_id, &id, binding);
-                Ok(Spanned::wrap_span(binding, id.span()))
+                Ok(Spanned::wrap_span(binding, id_token.span()))
             }
             RelativePosition::After => unimplemented!(),
         }
@@ -510,6 +567,15 @@ impl LiteParser<'codemap> {
     }
 
     fn consume(&mut self) -> Spanned<LexToken> {
+        if self.pos >= self.tokens.len() {
+            println!("raw token=EOF")
+        } else {
+            println!(
+                "raw token={:?}",
+                Debuggable::from(&self.tokens[self.pos], self.table())
+            )
+        }
+
         assert!(
             self.pos == self.out_tokens.len(),
             "BUG: Didn't annotate all of the tokens\nnext={:?}; pos={}\nin_tokens={:?}\nout_tokens={:?}",
@@ -538,8 +604,6 @@ impl LiteParser<'codemap> {
         loop {
             let token = self.maybe_consume();
 
-            println!("raw token={:?}", token);
-
             let token = match token {
                 None if allow.has(ALLOW_EOF) => {
                     return Ok(Spanned::wrap_span(LexToken::EOF, Span::EOF))
@@ -566,11 +630,11 @@ impl LiteParser<'codemap> {
         &mut self,
         id_policy: IdPolicy,
         allow: AllowPolicy,
-    ) -> Result<Option<Spanned<StringId>>, ParseError> {
+    ) -> Result<Spanned<Token>, ParseError> {
         let next = self.consume_next_token(allow)?;
 
         let token = match *next {
-            LexToken::EOF if allow.has(ALLOW_EOF) => return Ok(None),
+            LexToken::EOF if allow.has(ALLOW_EOF) => return Ok(EOF),
             LexToken::EOF => {
                 return Err(ParseError::new(
                     "Unexpected EOF in macro expansion, TODO".to_string(),
@@ -578,46 +642,63 @@ impl LiteParser<'codemap> {
                 ))
             }
             _ => {
-                println!("{:?}", next.as_id());
+                let id = next.as_id()?;
 
-                next.as_id()
-            }
-        }?;
+                match id_policy {
+                    IdPolicy::Label => Token::Label(*id.node()),
+                    IdPolicy::Bind(scope) => Token::Binding {
+                        scope,
+                        name: *id.node(),
+                    },
+                    IdPolicy::Refer(scope) => Token::Reference {
+                        scope,
+                        name: *id.node(),
+                    },
+                    IdPolicy::Export { scope, hoist } => {
+                        if hoist == false {
+                            unimplemented!("Exports that only refer to later in the scope are not yet implemented")
+                        }
 
-        let name = *token;
-
-        let out_token = match id_policy {
-            IdPolicy::Label => Token::Label(name),
-            IdPolicy::Bind(scope_id) => Token::Binding {
-                scope: scope_id,
-                name,
-            },
-            IdPolicy::Refer(scope_id) => Token::Reference {
-                scope: scope_id,
-                name,
-            },
-            IdPolicy::Export { scope, hoist } => {
-                if hoist == false {
-                    unimplemented!(
-                        "Exports that only refer to later in the scope are not yet implemented"
-                    );
+                        Token::Export {
+                            scope,
+                            name: *id.node(),
+                        }
+                    }
                 }
-
-                Token::Export { scope, name }
             }
         };
 
-        self.out_tokens
-            .push(Spanned::wrap_span(out_token, token.span()));
+        let token = Spanned::wrap_span(token, next.span());
+        self.push_out(token);
 
-        Ok(Some(token))
+        Ok(token)
     }
 
     fn push_single(&mut self, _token: Spanned<Token>) {}
 
     fn push_out(&mut self, token: Spanned<Token>) {
-        println!("Pushing token: {:?}", token);
+        println!(
+            "Pushing token: {:?}",
+            Debuggable::from(&token, self.table())
+        );
+        self.tree.tick();
         self.out_tokens.push(token)
+    }
+}
+
+struct ExprParser<'parser, 'codemap> {
+    reader: &'parser mut LiteParser<'codemap>,
+    scope: ScopeId,
+}
+
+impl ExprParser<'parser, 'codemap> {
+    fn expect(&mut self) -> Result<Handle, ParseError> {
+        self.reader.tree.start();
+        self.reader.tree.mark_expr();
+
+        let handle = self.reader.tree.end();
+
+        Ok(handle)
     }
 }
 
@@ -657,19 +738,6 @@ mod tests {
     fn test_lite_parse() {
         crate::init_logger();
 
-        let source = unindent(
-            r##"
-            struct Diagnostic {
-            ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
-              msg: String,
-              ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
-              level: String,
-              ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
-            }
-            ^ #}#
-            "##,
-        );
-
         // let source = unindent(
         //     r##"
         //     struct Diagnostic {
@@ -680,14 +748,27 @@ mod tests {
         //       ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
         //     }
         //     ^ #}#
-        //     def new(msg: String, level: String) -> Diagnostic {
-        //     ^^^~^^^~^^^~^~~~~~~^~^^^^^~^~~~~~~^~^^~^^^^^^^^^^~^ @def@ ws @new@ #(# @msg@ #:# ws @String@ #,# ws @level@ #:# ws @String@ #)# ws #-># ws @Diagnostic@ ws #{#
-        //       Diagnostic { msg, level }
-        //       ^^^^^^^^^^~^~^^^~^~~~~~^~ @Diagnostic@ ws #{# ws @msg@ #,# ws @level@ ws #}#
-        //     }
-        //     ^ #}#
         //     "##,
         // );
+
+        let source = unindent(
+            r##"
+            struct Diagnostic {
+            ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
+              msg: String,
+              ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
+              level: String,
+              ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
+            }
+            ^ #}#
+            def new(msg: String, level: String) -> Diagnostic {
+            ^^^~^^^~^^^~^~~~~~~^~^^^^^~^~~~~~~^~^^~^^^^^^^^^^~^ @def@ ws @new@ #(# @msg@ #:# ws @String@ #,# ws @level@ #:# ws @String@ #)# ws #-># ws @Diagnostic@ ws #{#
+              Diagnostic { msg, level }
+              ^^^^^^^^^^~^~^^^~^~~~~~^~ @Diagnostic@ ws #{# ws @msg@ #,# ws @level@ ws #}#
+            }
+            ^ #}#
+            "##,
+        );
 
         let (source, mut ann) = process(&source);
 

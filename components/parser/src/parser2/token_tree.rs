@@ -45,7 +45,6 @@ impl TokenTree {
     pub fn start(&mut self) {
         self.stack
             .push(TokenSpan(TokenPos(self.current), TokenPos(self.current)));
-        self.tick();
     }
 
     pub fn mark_expr(&mut self) {
@@ -58,7 +57,6 @@ impl TokenTree {
 
     pub fn mark_macro(&mut self) {
         self.kind = Some(TokenKind::Macro(TokenPos(self.current)));
-        self.current += 1;
     }
 
     pub fn tick(&mut self) {
@@ -90,6 +88,5 @@ impl TokenTree {
 
     pub fn single(&mut self) {
         self.nodes.push(TokenNode::Token(TokenPos(self.current)));
-        self.current += 1;
     }
 }

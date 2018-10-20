@@ -44,12 +44,26 @@ pub fn def_def(scope: ScopeId, reader: &mut LiteParser<'_>) -> Result<Box<dyn Te
                 reader.expect_sigil(":", ALLOW_NEWLINE)?;
                 let ty = reader.expect_type(ALLOW_NEWLINE, scope)?;
                 params.push(Param { name, ty });
-                reader.expect_sigil(",", ALLOW_NEWLINE)?;
+
+                match reader.maybe_sigil(",", ALLOW_NEWLINE)? {
+                    (true, _) => {}
+                    (false, _) => {
+                        reader.expect_sigil(")", ALLOW_NEWLINE)?;
+                        break;
+                    }
+                }
             }
         }
     }
 
-    // TODO: maybe ->
+    let ty = match reader.maybe_sigil("->", ALLOW_NEWLINE)? {
+        (true, _) => Some(reader.expect_type(ALLOW_NEWLINE, scope)?),
+        (false, _) => None,
+    };
+
+    reader.expect_sigil("{", ALLOW_NEWLINE)?;
+
+    reader.expect_expr(&body_scope);
 
     reader.end_entity();
 
@@ -58,12 +72,14 @@ pub fn def_def(scope: ScopeId, reader: &mut LiteParser<'_>) -> Result<Box<dyn Te
     Ok(Box::new(DefDef {
         name: binding,
         params,
+        ret: ty,
     }))
 }
 
 struct DefDef {
     name: Spanned<BindingId>,
     params: Vec<Param>,
+    ret: Option<Handle>,
 }
 
 impl Term for DefDef {}
