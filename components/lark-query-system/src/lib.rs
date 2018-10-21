@@ -7,7 +7,7 @@ use ast::{
 use languageserver_types::Position;
 use lark_entity::EntityTables;
 use salsa::{Database, ParallelDatabase};
-use task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
+use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 
 #[derive(Default)]
 struct LarkDatabase {

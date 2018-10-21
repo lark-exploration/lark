@@ -1,6 +1,6 @@
-use codegen::{codegen, RustFile};
-use eval::eval_context;
-use mir::{
+use lark_codegen::{codegen, RustFile};
+use lark_eval::eval_context;
+use lark_mir::{
     builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
     Rvalue, StatementKind, Struct, TerminatorKind,
 };

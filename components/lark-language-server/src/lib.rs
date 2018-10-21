@@ -3,7 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::io;
 use std::io::prelude::{Read, Write};
 use std::sync::mpsc::Sender;
-use task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
+use lark_task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method")]
@@ -156,7 +156,7 @@ impl Actor for LspResponder {
     }
 }
 
-pub fn lsp_serve(send_to_manager_channel: Sender<task_manager::MsgToManager>) {
+pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager>) {
     loop {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {

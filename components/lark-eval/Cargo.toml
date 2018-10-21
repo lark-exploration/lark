@@ -1,8 +1,8 @@
 [package]
-name = "codegen"
+name = "lark-eval"
 version = "0.1.0"
 authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-mir = { path = "../mir" }
+lark-mir = { path = "../lark-mir" }
