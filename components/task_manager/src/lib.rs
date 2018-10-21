@@ -53,9 +53,37 @@ pub trait Actor {
     type InMessage: Send + Sync + 'static;
     type OutMessage: Send + Sync + 'static;
 
-    fn startup(&mut self, send_channel: Box<dyn Fn(Self::OutMessage) -> () + Send>);
+    fn startup(&mut self, send_channel: &dyn SendChannel<Self::OutMessage>);
     fn receive_message(&mut self, message: Self::InMessage);
     fn shutdown(&mut self);
+}
+
+pub trait SendChannel<T: Send + 'static>: Send + 'static {
+    fn send(&self, value: T);
+    fn clone_send_channel(&self) -> Box<dyn SendChannel<T>>;
+}
+
+impl SendChannel<QueryResponse> for Sender<MsgToManager> {
+    fn send(&self, value: QueryResponse) {
+        match self.send(MsgToManager::QueryResponse(value)) {
+            Ok(()) => {}
+            Err(_) => panic!("manager no longer listening"),
+        }
+    }
+
+    fn clone_send_channel(&self) -> Box<dyn SendChannel<QueryResponse>> {
+        Box::new(self.clone())
+    }
+}
+
+pub struct NoopSendChannel;
+
+impl<T: Send + 'static> SendChannel<T> for NoopSendChannel {
+    fn send(&self, _value: T) {}
+
+    fn clone_send_channel(&self) -> Box<dyn SendChannel<T>> {
+        Box::new(NoopSendChannel)
+    }
 }
 
 pub struct ActorControl<MessageType: Send + Sync + 'static> {
@@ -81,14 +109,8 @@ impl TaskManager {
     ) -> ActorControl<MsgToManager> {
         let (manager_tx, manager_rx) = channel();
 
-        let manager_tx_clone = manager_tx.clone();
-
-        query_system.startup(Box::new(move |x| {
-            manager_tx_clone
-                .send(MsgToManager::QueryResponse(x))
-                .unwrap()
-        }));
-        lsp_responder.startup(Box::new(move |_| {}));
+        query_system.startup(&manager_tx);
+        lsp_responder.startup(&NoopSendChannel);
 
         let query_system_actor = TaskManager::spawn_actor(query_system);
         let lsp_responder_actor = TaskManager::spawn_actor(lsp_responder);
