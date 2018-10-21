@@ -1,8 +1,10 @@
 [package]
-name = "eval"
+name = "lark-task-manager"
 version = "0.1.0"
 authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-mir = { path = "../mir" }
+languageserver-types = "0.51.0"
+lark-mir = { path = "../lark-mir" }
+url = "1.7"

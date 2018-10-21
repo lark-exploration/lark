@@ -1,5 +1,5 @@
 [package]
-name = "query"
+name = "lark-query-system"
 version = "0.1.0"
 authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
 edition = "2018"
@@ -12,4 +12,4 @@ ast = { path = "../ast" }
 intern = { path = "../intern" }
 lark-entity = { path = "../lark-entity" }
 parser = { path = "../parser" }
-task_manager = { path = "../task_manager" }
+lark-task-manager = { path = "../lark-task-manager" }

@@ -1,4 +1,4 @@
-use mir::{
+use lark_mir::{
     BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand, Place, Rvalue, Statement,
     StatementKind,
 };
