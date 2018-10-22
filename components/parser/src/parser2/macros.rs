@@ -6,12 +6,13 @@ use crate::parser::ast::Debuggable;
 use crate::parser::program::ModuleTable;
 use crate::parser::program::StringId;
 use crate::parser::{ParseError, Spanned};
+use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE, ALLOW_NONE};
 use crate::parser2::builtins;
 use crate::parser2::lite_parse::{
-    AllowPolicy, BindingId, Expected, ExpectedId, LiteParser, MaybeTerminator, RelativePosition,
-    Token, ALLOW_EOF, ALLOW_NEWLINE, ALLOW_NONE,
+    BindingId, Expected, ExpectedId, LiteParser, MaybeTerminator, RelativePosition, Token,
 };
 use crate::parser2::quicklex::Token as LexToken;
+use crate::parser2::reader::Reader;
 use crate::parser2::token_tree::Handle;
 
 use derive_new::new;
@@ -26,6 +27,8 @@ pub struct Macros {
 }
 
 pub trait MacroRead {
+    fn extent(&self, reader: &mut Reader<'_>) -> Result<(), ParseError>;
+
     fn read(
         &self,
         scope: ScopeId,
@@ -50,34 +53,31 @@ impl Macros {
     }
 }
 
-#[derive(new)]
-pub struct MacroReadFn<F>
-where
-    F: Fn(ScopeId, &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>,
-{
-    func: F,
-}
+// #[derive(new)]
+// pub struct MacroReadFn<F>
+// where
+//     F: Fn(ScopeId, &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>,
+// {
+//     func: F,
+// }
 
-impl<F> MacroRead for MacroReadFn<F>
-where
-    F: Fn(ScopeId, &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>,
-{
-    fn read(
-        &self,
-        scope: ScopeId,
-        reader: &mut LiteParser<'_>,
-    ) -> Result<Box<dyn Term>, ParseError> {
-        (self.func)(scope, reader)
-    }
-}
+// impl<F> MacroRead for MacroReadFn<F>
+// where
+//     F: Fn(ScopeId, &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>,
+// {
+//     fn read(
+//         &self,
+//         scope: ScopeId,
+//         reader: &mut LiteParser<'_>,
+//     ) -> Result<Box<dyn Term>, ParseError> {
+//         (self.func)(scope, reader)
+//     }
+// }
 
 pub fn macros(table: &mut ModuleTable) -> Macros {
     Macros::default()
-        .add(
-            table.intern(&"struct"),
-            MacroReadFn::new(builtins::struct_def),
-        )
-        .add(table.intern(&"def"), MacroReadFn::new(builtins::def_def))
+        .add(table.intern(&"struct"), builtins::StructDef)
+        .add(table.intern(&"def"), builtins::DefDef)
 }
 
 pub trait Term {}

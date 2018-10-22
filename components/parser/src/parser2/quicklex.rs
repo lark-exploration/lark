@@ -69,6 +69,16 @@ impl Spanned<Token> {
             )),
         }
     }
+
+    pub fn expect_id(self) -> Result<Spanned<Token>, ParseError> {
+        match self.0 {
+            Token::Identifier(_) => Ok(self),
+            other => Err(ParseError::new(
+                format!("Unexpected token {:?}, expected id", other),
+                self.1,
+            )),
+        }
+    }
 }
 
 impl DebugModuleTable for Token {
