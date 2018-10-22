@@ -36,6 +36,8 @@ pub struct TokenTree {
 
     #[new(value = "0")]
     current: usize,
+
+    token_len: usize,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -45,6 +47,14 @@ impl TokenTree {
     pub fn start(&mut self) {
         self.stack
             .push(TokenSpan(TokenPos(self.current), TokenPos(self.current)));
+    }
+
+    pub fn pos(&self) -> usize {
+        self.current
+    }
+
+    pub fn is_done(&self) -> bool {
+        self.current >= self.token_len
     }
 
     pub fn mark_expr(&mut self) {
@@ -63,6 +73,10 @@ impl TokenTree {
         self.current += 1;
     }
 
+    pub fn backtrack(&mut self) {
+        self.current -= 1;
+    }
+
     pub fn end(&mut self) -> Handle {
         let mut current = self
             .stack
@@ -70,7 +84,6 @@ impl TokenTree {
             .expect("Can't end an event if none is started");
 
         current.1 = TokenPos(self.current);
-        self.tick();
 
         let node = match self
             .kind
