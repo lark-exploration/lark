@@ -14,13 +14,13 @@ pub fn build(
 fn create_src_file(codegen_type: CodegenType) -> tempfile::NamedTempFile {
     let temp_file = match codegen_type {
         CodegenType::Rust => tempfile::NamedTempFileOptions::new()
-            .prefix("larktest")
+            .prefix("lark")
             .suffix(".rs")
             .rand_bytes(6)
             .create()
             .unwrap(),
         CodegenType::C => tempfile::NamedTempFileOptions::new()
-            .prefix("larktest")
+            .prefix("lark")
             .suffix(".c")
             .rand_bytes(6)
             .create()
