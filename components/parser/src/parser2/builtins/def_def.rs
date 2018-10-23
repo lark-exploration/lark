@@ -7,22 +7,60 @@ use crate::parser2::lite_parse::{
     ExpectedId, LiteParser, MaybeTerminator, RelativePosition, Token,
 };
 use crate::parser2::macros::{MacroRead, Term};
-use crate::parser2::reader::Reader;
+use crate::parser2::quicklex::Token as LexToken;
+use crate::parser2::reader::{self, Reader};
 use crate::parser2::token_tree::Handle;
 
 use log::trace;
 
-#[derive(Debug)]
-struct Param {
-    name: Spanned<Token>,
-    ty: Handle,
-}
-
-pub struct DefDef;
-
 impl MacroRead for DefDef {
     fn extent(&self, reader: &mut Reader<'_>) -> Result<(), ParseError> {
-        unimplemented!()
+        let name = reader.expect_id(ALLOW_NEWLINE)?;
+        reader.start_entity(&name);
+
+        reader.expect_sigil("(", ALLOW_NEWLINE)?;
+
+        let mut params: Vec<ExtentParam> = vec![];
+
+        loop {
+            let field = reader.expect_id_until(
+                ALLOW_NEWLINE,
+                reader::ExpectedId::AnyIdentifier,
+                reader.sigil(")"),
+            )?;
+
+            match field {
+                reader::MaybeTerminator::Terminator(_) => break,
+                reader::MaybeTerminator::Token(name) => {
+                    reader.expect_sigil(":", ALLOW_NEWLINE)?;
+                    let ty = reader.expect_type(ALLOW_NEWLINE)?;
+                    params.push(ExtentParam { name, ty });
+
+                    match reader.maybe_sigil(",", ALLOW_NEWLINE)? {
+                        Ok(_) => {}
+                        Err(_) => {
+                            reader.expect_sigil(")", ALLOW_NEWLINE)?;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        let ty = match reader.maybe_sigil("->", ALLOW_NEWLINE)? {
+            Ok(_) => Some(reader.expect_type(ALLOW_NEWLINE)?),
+            Err(_) => None,
+        };
+
+        reader.expect_sigil("{", ALLOW_NEWLINE)?;
+
+        reader.expect_expr()?;
+
+        reader.end_entity();
+
+        trace!("DefDef {{ name: {:?}, params: {:?} }}", name, params);
+
+        Ok(())
     }
 
     fn read(
@@ -89,6 +127,30 @@ impl MacroRead for DefDef {
         }))
     }
 }
+
+#[derive(Debug)]
+struct ExtentParam {
+    name: Spanned<LexToken>,
+    ty: Handle,
+}
+
+pub struct ExtentDef;
+
+struct DefExtentTerm {
+    name: Spanned<LexToken>,
+    params: Vec<ExtentParam>,
+    ret: Option<Handle>,
+}
+
+impl Term for DefExtentTerm {}
+
+#[derive(Debug)]
+struct Param {
+    name: Spanned<Token>,
+    ty: Handle,
+}
+
+pub struct DefDef;
 
 struct DefDefTerm {
     name: Spanned<BindingId>,

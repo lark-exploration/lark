@@ -137,6 +137,9 @@ pub trait HasSpan {
     type Inner;
     fn span(&self) -> Span;
     fn node(&self) -> &Self::Inner;
+    fn copy<T>(&self, other: T) -> Spanned<T> {
+        Spanned::wrap_span(other, self.span())
+    }
 }
 
 impl<T> HasSpan for Spanned<T> {

@@ -51,6 +51,13 @@ impl Token {
         }
     }
 
+    pub fn is_sigil(&self) -> bool {
+        match self {
+            Token::Sigil(..) => true,
+            _ => false,
+        }
+    }
+
     pub fn is_sigil_named(&self, name: StringId) -> bool {
         match self {
             Token::Sigil(id) if *id == name => true,

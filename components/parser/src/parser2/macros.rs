@@ -22,8 +22,36 @@ use std::fmt::{self, Debug};
 use std::sync::Arc;
 
 #[derive(Default)]
+pub struct MacroMap {
+    macros: FxIndexMap<StringId, Arc<MacroRead>>,
+}
+
+impl MacroMap {
+    pub fn add(mut self, name: StringId, macro_def: impl MacroRead + 'static) -> MacroMap {
+        self.macros.insert(name, Arc::new(macro_def));
+        self
+    }
+
+    pub fn get(&self, name: StringId) -> Option<Arc<dyn MacroRead>> {
+        self.macros.get(&name).cloned()
+    }
+
+    pub fn has(&self, name: &StringId) -> bool {
+        self.macros.contains_key(name)
+    }
+}
+
+impl Debug for MacroMap {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_set().entries(self.macros.keys()).finish()
+    }
+}
+
+#[derive(Default)]
 pub struct Macros {
-    named: FxIndexMap<StringId, Arc<MacroRead>>,
+    named: MacroMap,
+    operator: MacroMap,
+    prefix: MacroMap,
 }
 
 pub trait MacroRead {
@@ -38,18 +66,22 @@ pub trait MacroRead {
 
 impl Debug for Macros {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_set().entries(self.named.keys()).finish()
+        self.named.fmt(f)
     }
 }
 
 impl Macros {
     pub fn add(mut self, name: StringId, macro_def: impl MacroRead + 'static) -> Macros {
-        self.named.insert(name, Arc::new(macro_def));
+        self.named = self.named.add(name, macro_def);
         self
     }
 
     pub fn get(&self, name: StringId) -> Option<Arc<dyn MacroRead>> {
-        self.named.get(&name).cloned()
+        self.named.get(name)
+    }
+
+    pub fn has(&self, name: &StringId) -> bool {
+        self.named.has(name)
     }
 }
 

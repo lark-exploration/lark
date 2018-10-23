@@ -1,6 +1,7 @@
 use crate::parser::program::StringId;
 
 use derive_new::new;
+use log::trace;
 
 #[derive(Debug, Copy, Clone)]
 pub struct TokenSpan(pub TokenPos, pub TokenPos);
@@ -37,6 +38,9 @@ pub struct TokenTree {
     #[new(value = "0")]
     current: usize,
 
+    #[new(value = "None")]
+    backtrack_point: Option<usize>,
+
     token_len: usize,
 }
 
@@ -44,7 +48,9 @@ pub struct TokenTree {
 pub struct Handle(usize);
 
 impl TokenTree {
-    pub fn start(&mut self) {
+    pub fn start(&mut self, debug_name: &str) {
+        trace!(target: "lark::reader", "starting {}", debug_name);
+
         self.stack
             .push(TokenSpan(TokenPos(self.current), TokenPos(self.current)));
     }
@@ -73,11 +79,42 @@ impl TokenTree {
         self.current += 1;
     }
 
-    pub fn backtrack(&mut self) {
-        self.current -= 1;
+    pub fn mark_backtrack_point(&mut self, debug_reason: &str) {
+        // TODO: Perhaps RAII instead of assertion? Depends on whether backtracking is always pretty
+        // static, which is so far true.
+
+        trace!(target: "lark::reader", "Marking backtrack point; reason={:?}", debug_reason);
+        assert!(
+            self.backtrack_point == None,
+            "Cannot set a backtrack point while another is active"
+        );
+
+        self.backtrack_point = Some(self.current);
     }
 
-    pub fn end(&mut self) -> Handle {
+    pub fn backtrack(&mut self, debug_reason: &str) {
+        trace!(
+            target: "lark::reader",
+            "Backtracking to {:?}; reason={:?}",
+            self.backtrack_point,
+            debug_reason
+        );
+
+        let to = self
+            .backtrack_point
+            .expect("Can only backtrack while a backtrack point is active");
+        self.current = to;
+        self.backtrack_point = None;
+    }
+
+    pub fn commit(&mut self, debug_reason: &str) {
+        trace!(target: "lark::reader", "Committing backtrack point; reason={:?}", debug_reason);
+        self.backtrack_point = None;
+    }
+
+    pub fn end(&mut self, debug_name: &str) -> Handle {
+        trace!(target: "lark::reader", "ending {}", debug_name);
+
         let mut current = self
             .stack
             .pop()

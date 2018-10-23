@@ -61,6 +61,12 @@ pub trait DebugModuleTable {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result;
 }
 
+impl DebugModuleTable for &str {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, _table: &'table ModuleTable) -> fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
 impl DebugModuleTable for Item {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         match self {

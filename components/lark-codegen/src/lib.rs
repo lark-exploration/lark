@@ -1,4 +1,4 @@
-use mir::{
+use lark_mir::{
     builtin_type, BasicBlock, BinOp, BuiltinFn, Context, Definition, Function, Operand, Place,
     Rvalue, StatementKind, Struct, Terminator, TerminatorKind, Ty, VarId,
 };

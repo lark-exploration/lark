@@ -28,20 +28,20 @@ text-diff = "0.4.0"
 languageserver-types = "0.51.0"
 salsa = "0.6.0"
 
-codegen = { path = "components/codegen" }
 debug = { path = "components/debug" }
-lark-debug-derive = { path = "components/lark-debug-derive" }
-eval = { path = "components/eval" }
-ide = { path = "components/ide" }
 indices = { path = "components/indices" }
 intern = { path = "components/intern" }
 hir = { path = "components/hir" }
+lark-codegen = { path = "components/lark-codegen" }
+lark-debug-derive = { path = "components/lark-debug-derive" }
+lark-eval = { path = "components/lark-eval" }
+lark-language-server = { path = "components/lark-language-server" }
+lark-mir = { path = "components/lark-mir" }
+lark-query-system = { path = "components/lark-query-system" }
 lark-string = { path = "components/lark-string" } 
-mir = { path = "components/mir" }
+lark-task-manager = { path = "components/lark-task-manager" }
 map = { path = "components/map" }
 parser = { path = "components/parser" }
-query = { path = "components/query" }
-task_manager = { path = "components/task_manager" }
 ty = { path = "components/ty" }
 type-check = { path = "components/type-check" }
 unify = { path = "components/unify" }

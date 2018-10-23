@@ -444,10 +444,10 @@ impl LiteParser<'codemap> {
         whitespace: AllowPolicy,
         scope: ScopeId,
     ) -> Result<Handle, ParseError> {
-        self.tree.start();
+        self.tree.start("type");
         self.tree.mark_type();
         self.consume_next_id(IdPolicy::Refer(scope), whitespace)?;
-        let handle = self.tree.end();
+        let handle = self.tree.end("type");
 
         Ok(handle)
     }

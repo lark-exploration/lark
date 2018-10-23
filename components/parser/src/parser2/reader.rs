@@ -23,6 +23,36 @@ enum NextAction {
     Macro(StringId),
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum PairedDelimiter {
+    Curly,
+    Round,
+    Square,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum ShapeStart {
+    Identifier(Spanned<StringId>),
+    Macro(Spanned<StringId>),
+    Curly,
+    Round,
+    Square,
+    String,
+    Prefix(StringId),
+    EOF,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum ShapeContinue {
+    Identifier(StringId),
+    Macro(StringId),
+    Curly,
+    Round,
+    Square,
+    Prefix(StringId),
+    EOF,
+}
+
 #[derive(Debug)]
 pub struct Reader<'codemap> {
     tokens: Vec<Spanned<LexToken>>,
@@ -61,17 +91,27 @@ pub enum RelativePosition {
 
 #[derive(Debug, Copy, Clone)]
 pub enum Expected {
-    AnyIdentifier,
-    Identifier(StringId),
-    Sigil(StringId),
+    ExpectedId(ExpectedId),
+    ExpectedSigil(ExpectedSigil),
+}
+
+impl From<ExpectedSigil> for Expected {
+    fn from(from: ExpectedSigil) -> Expected {
+        Expected::ExpectedSigil(from)
+    }
+}
+
+impl From<ExpectedId> for Expected {
+    fn from(from: ExpectedId) -> Expected {
+        Expected::ExpectedId(from)
+    }
 }
 
 impl Expected {
     fn matches(&self, token: &LexToken) -> bool {
         match self {
-            Expected::AnyIdentifier => token.is_id(),
-            Expected::Identifier(s) => token.is_id_named(*s),
-            Expected::Sigil(s) => token.is_sigil_named(*s),
+            Expected::ExpectedId(id) => id.matches(token),
+            Expected::ExpectedSigil(sigil) => sigil.matches(token),
         }
     }
 }
@@ -87,6 +127,55 @@ impl ExpectedId {
         match self {
             ExpectedId::AnyIdentifier => token.is_id(),
             ExpectedId::Identifier(s) => token.is_id_named(*s),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum ExpectedSigil {
+    AnySigil,
+    Sigil(StringId),
+}
+
+pub trait IntoExpectedSigil: DebugModuleTable {
+    fn into_expected_sigil(&self, table: &ModuleTable) -> ExpectedSigil;
+}
+
+impl IntoExpectedSigil for &str {
+    fn into_expected_sigil(&self, table: &ModuleTable) -> ExpectedSigil {
+        let id = table
+            .get(self)
+            .expect(&format!("Unexpected missing sigil {:?}", self));
+        ExpectedSigil::Sigil(id)
+    }
+}
+
+impl IntoExpectedSigil for StringId {
+    fn into_expected_sigil(&self, table: &ModuleTable) -> ExpectedSigil {
+        ExpectedSigil::Sigil(*self)
+    }
+}
+
+impl IntoExpectedSigil for ExpectedSigil {
+    fn into_expected_sigil(&self, _table: &ModuleTable) -> ExpectedSigil {
+        *self
+    }
+}
+
+impl DebugModuleTable for ExpectedSigil {
+    fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
+        match self {
+            ExpectedSigil::AnySigil => write!(f, "<any sigil>"),
+            ExpectedSigil::Sigil(id) => write!(f, "#{:?}#", Debuggable::from(id, table)),
+        }
+    }
+}
+
+impl ExpectedSigil {
+    fn matches(&self, token: &LexToken) -> bool {
+        match self {
+            ExpectedSigil::AnySigil => token.is_sigil(),
+            ExpectedSigil::Sigil(s) => token.is_sigil_named(*s),
         }
     }
 }
@@ -134,6 +223,10 @@ impl Reader<'codemap> {
         &mut self.tree
     }
 
+    fn has_macro(&self, id: &StringId) -> bool {
+        self.macros.has(&id)
+    }
+
     fn get_macro(&mut self, id: Spanned<StringId>) -> Result<Arc<MacroRead>, ParseError> {
         self.macros.get(*id).ok_or_else(|| {
             ParseError::new(
@@ -178,7 +271,7 @@ impl Reader<'codemap> {
         &mut self,
         allow: AllowPolicy,
         expected: ExpectedId,
-        terminator: Expected,
+        terminator: impl Into<Expected>,
     ) -> Result<MaybeTerminator, ParseError> {
         trace!(target: "lark::reader", "expect_id_until");
 
@@ -187,7 +280,7 @@ impl Reader<'codemap> {
         match next {
             Spanned(LexToken::EOF, ..) => Ok(MaybeTerminator::Token(EOF)),
             token @ Spanned(..) => match token.node() {
-                id if terminator.matches(&id) => Ok(MaybeTerminator::Terminator(token)),
+                id if terminator.into().matches(&id) => Ok(MaybeTerminator::Terminator(token)),
                 id if expected.matches(&id) => Ok(MaybeTerminator::Token(token)),
                 other => {
                     return Err(ParseError::new(
@@ -199,13 +292,125 @@ impl Reader<'codemap> {
         }
     }
 
-    pub fn sigil(&self, sigil: &str) -> Expected {
+    pub fn sigil(&self, sigil: &str) -> ExpectedSigil {
         let id = self.table.get(&sigil).expect(&format!(
             "Expected sigil {}, but none was registered",
             sigil
         ));
 
-        Expected::Sigil(id)
+        ExpectedSigil::Sigil(id)
+    }
+
+    pub fn any_sigil(&self) -> ExpectedSigil {
+        ExpectedSigil::AnySigil
+    }
+
+    pub fn consume_start_expr(
+        &mut self,
+        shape: ShapeStart,
+        allow: AllowPolicy,
+    ) -> Result<(), ParseError> {
+        // TODO: Validate ShapeStart
+        self.consume_next_token(allow).map(|_| ())
+    }
+
+    pub fn peek_start_expr(&self, allow: AllowPolicy) -> Result<ShapeStart, ParseError> {
+        if self.tree.is_done() {
+            if allow.has(ALLOW_EOF) {
+                return Ok(ShapeStart::EOF);
+            } else {
+                return Err(ParseError::new(format!("Unexpected EOF"), Span::EOF));
+            }
+        }
+
+        let mut pos = self.pos();
+
+        loop {
+            let token = self.tokens[pos];
+            pos += 1;
+
+            match token.node() {
+                LexToken::EOF => unreachable!(),
+                LexToken::Newline if allow.has(ALLOW_NEWLINE) => continue,
+                LexToken::Newline => {
+                    return Err(ParseError::new(format!("Unexpected newline"), token.span()))
+                }
+                LexToken::Comment(_) => continue,
+                LexToken::String(_) => {
+                    return Err(ParseError::new(format!("Unexpected string"), token.span()))
+                }
+                LexToken::Whitespace(_) => continue,
+                LexToken::Identifier(id) => {
+                    if self.has_macro(&id) {
+                        return Ok(ShapeStart::Macro(token.copy(*id)));
+                    } else {
+                        return Ok(ShapeStart::Identifier(token.copy(*id)));
+                    }
+                }
+                sigil @ LexToken::Sigil(_) => match sigil {
+                    _ if self.sigil("{").matches(sigil) => return Ok(ShapeStart::Curly),
+                    _ if self.sigil("(").matches(sigil) => return Ok(ShapeStart::Round),
+                    _ if self.sigil("[").matches(sigil) => return Ok(ShapeStart::Square),
+                    sigil => {
+                        return Err(ParseError::new(
+                            format!(
+                                "Unexpected sigil {:?}",
+                                Debuggable::from(&token, self.table()),
+                            ),
+                            token.span(),
+                        ))
+                    }
+                },
+            }
+        }
+    }
+
+    pub fn peek_continue_expr(&self, allow: AllowPolicy) -> Result<ShapeContinue, ParseError> {
+        if self.tree.is_done() {
+            if allow.has(ALLOW_EOF) {
+                return Ok(ShapeContinue::EOF);
+            } else {
+                return Err(ParseError::new(format!("Unexpected EOF"), Span::EOF));
+            }
+        }
+
+        let token = self.tokens[self.pos()];
+
+        loop {
+            match token.node() {
+                LexToken::EOF => unreachable!(),
+                LexToken::Newline if allow.has(ALLOW_NEWLINE) => continue,
+                LexToken::Newline => {
+                    return Err(ParseError::new(format!("Unexpected newline"), token.span()))
+                }
+                LexToken::Comment(_) => continue,
+                LexToken::String(_) => {
+                    return Err(ParseError::new(format!("Unexpected string"), token.span()))
+                }
+                LexToken::Whitespace(_) => continue,
+                LexToken::Identifier(id) => {
+                    return Ok(ShapeContinue::Identifier(*id));
+                }
+                sigil @ LexToken::Sigil(_) => match sigil {
+                    _ if self.sigil("{").matches(sigil) => return Ok(ShapeContinue::Curly),
+                    _ if self.sigil("(").matches(sigil) => return Ok(ShapeContinue::Round),
+                    _ if self.sigil("[").matches(sigil) => return Ok(ShapeContinue::Square),
+                    sigil => {
+                        return Err(ParseError::new(
+                            format!(
+                                "Unexpected sigil {:?}",
+                                Debuggable::from(&token, self.table()),
+                            ),
+                            token.span(),
+                        ))
+                    }
+                },
+            }
+        }
+    }
+
+    pub fn expect_paired(&mut self, open: PairedDelimiter) -> Result<(), ParseError> {
+        unimplemented!()
     }
 
     pub fn expect_id(&mut self, allow: AllowPolicy) -> Result<Spanned<StringId>, ParseError> {
@@ -217,49 +422,54 @@ impl Reader<'codemap> {
 
     pub fn expect_type(&mut self, whitespace: AllowPolicy) -> Result<Handle, ParseError> {
         trace!(target: "lark::reader", "expect_type");
-        self.tree.start();
+        self.tree.start("type");
         self.tree.mark_type();
         self.consume_next_id(whitespace)?;
-        let handle = self.tree.end();
+        let handle = self.tree.end("type");
 
         Ok(handle)
     }
 
     pub fn maybe_sigil(
         &mut self,
-        sigil: &str,
+        sigil: impl IntoExpectedSigil,
         allow: AllowPolicy,
-    ) -> Result<(bool, Spanned<LexToken>), ParseError> {
-        let id = self.table.get(&sigil);
+    ) -> Result<Result<Spanned<LexToken>, Spanned<LexToken>>, ParseError> {
+        self.tree.mark_backtrack_point("maybe_sigil");
+        let next = self.consume_next_token(allow)?;
+        let sigil = sigil.into_expected_sigil(self.table());
 
-        match id {
-            None => unimplemented!(),
-
-            Some(id) => match self.consume_next_token(allow)? {
-                eof @ Spanned(LexToken::EOF, ..) => Ok((true, eof)),
-
-                Spanned(LexToken::Sigil(sigil), span) if sigil == id => {
-                    Ok((true, Spanned::wrap_span(LexToken::Sigil(sigil), span)))
-                }
-
-                other => {
-                    self.backtrack("maybe_sigil");
-                    Ok((false, other))
-                }
-            },
+        match next.node() {
+            LexToken::Sigil(s) if sigil.matches(&next) => {
+                self.tree.commit("maybe_sigil");
+                Ok(Ok(next))
+            }
+            _ => {
+                self.tree.backtrack("maybe_sigil");
+                Ok(Err(next))
+            }
         }
     }
 
-    pub fn expect_sigil(&mut self, sigil: &str, allow: AllowPolicy) -> Result<(), ParseError> {
-        trace!(target: "lark::reader", "expect_sigil #{}#", sigil);
+    pub fn expect_sigil(
+        &mut self,
+        sigil: impl IntoExpectedSigil,
+        allow: AllowPolicy,
+    ) -> Result<(), ParseError> {
+        trace!(target: "lark::reader", "expect_sigil {:?}", Debuggable::from(&sigil, self.table()));
 
         match self.maybe_sigil(sigil, allow)? {
-            (true, _) => Ok(()),
-            (false, token) => Err(ParseError::new(
+            Ok(_) => Ok(()),
+            Err(token) => Err(ParseError::new(
                 format!("Unexpected {:?}", *token),
                 token.span(),
             )),
         }
+    }
+
+    pub fn current_span(&self) -> Span {
+        let token = self.tokens[self.pos()];
+        token.span()
     }
 
     pub fn expect_expr(&mut self) -> Result<Handle, ParseError> {
@@ -273,6 +483,8 @@ impl Reader<'codemap> {
     pub fn end_entity(&mut self) {
         self.entity_tree.finish(TokenPos(self.pos()));
     }
+
+    fn mark_backtrack_point(&mut self) {}
 
     fn consume(&mut self) -> Spanned<LexToken> {
         if self.tree().is_done() {
@@ -355,7 +567,7 @@ impl Reader<'codemap> {
             debug_from,
             Debuggable::from(&self.tokens[self.pos()], self.table())
         );
-        self.tree.backtrack();
+        self.tree.backtrack(debug_from);
     }
 }
 
@@ -394,6 +606,8 @@ mod tests {
     #[test]
     fn test_reader() {
         crate::init_logger();
+
+        return;
 
         // let source = unindent(
         //     r##"
