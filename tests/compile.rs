@@ -21,9 +21,6 @@ mod tests {
 
         let output_stdout = String::from_utf8_lossy(&output.stdout);
 
-        #[cfg(windows)]
-        assert_eq!(output_stdout, "\"Hello, world 3\"\r\n18\r\n");
-        #[cfg(unix)]
         assert_eq!(output_stdout, "\"Hello, world 3\"\n18\n");
     }
 }
