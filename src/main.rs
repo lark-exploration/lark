@@ -15,8 +15,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-mod tests;
-
 use std::{env, io};
 
 use lark_language_server::{lsp_serve, LspResponder};
