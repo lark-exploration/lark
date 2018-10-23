@@ -1,17 +1,14 @@
-use lark_codegen::{codegen, RustFile};
-use lark_eval::eval_context;
 use lark_mir::{
-    builtin_type, BasicBlock, BinOp, Context, Definition, Function, LocalDecl, Operand, Place,
-    Rvalue, StatementKind, Struct, TerminatorKind,
+    builtin_type, BasicBlock, BinOp, Context, DefId, Definition, Function, LocalDecl, Operand,
+    Place, Rvalue, StatementKind, Struct, TerminatorKind,
 };
 
-#[test]
-fn internaltest() {
-    let mut c = Context::new();
+pub fn generate_big_test() -> (Context, DefId) {
+    let mut context = Context::new();
 
-    let i32_ty = c.simple_type_for_def_id(builtin_type::I32);
-    let void_ty = c.simple_type_for_def_id(builtin_type::VOID);
-    let string_ty = c.simple_type_for_def_id(builtin_type::STRING);
+    let i32_ty = context.simple_type_for_def_id(builtin_type::I32);
+    let void_ty = context.simple_type_for_def_id(builtin_type::VOID);
+    let string_ty = context.simple_type_for_def_id(builtin_type::STRING);
 
     let mut bob = Function::new(
         i32_ty,
@@ -39,14 +36,14 @@ fn internaltest() {
 
     bob.push_block(bb1);
 
-    let bob_def_id = c.add_definition(Definition::Fn(bob));
+    let bob_def_id = context.add_definition(Definition::Fn(bob));
 
     let person = Struct::new("Person".into())
         .field("height".into(), i32_ty)
         .field("id".into(), i32_ty);
 
-    let person_def_id = c.add_definition(Definition::Struct(person));
-    let person_ty = c.simple_type_for_def_id(person_def_id);
+    let person_def_id = context.add_definition(Definition::Struct(person));
+    let person_ty = context.simple_type_for_def_id(person_def_id);
 
     let mut m = Function::new(void_ty, vec![], "main".into());
     let call_result_tmp = m.new_temp(i32_ty);
@@ -91,10 +88,7 @@ fn internaltest() {
 
     bb2.terminate(TerminatorKind::Return);
     m.push_block(bb2);
-    let main_def_id = c.add_definition(Definition::Fn(m));
+    let main_def_id = context.add_definition(Definition::Fn(m));
 
-    let mut rust = RustFile::new();
-
-    codegen(&mut rust, &c);
-    eval_context(&c, main_def_id);
+    (context, main_def_id)
 }
