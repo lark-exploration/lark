@@ -1,6 +1,5 @@
 use lark_mir::{
-    BinOp, BuiltinFn, Context, DefId, Definition, Function, Operand, Place, Rvalue, Statement,
-    StatementKind,
+    BinOp, Context, DefId, Definition, Function, Operand, Place, Rvalue, Statement, StatementKind,
 };
 use std::collections::HashMap;
 use std::fmt;
@@ -82,33 +81,6 @@ fn eval_rvalue(context: &Context, frame: &mut CallFrame, rvalue: &Rvalue) -> Val
                     eval_fn(context, &mut new_frame, f);
                     let result = new_frame.locals[0].clone();
                     result
-                }
-                Definition::BuiltinFn(BuiltinFn::StringInterpolate) => {
-                    let mut arg_eval = vec![];
-                    for arg in args {
-                        arg_eval.push(eval_operand(context, frame, arg));
-                    }
-
-                    let format_string = &arg_eval[0];
-
-                    match format_string {
-                        Value::Str(s) => {
-                            let sections: Vec<&str> = s.split("{}").collect();
-                            let sections_len = sections.len();
-
-                            let mut result = String::new();
-
-                            for i in 0..(sections_len - 1) {
-                                result += sections[i];
-                                result += &format!("{}", arg_eval[i + 1]);
-                            }
-
-                            result += sections[sections_len - 1];
-
-                            Value::Str(result)
-                        }
-                        _ => unimplemented!("String interpolation without a format string"),
-                    }
                 }
                 Definition::Struct(ref s) => {
                     let mut new_obj = HashMap::new();

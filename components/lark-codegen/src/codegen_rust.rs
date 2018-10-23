@@ -1,6 +1,6 @@
 use lark_mir::{
-    builtin_type, BasicBlock, BinOp, BuiltinFn, Context, Definition, Function, Operand, Place,
-    Rvalue, StatementKind, Struct, Terminator, TerminatorKind, Ty, VarId,
+    builtin_type, BasicBlock, BinOp, Context, Definition, Function, Operand, Place, Rvalue,
+    StatementKind, Struct, Terminator, TerminatorKind, Ty, VarId,
 };
 
 pub struct RustFile {
@@ -105,21 +105,6 @@ fn codegen_block(rust: &mut RustFile, context: &Context, f: &Function, b: &Basic
                                 }
                                 rust.output_raw(")");
                             }
-                            Definition::BuiltinFn(builtin_fn) => match builtin_fn {
-                                BuiltinFn::StringInterpolate => {
-                                    rust.output_raw("format!(");
-                                    let mut first = true;
-                                    for processed_arg in processed_args {
-                                        if !first {
-                                            rust.output_raw(", ");
-                                        } else {
-                                            first = false;
-                                        }
-                                        rust.output_raw(&processed_arg);
-                                    }
-                                    rust.output_raw(")");
-                                }
-                            },
                             Definition::Struct(s) => {
                                 rust.output_raw(&format!("{} {{", s.name));
                                 for i in 0..s.fields.len() {
