@@ -1,5 +1,6 @@
 mod def_def;
 mod expr_def;
+mod paired;
 mod struct_def;
 
 pub use self::def_def::DefDef;

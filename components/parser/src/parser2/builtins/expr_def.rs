@@ -1,8 +1,8 @@
 use crate::prelude::*;
 
 use crate::parser::ParseError;
-use crate::parser2::allow::ALLOW_NEWLINE;
-use crate::parser2::reader::{self, Reader, ShapeStart};
+use crate::parser2::allow::{ALLOW_EOF, ALLOW_NEWLINE, ALLOW_NONE};
+use crate::parser2::reader::{self, PairedDelimiter, Reader, ShapeContinue, ShapeStart};
 use crate::parser2::{Handle, LiteParser, ScopeId};
 
 use derive_new::new;
@@ -64,7 +64,12 @@ impl ExprParser {
     fn process(&mut self, reader: &mut Reader<'_>) -> Result<(), ParseError> {
         self.start_expr(reader)?;
 
-        Ok(())
+        loop {
+            match self.continue_expr(reader)? {
+                Continue::PossibleEnd => continue,
+                Continue::Terminator => return Ok(()),
+            }
+        }
     }
 
     fn start_expr(&mut self, reader: &mut Reader<'_>) -> Result<(), ParseError> {
@@ -81,9 +86,36 @@ impl ExprParser {
         }
     }
 
+    fn continue_expr(&mut self, reader: &mut Reader<'_>) -> Result<Continue, ParseError> {
+        Ok(
+            match reader.peek_continue_expr(ALLOW_EOF | ALLOW_NEWLINE)? {
+                ShapeContinue::Identifier(_) => Continue::Terminator,
+                ShapeContinue::Macro(_) => Continue::Terminator,
+                ShapeContinue::Sigil(_) => Continue::Terminator,
+                ShapeContinue::Operator(_) => unimplemented!(),
+                ShapeContinue::PairedDelimiter(d) => self.continue_delimiters(reader, d),
+                ShapeContinue::Newline => Continue::Terminator,
+                ShapeContinue::EOF => Continue::Terminator,
+            },
+        )
+    }
+
     fn start_id(&mut self, reader: &mut Reader<'_>, start: ShapeStart) -> Result<(), ParseError> {
         reader.consume_start_expr(start, ALLOW_NEWLINE)
     }
+
+    fn continue_delimiters(
+        &mut self,
+        reader: &mut Reader<'_>,
+        del: PairedDelimiter,
+    ) -> Result<(), ParseError> {
+        Ok(())
+    }
+}
+
+enum Continue {
+    PossibleEnd,
+    Terminator,
 }
 
 enum States {

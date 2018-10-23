@@ -24,6 +24,16 @@ token! {
     EOF,
 }
 
+enum Classified {
+    OpenCurly,
+    CloseCurly,
+    OpenSquare,
+    CloseSquare,
+    OpenRound,
+    CloseRound,
+    Other(Token),
+}
+
 impl Token {
     pub fn data(&self) -> StringId {
         match *self {
@@ -64,6 +74,8 @@ impl Token {
             _ => false,
         }
     }
+
+    pub fn classify_sigil(&self) -> Result<ClassifiedSigil, ParseError> {}
 }
 
 impl Spanned<Token> {

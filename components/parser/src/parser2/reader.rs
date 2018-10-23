@@ -23,20 +23,18 @@ enum NextAction {
     Macro(StringId),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum PairedDelimiter {
     Curly,
     Round,
     Square,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ShapeStart {
     Identifier(Spanned<StringId>),
     Macro(Spanned<StringId>),
-    Curly,
-    Round,
-    Square,
+    PairedDelimiter(PairedDelimiter),
     String,
     Prefix(StringId),
     EOF,
@@ -46,10 +44,10 @@ pub enum ShapeStart {
 pub enum ShapeContinue {
     Identifier(StringId),
     Macro(StringId),
-    Curly,
-    Round,
-    Square,
-    Prefix(StringId),
+    Sigil(StringId),
+    Operator(StringId),
+    PairedDelimiter(PairedDelimiter),
+    Newline,
     EOF,
 }
 
@@ -200,7 +198,7 @@ pub struct ParseResult {
     entity_tree: EntityTree,
 }
 
-const EOF: Spanned<LexToken> = Spanned(LexToken::EOF, Span::EOF);
+pub const EOF: Spanned<LexToken> = Spanned(LexToken::EOF, Span::EOF);
 
 impl Reader<'codemap> {
     pub fn process(mut self) -> Result<ParseResult, ParseError> {
@@ -217,6 +215,13 @@ impl Reader<'codemap> {
 
     pub fn table(&self) -> &ModuleTable {
         &self.table
+    }
+
+    pub fn tokens(&self) -> (&[Spanned<LexToken>], usize) {
+        let tokens = &self.tokens[..];
+        let pos = self.pos();
+
+        (tokens, pos)
     }
 
     pub fn tree(&mut self) -> &mut TokenTree {
@@ -267,6 +272,13 @@ impl Reader<'codemap> {
         }
     }
 
+    pub fn expect_paired_delimiters(
+        &mut self,
+        allow: AllowPolicy,
+        delimiters: PairedDelimiter,
+    ) -> Result<(), ParseResult> {
+    }
+
     pub fn expect_id_until(
         &mut self,
         allow: AllowPolicy,
@@ -314,6 +326,15 @@ impl Reader<'codemap> {
         self.consume_next_token(allow).map(|_| ())
     }
 
+    pub fn consume_continue_expr(
+        &mut self,
+        shape: ShapeContinue,
+        allow: AllowPolicy,
+    ) -> Result<(), ParseError> {
+        // TODO: Validate ShapeStart
+        self.consume_next_token(allow).map(|_| ())
+    }
+
     pub fn peek_start_expr(&self, allow: AllowPolicy) -> Result<ShapeStart, ParseError> {
         if self.tree.is_done() {
             if allow.has(ALLOW_EOF) {
@@ -348,9 +369,15 @@ impl Reader<'codemap> {
                     }
                 }
                 sigil @ LexToken::Sigil(_) => match sigil {
-                    _ if self.sigil("{").matches(sigil) => return Ok(ShapeStart::Curly),
-                    _ if self.sigil("(").matches(sigil) => return Ok(ShapeStart::Round),
-                    _ if self.sigil("[").matches(sigil) => return Ok(ShapeStart::Square),
+                    _ if self.sigil("{").matches(sigil) => {
+                        return Ok(ShapeStart::PairedDelimiter(PairedDelimiter::Curly))
+                    }
+                    _ if self.sigil("(").matches(sigil) => {
+                        return Ok(ShapeStart::PairedDelimiter(PairedDelimiter::Round))
+                    }
+                    _ if self.sigil("[").matches(sigil) => {
+                        return Ok(ShapeStart::PairedDelimiter(PairedDelimiter::Square))
+                    }
                     sigil => {
                         return Err(ParseError::new(
                             format!(
@@ -379,26 +406,37 @@ impl Reader<'codemap> {
         loop {
             match token.node() {
                 LexToken::EOF => unreachable!(),
-                LexToken::Newline if allow.has(ALLOW_NEWLINE) => continue,
+
+                // TODO: Leading `.` on next line. Requires an extra lookahead through whitespace
+                LexToken::Newline if allow.has(ALLOW_NEWLINE) => return Ok(ShapeContinue::Newline),
                 LexToken::Newline => {
                     return Err(ParseError::new(format!("Unexpected newline"), token.span()))
                 }
                 LexToken::Comment(_) => continue,
                 LexToken::String(_) => {
-                    return Err(ParseError::new(format!("Unexpected string"), token.span()))
+                    return Err(ParseError::new(
+                        format!("Unimplemented string in continuation position"),
+                        token.span(),
+                    ))
                 }
                 LexToken::Whitespace(_) => continue,
                 LexToken::Identifier(id) => {
                     return Ok(ShapeContinue::Identifier(*id));
                 }
                 sigil @ LexToken::Sigil(_) => match sigil {
-                    _ if self.sigil("{").matches(sigil) => return Ok(ShapeContinue::Curly),
-                    _ if self.sigil("(").matches(sigil) => return Ok(ShapeContinue::Round),
-                    _ if self.sigil("[").matches(sigil) => return Ok(ShapeContinue::Square),
+                    _ if self.sigil("{").matches(sigil) => {
+                        return Ok(ShapeContinue::PairedDelimiter(PairedDelimiter::Curly))
+                    }
+                    _ if self.sigil("(").matches(sigil) => {
+                        return Ok(ShapeContinue::PairedDelimiter(PairedDelimiter::Round))
+                    }
+                    _ if self.sigil("[").matches(sigil) => {
+                        return Ok(ShapeContinue::PairedDelimiter(PairedDelimiter::Square))
+                    }
                     sigil => {
                         return Err(ParseError::new(
                             format!(
-                                "Unexpected sigil {:?}",
+                                "Unimplemented operators {:?}",
                                 Debuggable::from(&token, self.table()),
                             ),
                             token.span(),
@@ -606,8 +644,6 @@ mod tests {
     #[test]
     fn test_reader() {
         crate::init_logger();
-
-        return;
 
         // let source = unindent(
         //     r##"
