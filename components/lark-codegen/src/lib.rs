@@ -1,6 +1,7 @@
 use lark_mir::Context;
 
 mod build;
+mod codegen_c;
 mod codegen_rust;
 
 #[derive(Copy, Clone)]
@@ -12,7 +13,7 @@ pub enum CodegenType {
 pub fn codegen(context: &Context, codegen_type: CodegenType) -> String {
     match codegen_type {
         CodegenType::Rust => codegen_rust::codegen_rust(context),
-        CodegenType::C => unimplemented!("C codegen not yet supported"),
+        CodegenType::C => codegen_c::codegen_c(context),
     }
 }
 

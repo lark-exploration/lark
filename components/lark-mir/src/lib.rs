@@ -191,14 +191,8 @@ pub mod builtin_type {
 }
 
 #[derive(Debug)]
-pub enum BuiltinFn {
-    StringInterpolate,
-}
-
-#[derive(Debug)]
 pub enum Definition {
     Builtin,
-    BuiltinFn(BuiltinFn),
     Fn(Function),
     Struct(Struct),
 }
@@ -214,8 +208,6 @@ impl Context {
         for _ in 0..(builtin_type::ERROR + 1) {
             definitions.push(Definition::Builtin); // UNKNOWN
         }
-
-        definitions.push(Definition::BuiltinFn(BuiltinFn::StringInterpolate));
 
         Context { definitions }
     }
