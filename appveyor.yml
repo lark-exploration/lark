@@ -5,9 +5,9 @@ environment:
     PROJECT_NAME: rls
     RUST_BACKTRACE: 1
   matrix:
-    - TARGET: x86_64-pc-windows-msvc
+    - TARGET: i686-pc-windows-msvc
       CHANNEL: nightly
-      BITS: 64
+      BITS: 32
 
 install:
   - set PATH=C:\msys64\mingw%BITS%\bin;C:\msys64\usr\bin;%PATH%
