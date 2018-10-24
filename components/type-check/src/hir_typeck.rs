@@ -3,12 +3,9 @@ use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::TypeCheckerFields;
 use hir;
-use hir::ErrorReported;
 use lark_entity::MemberKind;
 use std::sync::Arc;
-use ty::declaration::Declaration;
 use ty::Ty;
-use ty::TypeFamily;
 use ty::{BaseData, BaseKind};
 
 impl<DB, F> TypeChecker<'_, DB, F>
@@ -130,20 +127,16 @@ where
                     match kind {
                         BaseKind::Named(def_id) => {
                             match this.db().member_entity(def_id, MemberKind::Field, text) {
-                                Ok(Some(field_entity)) => {
-                                    let field_decl_ty = this.db().ty(field_entity).unwrap_or_else(
-                                        |ErrorReported| Declaration::error_ty(this),
-                                    );
+                                Some(field_entity) => {
+                                    let field_decl_ty = this.db().ty(field_entity).into_value();
                                     let field_ty = this.substitute(place, &generics, field_decl_ty);
                                     this.apply_owner_perm(place, owner_ty.perm, field_ty)
                                 }
 
-                                Ok(None) => {
+                                None => {
                                     this.results.record_error(place);
                                     this.error_type()
                                 }
-
-                                Err(ErrorReported) => this.error_type(),
                             }
                         }
 
@@ -183,12 +176,11 @@ where
                 let text = self.hir[method_name].text;
                 let method_entity = match self.db().member_entity(def_id, MemberKind::Method, text)
                 {
-                    Ok(Some(def_id)) => def_id,
-                    Ok(None) => {
+                    Some(def_id) => def_id,
+                    None => {
                         self.results.record_error(expression);
                         return self.error_type();
                     }
-                    Err(ErrorReported) => return self.error_type(),
                 };
 
                 // FIXME -- what role does `owner_ty` place here??

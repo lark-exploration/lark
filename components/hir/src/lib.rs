@@ -3,21 +3,24 @@
 #![feature(crate_visibility_modifier)]
 #![feature(const_fn)]
 #![feature(const_let)]
+#![feature(decl_macro)]
 #![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 
 use ast::AstDatabase;
+use crate::error::ErrorReported;
+use crate::error::WithError;
 use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::MemberKind;
 use parser::pos::{HasSpan, Span, Spanned};
-use parser::ParseError;
 use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
 
+pub mod error;
 mod fn_body;
 mod query_definitions;
 mod scope;
@@ -44,13 +47,13 @@ salsa::query_group! {
         }
 
         /// Gets the def-id for a field of a given class.
-        fn member_entity(entity: Entity, kind: MemberKind, id: StringId) -> Result<Option<Entity>, ErrorReported> {
+        fn member_entity(entity: Entity, kind: MemberKind, id: StringId) -> Option<Entity> {
             type MemberEntityQuery;
             use fn query_definitions::member_entity;
         }
 
         /// Get the type of something.
-        fn ty(key: Entity) -> Result<ty::Ty<Declaration>, ErrorReported> {
+        fn ty(key: Entity) -> WithError<ty::Ty<Declaration>> {
             type TyQuery;
             use fn type_conversion::ty;
         }
@@ -349,15 +352,4 @@ indices::index_type! {
 pub enum ErrorData {
     ParseError { description: String },
     UnknownIdentifier { text: StringId },
-}
-
-/// Unit type used in `Result` to indicate a value derived from other
-/// value where an error was already reported.
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ErrorReported;
-
-impl From<ParseError> for ErrorReported {
-    fn from(_: ParseError) -> ErrorReported {
-        ErrorReported
-    }
 }

@@ -1,5 +1,5 @@
 use ast::ast as a;
-use crate::ErrorReported;
+use crate::error::ErrorReported;
 use crate::HirDatabase;
 use crate::Member;
 use intern::Intern;
@@ -49,18 +49,21 @@ crate fn member_entity(
     owner: Entity,
     kind: MemberKind,
     name: StringId,
-) -> Result<Option<Entity>, ErrorReported> {
-    Ok(db
-        .members(owner)?
-        .iter()
-        .filter_map(|member| {
-            if member.kind == kind && member.name == name {
-                Some(member.entity)
-            } else {
-                None
-            }
-        })
-        .next())
+) -> Option<Entity> {
+    match db.members(owner) {
+        Err(_) => Some(EntityData::Error.intern(db)),
+
+        Ok(members) => members
+            .iter()
+            .filter_map(|member| {
+                if member.kind == kind && member.name == name {
+                    Some(member.entity)
+                } else {
+                    None
+                }
+            })
+            .next(),
+    }
 }
 
 crate fn signature(_db: &impl HirDatabase, _key: Entity) -> ty::Signature<Declaration> {

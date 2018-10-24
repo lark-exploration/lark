@@ -1,10 +1,9 @@
 #![allow(unused_variables)]
 
+use codespan::ByteIndex;
 use crate::parser::ast::{DebugModuleTable, Debuggable};
 use crate::parser::pos::{Span, Spanned};
 use crate::parser::program::{ModuleTable, StringId};
-
-use codespan::ByteIndex;
 use derive_new::new;
 use log::{debug, trace, warn};
 use std::fmt::{self, Debug};
