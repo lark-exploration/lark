@@ -40,7 +40,32 @@ impl CallFrame {
     }
 }
 
-pub fn eval_operand(_context: &Context, frame: &mut CallFrame, operand: &Operand) -> Value {
+pub struct IOHandler {
+    pub redirect: Option<String>,
+}
+
+impl IOHandler {
+    pub fn new(redirect_output: bool) -> IOHandler {
+        if redirect_output {
+            IOHandler {
+                redirect: Some(String::new()),
+            }
+        } else {
+            IOHandler { redirect: None }
+        }
+    }
+
+    pub fn println(&mut self, output: String) {
+        if let Some(redirect_output) = &mut self.redirect {
+            redirect_output.push_str(&output);
+            redirect_output.push_str("\n");
+        } else {
+            println!("{}", output);
+        }
+    }
+}
+
+pub fn eval_operand(frame: &mut CallFrame, operand: &Operand) -> Value {
     match operand {
         Operand::ConstantInt(i) => Value::I32(*i),
         Operand::ConstantString(s) => Value::Str(s.clone()),
@@ -63,32 +88,34 @@ pub fn eval_operand(_context: &Context, frame: &mut CallFrame, operand: &Operand
     }
 }
 
-fn eval_rvalue(context: &Context, frame: &mut CallFrame, rvalue: &Rvalue) -> Value {
+fn eval_rvalue(
+    context: &Context,
+    frame: &mut CallFrame,
+    rvalue: &Rvalue,
+    io_handler: &mut IOHandler,
+) -> Value {
     match rvalue {
-        Rvalue::Use(ref operand) => eval_operand(context, frame, operand),
+        Rvalue::Use(ref operand) => eval_operand(frame, operand),
         Rvalue::Call(def_id, args) => {
             match &context.definitions[*def_id] {
                 Definition::Fn(f) => {
                     let mut new_frame = CallFrame::new();
                     new_frame.locals.push(Value::Void); // return value
                     for arg in args {
-                        new_frame.locals.push(eval_operand(context, frame, arg));
+                        new_frame.locals.push(eval_operand(frame, arg));
                     }
                     let num_temps = f.local_decls.len() - 1 - f.arg_count;
                     for _ in 0..num_temps {
                         new_frame.locals.push(Value::Void);
                     }
-                    eval_fn(context, &mut new_frame, f);
+                    eval_fn(context, &mut new_frame, f, io_handler);
                     let result = new_frame.locals[0].clone();
                     result
                 }
                 Definition::Struct(ref s) => {
                     let mut new_obj = HashMap::new();
                     for i in 0..s.fields.len() {
-                        new_obj.insert(
-                            s.fields[i].name.clone(),
-                            eval_operand(context, frame, &args[i]),
-                        );
+                        new_obj.insert(s.fields[i].name.clone(), eval_operand(frame, &args[i]));
                     }
                     Value::Struct(new_obj)
                 }
@@ -113,10 +140,15 @@ fn eval_rvalue(context: &Context, frame: &mut CallFrame, rvalue: &Rvalue) -> Val
     }
 }
 
-pub fn eval_stmt(context: &Context, frame: &mut CallFrame, stmt: &Statement) {
+pub fn eval_stmt(
+    context: &Context,
+    frame: &mut CallFrame,
+    stmt: &Statement,
+    io_handler: &mut IOHandler,
+) {
     match &stmt.kind {
         StatementKind::Assign(place, rvalue) => {
-            let rval = eval_rvalue(context, frame, rvalue);
+            let rval = eval_rvalue(context, frame, rvalue, io_handler);
             match place {
                 Place::Local(target_var_id) => frame.locals[*target_var_id] = rval,
                 Place::Static(_) => unimplemented!("Assigning into static currently not supported"),
@@ -132,12 +164,12 @@ pub fn eval_stmt(context: &Context, frame: &mut CallFrame, stmt: &Statement) {
         }
         StatementKind::DebugPrint(place) => match place {
             Place::Local(var_id) => {
-                println!("{}", frame.locals[*var_id]);
+                io_handler.println(format!("{}", frame.locals[*var_id]));
             }
             Place::Static(_) => unimplemented!("Debug print of value other than local variable"),
             Place::Field(source_var_id, field_name) => match &frame.locals[*source_var_id] {
                 Value::Struct(s) => {
-                    println!("{}", s[field_name]);
+                    io_handler.println(format!("{}", s[field_name]));
                 }
                 _ => unimplemented!("Field access of non-struct value"),
             },
@@ -145,15 +177,20 @@ pub fn eval_stmt(context: &Context, frame: &mut CallFrame, stmt: &Statement) {
     }
 }
 
-pub fn eval_fn(context: &Context, frame: &mut CallFrame, fun: &Function) {
+pub fn eval_fn(
+    context: &Context,
+    frame: &mut CallFrame,
+    fun: &Function,
+    io_handler: &mut IOHandler,
+) {
     for block in &fun.basic_blocks {
         for stmt in &block.statements {
-            eval_stmt(context, frame, stmt);
+            eval_stmt(context, frame, stmt, io_handler);
         }
     }
 }
 
-pub fn eval_context(context: &Context, starting_fn: DefId) {
+pub fn eval_context(context: &Context, starting_fn: DefId, io_handler: &mut IOHandler) {
     match context.definitions[starting_fn] {
         Definition::Fn(ref f) => {
             let mut frame = CallFrame::new();
@@ -163,7 +200,7 @@ pub fn eval_context(context: &Context, starting_fn: DefId) {
                 frame.locals.push(Value::Void);
             }
 
-            eval_fn(context, &mut frame, f);
+            eval_fn(context, &mut frame, f, io_handler);
         }
         _ => unimplemented!("Starting function is not a function definition"),
     }
