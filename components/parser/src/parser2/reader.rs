@@ -5,7 +5,7 @@ use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
 use crate::parser2::builtins::{self, ExprParser};
 use crate::parser2::entity_tree::{EntityTree, EntityTreeBuilder};
 use crate::parser2::macros::{macros, MacroRead, Macros};
-use crate::parser2::quicklex::Token as LexToken;
+use crate::LexToken;
 use crate::parser2::token_tree::{Handle, TokenPos, TokenSpan, TokenTree};
 
 use bimap::BiMap;
@@ -277,6 +277,7 @@ impl Reader<'codemap> {
         allow: AllowPolicy,
         delimiters: PairedDelimiter,
     ) -> Result<(), ParseResult> {
+        unimplemented!()
     }
 
     pub fn expect_id_until(
@@ -634,8 +635,9 @@ mod tests {
     use crate::parser::reporting::print_parse_error;
     use crate::parser::{Span, Spanned};
     use crate::parser2::macros::{macros, Macros};
-    use crate::parser2::quicklex::{Token, Tokenizer};
+    use crate::parser2::quicklex::{Tokenizer};
     use crate::parser2::test_helpers::{process, Annotations, Position};
+    use crate::LexToken;
 
     use log::trace;
     use std::collections::HashMap;

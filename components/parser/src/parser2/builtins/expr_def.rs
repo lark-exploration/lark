@@ -93,7 +93,7 @@ impl ExprParser {
                 ShapeContinue::Macro(_) => Continue::Terminator,
                 ShapeContinue::Sigil(_) => Continue::Terminator,
                 ShapeContinue::Operator(_) => unimplemented!(),
-                ShapeContinue::PairedDelimiter(d) => self.continue_delimiters(reader, d),
+                ShapeContinue::PairedDelimiter(d) => return self.continue_delimiters(reader, d),
                 ShapeContinue::Newline => Continue::Terminator,
                 ShapeContinue::EOF => Continue::Terminator,
             },
@@ -108,8 +108,8 @@ impl ExprParser {
         &mut self,
         reader: &mut Reader<'_>,
         del: PairedDelimiter,
-    ) -> Result<(), ParseError> {
-        Ok(())
+    ) -> Result<Continue, ParseError> {
+        Ok(Continue::PossibleEnd)
     }
 }
 

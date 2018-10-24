@@ -1,4 +1,3 @@
-use codespan::ByteOffset;
 use crate::parser::ast::{DebugModuleTable, Debuggable};
 use crate::parser::keywords::{KEYWORDS, SIGILS};
 use crate::parser::lexer_helpers::{begin, consume, consume_n, reconsume};
@@ -8,117 +7,14 @@ use crate::parser::lexer_helpers::{
 };
 use crate::parser::program::StringId;
 use crate::parser::{ModuleTable, Span, Spanned};
+use crate::parser2::LexToken;
+
+use codespan::ByteOffset;
 use derive_new::new;
 use lazy_static::lazy_static;
 use log::{trace, warn};
 use std::fmt;
 use unicode_xid::UnicodeXID;
-
-token! {
-    Whitespace: String,
-    Identifier: String,
-    Sigil: String,
-    Comment: String,
-    String: String,
-    Newline,
-    EOF,
-}
-
-enum Classified {
-    OpenCurly,
-    CloseCurly,
-    OpenSquare,
-    CloseSquare,
-    OpenRound,
-    CloseRound,
-    Other(Token),
-}
-
-impl Token {
-    pub fn data(&self) -> StringId {
-        match *self {
-            Token::Whitespace(s) => s,
-            Token::Identifier(s) => s,
-            Token::Sigil(s) => s,
-            Token::Comment(s) => s,
-            Token::String(s) => s,
-            Token::Newline => panic!("Can't get data from newline (TODO?)"),
-            Token::EOF => panic!("Can't get data from EOF (TODO?)"),
-        }
-    }
-
-    pub fn is_id(&self) -> bool {
-        match self {
-            Token::Identifier(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_id_named(&self, name: StringId) -> bool {
-        match self {
-            Token::Identifier(id) if *id == name => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_sigil(&self) -> bool {
-        match self {
-            Token::Sigil(..) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_sigil_named(&self, name: StringId) -> bool {
-        match self {
-            Token::Sigil(id) if *id == name => true,
-            _ => false,
-        }
-    }
-
-    pub fn classify_sigil(&self) -> Result<ClassifiedSigil, ParseError> {}
-}
-
-impl Spanned<Token> {
-    pub fn as_id(self) -> Result<Spanned<StringId>, ParseError> {
-        match self.0 {
-            Token::Identifier(id) => Ok(Spanned::wrap_span(id, self.1)),
-            other => Err(ParseError::new(
-                format!("Unexpected token {:?}, expected id", other),
-                self.1,
-            )),
-        }
-    }
-
-    pub fn expect_id(self) -> Result<Spanned<Token>, ParseError> {
-        match self.0 {
-            Token::Identifier(_) => Ok(self),
-            other => Err(ParseError::new(
-                format!("Unexpected token {:?}, expected id", other),
-                self.1,
-            )),
-        }
-    }
-}
-
-impl DebugModuleTable for Token {
-    fn debug(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        table: &'table crate::parser::ModuleTable,
-    ) -> std::fmt::Result {
-        use self::Token::*;
-
-        match self {
-            Whitespace(_) => write!(f, "<whitespace>"),
-            Identifier(s) => s.debug(f, table),
-            Sigil(s) => write!(f, "#{:?}#", Debuggable::from(s, table)),
-            Comment(_) => write!(f, "/* ... */"),
-            String(s) => write!(f, "\"{:?}\"", Debuggable::from(s, table)),
-            Newline => write!(f, "<newline>"),
-            EOF => write!(f, "<EOF>"),
-        }
-    }
-}
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
 
@@ -141,7 +37,7 @@ pub enum LexerState {
 }
 
 impl LexerDelegateTrait for LexerState {
-    type Token = Token;
+    type Token = LexToken;
 
     fn top() -> LexerState {
         LexerState::Top
@@ -164,7 +60,7 @@ impl LexerDelegateTrait for LexerState {
                         // LexerNext::dynamic_sigil(Token::Sigil)
                     }
                     '"' => consume().and_transition(StringLiteral),
-                    '\n' => LexerNext::sigil(Token::Newline),
+                    '\n' => LexerNext::sigil(LexToken::Newline),
                     c if c.is_whitespace() => LexerNext::begin(Whitespace),
                     _ if rest.starts_with("/*") => consume_n(2).and_push(Comment(1)),
                     c => LexerNext::Error(Some(c)),
@@ -173,11 +69,11 @@ impl LexerDelegateTrait for LexerState {
 
             LexerState::Sigil => match c {
                 None => reconsume()
-                    .and_emit_dynamic(Token::Sigil)
+                    .and_emit_dynamic(LexToken::sigil)
                     .and_transition(LexerState::Top),
                 Some(c) if is_sigil_char(c) => consume().and_remain(),
                 _ => reconsume()
-                    .and_emit_dynamic(Token::Sigil)
+                    .and_emit_dynamic(LexToken::sigil)
                     .and_transition(LexerState::Top),
             },
 
@@ -185,14 +81,14 @@ impl LexerDelegateTrait for LexerState {
                 None => LexerNext::Error(c),
                 Some(c) => match c {
                     '"' => consume()
-                        .and_emit_dynamic(Token::String)
+                        .and_emit_dynamic(LexToken::String)
                         .and_transition(LexerState::Top),
                     _ => consume().and_remain(),
                 },
             },
 
             LexerState::StartIdent => match c {
-                None => LexerNext::emit_dynamic(Token::Identifier, LexerState::Top),
+                None => LexerNext::emit_dynamic(LexToken::Identifier, LexerState::Top),
                 Some(c) => match c {
                     c if UnicodeXID::is_xid_continue(c) => {
                         consume().and_transition(LexerState::ContinueIdent)
@@ -201,17 +97,17 @@ impl LexerDelegateTrait for LexerState {
                     // TODO: Should this be a pop, so we don't have to reiterate
                     // the state name?
                     _ => reconsume()
-                        .and_emit_dynamic(Token::Identifier)
+                        .and_emit_dynamic(LexToken::Identifier)
                         .and_transition(LexerState::Top),
                 },
             },
 
             LexerState::ContinueIdent => match c {
-                None => LexerNext::emit_dynamic(Token::Identifier, LexerState::Top),
+                None => LexerNext::emit_dynamic(LexToken::Identifier, LexerState::Top),
                 Some(c) => match c {
                     c if UnicodeXID::is_xid_continue(c) => consume().and_remain(),
                     _ => reconsume()
-                        .and_emit_dynamic(Token::Identifier)
+                        .and_emit_dynamic(LexToken::Identifier)
                         .and_transition(LexerState::Top),
                 },
             },
@@ -222,7 +118,7 @@ impl LexerDelegateTrait for LexerState {
                     '\n' => reconsume().and_discard().and_transition(LexerState::Top),
                     c if c.is_whitespace() => consume().and_remain(),
                     _ => reconsume()
-                        .and_emit_dynamic(Token::Whitespace)
+                        .and_emit_dynamic(LexToken::Whitespace)
                         .and_transition(LexerState::Top),
                 },
             },
@@ -234,7 +130,7 @@ impl LexerDelegateTrait for LexerState {
                         .and_transition(LexerState::Comment(2))
                 } else if rest.starts_with("*/") {
                     consume_n(2)
-                        .and_emit_dynamic(Token::Comment)
+                        .and_emit_dynamic(LexToken::Comment)
                         .and_transition(LexerState::Top)
                 } else {
                     consume().and_remain()
@@ -269,11 +165,12 @@ fn is_sigil_char(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{Token, Tokenizer};
+    use crate::LexToken;
     use crate::parser::ast::DebuggableVec;
     use crate::parser::lexer_helpers::ParseError;
     use crate::parser::{Span, Spanned};
     use crate::parser2::test_helpers::{process, Annotations, Position};
+    use super::Tokenizer;
 
     use log::trace;
     use unindent::unindent;
@@ -302,7 +199,7 @@ mod tests {
 
         let lexed = Tokenizer::new(ann.table(), &source, start);
 
-        let tokens: Result<Vec<Spanned<Token>>, ParseError> = lexed
+        let tokens: Result<Vec<Spanned<LexToken>>, ParseError> = lexed
             .map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
             .collect();
 

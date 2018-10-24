@@ -27,5 +27,5 @@ pub use self::parser::parse;
 pub use self::parser::pos;
 pub use self::parser::program::{LookupStringId, ModuleTable, Seahash, StringId};
 pub use self::parser::token::Token;
-pub use self::parser2::quicklex::Token as LexToken;
+pub use self::parser2::LexToken;
 pub use self::parser2::reader::{PairedDelimiter, Reader};

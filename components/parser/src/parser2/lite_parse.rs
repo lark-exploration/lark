@@ -5,8 +5,10 @@ use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
 use crate::parser2::builtins::{self, ExprParser};
 use crate::parser2::entity_tree::{EntityTree, EntityTreeBuilder};
 use crate::parser2::macros::{macros, MacroRead, Macros};
-use crate::parser2::quicklex::Token as LexToken;
+use crate::parser2::quicklex;
+use crate::parser2::token;
 use crate::parser2::token_tree::{Handle, TokenPos, TokenSpan, TokenTree};
+use crate::LexToken;
 
 use bimap::BiMap;
 use codespan::CodeMap;
@@ -465,7 +467,7 @@ impl LiteParser<'codemap> {
             Some(id) => match self.consume_next_token(allow)? {
                 eof @ Spanned(LexToken::EOF, ..) => Ok((true, eof)),
 
-                Spanned(LexToken::Sigil(sigil), span) if sigil == id => {
+                Spanned(LexToken::Sigil(sigil), span) if sigil == token::Sigil(id) => {
                     let token = Token::Sigil(id);
                     self.push_out(Spanned::wrap_span(token, span));
                     Ok((true, Spanned::wrap_span(LexToken::Sigil(sigil), span)))
@@ -689,8 +691,9 @@ mod tests {
     use crate::parser::reporting::print_parse_error;
     use crate::parser::{Span, Spanned};
     use crate::parser2::macros::{macros, Macros};
-    use crate::parser2::quicklex::{Token, Tokenizer};
+    use crate::parser2::quicklex::{Tokenizer};
     use crate::parser2::test_helpers::{process, Annotations, Position};
+    use crate::LexToken;
 
     use log::trace;
     use std::collections::HashMap;

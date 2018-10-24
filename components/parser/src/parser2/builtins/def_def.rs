@@ -7,7 +7,7 @@ use crate::parser2::lite_parse::{
     ExpectedId, LiteParser, MaybeTerminator, RelativePosition, Token,
 };
 use crate::parser2::macros::{MacroRead, Term};
-use crate::parser2::quicklex::Token as LexToken;
+use crate::LexToken;
 use crate::parser2::reader::{self, Reader};
 use crate::parser2::token_tree::Handle;
 
