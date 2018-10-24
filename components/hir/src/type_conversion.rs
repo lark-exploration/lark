@@ -16,6 +16,8 @@ use ty::TypeFamily;
 
 crate fn ty(db: &impl HirDatabase, entity: Entity) -> Result<ty::Ty<Declaration>, ErrorReported> {
     match entity.untern(db) {
+        EntityData::Error => Err(ErrorReported),
+
         EntityData::ItemName { .. } => {
             let ast = db.ast_of_item(entity)?;
             match &*ast {

@@ -68,7 +68,7 @@ salsa::query_group! {
         }
 
         /// Resolve a type name that appears in the given entity.
-        fn resolve_name(scope: Entity, name: StringId) -> Result<Option<Entity>, ErrorReported> {
+        fn resolve_name(scope: Entity, name: StringId) -> Option<Entity> {
             type ResolveName;
             use fn scope::resolve_name;
         }
