@@ -10,6 +10,4 @@ matrix:
 os:
   - linux
   - osx
-  - windows
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"; fi  
+  
