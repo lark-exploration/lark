@@ -30,8 +30,8 @@ pub trait ErrorSentinel<Cx> {
 /// to the user.
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct WithError<T> {
-    value: T,
-    errors: Vec<Span>,
+    pub value: T,
+    pub errors: Vec<Span>,
 }
 
 impl<T> WithError<T> {
@@ -65,6 +65,12 @@ impl<T> WithError<T> {
         T: ErrorSentinel<Cx>,
     {
         WithError::ok(T::error_sentinel(cx))
+    }
+
+    /// Append any errors into `vec` and return our wrapped value.
+    pub fn accumulate_errors_into(self, vec: &mut Vec<Span>) -> T {
+        vec.extend(self.errors);
+        self.value
     }
 
     pub fn into_value(self) -> T {

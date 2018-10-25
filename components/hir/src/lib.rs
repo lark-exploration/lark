@@ -58,10 +58,10 @@ salsa::query_group! {
             use fn type_conversion::ty;
         }
 
-        /// Get the signature of a method or function -- defined for fields and structs.
-        fn signature(key: Entity) -> ty::Signature<Declaration> {
+        /// Get the signature of a function.
+        fn signature(key: Entity) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
             type SignatureQuery;
-            use fn query_definitions::signature;
+            use fn type_conversion::signature;
         }
 
         /// Get the generic declarations from a particular item.

@@ -9,7 +9,6 @@ use lark_entity::LangItem;
 use lark_entity::MemberKind;
 use parser::StringId;
 use std::sync::Arc;
-use ty::declaration::Declaration;
 
 crate fn boolean_entity(db: &impl HirDatabase) -> Entity {
     EntityData::LangItem(LangItem::Boolean).intern(db)
@@ -65,10 +64,6 @@ crate fn member_entity(
             })
             .next(),
     }
-}
-
-crate fn signature(_db: &impl HirDatabase, _key: Entity) -> ty::Signature<Declaration> {
-    unimplemented!()
 }
 
 crate fn generic_declarations(

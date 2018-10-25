@@ -3,8 +3,10 @@ use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::TypeCheckerFields;
 use hir;
+use hir::error::ErrorReported;
 use lark_entity::MemberKind;
 use std::sync::Arc;
+use ty::Signature;
 use ty::Ty;
 use ty::{BaseData, BaseKind};
 
@@ -14,9 +16,19 @@ where
     F: TypeCheckFamily,
 {
     pub(super) fn check_fn_body(&mut self) {
-        let signature = self.db.signature(self.fn_entity);
+        let declaration_signature = self
+            .db
+            .signature(self.fn_entity)
+            .into_value()
+            .unwrap_or_else(|ErrorReported| {
+                Signature::error_sentinel(self, self.hir.arguments.len())
+            });
         let placeholders = self.placeholders_for(self.fn_entity);
-        let signature = self.substitute(self.hir.root_expression, &placeholders, signature);
+        let signature = self.substitute(
+            self.hir.root_expression,
+            &placeholders,
+            declaration_signature,
+        );
         assert_eq!(signature.inputs.len(), self.hir.arguments.len());
         for (&argument, &input) in self.hir.arguments.iter().zip(signature.inputs.iter()) {
             self.results.record_ty(argument, input);
@@ -185,7 +197,10 @@ where
 
                 // FIXME -- what role does `owner_ty` place here??
 
-                let signature_decl = self.db().signature(method_entity);
+                let signature_decl = match self.db().signature(method_entity).into_value() {
+                    Ok(s) => s,
+                    Err(ErrorReported) => Signature::error_sentinel(self, arguments.len()),
+                };
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
                     self.results.record_error(expression);

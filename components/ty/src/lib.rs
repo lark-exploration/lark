@@ -281,6 +281,15 @@ pub struct Signature<F: TypeFamily> {
     pub output: Ty<F>,
 }
 
+impl<F: TypeFamily> Signature<F> {
+    pub fn error_sentinel(tables: &dyn AsRef<TyInternTables>, num_inputs: usize) -> Signature<F> {
+        Signature {
+            inputs: Arc::new((0..num_inputs).map(|_| F::error_ty(tables)).collect()),
+            output: F::error_ty(tables),
+        }
+    }
+}
+
 /// The "generic declarations" list out the generic parameters for a
 /// given item. Since items inherit generic items from one another
 /// (e.g., from their parents),
