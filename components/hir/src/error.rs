@@ -80,6 +80,12 @@ impl<T> WithError<T> {
     }
 }
 
+impl<T, DB> ErrorSentinel<&DB> for Result<T, ErrorReported> {
+    fn error_sentinel(_db: &DB) -> Self {
+        Err(ErrorReported)
+    }
+}
+
 impl<DB> ErrorSentinel<&DB> for Ty<Declaration>
 where
     DB: AsRef<TyInternTables>,
