@@ -58,21 +58,21 @@ salsa::query_group! {
             use fn type_conversion::ty;
         }
 
-        /// Get the signature of a method or function -- defined for fields and structs.
-        fn signature(key: Entity) -> ty::Signature<Declaration> {
+        /// Get the signature of a function.
+        fn signature(key: Entity) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
             type SignatureQuery;
-            use fn query_definitions::signature;
+            use fn type_conversion::signature;
         }
 
         /// Get the generic declarations from a particular item.
-        fn generic_declarations(key: Entity) -> Arc<ty::GenericDeclarations> {
-            type GenericDeclarations;
-            use fn query_definitions::generic_declarations;
+        fn generic_declarations(key: Entity) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+            type GenericDeclarationsQuery;
+            use fn type_conversion::generic_declarations;
         }
 
         /// Resolve a type name that appears in the given entity.
         fn resolve_name(scope: Entity, name: StringId) -> Option<Entity> {
-            type ResolveName;
+            type ResolveNameQuery;
             use fn scope::resolve_name;
         }
     }

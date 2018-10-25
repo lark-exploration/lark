@@ -35,7 +35,7 @@ pub trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
 
     fn own_perm(tables: &dyn AsRef<TyInternTables>) -> Self::Perm;
 
-    fn error_ty(tables: &dyn AsRef<TyInternTables>) -> Ty<Self> {
+    fn error_type(tables: &dyn AsRef<TyInternTables>) -> Ty<Self> {
         Ty {
             perm: Self::own_perm(tables),
             base: Self::error_base_data(tables),
@@ -281,10 +281,19 @@ pub struct Signature<F: TypeFamily> {
     pub output: Ty<F>,
 }
 
+impl<F: TypeFamily> Signature<F> {
+    pub fn error_sentinel(tables: &dyn AsRef<TyInternTables>, num_inputs: usize) -> Signature<F> {
+        Signature {
+            inputs: Arc::new((0..num_inputs).map(|_| F::error_type(tables)).collect()),
+            output: F::error_type(tables),
+        }
+    }
+}
+
 /// The "generic declarations" list out the generic parameters for a
 /// given item. Since items inherit generic items from one another
 /// (e.g., from their parents),
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct GenericDeclarations {
     pub parent_item: Option<Entity>,
     pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,

@@ -149,7 +149,7 @@ where
         } = let_decl;
 
         let variable = match **pattern {
-            a::Pattern::Underscore => unimplemented!(),
+            a::Pattern::Underscore => unimplemented!("underscore patterns -- too lazy"),
 
             a::Pattern::Identifier(identifier, _mode) => {
                 let name = self.add(identifier.span(), hir::IdentifierData { text: *identifier });
@@ -185,9 +185,9 @@ where
         match expr {
             a::Expression::Block(block) => self.lower_block(block),
 
-            a::Expression::ConstructStruct(_) => unimplemented!(),
+            a::Expression::ConstructStruct(_) => unimplemented!("struct construction"),
 
-            a::Expression::Call(_) => unimplemented!(),
+            a::Expression::Call(_) => unimplemented!("calls"),
 
             a::Expression::Ref(_) => {
                 let place = self.lower_place(expr);
@@ -196,11 +196,11 @@ where
                 self.add(span, hir::ExpressionData::Place { perm, place })
             }
 
-            a::Expression::Binary(..) => unimplemented!(),
+            a::Expression::Binary(..) => unimplemented!("binary operators"),
 
-            a::Expression::Interpolation(..) => unimplemented!(),
+            a::Expression::Interpolation(..) => unimplemented!("interpolation"),
 
-            a::Expression::Literal(..) => unimplemented!(),
+            a::Expression::Literal(..) => unimplemented!("literals"),
         }
     }
 

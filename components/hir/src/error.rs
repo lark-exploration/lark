@@ -28,17 +28,20 @@ pub trait ErrorSentinel<Cx> {
 /// that the operation itself is reporting the error. Confusing the
 /// two will result in too many or too few error reports being shown
 /// to the user.
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct WithError<T> {
-    value: T,
-    error: Option<Span>,
+    pub value: T,
+    pub errors: Vec<Span>,
 }
 
 impl<T> WithError<T> {
     /// Convenience function: generates a `WithError` with a result
     /// that has no error at all.
     pub fn ok(value: T) -> WithError<T> {
-        WithError { value, error: None }
+        WithError {
+            value,
+            errors: vec![],
+        }
     }
 
     /// Convenience function: generates a `WithError` indicating that
@@ -50,7 +53,7 @@ impl<T> WithError<T> {
     {
         WithError {
             value: T::error_sentinel(cx),
-            error: Some(span),
+            errors: vec![span],
         }
     }
 
@@ -64,16 +67,28 @@ impl<T> WithError<T> {
         WithError::ok(T::error_sentinel(cx))
     }
 
+    /// Append any errors into `vec` and return our wrapped value.
+    pub fn accumulate_errors_into(self, vec: &mut Vec<Span>) -> T {
+        vec.extend(self.errors);
+        self.value
+    }
+
     pub fn into_value(self) -> T {
         self.value
     }
 
     pub fn into_result(self) -> Result<T, ErrorReported> {
-        if self.error.is_some() {
+        if !self.errors.is_empty() {
             Err(ErrorReported)
         } else {
             Ok(self.value)
         }
+    }
+}
+
+impl<T, DB> ErrorSentinel<&DB> for Result<T, ErrorReported> {
+    fn error_sentinel(_db: &DB) -> Self {
+        Err(ErrorReported)
     }
 }
 
@@ -82,7 +97,7 @@ where
     DB: AsRef<TyInternTables>,
 {
     fn error_sentinel(db: &DB) -> Self {
-        Declaration::error_ty(db)
+        Declaration::error_type(db)
     }
 }
 

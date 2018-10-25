@@ -5,13 +5,13 @@ use crate::Member;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
+use lark_entity::LangItem;
 use lark_entity::MemberKind;
 use parser::StringId;
 use std::sync::Arc;
-use ty::declaration::Declaration;
 
-crate fn boolean_entity(_db: &impl HirDatabase) -> Entity {
-    unimplemented!()
+crate fn boolean_entity(db: &impl HirDatabase) -> Entity {
+    EntityData::LangItem(LangItem::Boolean).intern(db)
 }
 
 crate fn members(db: &impl HirDatabase, owner: Entity) -> Result<Arc<Vec<Member>>, ErrorReported> {
@@ -64,15 +64,4 @@ crate fn member_entity(
             })
             .next(),
     }
-}
-
-crate fn signature(_db: &impl HirDatabase, _key: Entity) -> ty::Signature<Declaration> {
-    unimplemented!()
-}
-
-crate fn generic_declarations(
-    _db: &impl HirDatabase,
-    _key: Entity,
-) -> Arc<ty::GenericDeclarations> {
-    unimplemented!()
 }

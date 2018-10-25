@@ -17,6 +17,9 @@ pub enum EntityData {
     /// Indicates that fetching the entity somehow failed with an
     /// error (which has been separately reported).
     Error,
+
+    LangItem(LangItem),
+
     InputFile {
         file: StringId,
     },
@@ -30,6 +33,16 @@ pub enum EntityData {
         kind: MemberKind,
         id: StringId,
     },
+}
+
+/// Struct definitions that are built-in to Lark.
+///
+/// Eventually, I would like these to be structs declared in some kind
+/// of libcore -- though I'm not sure how tuple would work there.
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum LangItem {
+    Boolean,
+    Tuple(usize),
 }
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -68,7 +81,7 @@ impl Entity {
     /// The input file in which an entity appears (if any).
     pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<StringId> {
         match self.untern(db) {
-            EntityData::Error => None,
+            EntityData::Error | EntityData::LangItem(_) => None,
             EntityData::InputFile { file } => Some(file),
             EntityData::ItemName { base, .. } => base.input_file(db),
             EntityData::MemberName { base, .. } => base.input_file(db),
