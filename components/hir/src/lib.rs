@@ -66,13 +66,13 @@ salsa::query_group! {
 
         /// Get the generic declarations from a particular item.
         fn generic_declarations(key: Entity) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
-            type GenericDeclarations;
+            type GenericDeclarationsQuery;
             use fn type_conversion::generic_declarations;
         }
 
         /// Resolve a type name that appears in the given entity.
         fn resolve_name(scope: Entity, name: StringId) -> Option<Entity> {
-            type ResolveName;
+            type ResolveNameQuery;
             use fn scope::resolve_name;
         }
     }

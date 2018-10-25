@@ -8,12 +8,14 @@ use languageserver_types::Position;
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use salsa::{Database, ParallelDatabase};
+use ty::interners::TyInternTables;
 
 #[derive(Default)]
 struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
     parser_state: Arc<ParserState>,
     item_id_tables: Arc<EntityTables>,
+    ty_intern_tables: Arc<TyInternTables>,
 }
 
 impl Database for LarkDatabase {
@@ -28,6 +30,7 @@ impl ParallelDatabase for LarkDatabase {
             runtime: self.runtime.fork(),
             parser_state: self.parser_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
+            ty_intern_tables: self.ty_intern_tables.clone(),
         }
     }
 }
@@ -41,6 +44,19 @@ salsa::database_storage! {
             fn items_in_file() for ItemsInFile;
             fn ast_of_item() for AstOfItem;
         }
+        impl hir::HirDatabase {
+            fn boolean_entity() for hir::BooleanEntityQuery;
+            fn fn_body() for hir::FnBodyQuery;
+            fn members() for hir::MembersQuery;
+            fn member_entity() for hir::MemberEntityQuery;
+            fn ty() for hir::TyQuery;
+            fn signature() for hir::SignatureQuery;
+            fn generic_declarations() for hir::GenericDeclarationsQuery;
+            fn resolve_name() for hir::ResolveNameQuery;
+        }
+        impl type_check::TypeCheckDatabase {
+            fn base_type_check() for type_check::BaseTypeCheckQuery;
+        }
     }
 }
 
@@ -53,6 +69,12 @@ impl parser::LookupStringId for LarkDatabase {
 impl AsRef<EntityTables> for LarkDatabase {
     fn as_ref(&self) -> &EntityTables {
         &self.item_id_tables
+    }
+}
+
+impl AsRef<TyInternTables> for LarkDatabase {
+    fn as_ref(&self) -> &TyInternTables {
+        &self.ty_intern_tables
     }
 }
 

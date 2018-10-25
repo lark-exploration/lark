@@ -10,6 +10,9 @@ salsa = "0.6.0"
 
 ast = { path = "../ast" }
 intern = { path = "../intern" }
+hir = { path = "../hir" }
 lark-entity = { path = "../lark-entity" }
-parser = { path = "../parser" }
 lark-task-manager = { path = "../lark-task-manager" }
+parser = { path = "../parser" }
+ty = { path = "../ty" }
+type-check = { path = "../type-check" }
