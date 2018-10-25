@@ -6,8 +6,8 @@ use ast::{
 };
 use languageserver_types::Position;
 use lark_entity::EntityTables;
-use salsa::{Database, ParallelDatabase};
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
+use salsa::{Database, ParallelDatabase};
 
 #[derive(Default)]
 struct LarkDatabase {
@@ -89,16 +89,16 @@ impl Actor for QuerySystem {
     fn receive_message(&mut self, message: Self::InMessage) {
         match message {
             QueryRequest::OpenFile(url, contents) => {
-                std::thread::spawn({
-                    let db = self.lark_db.fork();
-                    move || {
-                        let interned_path = db.intern_string(url.as_str());
-                        let interned_contents = db.intern_string(contents.as_str());
-                        db.query(InputFiles).set((), Arc::new(vec![interned_path]));
-                        db.query(InputText)
-                            .set(interned_path, Some(interned_contents));
-                    }
-                });
+                // Process sets on the same thread -- this not only gives them priority,
+                // it ensures an overall ordering to edits.
+                let interned_path = self.lark_db.intern_string(url.as_str());
+                let interned_contents = self.lark_db.intern_string(contents.as_str());
+                self.lark_db
+                    .query(InputFiles)
+                    .set((), Arc::new(vec![interned_path]));
+                self.lark_db
+                    .query(InputText)
+                    .set(interned_path, Some(interned_contents));
             }
             QueryRequest::EditFile(_) => {}
             QueryRequest::TypeAtPosition(task_id, url, position) => {
