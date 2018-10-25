@@ -42,7 +42,7 @@ crate fn generic_declarations(
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {
             if arity != 0 {
-                unimplemented!("don't feel like dealing with tuples yet");
+                unimplemented!("non-zero arity tuples");
             }
             WithError::ok(Ok(empty_declarations(None)))
         }

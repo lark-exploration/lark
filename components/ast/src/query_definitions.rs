@@ -71,10 +71,7 @@ crate fn ast_of_item(db: &impl AstDatabase, item_id: Entity) -> Result<Arc<ast::
                     panic!("no such item")
                 }
 
-                _ => {
-                    // Nested items -- don't implement for now, too lazy =)
-                    unimplemented!()
-                }
+                _ => unimplemented!("nested items -- too lazy"),
             }
         }
 
