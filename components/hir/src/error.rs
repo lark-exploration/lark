@@ -28,17 +28,20 @@ pub trait ErrorSentinel<Cx> {
 /// that the operation itself is reporting the error. Confusing the
 /// two will result in too many or too few error reports being shown
 /// to the user.
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct WithError<T> {
     value: T,
-    error: Option<Span>,
+    errors: Vec<Span>,
 }
 
 impl<T> WithError<T> {
     /// Convenience function: generates a `WithError` with a result
     /// that has no error at all.
     pub fn ok(value: T) -> WithError<T> {
-        WithError { value, error: None }
+        WithError {
+            value,
+            errors: vec![],
+        }
     }
 
     /// Convenience function: generates a `WithError` indicating that
@@ -50,7 +53,7 @@ impl<T> WithError<T> {
     {
         WithError {
             value: T::error_sentinel(cx),
-            error: Some(span),
+            errors: vec![span],
         }
     }
 
@@ -69,7 +72,7 @@ impl<T> WithError<T> {
     }
 
     pub fn into_result(self) -> Result<T, ErrorReported> {
-        if self.error.is_some() {
+        if !self.errors.is_empty() {
             Err(ErrorReported)
         } else {
             Ok(self.value)
