@@ -65,10 +65,3 @@ crate fn member_entity(
             .next(),
     }
 }
-
-crate fn generic_declarations(
-    _db: &impl HirDatabase,
-    _key: Entity,
-) -> Arc<ty::GenericDeclarations> {
-    unimplemented!()
-}

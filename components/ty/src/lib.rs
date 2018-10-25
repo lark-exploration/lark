@@ -293,7 +293,7 @@ impl<F: TypeFamily> Signature<F> {
 /// The "generic declarations" list out the generic parameters for a
 /// given item. Since items inherit generic items from one another
 /// (e.g., from their parents),
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct GenericDeclarations {
     pub parent_item: Option<Entity>,
     pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,

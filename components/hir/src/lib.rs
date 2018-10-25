@@ -65,9 +65,9 @@ salsa::query_group! {
         }
 
         /// Get the generic declarations from a particular item.
-        fn generic_declarations(key: Entity) -> Arc<ty::GenericDeclarations> {
+        fn generic_declarations(key: Entity) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
             type GenericDeclarations;
-            use fn query_definitions::generic_declarations;
+            use fn type_conversion::generic_declarations;
         }
 
         /// Resolve a type name that appears in the given entity.

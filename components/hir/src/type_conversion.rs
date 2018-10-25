@@ -17,11 +17,64 @@ use ty::BaseKind;
 use ty::BoundVar;
 use ty::BoundVarOr;
 use ty::Erased;
+use ty::GenericDeclarations;
 use ty::GenericKind;
 use ty::Generics;
 use ty::Signature;
 use ty::Ty;
 use ty::TypeFamily;
+
+crate fn generic_declarations(
+    db: &impl HirDatabase,
+    entity: Entity,
+) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+    let empty_declarations = |parent_item: Option<Entity>| {
+        Arc::new(GenericDeclarations {
+            parent_item,
+            declarations: Default::default(),
+        })
+    };
+
+    match entity.untern(db) {
+        EntityData::Error => WithError::error_sentinel(db),
+
+        EntityData::LangItem(LangItem::Boolean) => WithError::ok(Ok(empty_declarations(None))),
+
+        EntityData::LangItem(LangItem::Tuple(arity)) => {
+            if arity != 0 {
+                unimplemented!("don't feel like dealing with tuples yet");
+            }
+            WithError::ok(Ok(empty_declarations(None)))
+        }
+
+        EntityData::ItemName { .. } => {
+            let ast = or_sentinel!(db, db.ast_of_item(entity));
+
+            // Eventually, items ought to be permitted to have generic types attached to them.
+            match &*ast {
+                a::Item::Struct(_) | a::Item::Def(_) => WithError::ok(Ok(empty_declarations(None))),
+            }
+        }
+
+        EntityData::MemberName {
+            base,
+            kind: MemberKind::Field,
+            id: _,
+        } => WithError::ok(Ok(empty_declarations(Some(base)))),
+
+        // Eventually, methods ought to be permitted to have generic types attached to them.
+        EntityData::MemberName {
+            base,
+            kind: MemberKind::Method,
+            id: _,
+        } => WithError::ok(Ok(empty_declarations(Some(base)))),
+
+        EntityData::InputFile { .. } => panic!(
+            "cannot get generics of entity with data {:?}",
+            entity.untern(db).debug_with(db),
+        ),
+    }
+}
 
 crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declaration>> {
     match entity.untern(db) {
