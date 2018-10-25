@@ -128,6 +128,9 @@ impl Actor for QuerySystem {
                     let db = self.lark_db.fork();
                     let send_channel = self.send_channel.clone_send_channel();
                     move || {
+                        // Ensure that `type_at_position` executes atomically
+                        let _lock = db.salsa_runtime().lock_revision();
+
                         match type_at_position(&db, url.as_str(), position) {
                             Ok(v) => {
                                 send_channel.send(QueryResponse::Type(task_id, v.to_string()));
