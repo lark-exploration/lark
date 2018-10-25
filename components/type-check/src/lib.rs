@@ -73,8 +73,6 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
 
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
-    fn error_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
-
     fn require_assignable(
         this: &mut impl TypeCheckerFields<Self>,
         expression: hir::Expression,

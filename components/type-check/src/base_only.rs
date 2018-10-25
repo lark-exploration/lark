@@ -85,19 +85,6 @@ impl TypeCheckFamily for BaseOnly {
         }
     }
 
-    fn error_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
-        Ty {
-            perm: Erased,
-            base: BaseOnly::intern_base_data(
-                this.db(),
-                BaseData {
-                    kind: BaseKind::Error,
-                    generics: Generics::empty(),
-                },
-            ),
-        }
-    }
-
     fn apply_user_perm(
         _this: &mut impl TypeCheckerFields<Self>,
         _perm: hir::Perm,

@@ -97,7 +97,7 @@ where
     DB: AsRef<TyInternTables>,
 {
     fn error_sentinel(db: &DB) -> Self {
-        Declaration::error_ty(db)
+        Declaration::error_type(db)
     }
 }
 
