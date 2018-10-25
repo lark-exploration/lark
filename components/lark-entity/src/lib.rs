@@ -14,6 +14,9 @@ indices::index_type! {
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum EntityData {
+    /// Indicates that fetching the entity somehow failed with an
+    /// error (which has been separately reported).
+    Error,
     InputFile {
         file: StringId,
     },
@@ -62,9 +65,11 @@ where
 }
 
 impl Entity {
-    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> StringId {
+    /// The input file in which an entity appears (if any).
+    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<StringId> {
         match self.untern(db) {
-            EntityData::InputFile { file } => file,
+            EntityData::Error => None,
+            EntityData::InputFile { file } => Some(file),
             EntityData::ItemName { base, .. } => base.input_file(db),
             EntityData::MemberName { base, .. } => base.input_file(db),
         }
