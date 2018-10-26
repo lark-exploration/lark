@@ -1,5 +1,4 @@
 use ast::ast as a;
-use crate::error::ErrorReported;
 use crate::HirDatabase;
 use crate::Member;
 use intern::Intern;
@@ -7,6 +6,7 @@ use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
 use lark_entity::MemberKind;
+use lark_error::ErrorReported;
 use parser::StringId;
 use std::sync::Arc;
 

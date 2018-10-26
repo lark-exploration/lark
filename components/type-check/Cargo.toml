@@ -12,6 +12,7 @@ ast = { path = "../ast" }
 hir = { path = "../hir" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }
+lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 map = { path = "../map" }
 parser = { path = "../parser" }

@@ -8,19 +8,18 @@
 #![feature(specialization)]
 
 use ast::AstDatabase;
-use crate::error::ErrorReported;
-use crate::error::WithError;
 use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::MemberKind;
+use lark_error::ErrorReported;
+use lark_error::WithError;
 use parser::pos::{HasSpan, Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
 
-pub mod error;
 mod fn_body;
 mod query_definitions;
 mod scope;

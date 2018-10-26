@@ -1,0 +1,10 @@
+[package]
+name = "lark-error"
+version = "0.1.0"
+authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+edition = "2018"
+
+[dependencies]
+debug = { path = "../debug" }
+lark-debug-derive = { path = "../lark-debug-derive" }
+parser = { path = "../parser" }

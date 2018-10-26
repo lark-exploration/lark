@@ -6,8 +6,10 @@ use crate::interners::TyInternTables;
 use crate::BaseData;
 use crate::BoundVarOr;
 use crate::Erased;
+use crate::Ty;
 use crate::TypeFamily;
 use intern::Intern;
+use lark_error::ErrorSentinel;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Declaration;
@@ -33,4 +35,13 @@ pub type DeclarationTy = crate::Ty<Declaration>;
 
 indices::index_type! {
     pub struct Base { .. }
+}
+
+impl<DB> ErrorSentinel<&DB> for Ty<Declaration>
+where
+    DB: AsRef<TyInternTables>,
+{
+    fn error_sentinel(db: &DB) -> Self {
+        Declaration::error_type(db)
+    }
 }

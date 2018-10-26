@@ -1,7 +1,4 @@
 use ast::ast as a;
-use crate::error::or_sentinel;
-use crate::error::ErrorReported;
-use crate::error::WithError;
 use crate::HirDatabase;
 use debug::DebugWith;
 use intern::Intern;
@@ -10,6 +7,9 @@ use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
 use lark_entity::MemberKind;
+use lark_error::or_sentinel;
+use lark_error::ErrorReported;
+use lark_error::WithError;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 use ty::BaseData;

@@ -14,6 +14,7 @@ indices = { path = "../indices" }
 intern = { path = "../intern" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-entity = { path = "../lark-entity" }
+lark-error = { path = "../lark-error" }
 map = { path = "../map" }
 parser = { path = "../parser" }
 ty = { path = "../ty" }
