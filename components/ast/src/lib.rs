@@ -25,37 +25,37 @@ salsa::query_group! {
         // parser -- but I want to minimize merge conflicts.
 
         fn input_files(key: ()) -> Arc<Vec<StringId>> {
-            type InputFiles;
+            type InputFilesQuery;
             storage input;
         }
 
         fn input_text(path: StringId) -> Option<StringId> {
-            type InputText;
+            type InputTextQuery;
             storage input;
         }
 
         fn ast_of_file(path: StringId) -> WithError<Result<Arc<ast::Module>, ErrorReported>> {
-            type AstOfFile;
+            type AstOfFileQuery;
             use fn query_definitions::ast_of_file;
         }
 
         fn items_in_file(path: StringId) -> Arc<Vec<Entity>> {
-            type ItemsInFile;
+            type ItemsInFileQuery;
             use fn query_definitions::items_in_file;
         }
 
         fn entity_span(entity: Entity) -> Option<Span> {
-            type EntitySpan;
+            type EntitySpanQuery;
             use fn query_definitions::entity_span;
         }
 
         fn ast_of_item(item: Entity) -> Result<Arc<ast::Item>, ErrorReported> {
-            type AstOfItem;
+            type AstOfItemQuery;
             use fn query_definitions::ast_of_item;
         }
 
         fn ast_of_field(item: Entity) -> Result<ast::Field, ErrorReported> {
-            type AstOfField;
+            type AstOfFieldQuery;
             use fn query_definitions::ast_of_field;
         }
     }

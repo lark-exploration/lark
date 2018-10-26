@@ -39,13 +39,13 @@ impl LsDatabase for LarkDatabase {}
 salsa::database_storage! {
     struct LarkDatabaseStorage for LarkDatabase {
         impl ast::AstDatabase {
-            fn input_files() for ast::InputFiles;
-            fn input_text() for ast::InputText;
-            fn ast_of_file() for ast::AstOfFile;
-            fn items_in_file() for ast::ItemsInFile;
-            fn ast_of_item() for ast::AstOfItem;
-            fn ast_of_field() for ast::AstOfField;
-            fn entity_span() for ast::EntitySpan;
+            fn input_files() for ast::InputFilesQuery;
+            fn input_text() for ast::InputTextQuery;
+            fn ast_of_file() for ast::AstOfFileQuery;
+            fn items_in_file() for ast::ItemsInFileQuery;
+            fn ast_of_item() for ast::AstOfItemQuery;
+            fn ast_of_field() for ast::AstOfFieldQuery;
+            fn entity_span() for ast::EntitySpanQuery;
         }
         impl hir::HirDatabase {
             fn boolean_entity() for hir::BooleanEntityQuery;
@@ -119,10 +119,10 @@ impl Actor for QuerySystem {
                 let interned_path = self.lark_db.intern_string(url.as_str());
                 let interned_contents = self.lark_db.intern_string(contents.as_str());
                 self.lark_db
-                    .query(ast::InputFiles)
+                    .query(ast::InputFilesQuery)
                     .set((), Arc::new(vec![interned_path]));
                 self.lark_db
-                    .query(ast::InputText)
+                    .query(ast::InputTextQuery)
                     .set(interned_path, Some(interned_contents));
             }
             QueryRequest::EditFile(_) => {}

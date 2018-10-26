@@ -2,8 +2,8 @@
 
 use crate::AstDatabase;
 use crate::HasParserState;
-use crate::InputFiles;
-use crate::InputText;
+use crate::InputFilesQuery;
+use crate::InputTextQuery;
 use crate::ParserState;
 use debug::DebugWith;
 use lark_entity::EntityTables;
@@ -20,13 +20,13 @@ struct TestDatabaseImpl {
 salsa::database_storage! {
     pub struct TestDatabaseImplStorage for TestDatabaseImpl {
         impl AstDatabase {
-            fn input_files() for crate::InputFiles;
-            fn input_text() for crate::InputText;
-            fn ast_of_file() for crate::AstOfFile;
-            fn items_in_file() for crate::ItemsInFile;
-            fn ast_of_item() for crate::AstOfItem;
-            fn ast_of_field() for crate::AstOfField;
-            fn entity_span() for crate::EntitySpan;
+            fn input_files() for crate::InputFilesQuery;
+            fn input_text() for crate::InputTextQuery;
+            fn ast_of_file() for crate::AstOfFileQuery;
+            fn items_in_file() for crate::ItemsInFileQuery;
+            fn ast_of_item() for crate::AstOfItemQuery;
+            fn ast_of_field() for crate::AstOfFieldQuery;
+            fn entity_span() for crate::EntitySpanQuery;
         }
     }
 }
@@ -63,9 +63,9 @@ fn parse_error() {
     let db = TestDatabaseImpl::default();
 
     let path1 = db.intern_string("path1");
-    db.query(InputFiles).set((), Arc::new(vec![path1]));
+    db.query(InputFilesQuery).set((), Arc::new(vec![path1]));
     let text1 = db.intern_string("XXX");
-    db.query(InputText).set(path1, Some(text1));
+    db.query(InputTextQuery).set(path1, Some(text1));
 
     assert!(!db.ast_of_file(path1).errors.is_empty());
 }
@@ -75,7 +75,7 @@ fn parse_ok() {
     let db = TestDatabaseImpl::default();
 
     let path1 = db.intern_string("path1");
-    db.query(InputFiles).set((), Arc::new(vec![path1]));
+    db.query(InputFilesQuery).set((), Arc::new(vec![path1]));
     let text1 = db.intern_string(
         "struct Diagnostic {
   msg: own String,
@@ -86,7 +86,7 @@ def new(msg: own String, level: String) -> Diagnostic {
   Diagnostic { mgs, level }
 }",
     );
-    db.query(InputText).set(path1, Some(text1));
+    db.query(InputTextQuery).set(path1, Some(text1));
 
     assert!(
         db.ast_of_file(path1).errors.is_empty(),
