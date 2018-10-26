@@ -108,23 +108,16 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declarati
         }
 
         EntityData::MemberName {
-            base,
             kind: MemberKind::Field,
-            id,
-        } => match &*or_return_sentinel!(db, db.ast_of_item(base)) {
-            a::Item::Struct(s) => match s.fields.iter().find(|f| *f.name == id) {
-                Some(field) => declaration_ty_from_ast_ty(db, entity, &field.ty),
-
-                None => panic!("no such field"),
-            },
-
-            ast => panic!("field of invalid entity {:?}", ast),
-        },
+            ..
+        } => {
+            let field = or_return_sentinel!(db, db.ast_of_field(entity));
+            declaration_ty_from_ast_ty(db, entity, &field.ty)
+        }
 
         EntityData::MemberName {
-            base: _,
             kind: MemberKind::Method,
-            id: _,
+            ..
         } => WithError::ok(declaration_ty_named(db, entity, Generics::empty())),
 
         EntityData::InputFile { .. } => panic!(

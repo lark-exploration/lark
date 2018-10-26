@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use ast::{
-    AstDatabase, AstOfFile, AstOfItem, HasParserState, InputFiles, InputText, ItemsInFile,
-    ParserState,
-};
+use ast::{HasParserState, ParserState};
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use salsa::{Database, ParallelDatabase};
@@ -41,12 +38,13 @@ impl LsDatabase for LarkDatabase {}
 
 salsa::database_storage! {
     struct LarkDatabaseStorage for LarkDatabase {
-        impl AstDatabase {
-            fn input_files() for InputFiles;
-            fn input_text() for InputText;
-            fn ast_of_file() for AstOfFile;
-            fn items_in_file() for ItemsInFile;
-            fn ast_of_item() for AstOfItem;
+        impl ast::AstDatabase {
+            fn input_files() for ast::InputFiles;
+            fn input_text() for ast::InputText;
+            fn ast_of_file() for ast::AstOfFile;
+            fn items_in_file() for ast::ItemsInFile;
+            fn ast_of_item() for ast::AstOfItem;
+            fn ast_of_field() for ast::AstOfField;
         }
         impl hir::HirDatabase {
             fn boolean_entity() for hir::BooleanEntityQuery;
@@ -120,10 +118,10 @@ impl Actor for QuerySystem {
                 let interned_path = self.lark_db.intern_string(url.as_str());
                 let interned_contents = self.lark_db.intern_string(contents.as_str());
                 self.lark_db
-                    .query(InputFiles)
+                    .query(ast::InputFiles)
                     .set((), Arc::new(vec![interned_path]));
                 self.lark_db
-                    .query(InputText)
+                    .query(ast::InputText)
                     .set(interned_path, Some(interned_contents));
             }
             QueryRequest::EditFile(_) => {}

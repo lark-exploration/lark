@@ -4,6 +4,7 @@ use intern::Untern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::ItemKind;
+use lark_entity::MemberKind;
 use lark_error::or_return_sentinel;
 use lark_error::{ErrorReported, WithError};
 use parser::ast;
@@ -82,5 +83,27 @@ crate fn ast_of_item(
         }
 
         d => panic!("ast-of-item invoked with non-item {:?}", d),
+    }
+}
+
+crate fn ast_of_field(db: &impl AstDatabase, item_id: Entity) -> Result<ast::Field, ErrorReported> {
+    match item_id.untern(db) {
+        EntityData::MemberName {
+            base,
+            kind: MemberKind::Field,
+            id,
+        } => match &*db.ast_of_item(base)? {
+            ast::Item::Struct(s) => match s.fields.iter().find(|f| *f.name == id) {
+                Some(field) => Ok(field.clone()),
+
+                None => panic!("no such field"),
+            },
+
+            ast => panic!("field of invalid entity {:?}", ast),
+        },
+
+        EntityData::Error(span) => Err(ErrorReported::at_span(span)),
+
+        d => panic!("ast-of-item invoked with non-field {:?}", d),
     }
 }

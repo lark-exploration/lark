@@ -47,6 +47,11 @@ salsa::query_group! {
             type AstOfItem;
             use fn query_definitions::ast_of_item;
         }
+
+        fn ast_of_field(item: Entity) -> Result<ast::Field, ErrorReported> {
+            type AstOfField;
+            use fn query_definitions::ast_of_field;
+        }
     }
 }
 
