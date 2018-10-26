@@ -1,12 +1,9 @@
 #![cfg(test)]
 
 use crate::AstDatabase;
-use crate::AstOfFile;
-use crate::AstOfItem;
 use crate::HasParserState;
 use crate::InputFiles;
 use crate::InputText;
-use crate::ItemsInFile;
 use crate::ParserState;
 use debug::DebugWith;
 use lark_entity::EntityTables;
@@ -23,11 +20,13 @@ struct TestDatabaseImpl {
 salsa::database_storage! {
     pub struct TestDatabaseImplStorage for TestDatabaseImpl {
         impl AstDatabase {
-            fn input_files() for InputFiles;
-            fn input_text() for InputText;
-            fn ast_of_file() for AstOfFile;
-            fn items_in_file() for ItemsInFile;
-            fn ast_of_item() for AstOfItem;
+            fn input_files() for crate::InputFiles;
+            fn input_text() for crate::InputText;
+            fn ast_of_file() for crate::AstOfFile;
+            fn items_in_file() for crate::ItemsInFile;
+            fn ast_of_item() for crate::AstOfItem;
+            fn ast_of_field() for crate::AstOfField;
+            fn entity_span() for crate::EntitySpan;
         }
     }
 }
@@ -68,7 +67,7 @@ fn parse_error() {
     let text1 = db.intern_string("XXX");
     db.query(InputText).set(path1, Some(text1));
 
-    assert!(db.ast_of_file(path1).is_err());
+    assert!(!db.ast_of_file(path1).errors.is_empty());
 }
 
 #[test]
@@ -90,9 +89,9 @@ def new(msg: own String, level: String) -> Diagnostic {
     db.query(InputText).set(path1, Some(text1));
 
     assert!(
-        db.ast_of_file(path1).is_ok(),
+        db.ast_of_file(path1).errors.is_empty(),
         "{:?}",
-        db.ast_of_file(path1).unwrap_err(),
+        db.ast_of_file(path1).errors,
     );
 
     let items_in_file = db.items_in_file(path1);
