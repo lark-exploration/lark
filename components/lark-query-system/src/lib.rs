@@ -4,11 +4,13 @@ use ast::{
     AstDatabase, AstOfFile, AstOfItem, HasParserState, InputFiles, InputText, ItemsInFile,
     ParserState,
 };
-use languageserver_types::Position;
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use salsa::{Database, ParallelDatabase};
 use ty::interners::TyInternTables;
+
+mod ls_ops;
+use self::ls_ops::{Cancelled, LsDatabase};
 
 #[derive(Default)]
 struct LarkDatabase {
@@ -34,6 +36,8 @@ impl ParallelDatabase for LarkDatabase {
         }
     }
 }
+
+impl LsDatabase for LarkDatabase {}
 
 salsa::database_storage! {
     struct LarkDatabaseStorage for LarkDatabase {
@@ -131,7 +135,7 @@ impl Actor for QuerySystem {
                         // Ensure that `type_at_position` executes atomically
                         let _lock = db.salsa_runtime().lock_revision();
 
-                        match type_at_position(&db, url.as_str(), position) {
+                        match db.type_at_position(url.as_str(), position) {
                             Ok(v) => {
                                 send_channel.send(QueryResponse::Type(task_id, v.to_string()));
                             }
@@ -146,22 +150,6 @@ impl Actor for QuerySystem {
             }
         }
     }
-}
-
-struct Cancelled;
-
-fn type_at_position(
-    db: &impl AstDatabase,
-    url: &str,
-    _position: Position,
-) -> Result<String, Cancelled> {
-    let interned_path = db.intern_string(url);
-    let result = db.input_text(interned_path);
-    let contents = db.untern_string(result.unwrap());
-    if db.salsa_runtime().is_current_revision_canceled() {
-        return Err(Cancelled);
-    }
-    Ok(contents.to_string())
 }
 
 #[cfg(test)]
