@@ -32,6 +32,21 @@ impl Item {
     }
 }
 
+impl HasSpan for Item {
+    type Inner = Item;
+
+    fn span(&self) -> Span {
+        match self {
+            Item::Struct(s) => s.span(),
+            Item::Def(d) => d.span(),
+        }
+    }
+
+    fn node(&self) -> &Self {
+        self
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum BlockItem {
     Item(Item),
@@ -145,6 +160,18 @@ pub struct Def {
     pub ret: Option<Spanned<Type>>,
     pub body: Spanned<Block>,
     pub span: Span,
+}
+
+impl HasSpan for Def {
+    type Inner = Def;
+
+    fn span(&self) -> Span {
+        self.span
+    }
+
+    fn node(&self) -> &Self {
+        self
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
