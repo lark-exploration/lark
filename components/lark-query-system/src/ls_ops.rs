@@ -8,14 +8,22 @@ use languageserver_types::Position;
 
 pub(crate) struct Cancelled;
 
+pub(crate) type Cancelable<T> = Result<T, Cancelled>;
+
 pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
-    fn type_at_position(&self, url: &str, _position: Position) -> Result<String, Cancelled> {
+    fn check_for_cancellation(&self) -> Cancelable<()> {
+        if self.salsa_runtime().is_current_revision_canceled() {
+            Err(Cancelled)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn type_at_position(&self, url: &str, _position: Position) -> Cancelable<String> {
         let interned_path = self.intern_string(url);
         let result = self.input_text(interned_path);
         let contents = self.untern_string(result.unwrap());
-        if self.salsa_runtime().is_current_revision_canceled() {
-            return Err(Cancelled);
-        }
+        self.check_for_cancellation()?;
         Ok(contents.to_string())
     }
 }
