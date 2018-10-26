@@ -3,6 +3,7 @@
 use crate::AstDatabase;
 use crate::HasParserState;
 use crate::InputFilesQuery;
+use crate::InputText;
 use crate::InputTextQuery;
 use crate::ParserState;
 use debug::DebugWith;
@@ -65,7 +66,13 @@ fn parse_error() {
     let path1 = db.intern_string("path1");
     db.query(InputFilesQuery).set((), Arc::new(vec![path1]));
     let text1 = db.intern_string("XXX");
-    db.query(InputTextQuery).set(path1, Some(text1));
+    db.query(InputTextQuery).set(
+        path1,
+        Some(InputText {
+            text: text1,
+            start_offset: 0,
+        }),
+    );
 
     assert!(!db.ast_of_file(path1).errors.is_empty());
 }
@@ -86,7 +93,13 @@ def new(msg: own String, level: String) -> Diagnostic {
   Diagnostic { mgs, level }
 }",
     );
-    db.query(InputTextQuery).set(path1, Some(text1));
+    db.query(InputTextQuery).set(
+        path1,
+        Some(InputText {
+            text: text1,
+            start_offset: 0,
+        }),
+    );
 
     assert!(
         db.ast_of_file(path1).errors.is_empty(),

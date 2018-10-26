@@ -1,3 +1,4 @@
+use crate::InputText;
 use parking_lot::RwLock;
 use parser::ast;
 use parser::ParseError;
@@ -14,11 +15,15 @@ impl ParserState {
     crate fn parse(
         &self,
         _path: StringId,
-        input_text: StringId,
+        input_text: &InputText,
     ) -> Result<ast::Module, ParseError> {
         let mut module_table = self.module_table.write();
-        let input_text = module_table.lookup(&input_text).to_string();
-        parser::parse(Cow::Borrowed(&*input_text), &mut module_table, 0)
+        let string = module_table.lookup(&input_text.text).to_string();
+        parser::parse(
+            Cow::Borrowed(&*string),
+            &mut module_table,
+            input_text.start_offset,
+        )
     }
 
     crate fn untern_string(&self, string_id: StringId) -> Arc<String> {

@@ -22,7 +22,7 @@ pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
     fn type_at_position(&self, url: &str, _position: Position) -> Cancelable<String> {
         let interned_path = self.intern_string(url);
         let result = self.input_text(interned_path);
-        let contents = self.untern_string(result.unwrap());
+        let contents = self.untern_string(result.unwrap().text);
         self.check_for_cancellation()?;
         Ok(contents.to_string())
     }

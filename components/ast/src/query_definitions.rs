@@ -20,7 +20,7 @@ crate fn ast_of_file(
         panic!("no input text for path `{}`", db.untern_string(path));
     });
 
-    match db.parser_state().parse(path, input_text) {
+    match db.parser_state().parse(path, &input_text) {
         Ok(module) => WithError::ok(Ok(Arc::new(module))),
         Err(parse_error) => WithError {
             value: Err(ErrorReported::at_span(parse_error.span)),

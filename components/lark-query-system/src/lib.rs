@@ -1,9 +1,12 @@
-use std::sync::Arc;
-
-use ast::{HasParserState, ParserState};
+use ast::{HasParserState, InputText, ParserState};
+use codespan::{CodeMap, FileMap, FileName};
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
+use map::FxIndexMap;
+use parking_lot::RwLock;
 use salsa::{Database, ParallelDatabase};
+use std::borrow::Cow;
+use std::sync::Arc;
 use ty::interners::TyInternTables;
 
 mod ls_ops;
@@ -12,6 +15,8 @@ use self::ls_ops::{Cancelled, LsDatabase};
 #[derive(Default)]
 struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
+    code_map: Arc<RwLock<CodeMap>>,
+    file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
     parser_state: Arc<ParserState>,
     item_id_tables: Arc<EntityTables>,
     ty_intern_tables: Arc<TyInternTables>,
@@ -26,6 +31,8 @@ impl Database for LarkDatabase {
 impl ParallelDatabase for LarkDatabase {
     fn fork(&self) -> Self {
         LarkDatabase {
+            code_map: self.code_map.clone(),
+            file_maps: self.file_maps.clone(),
             runtime: self.runtime.fork(),
             parser_state: self.parser_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
@@ -121,9 +128,28 @@ impl Actor for QuerySystem {
                 self.lark_db
                     .query(ast::InputFilesQuery)
                     .set((), Arc::new(vec![interned_path]));
+
+                // Uh, adding a "new" file on each change seems a bit ungreat. But good
+                // enough for now.
+                let file_map = self.lark_db.code_map.write().add_filemap(
+                    FileName::Virtual(Cow::Owned(url.to_string())),
+                    contents.to_string(),
+                );
+                let start_offset = file_map.span().start().to_usize() as u32;
+
+                // Record the filemap for later
                 self.lark_db
-                    .query(ast::InputTextQuery)
-                    .set(interned_path, Some(interned_contents));
+                    .file_maps
+                    .write()
+                    .insert(url.to_string(), file_map);
+
+                self.lark_db.query(ast::InputTextQuery).set(
+                    interned_path,
+                    Some(InputText {
+                        text: interned_contents,
+                        start_offset,
+                    }),
+                );
             }
             QueryRequest::EditFile(_) => {}
             QueryRequest::TypeAtPosition(task_id, url, position) => {

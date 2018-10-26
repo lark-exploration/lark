@@ -7,6 +7,7 @@
 #![feature(specialization)]
 
 pub use crate::parser_state::ParserState;
+use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::{ErrorReported, WithError};
@@ -29,7 +30,7 @@ salsa::query_group! {
             storage input;
         }
 
-        fn input_text(path: StringId) -> Option<StringId> {
+        fn input_text(path: StringId) -> Option<InputText> {
             type InputTextQuery;
             storage input;
         }
@@ -59,6 +60,12 @@ salsa::query_group! {
             use fn query_definitions::ast_of_field;
         }
     }
+}
+
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
+pub struct InputText {
+    pub text: StringId,
+    pub start_offset: u32,
 }
 
 /// Trait encapsulating the String interner. This should be
