@@ -3,7 +3,9 @@ use crate::prelude::*;
 use crate::parser::{ModuleTable, ParseError, Span, Spanned, StringId};
 use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
 use crate::parser2::builtins::{self, ExprParser};
-use crate::parser2::entity_tree::{EntityTree, EntityTreeBuilder};
+use crate::parser2::entity_tree::{
+    Entities, EntitiesBuilder, EntityKind, EntityTree, EntityTreeBuilder,
+};
 use crate::parser2::macros::{macros, MacroRead, Macros};
 use crate::parser2::quicklex;
 use crate::parser2::token;
@@ -17,6 +19,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use derive_new::new;
+use std::collections::BTreeMap;
 
 #[derive(Debug, Copy, Clone)]
 enum NextAction {
@@ -216,7 +219,7 @@ pub struct LiteParser<'codemap> {
     table: ModuleTable,
     codemap: &'codemap CodeMap,
     scopes: Scopes,
-    entity_tree: EntityTreeBuilder,
+    entity_tree: EntitiesBuilder,
     annotated: Vec<AnnotatedToken>,
     pos: usize,
     out_tokens: Vec<Spanned<Token>>,
@@ -238,7 +241,7 @@ impl LiteParser<'codemap> {
             table,
             codemap,
             scopes: Scopes::new(),
-            entity_tree: EntityTreeBuilder::new(),
+            entity_tree: EntitiesBuilder::new(),
             annotated: vec![],
             pos: 0,
             out_tokens: vec![],
@@ -331,7 +334,7 @@ const EOF: Spanned<Token> = Spanned(Token::EOF, Span::EOF);
 pub struct ParseResult {
     tree: TokenTree,
     tokens: Vec<Spanned<Token>>,
-    entity_tree: EntityTree,
+    entity_tree: Entities,
 }
 
 impl LiteParser<'codemap> {
@@ -538,8 +541,8 @@ impl LiteParser<'codemap> {
         }
     }
 
-    pub fn start_entity(&mut self, name: StringId) {
-        self.entity_tree.push(name, TokenPos(self.pos));
+    pub fn start_entity(&mut self, name: StringId, kind: EntityKind) {
+        self.entity_tree.push(&name, TokenPos(self.pos), kind);
     }
 
     pub fn end_entity(&mut self) {
@@ -691,7 +694,7 @@ mod tests {
     use crate::parser::reporting::print_parse_error;
     use crate::parser::{Span, Spanned};
     use crate::parser2::macros::{macros, Macros};
-    use crate::parser2::quicklex::{Tokenizer};
+    use crate::parser2::quicklex::Tokenizer;
     use crate::parser2::test_helpers::{process, Annotations, Position};
     use crate::LexToken;
 
@@ -699,11 +702,12 @@ mod tests {
     use std::collections::HashMap;
     use unindent::unindent;
 
+    /*
     #[test]
     fn test_lite_parse() {
         return;
         crate::init_logger();
-
+    
         // let source = unindent(
         //     r##"
         //     struct Diagnostic {
@@ -716,7 +720,7 @@ mod tests {
         //     ^ #}#
         //     "##,
         // );
-
+    
         let source = unindent(
             r##"
             struct Diagnostic {
@@ -735,30 +739,31 @@ mod tests {
             ^ #}#
             "##,
         );
-
-        let (source, mut ann) = process(&source);
-
+    
+        let (source, ann) = process(&source);
+    
         let filemap = ann.codemap().add_filemap("test".into(), source.clone());
         let start = filemap.span().start().0;
-
+    
         let tokens = match Tokenizer::new(ann.table(), &source, start).tokens() {
             Ok(tokens) => tokens,
             Err(e) => print_parse_error(e, ann.codemap()),
         };
-
+    
         // let tokens: Result<Vec<Spanned<Token>>, ParseError> = lexed
         //     .map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
         //     .collect();
-
+    
         println!("{:#?}", DebuggableVec::from(&tokens.clone(), ann.table()));
-
+    
         let builtin_macros = macros(ann.table());
-
+    
         let parser = LiteParser::new(tokens, builtin_macros, ann.table().clone(), ann.codemap());
-
+    
         match parser.process() {
             Ok(_) => {}
             Err(e) => print_parse_error(e, ann.codemap()),
         };
     }
+    */
 }

@@ -1,8 +1,12 @@
-use codespan::ByteIndex;
+use crate::prelude::*;
+
 use crate::parser::lexer_helpers::ParseError;
 use crate::parser::test_helpers::{LineTokenizer, Token};
 use crate::parser::{ast, ModuleTable, Span, Spanned, StringId};
+use crate::parser2::TokenPos;
+use crate::LexToken;
 
+use codespan::ByteIndex;
 use codespan::{ByteOffset, CodeMap};
 use derive_new::new;
 use itertools::Itertools;
@@ -15,11 +19,12 @@ pub fn process(source: &str) -> (String, Annotations) {
     extract(&source, codemap, 1)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Annotation {
     Whitespace(Span),
     Newline(Span),
     Identifier(Span),
+    String(Span),
     Sigil(Span),
 }
 
@@ -77,6 +82,14 @@ fn extract(s: &str, codemap: CodeMap, mut codespan_start: u32) -> (String, Annot
                         );
 
                         anns.push(Annotation::Identifier(span));
+                    }
+
+                    Token::String(string) => {
+                        let (name, snip, span) = ident(string, &anns, &spans, &t2, &source);
+
+                        assert_eq!(&name[..], snip, "annotation matches source");
+
+                        anns.push(Annotation::String(span));
                     }
 
                     Token::WsKeyword => {

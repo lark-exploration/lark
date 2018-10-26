@@ -4,6 +4,8 @@
 #![feature(nll)]
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
+#![feature(bind_by_move_pattern_guards)]
+#![feature(cell_update)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -27,5 +29,6 @@ pub use self::parser::parse;
 pub use self::parser::pos;
 pub use self::parser::program::{LookupStringId, ModuleTable, Seahash, StringId};
 pub use self::parser::token::Token;
-pub use self::parser2::LexToken;
 pub use self::parser2::reader::{PairedDelimiter, Reader};
+pub use self::parser2::token_tree::{TokenPos, TokenSpan};
+pub use self::parser2::LexToken;

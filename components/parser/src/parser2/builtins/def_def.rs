@@ -2,21 +2,23 @@ use crate::prelude::*;
 
 use crate::parser::{ParseError, Spanned};
 use crate::parser2::allow::ALLOW_NEWLINE;
+use crate::parser2::entity_tree::EntityKind;
 use crate::parser2::lite_parse::{BindingId, ScopeId};
 use crate::parser2::lite_parse::{
     ExpectedId, LiteParser, MaybeTerminator, RelativePosition, Token,
 };
 use crate::parser2::macros::{MacroRead, Term};
-use crate::LexToken;
-use crate::parser2::reader::{self, Reader};
+use crate::parser2::reader::{self, PairedDelimiter, Reader};
+use crate::parser2::token;
 use crate::parser2::token_tree::Handle;
+use crate::LexToken;
 
 use log::trace;
 
 impl MacroRead for DefDef {
     fn extent(&self, reader: &mut Reader<'_>) -> Result<(), ParseError> {
         let name = reader.expect_id(ALLOW_NEWLINE)?;
-        reader.start_entity(&name);
+        reader.start_entity(&name, EntityKind::Def);
 
         reader.expect_sigil("(", ALLOW_NEWLINE)?;
 
@@ -47,15 +49,13 @@ impl MacroRead for DefDef {
             }
         }
 
-        let ty = match reader.maybe_sigil("->", ALLOW_NEWLINE)? {
+        match reader.maybe_sigil("->", ALLOW_NEWLINE)? {
             Ok(_) => Some(reader.expect_type(ALLOW_NEWLINE)?),
             Err(_) => None,
         };
 
-        reader.expect_sigil("{", ALLOW_NEWLINE)?;
-
-        reader.expect_expr()?;
-
+        let sigil = reader.expect_sigil("{", ALLOW_NEWLINE)?;
+        reader.expect_paired_delimiters(sigil.copy(PairedDelimiter::Curly))?;
         reader.end_entity();
 
         trace!("DefDef {{ name: {:?}, params: {:?} }}", name, params);
@@ -70,7 +70,7 @@ impl MacroRead for DefDef {
     ) -> Result<Box<dyn Term>, ParseError> {
         let binding = reader.export_name(scope, RelativePosition::Hoist, false)?;
         let name = reader.get_binding_name(&scope, binding.node());
-        reader.start_entity(name);
+        reader.start_entity(name, EntityKind::Def);
 
         reader.expect_sigil("(", ALLOW_NEWLINE)?;
 

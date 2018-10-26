@@ -1,18 +1,20 @@
 use crate::prelude::*;
 
 use crate::parser2::reader::EOF;
-use crate::{LexToken, PairedDelimiter, ParseError, Reader, ModuleTable};
 use crate::parser2::token::{self, ClassifiedSigil};
+use crate::{LexToken, ModuleTable, PairedDelimiter, ParseError, Reader};
+
+use log::trace;
 
 pub struct Paired<'reader> {
     tokens: &'reader [Spanned<LexToken>],
     pos: usize,
     delimiters: Vec<Spanned<PairedDelimiter>>,
-    table: &'reader ModuleTable
+    table: &'reader ModuleTable,
 }
 
 impl Paired<'reader> {
-    crate fn start(reader: &Reader, del: Spanned<PairedDelimiter>) -> Paired<'reader> {
+    crate fn start(reader: &'reader Reader, del: Spanned<PairedDelimiter>) -> Paired<'reader> {
         let (tokens, pos) = reader.tokens();
         let delimiters = vec![del];
 
@@ -20,13 +22,16 @@ impl Paired<'reader> {
             tokens,
             pos,
             delimiters,
-            table: reader.table()
+            table: reader.table(),
         }
     }
 
     pub fn process(&mut self) -> Result<usize, ParseError> {
+        trace!(target: "lark::reader", "# Paired#process");
+
         loop {
             let next = self.consume();
+            trace!(target: "lark::reader", "consumed {:?}", Debuggable::from(&next, &self.table));
 
             match next.node() {
                 LexToken::Whitespace(..) => continue,
@@ -37,7 +42,7 @@ impl Paired<'reader> {
                     self.process_sigil(*sigil, next.span())?;
 
                     if self.delimiters.len() == 0 {
-                        return Ok(self.pos)
+                        return Ok(self.pos);
                     }
                 }
                 LexToken::Newline => continue,
@@ -48,10 +53,18 @@ impl Paired<'reader> {
 
     fn process_sigil(&mut self, sigil: token::Sigil, span: Span) -> Result<(), ParseError> {
         match sigil.classify(self.table) {
-            ClassifiedSigil::OpenCurly => self.push_delimiter(Spanned::wrap_span(PairedDelimiter::Curly, span)),
-            ClassifiedSigil::OpenSquare => self.push_delimiter(Spanned::wrap_span(PairedDelimiter::Square, span)),
-            ClassifiedSigil::OpenRound => self.push_delimiter(Spanned::wrap_span(PairedDelimiter::Round, span)),
-            sigil if self.closes_current(sigil) => { self.pop_delimiter(span)?; },
+            ClassifiedSigil::OpenCurly => {
+                self.push_delimiter(Spanned::wrap_span(PairedDelimiter::Curly, span))
+            }
+            ClassifiedSigil::OpenSquare => {
+                self.push_delimiter(Spanned::wrap_span(PairedDelimiter::Square, span))
+            }
+            ClassifiedSigil::OpenRound => {
+                self.push_delimiter(Spanned::wrap_span(PairedDelimiter::Round, span))
+            }
+            classified if self.closes_current(classified) => {
+                self.pop_delimiter(span)?;
+            }
             _ => {}
         }
 
@@ -60,6 +73,8 @@ impl Paired<'reader> {
 
     fn consume(&mut self) -> Spanned<LexToken> {
         let token = self.tokens[self.pos];
+
+        trace!(target: "lark::reader", "token={:?}", Debuggable::from(&token, self.table));
 
         self.pos += 1;
 
@@ -73,7 +88,7 @@ impl Paired<'reader> {
             (PairedDelimiter::Curly, ClassifiedSigil::CloseCurly) => true,
             (PairedDelimiter::Round, ClassifiedSigil::CloseRound) => true,
             (PairedDelimiter::Square, ClassifiedSigil::CloseSquare) => true,
-            _ => false
+            _ => false,
         }
     }
 

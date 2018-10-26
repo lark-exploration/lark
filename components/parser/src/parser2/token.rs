@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use crate::{StringId, ModuleTable};
+use crate::{ModuleTable, StringId};
 
 use std::fmt;
 
@@ -23,7 +23,6 @@ impl DebugModuleTable for Sigil {
     }
 }
 
-
 impl Sigil {
     pub fn classify(&self, table: &ModuleTable) -> ClassifiedSigil {
         let string = table.lookup(&self.0);
@@ -35,11 +34,12 @@ impl Sigil {
             ")" => ClassifiedSigil::CloseRound,
             "[" => ClassifiedSigil::OpenSquare,
             "]" => ClassifiedSigil::CloseSquare,
-            _ => ClassifiedSigil::Other(self.0)
+            _ => ClassifiedSigil::Other(self.0),
         }
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClassifiedSigil {
     OpenCurly,
     CloseCurly,
@@ -47,7 +47,7 @@ pub enum ClassifiedSigil {
     CloseSquare,
     OpenRound,
     CloseRound,
-    Other(StringId)
+    Other(StringId),
 }
 
 impl Token {
@@ -94,6 +94,13 @@ impl Token {
             _ => false,
         }
     }
+
+    pub fn is_whitespace(&self) -> bool {
+        match self {
+            Token::Newline | Token::Whitespace(..) => true,
+            _ => false,
+        }
+    }
 }
 
 impl Spanned<Token> {
@@ -129,11 +136,29 @@ impl DebugModuleTable for Token {
         match self {
             Whitespace(_) => write!(f, "<whitespace>"),
             Identifier(s) => s.debug(f, table),
-            Sigil(s) => write!(f, "#{:?}#", Debuggable::from(s, table)),
+            Sigil(s) => write!(f, "{:?}", Debuggable::from(s, table)),
             Comment(_) => write!(f, "/* ... */"),
             String(s) => write!(f, "\"{:?}\"", Debuggable::from(s, table)),
             Newline => write!(f, "<newline>"),
             EOF => write!(f, "<EOF>"),
         }
     }
+}
+
+pub fn token_pos_at(line: usize, pos: usize, tokens: &[Spanned<Token>]) -> crate::TokenPos {
+    let mut current_line = 1;
+    let mut current_pos = 0;
+
+    for (i, ann) in tokens.iter().enumerate() {
+        if current_line == line && current_pos == pos {
+            return crate::TokenPos(i);
+        } else if let Token::Newline = ann.node() {
+            current_line += 1;
+            current_pos = 0;
+        } else {
+            current_pos += 1;
+        }
+    }
+
+    panic!("Couldn't find a token at {}:{}", line, pos);
 }

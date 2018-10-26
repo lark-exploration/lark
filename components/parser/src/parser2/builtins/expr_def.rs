@@ -65,7 +65,11 @@ impl ExprParser {
         self.start_expr(reader)?;
 
         loop {
-            match self.continue_expr(reader)? {
+            trace!(target: "lark::reader", "ExprParser#process");
+            let next = self.continue_expr(reader)?;
+            trace!(target: "lark::reader", "next={:?}", next);
+
+            match next {
                 Continue::PossibleEnd => continue,
                 Continue::Terminator => return Ok(()),
             }
@@ -87,17 +91,25 @@ impl ExprParser {
     }
 
     fn continue_expr(&mut self, reader: &mut Reader<'_>) -> Result<Continue, ParseError> {
-        Ok(
-            match reader.peek_continue_expr(ALLOW_EOF | ALLOW_NEWLINE)? {
-                ShapeContinue::Identifier(_) => Continue::Terminator,
-                ShapeContinue::Macro(_) => Continue::Terminator,
-                ShapeContinue::Sigil(_) => Continue::Terminator,
-                ShapeContinue::Operator(_) => unimplemented!(),
-                ShapeContinue::PairedDelimiter(d) => return self.continue_delimiters(reader, d),
-                ShapeContinue::Newline => Continue::Terminator,
-                ShapeContinue::EOF => Continue::Terminator,
-            },
-        )
+        trace!(target: "lark::reader", "ExprParser#continue_expr");
+
+        let result = match reader.peek_continue_expr(ALLOW_EOF | ALLOW_NEWLINE)? {
+            ShapeContinue::Identifier(_) => Continue::Terminator,
+            ShapeContinue::Macro(_) => Continue::Terminator,
+            ShapeContinue::Sigil(_) => Continue::Terminator,
+            ShapeContinue::Operator(_) => unimplemented!(),
+            ShapeContinue::PairedDelimiter(d) => {
+                trace!(target: "lark::reader", "Found paired delimiter {:?}", d);
+                reader.consume_continue_expr(ShapeContinue::PairedDelimiter(d), ALLOW_NEWLINE)?;
+                return self.continue_delimiters(reader, d);
+            }
+            ShapeContinue::Newline => Continue::Terminator,
+            ShapeContinue::EOF => Continue::Terminator,
+        };
+
+        trace!(target: "lark::reader", "result: {:?}", result);
+
+        Ok(result)
     }
 
     fn start_id(&mut self, reader: &mut Reader<'_>, start: ShapeStart) -> Result<(), ParseError> {
@@ -107,23 +119,27 @@ impl ExprParser {
     fn continue_delimiters(
         &mut self,
         reader: &mut Reader<'_>,
-        del: PairedDelimiter,
+        del: Spanned<PairedDelimiter>,
     ) -> Result<Continue, ParseError> {
+        reader.expect_paired_delimiters(del)?;
         Ok(Continue::PossibleEnd)
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 enum Continue {
     PossibleEnd,
     Terminator,
 }
 
+#[derive(Debug)]
 enum States {
     Initial,
     Delimited(Vec<Delimiter>),
     PossibleEnd,
 }
 
+#[derive(Debug)]
 enum Delimiter {
     Curly,
     Round,

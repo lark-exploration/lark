@@ -55,6 +55,9 @@ impl LexerDelegateTrait for LexerState {
                 None => LexerNext::EOF,
                 Some(c) => match c {
                     c if UnicodeXID::is_xid_start(c) => LexerNext::begin(StartIdent),
+                    c if is_delimiter_sigil_char(c) => {
+                        consume().and_emit_dynamic(LexToken::sigil).and_remain()
+                    }
                     c if is_sigil_char(c) => {
                         LexerNext::begin(Sigil)
                         // LexerNext::dynamic_sigil(Token::Sigil)
@@ -163,14 +166,21 @@ fn is_sigil_char(c: char) -> bool {
     }
 }
 
+fn is_delimiter_sigil_char(c: char) -> bool {
+    match c {
+        '{' | '}' | '(' | ')' | '>' | '<' => true,
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::LexToken;
+    use super::Tokenizer;
     use crate::parser::ast::DebuggableVec;
     use crate::parser::lexer_helpers::ParseError;
     use crate::parser::{Span, Spanned};
     use crate::parser2::test_helpers::{process, Annotations, Position};
-    use super::Tokenizer;
+    use crate::LexToken;
 
     use log::trace;
     use unindent::unindent;
