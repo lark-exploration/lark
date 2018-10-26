@@ -119,7 +119,7 @@ where
             .db
             .generic_declarations(def_id)
             .into_value()
-            .unwrap_or_else(|ErrorReported| Arc::new(GenericDeclarations::default()));
+            .unwrap_or_else(|ErrorReported(_)| Arc::new(GenericDeclarations::default()));
 
         let mut generics = match parent_item {
             Some(def_id) => self.placeholders_for(*def_id),

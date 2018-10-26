@@ -7,8 +7,9 @@ use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
 use lark_entity::MemberKind;
-use lark_error::or_sentinel;
+use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_error::WithError;
 use std::sync::Arc;
 use ty::declaration::Declaration;
@@ -36,7 +37,7 @@ crate fn generic_declarations(
     };
 
     match entity.untern(db) {
-        EntityData::Error => WithError::error_sentinel(db),
+        EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
 
         EntityData::LangItem(LangItem::Boolean) => WithError::ok(Ok(empty_declarations(None))),
 
@@ -48,7 +49,7 @@ crate fn generic_declarations(
         }
 
         EntityData::ItemName { .. } => {
-            let ast = or_sentinel!(db, db.ast_of_item(entity));
+            let ast = or_return_sentinel!(db, db.ast_of_item(entity));
 
             // Eventually, items ought to be permitted to have generic types attached to them.
             match &*ast {
@@ -78,7 +79,7 @@ crate fn generic_declarations(
 
 crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declaration>> {
     match entity.untern(db) {
-        EntityData::Error => WithError::error_sentinel(db),
+        EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
 
         EntityData::LangItem(LangItem::Boolean) => {
             WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
@@ -97,7 +98,7 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declarati
         }
 
         EntityData::ItemName { .. } => {
-            let ast = or_sentinel!(db, db.ast_of_item(entity));
+            let ast = or_return_sentinel!(db, db.ast_of_item(entity));
 
             match &*ast {
                 a::Item::Struct(_) | a::Item::Def(_) => {
@@ -110,7 +111,7 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declarati
             base,
             kind: MemberKind::Field,
             id,
-        } => match &*or_sentinel!(db, db.ast_of_item(base)) {
+        } => match &*or_return_sentinel!(db, db.ast_of_item(base)) {
             a::Item::Struct(s) => match s.fields.iter().find(|f| *f.name == id) {
                 Some(field) => declaration_ty_from_ast_ty(db, entity, &field.ty),
 
@@ -139,37 +140,33 @@ crate fn signature(
 ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
     let mut errors = vec![];
 
-    match db.ast_of_item(owner) {
-        Ok(ast) => match &*ast {
-            a::Item::Struct(_) => panic!("asked for signature of a struct"),
+    match &*or_return_sentinel!(db, db.ast_of_item(owner)) {
+        a::Item::Struct(_) => panic!("asked for signature of a struct"),
 
-            a::Item::Def(d) => {
-                let inputs: Vec<_> = d
-                    .parameters
-                    .iter()
-                    .map(|p| {
-                        declaration_ty_from_ast_ty(db, owner, &p.ty)
-                            .accumulate_errors_into(&mut errors)
-                    })
-                    .collect();
+        a::Item::Def(d) => {
+            let inputs: Vec<_> = d
+                .parameters
+                .iter()
+                .map(|p| {
+                    declaration_ty_from_ast_ty(db, owner, &p.ty).accumulate_errors_into(&mut errors)
+                })
+                .collect();
 
-                let output = match &d.ret {
-                    None => unit_ty(db),
-                    Some(ty) => declaration_ty_from_ast_ty(db, owner, ty)
-                        .accumulate_errors_into(&mut errors),
-                };
-
-                WithError {
-                    value: Ok(Signature {
-                        inputs: Arc::new(inputs),
-                        output,
-                    }),
-                    errors,
+            let output = match &d.ret {
+                None => unit_ty(db),
+                Some(ty) => {
+                    declaration_ty_from_ast_ty(db, owner, ty).accumulate_errors_into(&mut errors)
                 }
-            }
-        },
+            };
 
-        Err(_parse_error) => WithError::error_sentinel(db),
+            WithError {
+                value: Ok(Signature {
+                    inputs: Arc::new(inputs),
+                    output,
+                }),
+                errors,
+            }
+        }
     }
 }
 

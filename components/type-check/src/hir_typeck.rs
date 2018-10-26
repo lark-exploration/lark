@@ -20,7 +20,7 @@ where
             .db
             .signature(self.fn_entity)
             .into_value()
-            .unwrap_or_else(|ErrorReported| {
+            .unwrap_or_else(|ErrorReported(_)| {
                 Signature::error_sentinel(self, self.hir.arguments.len())
             });
         let placeholders = self.placeholders_for(self.fn_entity);
@@ -199,7 +199,7 @@ where
 
                 let signature_decl = match self.db().signature(method_entity).into_value() {
                     Ok(s) => s,
-                    Err(ErrorReported) => Signature::error_sentinel(self, arguments.len()),
+                    Err(ErrorReported(_)) => Signature::error_sentinel(self, arguments.len()),
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {

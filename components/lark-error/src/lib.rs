@@ -17,7 +17,7 @@
 //!   propagated an error or not, but sometimes it's the best/easiest
 //!   thing to do.
 //!   - To help with this, the `or_sentinel!` query acts as a kind of `?` operator
-//!     for bridging a `Result<T, ErrorReported>` into a `WithError<U>` where `U` has
+//!     for bridging a `Result<T, ErrorReported>` into a `U` where `U` has
 //!     a proper sentinel -- if the result is `Err(ErrorReported)`, it creates the
 //!     error-sentinel for `U` and returns it.
 //!   - This relies on the `ErrorSentinel` trait, which defines the
@@ -30,21 +30,29 @@
 
 use lark_debug_derive::DebugWith;
 use parser::pos::Span;
-use parser::ParseError;
+use std::sync::Arc;
 
 /// Unit type used in `Result` to indicate a value derived from other
 /// value where an error was already reported.
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ErrorReported;
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ErrorReported(pub Vec<Span>);
 
-impl From<ParseError> for ErrorReported {
-    fn from(_: ParseError) -> ErrorReported {
-        ErrorReported
+impl ErrorReported {
+    pub fn at_span(s: Span) -> Self {
+        ErrorReported(vec![s])
     }
-}
 
-pub trait ErrorSentinel<Cx> {
-    fn error_sentinel(cx: Cx) -> Self;
+    pub fn at_spans(s: Vec<Span>) -> Self {
+        ErrorReported(s)
+    }
+
+    pub fn spans(&self) -> &[Span] {
+        &self.0
+    }
+
+    pub fn into_spans(self) -> Vec<Span> {
+        self.0
+    }
 }
 
 /// Used to indicate an operation that may report an error.  Note that
@@ -79,19 +87,9 @@ impl<T> WithError<T> {
         T: ErrorSentinel<Cx>,
     {
         WithError {
-            value: T::error_sentinel(cx),
+            value: T::error_sentinel(cx, &[span]),
             errors: vec![span],
         }
-    }
-
-    /// Convenience function: generates a `WithError` that uses a
-    /// sentinel value to indicate that an error has already been
-    /// reported.
-    pub fn error_sentinel<Cx>(cx: Cx) -> WithError<T>
-    where
-        T: ErrorSentinel<Cx>,
-    {
-        WithError::ok(T::error_sentinel(cx))
     }
 
     /// Append any errors into `vec` and return our wrapped value.
@@ -106,25 +104,59 @@ impl<T> WithError<T> {
 
     pub fn into_result(self) -> Result<T, ErrorReported> {
         if !self.errors.is_empty() {
-            Err(ErrorReported)
+            Err(ErrorReported(self.errors.clone()))
         } else {
             Ok(self.value)
         }
     }
 }
 
-impl<T, DB> ErrorSentinel<&DB> for Result<T, ErrorReported> {
-    fn error_sentinel(_db: &DB) -> Self {
-        Err(ErrorReported)
-    }
-}
-
 /// A kind of `?` operator for `Result<T, ErrorReported>` values -- if
 /// `$v` is an `Err`, then returns `WithError::error_sentinel($cx)`
 /// from the surrounding function.
-pub macro or_sentinel($cx:expr, $v:expr) {
+pub macro or_return_sentinel($cx:expr, $v:expr) {
     match $v {
         Ok(v) => v,
-        Err(_) => return WithError::error_sentinel($cx),
+        Err(ErrorReported(spans)) => return ErrorSentinel::error_sentinel($cx, &spans),
+    }
+}
+
+pub trait ErrorSentinel<Cx> {
+    fn error_sentinel(cx: Cx, error_spans: &[Span]) -> Self;
+}
+
+impl<T, Cx> ErrorSentinel<Cx> for Result<T, ErrorReported> {
+    fn error_sentinel(_cx: Cx, spans: &[Span]) -> Self {
+        Err(ErrorReported(spans.to_owned()))
+    }
+}
+
+impl<T, Cx> ErrorSentinel<Cx> for Arc<T>
+where
+    T: ErrorSentinel<Cx>,
+{
+    fn error_sentinel(cx: Cx, spans: &[Span]) -> Self {
+        Arc::new(T::error_sentinel(cx, spans))
+    }
+}
+
+impl<T, Cx> ErrorSentinel<Cx> for Vec<T>
+where
+    T: ErrorSentinel<Cx>,
+{
+    fn error_sentinel(cx: Cx, spans: &[Span]) -> Self {
+        vec![T::error_sentinel(cx, spans)]
+    }
+}
+
+impl<T, Cx> ErrorSentinel<Cx> for WithError<T>
+where
+    T: ErrorSentinel<Cx>,
+{
+    fn error_sentinel(cx: Cx, spans: &[Span]) -> WithError<T>
+    where
+        T: ErrorSentinel<Cx>,
+    {
+        WithError::ok(T::error_sentinel(cx, spans))
     }
 }

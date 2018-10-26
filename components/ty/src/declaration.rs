@@ -10,6 +10,7 @@ use crate::Ty;
 use crate::TypeFamily;
 use intern::Intern;
 use lark_error::ErrorSentinel;
+use parser::pos::Span;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Declaration;
@@ -41,7 +42,7 @@ impl<DB> ErrorSentinel<&DB> for Ty<Declaration>
 where
     DB: AsRef<TyInternTables>,
 {
-    fn error_sentinel(db: &DB) -> Self {
+    fn error_sentinel(db: &DB, _spans: &[Span]) -> Self {
         Declaration::error_type(db)
     }
 }

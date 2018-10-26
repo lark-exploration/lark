@@ -4,8 +4,10 @@
 #![feature(const_let)]
 
 use debug::DebugWith;
-use intern::Untern;
+use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
+use lark_error::ErrorSentinel;
+use parser::pos::Span;
 use parser::StringId;
 
 indices::index_type! {
@@ -16,7 +18,7 @@ indices::index_type! {
 pub enum EntityData {
     /// Indicates that fetching the entity somehow failed with an
     /// error (which has been separately reported).
-    Error,
+    Error(Span),
 
     LangItem(LangItem),
 
@@ -81,10 +83,24 @@ impl Entity {
     /// The input file in which an entity appears (if any).
     pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<StringId> {
         match self.untern(db) {
-            EntityData::Error | EntityData::LangItem(_) => None,
+            EntityData::LangItem(_) => None,
             EntityData::InputFile { file } => Some(file),
             EntityData::ItemName { base, .. } => base.input_file(db),
             EntityData::MemberName { base, .. } => base.input_file(db),
+            EntityData::Error(_span) => {
+                // FIXME we could recover a file here
+                None
+            }
         }
+    }
+}
+
+impl<DB> ErrorSentinel<&DB> for Entity
+where
+    DB: AsRef<EntityTables>,
+{
+    fn error_sentinel(db: &DB, spans: &[Span]) -> Self {
+        // Pick the first error arbitrarily
+        EntityData::Error(spans[0]).intern(db)
     }
 }

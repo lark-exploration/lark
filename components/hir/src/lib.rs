@@ -349,6 +349,6 @@ indices::index_type! {
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ErrorData {
-    ParseError { description: String },
+    Misc,
     UnknownIdentifier { text: StringId },
 }
