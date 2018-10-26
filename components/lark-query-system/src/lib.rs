@@ -1,14 +1,13 @@
 use std::sync::Arc;
 
-use ast::{
-    AstDatabase, AstOfFile, AstOfItem, HasParserState, InputFiles, InputText, ItemsInFile,
-    ParserState,
-};
-use languageserver_types::Position;
+use ast::{HasParserState, ParserState};
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use salsa::{Database, ParallelDatabase};
 use ty::interners::TyInternTables;
+
+mod ls_ops;
+use self::ls_ops::{Cancelled, LsDatabase};
 
 #[derive(Default)]
 struct LarkDatabase {
@@ -35,14 +34,18 @@ impl ParallelDatabase for LarkDatabase {
     }
 }
 
+impl LsDatabase for LarkDatabase {}
+
 salsa::database_storage! {
     struct LarkDatabaseStorage for LarkDatabase {
-        impl AstDatabase {
-            fn input_files() for InputFiles;
-            fn input_text() for InputText;
-            fn ast_of_file() for AstOfFile;
-            fn items_in_file() for ItemsInFile;
-            fn ast_of_item() for AstOfItem;
+        impl ast::AstDatabase {
+            fn input_files() for ast::InputFiles;
+            fn input_text() for ast::InputText;
+            fn ast_of_file() for ast::AstOfFile;
+            fn items_in_file() for ast::ItemsInFile;
+            fn ast_of_item() for ast::AstOfItem;
+            fn ast_of_field() for ast::AstOfField;
+            fn entity_span() for ast::EntitySpan;
         }
         impl hir::HirDatabase {
             fn boolean_entity() for hir::BooleanEntityQuery;
@@ -116,10 +119,10 @@ impl Actor for QuerySystem {
                 let interned_path = self.lark_db.intern_string(url.as_str());
                 let interned_contents = self.lark_db.intern_string(contents.as_str());
                 self.lark_db
-                    .query(InputFiles)
+                    .query(ast::InputFiles)
                     .set((), Arc::new(vec![interned_path]));
                 self.lark_db
-                    .query(InputText)
+                    .query(ast::InputText)
                     .set(interned_path, Some(interned_contents));
             }
             QueryRequest::EditFile(_) => {}
@@ -131,7 +134,7 @@ impl Actor for QuerySystem {
                         // Ensure that `type_at_position` executes atomically
                         let _lock = db.salsa_runtime().lock_revision();
 
-                        match type_at_position(&db, url.as_str(), position) {
+                        match db.type_at_position(url.as_str(), position) {
                             Ok(v) => {
                                 send_channel.send(QueryResponse::Type(task_id, v.to_string()));
                             }
@@ -146,22 +149,6 @@ impl Actor for QuerySystem {
             }
         }
     }
-}
-
-struct Cancelled;
-
-fn type_at_position(
-    db: &impl AstDatabase,
-    url: &str,
-    _position: Position,
-) -> Result<String, Cancelled> {
-    let interned_path = db.intern_string(url);
-    let result = db.input_text(interned_path);
-    let contents = db.untern_string(result.unwrap());
-    if db.salsa_runtime().is_current_revision_canceled() {
-        return Err(Cancelled);
-    }
-    Ok(contents.to_string())
 }
 
 #[cfg(test)]

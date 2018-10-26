@@ -9,8 +9,9 @@
 pub use crate::parser_state::ParserState;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
+use lark_error::{ErrorReported, WithError};
 pub use parser::ast;
-use parser::ParseError;
+use parser::pos::Span;
 use parser::StringId;
 use std::sync::Arc;
 
@@ -33,7 +34,7 @@ salsa::query_group! {
             storage input;
         }
 
-        fn ast_of_file(path: StringId) -> Result<Arc<ast::Module>, ParseError> {
+        fn ast_of_file(path: StringId) -> WithError<Result<Arc<ast::Module>, ErrorReported>> {
             type AstOfFile;
             use fn query_definitions::ast_of_file;
         }
@@ -43,9 +44,19 @@ salsa::query_group! {
             use fn query_definitions::items_in_file;
         }
 
-        fn ast_of_item(item: Entity) -> Result<Arc<ast::Item>, ParseError> {
+        fn entity_span(entity: Entity) -> Option<Span> {
+            type EntitySpan;
+            use fn query_definitions::entity_span;
+        }
+
+        fn ast_of_item(item: Entity) -> Result<Arc<ast::Item>, ErrorReported> {
             type AstOfItem;
             use fn query_definitions::ast_of_item;
+        }
+
+        fn ast_of_field(item: Entity) -> Result<ast::Field, ErrorReported> {
+            type AstOfField;
+            use fn query_definitions::ast_of_field;
         }
     }
 }

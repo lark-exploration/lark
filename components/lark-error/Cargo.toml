@@ -1,14 +1,10 @@
 [package]
-name = "lark-entity"
+name = "lark-error"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
 debug = { path = "../debug" }
-indices = { path = "../indices" }
-intern = { path = "../intern" }
 lark-debug-derive = { path = "../lark-debug-derive" }
-lark-error = { path = "../lark-error" }
-parking_lot = "0.6.4"
 parser = { path = "../parser" }

@@ -2,8 +2,8 @@ use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::UniverseBinder;
 use hir;
-use hir::error::ErrorReported;
 use lark_entity::Entity;
+use lark_error::ErrorReported;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 use ty::interners::TyInternTables;
@@ -119,7 +119,7 @@ where
             .db
             .generic_declarations(def_id)
             .into_value()
-            .unwrap_or_else(|ErrorReported| Arc::new(GenericDeclarations::default()));
+            .unwrap_or_else(|ErrorReported(_)| Arc::new(GenericDeclarations::default()));
 
         let mut generics = match parent_item {
             Some(def_id) => self.placeholders_for(*def_id),

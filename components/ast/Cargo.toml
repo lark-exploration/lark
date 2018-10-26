@@ -6,10 +6,11 @@ edition = "2018"
 
 [dependencies]
 parking_lot = "0.6.4"
-salsa = "0.6.1"
+salsa = "0.6.2"
 
 debug = { path = "../debug" }
 lark-debug-derive = { path = "../lark-debug-derive" }
+lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }

@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 languageserver-types = "0.51.0"
-salsa = "0.6.1"
+salsa = "0.6.2"
 
 ast = { path = "../ast" }
 intern = { path = "../intern" }

@@ -6,12 +6,13 @@ edition = "2018"
 
 [dependencies]
 generational-arena = "0.1.0"
-salsa = "0.6.1"
+salsa = "0.6.2"
 
 ast = { path = "../ast" }
 hir = { path = "../hir" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }
+lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 map = { path = "../map" }
 parser = { path = "../parser" }

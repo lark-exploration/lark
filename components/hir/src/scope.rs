@@ -16,9 +16,9 @@ crate fn resolve_name(db: &impl HirDatabase, scope: Entity, name: StringId) -> O
                         id == name
                     }
 
-                    EntityData::LangItem(_) | EntityData::Error | EntityData::InputFile { .. } => {
-                        false
-                    }
+                    EntityData::LangItem(_)
+                    | EntityData::Error(_)
+                    | EntityData::InputFile { .. } => false,
                 })
                 .cloned()
                 .next()
@@ -42,6 +42,6 @@ crate fn resolve_name(db: &impl HirDatabase, scope: Entity, name: StringId) -> O
 
         EntityData::LangItem(_) => panic!("lang item is not a legal scope"),
 
-        EntityData::Error => Some(scope),
+        EntityData::Error(_) => Some(scope),
     }
 }

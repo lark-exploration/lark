@@ -4,6 +4,7 @@ use ast::ast as a;
 use crate as hir;
 use crate::HirDatabase;
 use lark_entity::Entity;
+use lark_error::ErrorReported;
 use map::FxIndexMap;
 use parser::pos::{Span, Spanned};
 use parser::StringId;
@@ -75,13 +76,9 @@ where
                 }
             },
 
-            Err(parse_error) => {
-                let root_expression = self.error_expression(
-                    parse_error.span,
-                    hir::ErrorData::ParseError {
-                        description: parse_error.description,
-                    },
-                );
+            Err(ErrorReported(ref spans)) => {
+                let root_expression =
+                    self.error_expression(*spans.first().unwrap(), hir::ErrorData::Misc);
 
                 hir::FnBody {
                     arguments: vec![],
