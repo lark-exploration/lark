@@ -100,6 +100,18 @@ pub struct Field {
     pub span: Span,
 }
 
+impl HasSpan for Field {
+    type Inner = Self;
+
+    fn span(&self) -> Span {
+        self.span
+    }
+
+    fn node(&self) -> &Self {
+        self
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum ConstructField {
     Longhand(Field),

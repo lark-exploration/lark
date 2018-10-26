@@ -8,6 +8,7 @@ use lark_entity::MemberKind;
 use lark_error::or_return_sentinel;
 use lark_error::{ErrorReported, WithError};
 use parser::ast;
+use parser::pos::{HasSpan, Span};
 use parser::StringId;
 use std::sync::Arc;
 
@@ -105,5 +106,33 @@ crate fn ast_of_field(db: &impl AstDatabase, item_id: Entity) -> Result<ast::Fie
         EntityData::Error(span) => Err(ErrorReported::at_span(span)),
 
         d => panic!("ast-of-item invoked with non-field {:?}", d),
+    }
+}
+
+crate fn entity_span(db: &impl AstDatabase, entity: Entity) -> Option<Span> {
+    match entity.untern(db) {
+        EntityData::ItemName { .. } => match db.ast_of_item(entity) {
+            Ok(ast) => Some(ast.span()),
+            Err(err) => Some(err.some_span()),
+        },
+
+        EntityData::Error(span) => Some(span),
+
+        EntityData::LangItem(_) => None,
+
+        EntityData::InputFile { .. } => unimplemented!("span for an input file"),
+
+        EntityData::MemberName {
+            kind: MemberKind::Field,
+            ..
+        } => match db.ast_of_field(entity) {
+            Ok(field) => Some(field.span()),
+            Err(err) => Some(err.some_span()),
+        },
+
+        EntityData::MemberName {
+            kind: MemberKind::Method,
+            ..
+        } => unimplemented!("span for a method"),
     }
 }

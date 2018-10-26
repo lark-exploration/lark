@@ -45,6 +45,7 @@ salsa::database_storage! {
             fn items_in_file() for ast::ItemsInFile;
             fn ast_of_item() for ast::AstOfItem;
             fn ast_of_field() for ast::AstOfField;
+            fn entity_span() for ast::EntitySpan;
         }
         impl hir::HirDatabase {
             fn boolean_entity() for hir::BooleanEntityQuery;

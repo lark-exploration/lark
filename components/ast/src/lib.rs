@@ -11,6 +11,7 @@ use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::{ErrorReported, WithError};
 pub use parser::ast;
+use parser::pos::Span;
 use parser::StringId;
 use std::sync::Arc;
 
@@ -41,6 +42,11 @@ salsa::query_group! {
         fn items_in_file(path: StringId) -> Arc<Vec<Entity>> {
             type ItemsInFile;
             use fn query_definitions::items_in_file;
+        }
+
+        fn entity_span(entity: Entity) -> Option<Span> {
+            type EntitySpan;
+            use fn query_definitions::entity_span;
         }
 
         fn ast_of_item(item: Entity) -> Result<Arc<ast::Item>, ErrorReported> {

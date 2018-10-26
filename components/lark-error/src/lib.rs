@@ -46,6 +46,11 @@ impl ErrorReported {
         ErrorReported(s)
     }
 
+    pub fn some_span(&self) -> Span {
+        // Pick the first error arbitrarily
+        self.spans()[0]
+    }
+
     pub fn spans(&self) -> &[Span] {
         &self.0
     }
