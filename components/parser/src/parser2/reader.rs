@@ -694,6 +694,7 @@ mod tests {
     use crate::parser2::token::token_pos_at;
     use crate::LexToken;
 
+    use derive_new::new;
     use log::{debug, trace};
     use std::collections::HashMap;
     use unindent::unindent;
@@ -720,12 +721,12 @@ mod tests {
             ^ #}#
             def main() {
             ^^^~^^^^~^~^ @def@ ws @main@ #(# #)# ws #{#
-                let var_name = "variable"
-                ^^^~^^^^^^^^~^~^^^^^^^^^^ @let@ ws @var_name@ ws #=# ws "variable"
-                let s = "variable is unused" + var_name
-                ^^^~^~^~^^^^^^^^^^^^^^^^^^^^~^~^^^^^^^^ @let@ ws @s@ ws #=# ws "variable is unused" ws #+# ws @var_name@
-                new(s, "warning")
-                ^^^~^~^~~~~~~~~~^ @new@ #(# @s@ #,# ws "warning" #)#
+              let var_name = "variable"
+              ^^^~^^^^^^^^~^~^^^^^^^^^^ @let@ ws @var_name@ ws #=# ws "variable"
+              let s = "variable is unused" + var_name
+              ^^^~^~^~^^^^^^^^^^^^^^^^^^^^~^~^^^^^^^^ @let@ ws @s@ ws #=# ws "variable is unused" ws #+# ws @var_name@
+              new(s, "warning")
+              ^^^~^~^~~~~~~~~~^ @new@ #(# @s@ #,# ws "warning" #)#
             }
             ^ #}#
             "##,
@@ -781,19 +782,67 @@ mod tests {
             vec!["Diagnostic", "new", "main"]
         );
 
-        let struct_start = token_pos_at(1, 2, &tokens);
-        let struct_end = token_pos_at(4, 0, &tokens);
+        let assert = AssertEntities::new(&entity_tree, ann.table(), &tokens);
 
-        let struct_entity = entity_tree
-            .get_entity(&ann.table().get(&"Diagnostic").unwrap())
-            .unwrap();
+        assert.entities(&[
+            ("Diagnostic", (1, 2), (4, 0)),
+            ("new", (5, 2), (7, 0)),
+            ("main", (8, 2), (12, 0)),
+        ]);
+    }
+
+    #[derive(Debug, new)]
+    struct AssertEntities<'test> {
+        tree: &'test crate::Entities,
+        table: &'test crate::ModuleTable,
+        tokens: &'test [Spanned<crate::LexToken>],
+    }
+
+    impl AssertEntities<'test> {
+        fn entities(&self, entities: &[(&str, (usize, usize), (usize, usize))]) {
+            assert_eq!(
+                self.tree.len(),
+                entities.len(),
+                "There are {} entities in the parse",
+                entities.len()
+            );
+
+            assert_eq!(
+                self.tree.str_keys(self.table),
+                entities.iter().map(|i| i.0).collect::<Vec<_>>(),
+                "the entities are as expected"
+            );
+
+            for (name, start, end) in entities {
+                self.entity(name, *start, *end)
+            }
+        }
+
+        fn entity(&self, name: &str, start: (usize, usize), end: (usize, usize)) {
+            assert_entity(self.tree, name, start, end, self.table, self.tokens)
+        }
+    }
+
+    fn assert_entity(
+        tree: &crate::Entities,
+        name: &str,
+        start: (usize, usize),
+        end: (usize, usize),
+        table: &crate::ModuleTable,
+        tokens: &[Spanned<crate::LexToken>],
+    ) {
+        let struct_entity = tree.get_entity_by(table, name);
 
         assert_eq!(
             struct_entity.start(),
-            struct_start,
+            token_pos_at(start.0, start.1, &tokens),
             "struct start is correct"
         );
 
-        assert_eq!(struct_entity.end(), struct_end, "struct end is correct");
+        assert_eq!(
+            struct_entity.end(),
+            token_pos_at(end.0, end.1, &tokens),
+            "struct end is correct"
+        );
     }
 }

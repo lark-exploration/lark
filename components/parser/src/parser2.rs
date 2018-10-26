@@ -3,7 +3,7 @@ mod token_macro;
 
 mod allow;
 mod builtins;
-mod entity_tree;
+pub mod entity_tree;
 mod lite_parse;
 mod macros;
 pub mod quicklex;

@@ -52,7 +52,7 @@ pub struct EntityTreeBuilder {
     children: FxIndexMap<StringId, EntityTree>,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Entity {
     span: TokenSpan,
     name: StringId,
@@ -194,6 +194,16 @@ impl Entities {
 
     pub fn get_entity(&self, name: &StringId) -> Option<&Entity> {
         self.tree.get(name).map(|i| &i.entity)
+    }
+
+    pub fn get_entity_by(&self, table: &ModuleTable, name: &str) -> Entity {
+        let id = table
+            .get(&name)
+            .expect(&format!("Entity {} didn't exist", name));
+
+        *self
+            .get_entity(&id)
+            .expect(&format!("Entity {} didn't exist", name))
     }
 }
 
