@@ -1,15 +1,18 @@
 #![feature(in_band_lifetimes)]
 #![feature(macro_at_most_once_rep)]
 #![feature(never_type)]
+#![feature(specialization)]
 #![feature(const_fn)]
 #![feature(const_let)]
 #![warn(unused_imports)]
 
 use crate::interners::TyInternTables;
+use debug::DebugWith;
 use indices::IndexVec;
+use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use parser::StringId;
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 use std::hash::Hash;
 use std::iter::IntoIterator;
 use std::sync::Arc;
@@ -60,8 +63,22 @@ pub struct Ty<F: TypeFamily> {
     pub base: F::Base,
 }
 
+impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for Ty<F>
+where
+    F::Perm: DebugWith<Cx>,
+    F::Base: DebugWith<Cx>,
+{
+    fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Ty { perm, base } = self;
+        fmt.debug_struct("Ty")
+            .field("perm", &perm.debug_with(cx))
+            .field("base", &base.debug_with(cx))
+            .finish()
+    }
+}
+
 /// Indicates something that we've opted not to track statically.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Erased;
 
 /// The "base data" for a type.
@@ -69,6 +86,20 @@ pub struct Erased;
 pub struct BaseData<F: TypeFamily> {
     pub kind: BaseKind<F>,
     pub generics: Generics<F>,
+}
+
+impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for BaseData<F>
+where
+    F::Perm: DebugWith<Cx>,
+    F::Base: DebugWith<Cx>,
+{
+    fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let BaseData { kind, generics } = self;
+        fmt.debug_struct("BaseData")
+            .field("kind", &kind.debug_with(cx))
+            .field("generics", &generics.debug_with(cx))
+            .finish()
+    }
 }
 
 impl<F: TypeFamily> BaseData<F> {
@@ -94,10 +125,37 @@ pub enum BaseKind<F: TypeFamily> {
     Error,
 }
 
+impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for BaseKind<F> {
+    default fn fmt_with(&self, _: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Debug::fmt(self, fmt)
+    }
+}
+
+impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for BaseKind<F>
+where
+    F::Placeholder: DebugWith<Cx>,
+{
+    fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BaseKind::Named(entity) => fmt
+                .debug_tuple("Named")
+                .field(&entity.debug_with(cx))
+                .finish(),
+
+            BaseKind::Placeholder(p) => fmt
+                .debug_tuple("Placeholder")
+                .field(&p.debug_with(cx))
+                .finish(),
+
+            BaseKind::Error => fmt.debug_struct("Error").finish(),
+        }
+    }
+}
+
 /// Used as the value for inferable things during inference -- either
 /// a given `Base` (etc) maps to an inference variable or to some
 /// known value.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum InferVarOr<T> {
     InferVar(InferVar),
     Known(T),
@@ -116,7 +174,7 @@ impl<T> InferVarOr<T> {
 /// "any type". It is used when you are "inside" a "forall" binder -- so, for example,
 /// when we are type-checking a function like `fn foo<T>`, the `T` is represented by
 /// a placeholder.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Placeholder {
     pub universe: Universe,
     pub bound_var: BoundVar,
@@ -133,6 +191,8 @@ indices::index_type! {
     }
 }
 
+debug::debug_fallback_impl!(Universe);
+
 impl Universe {
     pub const ROOT: Universe = Universe::from_u32(0);
 }
@@ -140,7 +200,7 @@ impl Universe {
 /// A "bound variable" refers to one of the generic type parameters in scope
 /// within a declaration. So, for example, if you have `struct Foo<T> { x: T }`,
 /// then the bound var #0 would be `T`.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum BoundVarOr<T> {
     BoundVar(BoundVar),
     Known(T),
@@ -149,6 +209,8 @@ pub enum BoundVarOr<T> {
 indices::index_type! {
     pub struct BoundVar { .. }
 }
+
+debug::debug_fallback_impl!(BoundVar);
 
 /// A set of generic arguments; e.g., in a type like `Vec<i32>`, this
 /// would be `[i32]`.
@@ -191,6 +253,18 @@ impl<F: TypeFamily> Generics<F> {
     /// structure.)
     pub fn push(&mut self, generic: Generic<F>) {
         self.extend(std::iter::once(generic));
+    }
+}
+
+impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for Generics<F>
+where
+    F::Perm: DebugWith<Cx>,
+    F::Base: DebugWith<Cx>,
+{
+    fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.debug_list()
+            .entries(self.elements().iter().map(|e| e.debug_with(cx)))
+            .finish()
     }
 }
 
@@ -259,7 +333,7 @@ pub type Generic<F: TypeFamily> = GenericKind<Ty<F>>;
 
 /// An enum that lists out the various "kinds" of generic arguments
 /// (currently only types) and a distinct type of value for each kind.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum GenericKind<T> {
     Ty(T),
 }
@@ -290,17 +364,31 @@ impl<F: TypeFamily> Signature<F> {
     }
 }
 
+impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for Signature<F>
+where
+    F::Perm: DebugWith<Cx>,
+    F::Base: DebugWith<Cx>,
+{
+    default fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Signature { inputs, output } = self;
+        fmt.debug_struct("Signature")
+            .field("inputs", &inputs.debug_with(cx))
+            .field("output", &output.debug_with(cx))
+            .finish()
+    }
+}
+
 /// The "generic declarations" list out the generic parameters for a
 /// given item. Since items inherit generic items from one another
 /// (e.g., from their parents),
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
 pub struct GenericDeclarations {
     pub parent_item: Option<Entity>,
     pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
 }
 
 /// Declaration of an individual generic type parameter.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct GenericTyDeclaration {
     pub def_id: Entity,
     pub name: StringId,

@@ -1,6 +1,6 @@
 struct Diagnostic {
-  msg: own String,
-  level: String,
+  msg: own bool,
+  level: bool,
 }
 
 def new(msg: own String, level: String) -> Diagnostic {
