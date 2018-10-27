@@ -60,7 +60,7 @@ fn extract(s: &str, codemap: CodeMap, mut codespan_start: u32) -> (String, Annot
                             codespan_start
                         );
 
-                        spans.push(Span::from(
+                        spans.push(Span::from_indices(
                             start + ByteOffset(codespan_start as i64),
                             end + ByteOffset(codespan_start as i64),
                         ))

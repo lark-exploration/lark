@@ -66,6 +66,7 @@ salsa::query_group! {
 pub struct InputText {
     pub text: StringId,
     pub start_offset: u32,
+    pub span: Span,
 }
 
 /// Trait encapsulating the String interner. This should be

@@ -1,5 +1,5 @@
-// auto-generated: "lalrpop 0.15.2"
-// sha256: cc30702aebbc73125d57a388fcc49766c5f419316cc2ff518da621ede2dd
+// auto-generated: "lalrpop 0.16.0"
+// sha256: e5e15623effb38a9836d85255c0ac96b5a5160aa7f71701abf32a4912f2d31
 use crate::{Token, ParseError, StringId};
 use crate::parser::grammar_helpers::*;
 use crate::parser::ast::*;
@@ -4553,7 +4553,7 @@ fn __action5<
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
 ) -> Struct
 {
-    Struct::new(name, fields, Span::from(l, r))
+    Struct::new(name, fields, Span::from_indices(l, r))
 }
 
 fn __action6<
@@ -4590,7 +4590,7 @@ fn __action9<
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
 ) -> Field
 {
-    Field::new(id, ty, Span::from(l, r))
+    Field::new(id, ty, Span::from_indices(l, r))
 }
 
 fn __action10<
@@ -4603,7 +4603,7 @@ fn __action10<
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
 ) -> Def
 {
-    Def::new(name, decl.0, decl.1, block, Span::from(l, r))
+    Def::new(name, decl.0, decl.1, block, Span::from_indices(l, r))
 }
 
 fn __action11<
@@ -4695,7 +4695,7 @@ fn __action19<
 ) -> Spanned<Block>
 {
     {
-        Block::spanned(blocks, Span::from(l, r))
+        Block::spanned(blocks, Span::from_indices(l, r))
     }
 }
 
@@ -4713,7 +4713,7 @@ fn __action20<
         let mut v = blocks;
         v.push(trailing);
 
-        Block::spanned(v, Span::from(l, r))
+        Block::spanned(v, Span::from_indices(l, r))
     }
 }
 
@@ -4885,7 +4885,7 @@ fn __action39<
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
 ) -> ConstructStruct
 {
-    ConstructStruct::new(name, fields, Span::from(l, r))
+    ConstructStruct::new(name, fields, Span::from_indices(l, r))
 }
 
 fn __action40<
@@ -4952,7 +4952,7 @@ fn __action45<
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
 ) -> ConstructField
 {
-    ConstructField::Longhand(Field::new(name, ty, Span::from(l, r)))
+    ConstructField::Longhand(Field::new(name, ty, Span::from_indices(l, r)))
 }
 
 fn __action46<

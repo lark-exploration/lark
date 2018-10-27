@@ -133,7 +133,10 @@ crate fn entity_span(db: &impl AstDatabase, entity: Entity) -> Option<Span> {
 
         EntityData::LangItem(_) => None,
 
-        EntityData::InputFile { .. } => unimplemented!("span for an input file"),
+        EntityData::InputFile { file } => {
+            let input_text = db.input_text(file).unwrap();
+            Some(input_text.span)
+        }
 
         EntityData::MemberName {
             kind: MemberKind::Field,

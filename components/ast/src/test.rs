@@ -8,6 +8,7 @@ use crate::InputTextQuery;
 use crate::ParserState;
 use debug::DebugWith;
 use lark_entity::EntityTables;
+use parser::pos::Span;
 use salsa::Database;
 use std::sync::Arc;
 
@@ -71,6 +72,7 @@ fn parse_error() {
         Some(InputText {
             text: text1,
             start_offset: 0,
+            span: Span::Synthetic,
         }),
     );
 
@@ -83,21 +85,18 @@ fn parse_ok() {
 
     let path1 = db.intern_string("path1");
     db.query(InputFilesQuery).set((), Arc::new(vec![path1]));
-    let text1 = db.intern_string(
-        "struct Diagnostic {
-  msg: own String,
-  level: String,
-}
+    let text1_str = "struct Diagnostic { msg: own String, level: String, }
 
 def new(msg: own String, level: String) -> Diagnostic {
   Diagnostic { mgs, level }
-}",
-    );
+}";
+    let text1_interned = db.intern_string(text1_str);
     db.query(InputTextQuery).set(
         path1,
         Some(InputText {
-            text: text1,
+            text: text1_interned,
             start_offset: 0,
+            span: Span::for_str(0, text1_str),
         }),
     );
 
