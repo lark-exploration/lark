@@ -1,4 +1,5 @@
 use crate::AstDatabase;
+use debug::DebugWith;
 use intern::Intern;
 use intern::Untern;
 use lark_entity::Entity;
@@ -30,9 +31,18 @@ crate fn ast_of_file(
 }
 
 crate fn items_in_file(db: &impl AstDatabase, input_file: StringId) -> Arc<Vec<Entity>> {
+    log::debug!("items_in_file(input_file={})", input_file.debug_with(db));
+
     let ast_of_file = or_return_sentinel!(db, db.ast_of_file(input_file).into_value());
 
+    log::debug!("items_in_file: ast_of_file={:?}", ast_of_file);
+
     let input_file_id = EntityData::InputFile { file: input_file }.intern(db);
+
+    log::debug!(
+        "items_in_file: input_file_id={}",
+        input_file_id.debug_with(db)
+    );
 
     let items: Vec<_> = ast_of_file
         .items

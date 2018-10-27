@@ -122,7 +122,10 @@ impl<T> WithError<T> {
 pub macro or_return_sentinel($cx:expr, $v:expr) {
     match $v {
         Ok(v) => v,
-        Err(ErrorReported(spans)) => return ErrorSentinel::error_sentinel($cx, &spans),
+        Err(ErrorReported(spans)) => {
+            log::debug!("or_return_sentinel: returning error sentinel");
+            return ErrorSentinel::error_sentinel($cx, &spans);
+        }
     }
 }
 

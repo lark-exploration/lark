@@ -5,6 +5,7 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
+log = "0.4.5"
 parking_lot = "0.6.4"
 salsa = "0.6.2"
 
