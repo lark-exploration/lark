@@ -41,7 +41,11 @@ impl ParallelDatabase for LarkDatabase {
     }
 }
 
-impl LsDatabase for LarkDatabase {}
+impl LsDatabase for LarkDatabase {
+    fn file_maps(&self) -> &RwLock<FxIndexMap<String, Arc<FileMap>>> {
+        &self.file_maps
+    }
+}
 
 salsa::database_storage! {
     struct LarkDatabaseStorage for LarkDatabase {

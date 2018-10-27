@@ -63,6 +63,30 @@ impl Span {
 
         start_pos.to_usize()..end_pos.to_usize()
     }
+
+    pub fn start(&self) -> Option<ByteIndex> {
+        match self {
+            Span::Real(span) => Some(span.start()),
+            Span::EOF => None,
+            Span::Synthetic => None,
+        }
+    }
+
+    pub fn end(&self) -> Option<ByteIndex> {
+        match self {
+            Span::Real(span) => Some(span.end()),
+            Span::EOF => None,
+            Span::Synthetic => None,
+        }
+    }
+
+    pub fn contains(&self, position: ByteIndex) -> bool {
+        match self {
+            Span::Real(span) => position >= span.start() && position < span.end(),
+            Span::EOF => false,
+            Span::Synthetic => false,
+        }
+    }
 }
 
 impl Default for Span {
