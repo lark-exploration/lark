@@ -10,12 +10,12 @@ impl Struct {
     }
 
     crate fn spanned(mut self, start: u32, end: u32) -> Struct {
-        self.span = Span::from(ByteIndex(start), ByteIndex(end));
+        self.span = Span::from_indices(ByteIndex(start), ByteIndex(end));
         self
     }
 
     crate fn name_spanned(mut self, start: u32, end: u32) -> Struct {
-        self.name.1 = Span::from(ByteIndex(start), ByteIndex(end));
+        self.name.1 = Span::from_indices(ByteIndex(start), ByteIndex(end));
         self
     }
 
@@ -37,7 +37,7 @@ impl Def {
     }
 
     crate fn spanned(mut self, start: u32, end: u32) -> Self {
-        self.span = Span::from(ByteIndex(start), ByteIndex(end));
+        self.span = Span::from_indices(ByteIndex(start), ByteIndex(end));
         self
     }
 }

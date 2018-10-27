@@ -29,12 +29,22 @@ impl fmt::Debug for Span {
 
 debug::debug_fallback_impl!(Span);
 
+impl From<ByteSpan> for Span {
+    fn from(v: ByteSpan) -> Self {
+        Span::Real(v)
+    }
+}
+
 impl Span {
-    crate fn from(left: ByteIndex, right: ByteIndex) -> Span {
+    crate fn from_indices(left: ByteIndex, right: ByteIndex) -> Span {
         Span::Real(ByteSpan::new(left, right))
     }
 
-    crate fn from_pos(left: u32, right: u32) -> Span {
+    pub fn for_str(offset: usize, s: &str) -> Span {
+        Span::from_pos(offset as u32, (offset + s.len()) as u32)
+    }
+
+    pub fn from_pos(left: u32, right: u32) -> Span {
         Span::Real(ByteSpan::new(ByteIndex(left), ByteIndex(right)))
     }
 

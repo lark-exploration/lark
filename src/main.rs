@@ -15,11 +15,11 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use std::{env, io};
-
+use flexi_logger::{opt_format, Logger};
 use lark_language_server::{lsp_serve, LspResponder};
 use lark_query_system::QuerySystem;
 use lark_task_manager::Actor;
+use std::{env, io};
 
 fn build(_filename: &str) {}
 
@@ -38,7 +38,17 @@ fn ide() {
 }
 
 fn main() {
+    Logger::with_env_or_str("debug")
+        .log_to_file()
+        .directory("log_files")
+        .format(opt_format)
+        .start()
+        .unwrap_or_else(|e| panic!("Logger initialization failed with {}", e));
+
     let mut args = std::env::args();
+
+    eprintln!("Lark: executing");
+    log::error!("Lark: executing");
 
     match (args.next(), args.next(), args.next()) {
         (_, Some(ref cmd), Some(ref x)) if cmd == "build" => build(x),

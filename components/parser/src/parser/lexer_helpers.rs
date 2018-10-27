@@ -571,7 +571,7 @@ impl ParseError {
         let pos = left.into();
         ParseError {
             description: description.into(),
-            span: Span::from(pos, pos),
+            span: Span::from_indices(pos, pos),
         }
     }
 
@@ -589,7 +589,7 @@ impl ParseError {
     ) -> ParseError {
         ParseError {
             description: description.into(),
-            span: Span::from(left.into(), right.into()),
+            span: Span::from_indices(left.into(), right.into()),
         }
     }
 }

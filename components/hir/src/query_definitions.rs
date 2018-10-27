@@ -2,8 +2,10 @@ use ast::ast as a;
 use crate::HirDatabase;
 use crate::Member;
 use intern::Intern;
+use intern::Untern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
+use lark_entity::ItemKind;
 use lark_entity::LangItem;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
@@ -61,4 +63,40 @@ crate fn member_entity(
             })
             .next(),
     }
+}
+
+crate fn subentities(db: &impl HirDatabase, root: Entity) -> Arc<Vec<Entity>> {
+    let mut entities = vec![root];
+
+    // Go over each thing added to entities and add any nested
+    // entities.
+    let mut index = 0;
+    while let Some(&entity) = entities.get(index) {
+        index += 1;
+
+        match entity.untern(db) {
+            EntityData::ItemName {
+                kind: ItemKind::Struct,
+                ..
+            } => match db.members(entity) {
+                Ok(members) => entities.extend(members.iter().map(|member| member.entity)),
+                Err(ErrorReported(_)) => {}
+            },
+
+            EntityData::InputFile { file } => {
+                entities.extend(db.items_in_file(file).iter().cloned());
+            }
+
+            // No nested entities for these kinds of entities.
+            EntityData::LangItem { .. }
+            | EntityData::MemberName { .. }
+            | EntityData::Error { .. }
+            | EntityData::ItemName {
+                kind: ItemKind::Function,
+                ..
+            } => {}
+        }
+    }
+
+    Arc::new(entities)
 }

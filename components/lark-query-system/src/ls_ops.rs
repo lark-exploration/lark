@@ -5,8 +5,9 @@
 //! convenient.
 
 use codespan::{ByteIndex, ColumnIndex, FileMap, LineIndex};
+use intern::Intern;
 use languageserver_types::Position;
-use lark_entity::Entity;
+use lark_entity::{Entity, EntityData};
 use map::FxIndexMap;
 use parking_lot::RwLock;
 use parser::StringId;
@@ -51,8 +52,10 @@ pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
     ) -> Cancelable<Vec<Entity>> {
         self.check_for_cancellation()?;
 
+        let file_entity = EntityData::InputFile { file: path }.intern(self);
+
         let mut entities: Vec<_> = self
-            .items_in_file(path)
+            .subentities(file_entity)
             .iter()
             .filter_map(|&entity| {
                 if let Some(span) = self.entity_span(entity) {

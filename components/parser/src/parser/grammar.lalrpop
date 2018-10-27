@@ -24,7 +24,7 @@ Item: Arc<Item> = {
 
 Struct: Struct = {
     <l: @L> struct <name: Identifier> "{" Newlines? <fields: Fields> "}" <r: @R> =>
-        Struct::new(name, fields, Span::from(l, r))
+        Struct::new(name, fields, Span::from_indices(l, r))
 }
 
 Fields: Vec<Field> = {
@@ -40,12 +40,12 @@ COLON = {
 }
 
 Field: Field = {
-    <l: @L> <id: Identifier> ":" <ty: Type> <r: @R> => Field::new(id, ty, Span::from(l, r))
+    <l: @L> <id: Identifier> ":" <ty: Type> <r: @R> => Field::new(id, ty, Span::from_indices(l, r))
 }
 
 Def: Def = {
     <l: @L> def <name: Identifier> <decl: FnDecl> <block: Block> <r: @R> =>
-        Def::new(name, decl.0, decl.1, block, Span::from(l, r))
+        Def::new(name, decl.0, decl.1, block, Span::from_indices(l, r))
 }
 
 FnDecl: (Vec<Field>, Option<Spanned<Type>>) = {
@@ -73,14 +73,14 @@ Mode: Spanned<Mode> = {
 
 Block: Spanned<Block> = {
     <l: @L> "{" Newlines? <blocks: (<BlockItem> SEP Newlines?)*> "}" <r: @R> => {
-        Block::spanned(blocks, Span::from(l, r))
+        Block::spanned(blocks, Span::from_indices(l, r))
     },
 
     <l: @L> "{" <blocks: (<BlockItem> SEP Newlines?)*> <trailing: BlockItem> "}" <r: @R> => {
         let mut v = blocks;
         v.push(trailing);
 
-        Block::spanned(v, Span::from(l, r))
+        Block::spanned(v, Span::from_indices(l, r))
     }
 }
 
@@ -138,7 +138,7 @@ ADD: Spanned<Op> = {
 }
 
 ConstructStruct: ConstructStruct = {
-    <l: @L> <name: Identifier> "{" <fields: Delim<ConstructField, COMMA>> "}" <r: @R> => ConstructStruct::new(name, fields, Span::from(l, r))
+    <l: @L> <name: Identifier> "{" <fields: Delim<ConstructField, COMMA>> "}" <r: @R> => ConstructStruct::new(name, fields, Span::from_indices(l, r))
 }
 
 Call: Spanned<Call> = {
@@ -162,7 +162,7 @@ Callee: Callee = {
 
 ConstructField: ConstructField = {
     Identifier => ConstructField::Shorthand(<>),
-    <l: @L> <name: Identifier> ":" <ty: Type> <r: @R> => ConstructField::Longhand(Field::new(name, ty, Span::from(l, r)))
+    <l: @L> <name: Identifier> ":" <ty: Type> <r: @R> => ConstructField::Longhand(Field::new(name, ty, Span::from_indices(l, r)))
 }
 
 //ExprIf: Expression = {

@@ -1,4 +1,5 @@
 use crate::AstDatabase;
+use debug::DebugWith;
 use intern::Intern;
 use intern::Untern;
 use lark_entity::Entity;
@@ -22,17 +23,29 @@ crate fn ast_of_file(
 
     match db.parser_state().parse(path, &input_text) {
         Ok(module) => WithError::ok(Ok(Arc::new(module))),
-        Err(parse_error) => WithError {
-            value: Err(ErrorReported::at_span(parse_error.span)),
-            errors: vec![parse_error.span],
-        },
+        Err(parse_error) => {
+            log::error!("parse error for {}: {:?}", path.debug_with(db), parse_error);
+            WithError {
+                value: Err(ErrorReported::at_span(parse_error.span)),
+                errors: vec![parse_error.span],
+            }
+        }
     }
 }
 
 crate fn items_in_file(db: &impl AstDatabase, input_file: StringId) -> Arc<Vec<Entity>> {
+    log::debug!("items_in_file(input_file={})", input_file.debug_with(db));
+
     let ast_of_file = or_return_sentinel!(db, db.ast_of_file(input_file).into_value());
 
+    log::debug!("items_in_file: ast_of_file={:?}", ast_of_file);
+
     let input_file_id = EntityData::InputFile { file: input_file }.intern(db);
+
+    log::debug!(
+        "items_in_file: input_file_id={}",
+        input_file_id.debug_with(db)
+    );
 
     let items: Vec<_> = ast_of_file
         .items
@@ -120,7 +133,10 @@ crate fn entity_span(db: &impl AstDatabase, entity: Entity) -> Option<Span> {
 
         EntityData::LangItem(_) => None,
 
-        EntityData::InputFile { .. } => unimplemented!("span for an input file"),
+        EntityData::InputFile { file } => {
+            let input_text = db.input_text(file).unwrap();
+            Some(input_text.span)
+        }
 
         EntityData::MemberName {
             kind: MemberKind::Field,

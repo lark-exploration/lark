@@ -1,0 +1,7 @@
+struct Diagnostic {
+  msg: own String,
+  level: String,
+}
+
+def new(msg: own String, level: String) -> Diagnostic {
+}

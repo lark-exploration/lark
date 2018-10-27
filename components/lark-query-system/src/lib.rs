@@ -4,6 +4,7 @@ use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;
+use parser::pos::Span;
 use salsa::{Database, ParallelDatabase};
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -63,6 +64,7 @@ salsa::database_storage! {
             fn fn_body() for hir::FnBodyQuery;
             fn members() for hir::MembersQuery;
             fn member_entity() for hir::MemberEntityQuery;
+            fn subentities() for hir::SubentitiesQuery;
             fn ty() for hir::TyQuery;
             fn signature() for hir::SignatureQuery;
             fn generic_declarations() for hir::GenericDeclarationsQuery;
@@ -139,6 +141,7 @@ impl Actor for QuerySystem {
                     FileName::Virtual(Cow::Owned(url.to_string())),
                     contents.to_string(),
                 );
+                let file_span = file_map.span();
                 let start_offset = file_map.span().start().to_usize() as u32;
 
                 // Record the filemap for later
@@ -152,6 +155,7 @@ impl Actor for QuerySystem {
                     Some(InputText {
                         text: interned_contents,
                         start_offset,
+                        span: Span::from(file_span),
                     }),
                 );
             }
