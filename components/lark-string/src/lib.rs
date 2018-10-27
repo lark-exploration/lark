@@ -5,7 +5,7 @@
 #![feature(const_let)]
 #![feature(specialization)]
 
-use debug::DebugWith;
+use debug::FmtWithSpecialized;
 use intern::Intern;
 use intern::Untern;
 use std::sync::Arc;
@@ -77,11 +77,11 @@ impl Intern<StringTables> for String {
     }
 }
 
-impl<Cx> DebugWith<Cx> for StringId
+impl<Cx> FmtWithSpecialized<Cx> for StringId
 where
     Cx: AsRef<StringTables>,
 {
-    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = self.untern(cx);
         write!(fmt, "{:?}", &data[..])
     }

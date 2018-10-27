@@ -8,11 +8,15 @@ use crate::BoundVarOr;
 use crate::Erased;
 use crate::Ty;
 use crate::TypeFamily;
+use debug::{DebugWith, FmtWithSpecialized};
 use intern::Intern;
+use intern::Untern;
+use lark_debug_derive::DebugWith;
 use lark_error::ErrorSentinel;
 use parser::pos::Span;
+use std::fmt;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Declaration;
 
 impl TypeFamily for Declaration {
@@ -36,6 +40,17 @@ pub type DeclarationTy = crate::Ty<Declaration>;
 
 indices::index_type! {
     pub struct Base { .. }
+}
+
+debug::debug_fallback_impl!(Base);
+
+impl<Cx> FmtWithSpecialized<Cx> for Base
+where
+    Cx: AsRef<TyInternTables>,
+{
+    fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.untern(cx).fmt_with(cx, fmt)
+    }
 }
 
 impl<DB> ErrorSentinel<&DB> for Ty<Declaration>

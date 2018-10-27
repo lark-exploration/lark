@@ -1,6 +1,7 @@
 #![feature(macro_at_most_once_rep)]
 #![feature(const_let)]
 #![feature(const_fn)]
+#![feature(specialization)]
 
 use indices::{IndexVec, U32Index};
 
@@ -10,6 +11,8 @@ indices::index_type! {
         ..
     }
 }
+
+debug::debug_fallback_impl!(InferVar);
 
 /// Each "inferable" value represents something which can be inferred.
 /// For example, the `crate::ty::Perm` and `crate::ty::Base` types implement
