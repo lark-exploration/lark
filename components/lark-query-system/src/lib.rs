@@ -168,9 +168,13 @@ impl Actor for QuerySystem {
                         // Ensure that `type_at_position` executes atomically
                         let _lock = db.salsa_runtime().lock_revision();
 
-                        match db.type_at_position(url.as_str(), position) {
-                            Ok(v) => {
+                        match db.hover_text_at_position(url.as_str(), position) {
+                            Ok(Some(v)) => {
                                 send_channel.send(QueryResponse::Type(task_id, v.to_string()));
+                            }
+                            Ok(None) => {
+                                // FIXME what to send here to indicate "no hover"?
+                                send_channel.send(QueryResponse::Type(task_id, "".to_string()));
                             }
                             Err(Cancelled) => {
                                 // Not sure what to send here, if anything.

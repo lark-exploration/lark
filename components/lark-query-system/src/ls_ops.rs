@@ -5,9 +5,10 @@
 //! convenient.
 
 use codespan::{ByteIndex, ColumnIndex, FileMap, LineIndex};
-use intern::Intern;
+use debug::DebugWith;
+use intern::{Intern, Untern};
 use languageserver_types::Position;
-use lark_entity::{Entity, EntityData};
+use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use map::FxIndexMap;
 use parking_lot::RwLock;
 use parser::StringId;
@@ -28,11 +29,46 @@ pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
         }
     }
 
-    fn type_at_position(&self, url: &str, position: Position) -> Cancelable<String> {
+    /// Returns the hover text to display for a given position (if
+    /// any).
+    fn hover_text_at_position(&self, url: &str, position: Position) -> Cancelable<Option<String>> {
         let byte_index = self.position_to_byte_index(url, position);
         let interned_path = self.intern_string(url);
         let entity_ids = self.entity_ids_at_position(interned_path, byte_index)?;
-        Ok(format!("{:?}", entity_ids))
+        self.check_for_cancellation()?;
+        let entity = *entity_ids.last().unwrap();
+        match entity.untern(self) {
+            EntityData::ItemName {
+                kind: ItemKind::Struct,
+                id,
+                ..
+            } => Ok(Some(format!("struct {}", self.untern_string(id)))),
+
+            EntityData::MemberName {
+                kind: MemberKind::Field,
+                ..
+            } => {
+                let field_ty = self.ty(entity).into_value();
+                // FIXME should not use "debug" but display to format the type
+                Ok(Some(format!("{}", field_ty.debug_with(self))))
+            }
+
+            EntityData::ItemName {
+                kind: ItemKind::Function,
+                ..
+            }
+            | EntityData::MemberName {
+                kind: MemberKind::Method,
+                ..
+            } => {
+                // what should we say for functions and methods?
+                Ok(None)
+            }
+
+            EntityData::InputFile { .. } | EntityData::LangItem(_) | EntityData::Error(_) => {
+                Ok(None)
+            }
+        }
     }
 
     fn position_to_byte_index(&self, url: &str, position: Position) -> ByteIndex {
@@ -45,6 +81,8 @@ pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
             .unwrap()
     }
 
+    /// Return a "stack" of entity-ids in position, from outermost to
+    /// innermost.  Always returns a non-empty vector.
     fn entity_ids_at_position(
         &self,
         path: StringId,
@@ -86,6 +124,7 @@ pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
             (start, end)
         });
 
+        assert!(!entities.is_empty());
         Ok(entities)
     }
 }
