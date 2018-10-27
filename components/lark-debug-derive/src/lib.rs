@@ -21,17 +21,10 @@ pub fn derive_debug_with(input: proc_macro::TokenStream) -> proc_macro::TokenStr
     let generics = add_trait_bounds(input.generics);
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let syn::Generics {
-        lt_token: _,
-        params: impl_params,
-        gt_token: _,
-        where_clause: _,
-    } = syn::parse_quote! { #impl_generics };
-
     let expanded = quote! {
         // The generated impl.
-        impl < #(#impl_params,)* Cx: ?Sized > ::debug::DebugWith<Cx> for #name #ty_generics #where_clause {
-            fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        impl #impl_generics ::debug::DebugWith for #name #ty_generics #where_clause {
+            fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 #debug_with
             }
         }
@@ -52,7 +45,7 @@ fn add_trait_bounds(mut generics: syn::Generics) -> syn::Generics {
         if let syn::GenericParam::Type(ref mut type_param) = *param {
             type_param
                 .bounds
-                .push(syn::parse_quote!(::debug::DebugWith<Cx>));
+                .push(syn::parse_quote!(::debug::DebugWith));
         }
     }
 

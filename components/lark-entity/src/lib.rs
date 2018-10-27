@@ -3,7 +3,7 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 
-use debug::DebugWith;
+use debug::{DebugWith, FmtWithSpecialized};
 use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorSentinel;
@@ -69,11 +69,11 @@ intern::intern_tables! {
 
 debug::debug_fallback_impl!(Entity);
 
-impl<Cx> DebugWith<Cx> for Entity
+impl<Cx> FmtWithSpecialized<Cx> for Entity
 where
     Cx: AsRef<EntityTables>,
 {
-    fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = self.untern(cx);
         data.fmt_with(cx, fmt)
     }

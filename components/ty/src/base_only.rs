@@ -6,10 +6,13 @@ use crate::Erased;
 use crate::InferVarOr;
 use crate::Placeholder;
 use crate::TypeFamily;
+use debug::DebugWith;
 use intern::{Intern, Untern};
+use lark_debug_derive::DebugWith;
+use std::fmt;
 use unify::{InferVar, Inferable};
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct BaseOnly;
 
 impl TypeFamily for BaseOnly {
@@ -58,5 +61,16 @@ impl Inferable<TyInternTables> for Base {
     /// "known data" that it represents.
     fn assert_known(self, interners: &TyInternTables) -> Self::KnownData {
         self.untern(interners).assert_known()
+    }
+}
+
+debug::debug_fallback_impl!(Base);
+
+impl<Cx> debug::FmtWithSpecialized<Cx> for Base
+where
+    Cx: AsRef<TyInternTables>,
+{
+    fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.untern(cx).fmt_with(cx, fmt)
     }
 }

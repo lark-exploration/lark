@@ -25,11 +25,11 @@ pub mod identity;
 pub mod interners;
 pub mod map_family;
 
-pub trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
-    type Perm: Copy + Clone + Debug + Eq + Hash;
-    type Base: Copy + Clone + Debug + Eq + Hash;
+pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
+    type Perm: Copy + Clone + Debug + DebugWith + Eq + Hash;
+    type Base: Copy + Clone + Debug + DebugWith + Eq + Hash;
 
-    type Placeholder: Copy + Clone + Debug + Eq + Hash;
+    type Placeholder: Copy + Clone + Debug + DebugWith + Eq + Hash;
 
     fn intern_base_data(
         tables: &dyn AsRef<TyInternTables>,
@@ -57,24 +57,10 @@ pub trait TypeFamily: Copy + Clone + Debug + Eq + Hash + 'static {
 }
 
 /// A type is the combination of a *permission* and a *base type*.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Ty<F: TypeFamily> {
     pub perm: F::Perm,
     pub base: F::Base,
-}
-
-impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for Ty<F>
-where
-    F::Perm: DebugWith<Cx>,
-    F::Base: DebugWith<Cx>,
-{
-    fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Ty { perm, base } = self;
-        fmt.debug_struct("Ty")
-            .field("perm", &perm.debug_with(cx))
-            .field("base", &base.debug_with(cx))
-            .finish()
-    }
 }
 
 /// Indicates something that we've opted not to track statically.
@@ -82,24 +68,10 @@ where
 pub struct Erased;
 
 /// The "base data" for a type.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct BaseData<F: TypeFamily> {
     pub kind: BaseKind<F>,
     pub generics: Generics<F>,
-}
-
-impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for BaseData<F>
-where
-    F::Perm: DebugWith<Cx>,
-    F::Base: DebugWith<Cx>,
-{
-    fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let BaseData { kind, generics } = self;
-        fmt.debug_struct("BaseData")
-            .field("kind", &kind.debug_with(cx))
-            .field("generics", &generics.debug_with(cx))
-            .finish()
-    }
 }
 
 impl<F: TypeFamily> BaseData<F> {
@@ -112,7 +84,7 @@ impl<F: TypeFamily> BaseData<F> {
 }
 
 /// The *kinds* of base types we have on offer.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum BaseKind<F: TypeFamily> {
     /// A named type (might be value, might be linear, etc).
     Named(Entity),
@@ -123,33 +95,6 @@ pub enum BaseKind<F: TypeFamily> {
 
     /// Indicates that a type error was reported.
     Error,
-}
-
-impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for BaseKind<F> {
-    default fn fmt_with(&self, _: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(self, fmt)
-    }
-}
-
-impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for BaseKind<F>
-where
-    F::Placeholder: DebugWith<Cx>,
-{
-    fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            BaseKind::Named(entity) => fmt
-                .debug_tuple("Named")
-                .field(&entity.debug_with(cx))
-                .finish(),
-
-            BaseKind::Placeholder(p) => fmt
-                .debug_tuple("Placeholder")
-                .field(&p.debug_with(cx))
-                .finish(),
-
-            BaseKind::Error => fmt.debug_struct("Error").finish(),
-        }
-    }
 }
 
 /// Used as the value for inferable things during inference -- either
@@ -256,12 +201,8 @@ impl<F: TypeFamily> Generics<F> {
     }
 }
 
-impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for Generics<F>
-where
-    F::Perm: DebugWith<Cx>,
-    F::Base: DebugWith<Cx>,
-{
-    fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<F: TypeFamily> DebugWith for Generics<F> {
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.debug_list()
             .entries(self.elements().iter().map(|e| e.debug_with(cx)))
             .finish()
@@ -349,7 +290,7 @@ impl<T> GenericKind<T> {
 /// Signature from a function or method: `(T1, T2) -> T3`.  `inputs`
 /// are the list of the types of the arguments, and `output` is the
 /// return type.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Signature<F: TypeFamily> {
     pub inputs: Arc<Vec<Ty<F>>>,
     pub output: Ty<F>,
@@ -361,20 +302,6 @@ impl<F: TypeFamily> Signature<F> {
             inputs: Arc::new((0..num_inputs).map(|_| F::error_type(tables)).collect()),
             output: F::error_type(tables),
         }
-    }
-}
-
-impl<Cx: ?Sized, F: TypeFamily> DebugWith<Cx> for Signature<F>
-where
-    F::Perm: DebugWith<Cx>,
-    F::Base: DebugWith<Cx>,
-{
-    default fn fmt_with(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Signature { inputs, output } = self;
-        fmt.debug_struct("Signature")
-            .field("inputs", &inputs.debug_with(cx))
-            .field("output", &output.debug_with(cx))
-            .finish()
     }
 }
 
