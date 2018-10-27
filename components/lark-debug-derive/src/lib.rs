@@ -30,7 +30,7 @@ pub fn derive_debug_with(input: proc_macro::TokenStream) -> proc_macro::TokenStr
 
     let expanded = quote! {
         // The generated impl.
-        impl < #(#impl_params,)* Cx > ::debug::DebugWith<Cx> for #name #ty_generics #where_clause {
+        impl < #(#impl_params,)* Cx: ?Sized > ::debug::DebugWith<Cx> for #name #ty_generics #where_clause {
             fn fmt_with(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 #debug_with
             }
