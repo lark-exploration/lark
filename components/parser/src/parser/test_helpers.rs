@@ -22,6 +22,7 @@ pub enum LexerState {
     Underline,
     SecondaryUnderline,
     Whitespace,
+    String,
     Name,
     Sigil,
 }
@@ -31,6 +32,7 @@ pub enum Token {
     Underline,
     Sigil(StringId),
     Name(StringId),
+    String(StringId),
     Whitespace,
     WsKeyword,
 }
@@ -78,6 +80,8 @@ impl LexerDelegateTrait for LexerState {
                         consume().and_continue().and_transition(LexerState::Sigil)
                     } else if c == '@' {
                         consume().and_continue().and_transition(LexerState::Name)
+                    } else if c == '"' {
+                        consume().and_continue().and_transition(LexerState::String)
                     } else if c == ' ' {
                         LexerNext::Transition(LexerAccumulate::Begin, LexerState::Whitespace)
                     } else if rest.starts_with("ws") {
@@ -103,6 +107,14 @@ impl LexerDelegateTrait for LexerState {
             LexerState::Name => match c {
                 Some('@') => consume()
                     .and_emit_dynamic(Token::Name)
+                    .and_transition(LexerState::Top),
+                Some(_) => consume().and_remain(),
+                None => LexerNext::Error(None),
+            },
+
+            LexerState::String => match c {
+                Some('"') => consume()
+                    .and_emit_dynamic(Token::String)
                     .and_transition(LexerState::Top),
                 Some(_) => consume().and_remain(),
                 None => LexerNext::Error(None),

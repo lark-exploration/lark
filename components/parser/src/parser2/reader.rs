@@ -2,11 +2,15 @@ use crate::prelude::*;
 
 use crate::parser::{ModuleTable, ParseError, Span, Spanned, StringId};
 use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
+use crate::parser2::builtins::Paired;
 use crate::parser2::builtins::{self, ExprParser};
-use crate::parser2::entity_tree::{EntityTree, EntityTreeBuilder};
+use crate::parser2::entity_tree::{
+    Entities, EntitiesBuilder, EntityKind, EntityTree, EntityTreeBuilder,
+};
 use crate::parser2::macros::{macros, MacroRead, Macros};
-use crate::parser2::quicklex::Token as LexToken;
-use crate::parser2::token_tree::{Handle, TokenPos, TokenSpan, TokenTree};
+use crate::parser2::token;
+use crate::parser2::token_tree::{Handle, TokenNode, TokenPos, TokenSpan, TokenTree};
+use crate::LexToken;
 
 use bimap::BiMap;
 use codespan::CodeMap;
@@ -16,6 +20,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use derive_new::new;
+use std::collections::BTreeMap;
 
 #[derive(Debug, Copy, Clone)]
 enum NextAction {
@@ -23,20 +28,18 @@ enum NextAction {
     Macro(StringId),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum PairedDelimiter {
     Curly,
     Round,
     Square,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ShapeStart {
     Identifier(Spanned<StringId>),
     Macro(Spanned<StringId>),
-    Curly,
-    Round,
-    Square,
+    PairedDelimiter(PairedDelimiter),
     String,
     Prefix(StringId),
     EOF,
@@ -44,12 +47,12 @@ pub enum ShapeStart {
 
 #[derive(Debug, Copy, Clone)]
 pub enum ShapeContinue {
-    Identifier(StringId),
-    Macro(StringId),
-    Curly,
-    Round,
-    Square,
-    Prefix(StringId),
+    Identifier(Spanned<StringId>),
+    Macro(Spanned<StringId>),
+    Sigil(Spanned<StringId>),
+    Operator(Spanned<StringId>),
+    PairedDelimiter(Spanned<PairedDelimiter>),
+    Newline,
     EOF,
 }
 
@@ -59,7 +62,7 @@ pub struct Reader<'codemap> {
     macros: Macros,
     table: ModuleTable,
     codemap: &'codemap CodeMap,
-    entity_tree: EntityTreeBuilder,
+    entity_tree: EntitiesBuilder,
     tree: TokenTree,
 }
 
@@ -77,7 +80,7 @@ impl Reader<'codemap> {
             macros,
             table,
             codemap,
-            entity_tree: EntityTreeBuilder::new(),
+            entity_tree: EntitiesBuilder::new(),
             tree: TokenTree::new(len),
         }
     }
@@ -111,7 +114,7 @@ impl Expected {
     fn matches(&self, token: &LexToken) -> bool {
         match self {
             Expected::ExpectedId(id) => id.matches(token),
-            Expected::ExpectedSigil(sigil) => sigil.matches(token),
+            Expected::ExpectedSigil(sigil) => sigil.matches_token(token),
         }
     }
 }
@@ -151,7 +154,7 @@ impl IntoExpectedSigil for &str {
 }
 
 impl IntoExpectedSigil for StringId {
-    fn into_expected_sigil(&self, table: &ModuleTable) -> ExpectedSigil {
+    fn into_expected_sigil(&self, _table: &ModuleTable) -> ExpectedSigil {
         ExpectedSigil::Sigil(*self)
     }
 }
@@ -172,10 +175,17 @@ impl DebugModuleTable for ExpectedSigil {
 }
 
 impl ExpectedSigil {
-    fn matches(&self, token: &LexToken) -> bool {
+    fn matches_token(&self, token: &LexToken) -> bool {
         match self {
             ExpectedSigil::AnySigil => token.is_sigil(),
             ExpectedSigil::Sigil(s) => token.is_sigil_named(*s),
+        }
+    }
+
+    fn matches(&self, sigil: &token::Sigil) -> bool {
+        match self {
+            ExpectedSigil::AnySigil => true,
+            ExpectedSigil::Sigil(s) => *s == sigil.0,
         }
     }
 }
@@ -195,12 +205,13 @@ impl DebugModuleTable for MaybeTerminator {
     }
 }
 
+#[derive(Debug)]
 pub struct ParseResult {
-    tree: TokenTree,
-    entity_tree: EntityTree,
+    node_tree: Vec<TokenNode>,
+    entity_tree: Entities,
 }
 
-const EOF: Spanned<LexToken> = Spanned(LexToken::EOF, Span::EOF);
+pub const EOF: Spanned<LexToken> = Spanned(LexToken::EOF, Span::EOF);
 
 impl Reader<'codemap> {
     pub fn process(mut self) -> Result<ParseResult, ParseError> {
@@ -210,13 +221,20 @@ impl Reader<'codemap> {
         }
 
         Ok(ParseResult {
-            tree: self.tree,
+            node_tree: self.tree.finalize(),
             entity_tree: self.entity_tree.finalize(),
         })
     }
 
     pub fn table(&self) -> &ModuleTable {
         &self.table
+    }
+
+    pub fn tokens(&self) -> (&[Spanned<LexToken>], usize) {
+        let tokens = &self.tokens[..];
+        let pos = self.pos();
+
+        (tokens, pos)
     }
 
     pub fn tree(&mut self) -> &mut TokenTree {
@@ -241,8 +259,10 @@ impl Reader<'codemap> {
     }
 
     fn process_macro(&mut self) -> Result<(), ParseError> {
-        trace!(target: "lark::reader", "processing macro");
+        trace!(target: "lark::reader", "# process_macro");
+
         let token = self.consume_next_id(ALLOW_NEWLINE | ALLOW_EOF)?;
+        self.tree.start_at(self.tree.last_non_ws(), "macro");
 
         if let LexToken::EOF = token.node() {
             return Ok(());
@@ -254,6 +274,8 @@ impl Reader<'codemap> {
             let macro_def = self.get_macro(token.as_id().unwrap())?;
 
             macro_def.extent(self)?;
+
+            self.tree.end_at(self.tree.last_non_ws(), "macro");
 
             Ok(())
         } else {
@@ -267,13 +289,27 @@ impl Reader<'codemap> {
         }
     }
 
+    pub fn expect_paired_delimiters(
+        &mut self,
+        start: Spanned<PairedDelimiter>,
+    ) -> Result<(), ParseError> {
+        trace!(target: "lark::reader", "# paired delimiters; start={:?} @ {:?}", start.node(), start.span());
+        let mut paired = Paired::start(self, start);
+
+        let end = paired.process()?;
+
+        self.tree.fast_forward(end, end - 1);
+
+        Ok(())
+    }
+
     pub fn expect_id_until(
         &mut self,
         allow: AllowPolicy,
         expected: ExpectedId,
         terminator: impl Into<Expected>,
     ) -> Result<MaybeTerminator, ParseError> {
-        trace!(target: "lark::reader", "expect_id_until");
+        trace!(target: "lark::reader", "# expect_id_until");
 
         let next = self.consume_next_token(allow)?;
 
@@ -307,7 +343,16 @@ impl Reader<'codemap> {
 
     pub fn consume_start_expr(
         &mut self,
-        shape: ShapeStart,
+        _shape: ShapeStart,
+        allow: AllowPolicy,
+    ) -> Result<(), ParseError> {
+        // TODO: Validate ShapeStart
+        self.consume_next_token(allow).map(|_| ())
+    }
+
+    pub fn consume_continue_expr(
+        &mut self,
+        _shape: ShapeContinue,
         allow: AllowPolicy,
     ) -> Result<(), ParseError> {
         // TODO: Validate ShapeStart
@@ -347,11 +392,17 @@ impl Reader<'codemap> {
                         return Ok(ShapeStart::Identifier(token.copy(*id)));
                     }
                 }
-                sigil @ LexToken::Sigil(_) => match sigil {
-                    _ if self.sigil("{").matches(sigil) => return Ok(ShapeStart::Curly),
-                    _ if self.sigil("(").matches(sigil) => return Ok(ShapeStart::Round),
-                    _ if self.sigil("[").matches(sigil) => return Ok(ShapeStart::Square),
-                    sigil => {
+                LexToken::Sigil(sigil) => match sigil {
+                    _ if self.sigil("{").matches(sigil) => {
+                        return Ok(ShapeStart::PairedDelimiter(PairedDelimiter::Curly))
+                    }
+                    _ if self.sigil("(").matches(sigil) => {
+                        return Ok(ShapeStart::PairedDelimiter(PairedDelimiter::Round))
+                    }
+                    _ if self.sigil("[").matches(sigil) => {
+                        return Ok(ShapeStart::PairedDelimiter(PairedDelimiter::Square))
+                    }
+                    _ => {
                         return Err(ParseError::new(
                             format!(
                                 "Unexpected sigil {:?}",
@@ -366,6 +417,8 @@ impl Reader<'codemap> {
     }
 
     pub fn peek_continue_expr(&self, allow: AllowPolicy) -> Result<ShapeContinue, ParseError> {
+        trace!(target: "lark::reader", "# peek_continue_expr");
+
         if self.tree.is_done() {
             if allow.has(ALLOW_EOF) {
                 return Ok(ShapeContinue::EOF);
@@ -374,31 +427,53 @@ impl Reader<'codemap> {
             }
         }
 
-        let token = self.tokens[self.pos()];
+        let mut pos = self.pos();
 
         loop {
+            let token = self.tokens[pos];
+            pos += 1;
+
+            trace!(target: "lark::reader", "peeked {:?}", Debuggable::from(&token, self.table()));
+
             match token.node() {
                 LexToken::EOF => unreachable!(),
-                LexToken::Newline if allow.has(ALLOW_NEWLINE) => continue,
+
+                // TODO: Leading `.` on next line. Requires an extra lookahead through whitespace
+                LexToken::Newline if allow.has(ALLOW_NEWLINE) => return Ok(ShapeContinue::Newline),
                 LexToken::Newline => {
                     return Err(ParseError::new(format!("Unexpected newline"), token.span()))
                 }
                 LexToken::Comment(_) => continue,
                 LexToken::String(_) => {
-                    return Err(ParseError::new(format!("Unexpected string"), token.span()))
+                    return Err(ParseError::new(
+                        format!("Unimplemented string in continuation position"),
+                        token.span(),
+                    ))
                 }
                 LexToken::Whitespace(_) => continue,
                 LexToken::Identifier(id) => {
-                    return Ok(ShapeContinue::Identifier(*id));
+                    return Ok(ShapeContinue::Identifier(token.copy(*id)));
                 }
-                sigil @ LexToken::Sigil(_) => match sigil {
-                    _ if self.sigil("{").matches(sigil) => return Ok(ShapeContinue::Curly),
-                    _ if self.sigil("(").matches(sigil) => return Ok(ShapeContinue::Round),
-                    _ if self.sigil("[").matches(sigil) => return Ok(ShapeContinue::Square),
-                    sigil => {
+                LexToken::Sigil(sigil) => match sigil {
+                    _ if self.sigil("{").matches(sigil) => {
+                        return Ok(ShapeContinue::PairedDelimiter(
+                            token.copy(PairedDelimiter::Curly),
+                        ))
+                    }
+                    _ if self.sigil("(").matches(sigil) => {
+                        return Ok(ShapeContinue::PairedDelimiter(
+                            token.copy(PairedDelimiter::Round),
+                        ))
+                    }
+                    _ if self.sigil("[").matches(sigil) => {
+                        return Ok(ShapeContinue::PairedDelimiter(
+                            token.copy(PairedDelimiter::Square),
+                        ))
+                    }
+                    _ => {
                         return Err(ParseError::new(
                             format!(
-                                "Unexpected sigil {:?}",
+                                "Unimplemented operators {:?}",
                                 Debuggable::from(&token, self.table()),
                             ),
                             token.span(),
@@ -409,19 +484,29 @@ impl Reader<'codemap> {
         }
     }
 
-    pub fn expect_paired(&mut self, open: PairedDelimiter) -> Result<(), ParseError> {
-        unimplemented!()
+    pub fn next_non_ws(&self, from: usize) -> TokenPos {
+        let mut pos = from;
+        loop {
+            let token = self.tokens[pos];
+            pos += 1;
+
+            match token.node() {
+                LexToken::Whitespace(..) => continue,
+                LexToken::Newline => continue,
+                _ => return TokenPos(pos - 1),
+            }
+        }
     }
 
     pub fn expect_id(&mut self, allow: AllowPolicy) -> Result<Spanned<StringId>, ParseError> {
-        trace!(target: "lark::reader", "expect_id");
+        trace!(target: "lark::reader", "# expect_id");
         let id_token = self.consume_next_id(allow)?;
 
         id_token.as_id()
     }
 
     pub fn expect_type(&mut self, whitespace: AllowPolicy) -> Result<Handle, ParseError> {
-        trace!(target: "lark::reader", "expect_type");
+        trace!(target: "lark::reader", "# expect_type");
         self.tree.start("type");
         self.tree.mark_type();
         self.consume_next_id(whitespace)?;
@@ -432,17 +517,17 @@ impl Reader<'codemap> {
 
     pub fn maybe_sigil(
         &mut self,
-        sigil: impl IntoExpectedSigil,
+        expected: impl IntoExpectedSigil,
         allow: AllowPolicy,
-    ) -> Result<Result<Spanned<LexToken>, Spanned<LexToken>>, ParseError> {
+    ) -> Result<Result<Spanned<token::Sigil>, Spanned<LexToken>>, ParseError> {
         self.tree.mark_backtrack_point("maybe_sigil");
         let next = self.consume_next_token(allow)?;
-        let sigil = sigil.into_expected_sigil(self.table());
+        let expected = expected.into_expected_sigil(self.table());
 
         match next.node() {
-            LexToken::Sigil(s) if sigil.matches(&next) => {
+            LexToken::Sigil(sigil) if expected.matches(&sigil) => {
                 self.tree.commit("maybe_sigil");
-                Ok(Ok(next))
+                Ok(Ok(next.copy(*sigil)))
             }
             _ => {
                 self.tree.backtrack("maybe_sigil");
@@ -455,11 +540,11 @@ impl Reader<'codemap> {
         &mut self,
         sigil: impl IntoExpectedSigil,
         allow: AllowPolicy,
-    ) -> Result<(), ParseError> {
-        trace!(target: "lark::reader", "expect_sigil {:?}", Debuggable::from(&sigil, self.table()));
+    ) -> Result<Spanned<token::ClassifiedSigil>, ParseError> {
+        trace!(target: "lark::reader", "# expect_sigil {:?}", Debuggable::from(&sigil, self.table()));
 
         match self.maybe_sigil(sigil, allow)? {
-            Ok(_) => Ok(()),
+            Ok(token) => Ok(token.copy(token.classify(self.table()))),
             Err(token) => Err(ParseError::new(
                 format!("Unexpected {:?}", *token),
                 token.span(),
@@ -476,12 +561,13 @@ impl Reader<'codemap> {
         ExprParser.extent(self)
     }
 
-    pub fn start_entity(&mut self, name: &StringId) {
-        self.entity_tree.push(*name, TokenPos(self.pos()));
+    pub fn start_entity(&mut self, name: &StringId, kind: EntityKind) {
+        self.entity_tree
+            .push(name, TokenPos(self.tree.last_non_ws()), kind);
     }
 
     pub fn end_entity(&mut self) {
-        self.entity_tree.finish(TokenPos(self.pos()));
+        self.entity_tree.finish(TokenPos(self.tree.last_non_ws()));
     }
 
     fn mark_backtrack_point(&mut self) {}
@@ -492,14 +578,14 @@ impl Reader<'codemap> {
         } else {
             trace!(
                 target: "lark::reader",
-                "in token={:?}",
-                Debuggable::from(&self.tokens[self.pos()], self.table())
+                "in token={:?} pos={:?}",
+                Debuggable::from(&self.tokens[self.pos()], self.table()), self.pos()
             )
         }
 
         let token = self.tokens[self.pos()];
 
-        self.tick("consume");
+        self.tick(&token, "consume");
 
         token
     }
@@ -516,9 +602,7 @@ impl Reader<'codemap> {
         trace!(target: "lark::reader", "consume_next_token");
 
         loop {
-            trace!(target: "lark::reader", "consume_next_token ->");
             let token = self.maybe_consume();
-
             let token = match token {
                 None if allow.has(ALLOW_EOF) => {
                     return Ok(Spanned::wrap_span(LexToken::EOF, Span::EOF))
@@ -526,6 +610,8 @@ impl Reader<'codemap> {
                 None => return Err(ParseError::new(format!("Unexpected EOF"), Span::EOF)),
                 Some(token) => token,
             };
+
+            trace!(target: "lark::reader", "token = {:?}", Debuggable::from(&token, self.table()));
 
             match *token {
                 LexToken::Whitespace(..) => {}
@@ -552,20 +638,25 @@ impl Reader<'codemap> {
         Ok(token)
     }
 
-    fn tick(&mut self, debug_from: &str) {
+    fn tick(&mut self, token: &LexToken, debug_from: &str) {
         trace!(target: "lark::reader",
-            "from: {}, processed token: {:?}",
+            "tick: processed token: {:?} (from: {})",
+            Debuggable::from(&self.tokens[self.pos()], self.table()),
             debug_from,
-            Debuggable::from(&self.tokens[self.pos()], self.table())
         );
+
+        if !token.is_whitespace() {
+            self.tree.tick_non_ws();
+        }
+
         self.tree.tick();
     }
 
     fn backtrack(&mut self, debug_from: &str) {
         trace!(target: "lark::reader",
-            "from: {}, backtracked token: {:?}",
+            "backtrack: backtracked token: {:?} (from: {})",
+            Debuggable::from(&self.tokens[self.pos()], self.table()),
             debug_from,
-            Debuggable::from(&self.tokens[self.pos()], self.table())
         );
         self.tree.backtrack(debug_from);
     }
@@ -589,38 +680,28 @@ fn expect(
 
 #[cfg(test)]
 mod tests {
-    use super::Reader;
+    use crate::prelude::*;
+
+    use super::{ParseResult, Reader};
 
     use crate::parser::ast::DebuggableVec;
     use crate::parser::lexer_helpers::ParseError;
     use crate::parser::reporting::print_parse_error;
     use crate::parser::{Span, Spanned};
     use crate::parser2::macros::{macros, Macros};
-    use crate::parser2::quicklex::{Token, Tokenizer};
+    use crate::parser2::quicklex::Tokenizer;
     use crate::parser2::test_helpers::{process, Annotations, Position};
+    use crate::parser2::token::token_pos_at;
+    use crate::LexToken;
 
-    use log::trace;
+    use derive_new::new;
+    use log::{debug, trace};
     use std::collections::HashMap;
     use unindent::unindent;
 
     #[test]
     fn test_reader() {
         crate::init_logger();
-
-        return;
-
-        // let source = unindent(
-        //     r##"
-        //     struct Diagnostic {
-        //     ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
-        //       msg: String,
-        //       ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
-        //       level: String,
-        //       ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
-        //     }
-        //     ^ #}#
-        //     "##,
-        // );
 
         let source = unindent(
             r##"
@@ -638,6 +719,16 @@ mod tests {
               ^^^^^^^^^^~^~^^^~^~~~~~^~ @Diagnostic@ ws #{# ws @msg@ #,# ws @level@ ws #}#
             }
             ^ #}#
+            def main() {
+            ^^^~^^^^~^~^ @def@ ws @main@ #(# #)# ws #{#
+              let var_name = "variable"
+              ^^^~^^^^^^^^~^~^^^^^^^^^^ @let@ ws @var_name@ ws #=# ws "variable"
+              let s = "variable is unused" + var_name
+              ^^^~^~^~^^^^^^^^^^^^^^^^^^^^~^~^^^^^^^^ @let@ ws @s@ ws #=# ws "variable is unused" ws #+# ws @var_name@
+              new(s, "warning")
+              ^^^~^~^~~~~~~~~~^ @new@ #(# @s@ #,# ws "warning" #)#
+            }
+            ^ #}#
             "##,
         );
 
@@ -651,19 +742,107 @@ mod tests {
             Err(e) => print_parse_error(e, ann.codemap()),
         };
 
-        // let tokens: Result<Vec<Spanned<Token>>, ParseError> = lexed
-        //     .map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
-        //     .collect();
-
-        trace!(target: "lark::reader::test", "{:#?}", DebuggableVec::from(&tokens.clone(), ann.table()));
+        for (i, token) in tokens.clone().iter().enumerate() {
+            debug!(target: "lark::reader::test", "{}. {:?}", i, Debuggable::from(token, ann.table()));
+        }
 
         let builtin_macros = macros(ann.table());
 
-        let parser = Reader::new(tokens, builtin_macros, ann.table().clone(), ann.codemap());
+        let parser = Reader::new(
+            tokens.clone(),
+            builtin_macros,
+            ann.table().clone(),
+            ann.codemap(),
+        );
 
-        match parser.process() {
-            Ok(_) => {}
+        let result = match parser.process() {
+            Ok(result) => {
+                debug!(
+                    "{:#?}",
+                    result.entity_tree.debug(ann.table(), &tokens.clone())
+                );
+                result
+            }
             Err(e) => print_parse_error(e, ann.codemap()),
         };
+
+        let ParseResult {
+            entity_tree,
+            node_tree: _,
+        } = result;
+
+        assert_eq!(
+            entity_tree.len(),
+            3,
+            "There are three entities in the parse"
+        );
+
+        assert_eq!(
+            entity_tree.str_keys(ann.table()),
+            vec!["Diagnostic", "new", "main"]
+        );
+
+        let assert = AssertEntities::new(&entity_tree, ann.table(), &tokens);
+
+        assert.entities(&[
+            ("Diagnostic", (1, 2), (4, 0)),
+            ("new", (5, 2), (7, 0)),
+            ("main", (8, 2), (12, 0)),
+        ]);
+    }
+
+    #[derive(Debug, new)]
+    struct AssertEntities<'test> {
+        tree: &'test crate::Entities,
+        table: &'test crate::ModuleTable,
+        tokens: &'test [Spanned<crate::LexToken>],
+    }
+
+    impl AssertEntities<'test> {
+        fn entities(&self, entities: &[(&str, (usize, usize), (usize, usize))]) {
+            assert_eq!(
+                self.tree.len(),
+                entities.len(),
+                "There are {} entities in the parse",
+                entities.len()
+            );
+
+            assert_eq!(
+                self.tree.str_keys(self.table),
+                entities.iter().map(|i| i.0).collect::<Vec<_>>(),
+                "the entities are as expected"
+            );
+
+            for (name, start, end) in entities {
+                self.entity(name, *start, *end)
+            }
+        }
+
+        fn entity(&self, name: &str, start: (usize, usize), end: (usize, usize)) {
+            assert_entity(self.tree, name, start, end, self.table, self.tokens)
+        }
+    }
+
+    fn assert_entity(
+        tree: &crate::Entities,
+        name: &str,
+        start: (usize, usize),
+        end: (usize, usize),
+        table: &crate::ModuleTable,
+        tokens: &[Spanned<crate::LexToken>],
+    ) {
+        let struct_entity = tree.get_entity_by(table, name);
+
+        assert_eq!(
+            struct_entity.start(),
+            token_pos_at(start.0, start.1, &tokens),
+            "struct start is correct"
+        );
+
+        assert_eq!(
+            struct_entity.end(),
+            token_pos_at(end.0, end.1, &tokens),
+            "struct end is correct"
+        );
     }
 }

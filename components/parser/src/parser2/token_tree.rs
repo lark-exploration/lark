@@ -2,11 +2,18 @@ use crate::parser::program::StringId;
 
 use derive_new::new;
 use log::trace;
+use std::fmt;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct TokenSpan(pub TokenPos, pub TokenPos);
 
-#[derive(Debug, Copy, Clone)]
+impl fmt::Debug for TokenSpan {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}..{}", (self.0).0, (self.1).0)
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct TokenPos(pub usize);
 
 #[derive(Debug, Copy, Clone)]
@@ -38,6 +45,12 @@ pub struct TokenTree {
     #[new(value = "0")]
     current: usize,
 
+    #[new(value = "0")]
+    current_non_ws: usize,
+
+    #[new(value = "0")]
+    shape_start: usize,
+
     #[new(value = "None")]
     backtrack_point: Option<usize>,
 
@@ -48,15 +61,31 @@ pub struct TokenTree {
 pub struct Handle(usize);
 
 impl TokenTree {
-    pub fn start(&mut self, debug_name: &str) {
-        trace!(target: "lark::reader", "starting {}", debug_name);
+    pub fn finalize(self) -> Vec<TokenNode> {
+        self.nodes
+    }
 
-        self.stack
-            .push(TokenSpan(TokenPos(self.current), TokenPos(self.current)));
+    pub fn start(&mut self, debug_name: &str) {
+        self.start_at(self.current, debug_name)
+    }
+
+    pub fn start_at(&mut self, pos: usize, debug_name: &str) {
+        trace!(target: "lark::reader", "starting {} at {}", debug_name, pos);
+
+        self.stack.push(TokenSpan(TokenPos(pos), TokenPos(pos)));
     }
 
     pub fn pos(&self) -> usize {
         self.current
+    }
+
+    pub fn last_non_ws(&self) -> usize {
+        self.current_non_ws
+    }
+
+    pub fn start_pos(&self) -> usize {
+        let current = &self.stack[self.stack.len() - 1];
+        (current.0).0
     }
 
     pub fn is_done(&self) -> bool {
@@ -77,6 +106,15 @@ impl TokenTree {
 
     pub fn tick(&mut self) {
         self.current += 1;
+    }
+
+    pub fn tick_non_ws(&mut self) {
+        self.current_non_ws = self.current;
+    }
+
+    pub fn fast_forward(&mut self, to: usize, non_ws: usize) {
+        self.current = to;
+        self.current_non_ws = non_ws;
     }
 
     pub fn mark_backtrack_point(&mut self, debug_reason: &str) {
@@ -113,14 +151,18 @@ impl TokenTree {
     }
 
     pub fn end(&mut self, debug_name: &str) -> Handle {
-        trace!(target: "lark::reader", "ending {}", debug_name);
+        self.end_at(self.current, debug_name)
+    }
+
+    pub fn end_at(&mut self, pos: usize, debug_name: &str) -> Handle {
+        trace!(target: "lark::reader", "ending {} as {}", debug_name, pos);
 
         let mut current = self
             .stack
             .pop()
             .expect("Can't end an event if none is started");
 
-        current.1 = TokenPos(self.current);
+        current.1 = TokenPos(pos);
 
         let node = match self
             .kind
@@ -128,7 +170,7 @@ impl TokenTree {
         {
             TokenKind::Expr => TokenNode::Expr(current),
             TokenKind::Type => TokenNode::Type(current),
-            TokenKind::Macro(pos) => TokenNode::Macro(pos, current),
+            TokenKind::Macro(macro_pos) => TokenNode::Macro(macro_pos, current),
         };
 
         let handle = Handle(self.nodes.len());

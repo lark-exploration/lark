@@ -2,14 +2,15 @@ use crate::prelude::*;
 
 use crate::parser::{ParseError, Spanned};
 use crate::parser2::allow::ALLOW_NEWLINE;
+use crate::parser2::entity_tree::EntityKind;
 use crate::parser2::lite_parse::{BindingId, ScopeId};
 use crate::parser2::lite_parse::{
     ExpectedId, LiteParser, MaybeTerminator, RelativePosition, Token,
 };
 use crate::parser2::macros::{MacroRead, Term};
-use crate::parser2::quicklex::Token as LexToken;
 use crate::parser2::reader::{self, Reader};
 use crate::parser2::token_tree::Handle;
+use crate::LexToken;
 
 use log::trace;
 
@@ -18,7 +19,7 @@ pub struct StructDef;
 impl MacroRead for StructDef {
     fn extent(&self, reader: &mut Reader<'_>) -> Result<(), ParseError> {
         let name = reader.expect_id(ALLOW_NEWLINE)?;
-        reader.start_entity(&name);
+        reader.start_entity(&name, EntityKind::Struct);
 
         reader.expect_sigil("{", ALLOW_NEWLINE)?;
 
@@ -43,6 +44,8 @@ impl MacroRead for StructDef {
             }
         }
 
+        reader.end_entity();
+
         Ok(())
     }
 
@@ -53,7 +56,7 @@ impl MacroRead for StructDef {
     ) -> Result<Box<dyn Term>, ParseError> {
         let binding = reader.export_name(scope, RelativePosition::Hoist, false)?;
         let name = reader.get_binding_name(&scope, binding.node());
-        reader.start_entity(name);
+        reader.start_entity(name, EntityKind::Struct);
         reader.expect_sigil("{", ALLOW_NEWLINE)?;
 
         let mut fields: Vec<Field> = vec![];

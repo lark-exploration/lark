@@ -11,7 +11,7 @@ use crate::parser2::builtins;
 use crate::parser2::lite_parse::{
     BindingId, Expected, ExpectedId, LiteParser, MaybeTerminator, RelativePosition, Token,
 };
-use crate::parser2::quicklex::Token as LexToken;
+use crate::LexToken;
 use crate::parser2::reader::Reader;
 use crate::parser2::token_tree::Handle;
 

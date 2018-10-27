@@ -354,6 +354,7 @@ mod test {
                             name = Some(id);
                             break;
                         }
+                        Token::String(id) => {}
                         Token::WsKeyword => {}
                         Token::Sigil(id) => {}
                         Token::Whitespace => {}
