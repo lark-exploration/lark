@@ -23,10 +23,13 @@ crate fn ast_of_file(
 
     match db.parser_state().parse(path, &input_text) {
         Ok(module) => WithError::ok(Ok(Arc::new(module))),
-        Err(parse_error) => WithError {
-            value: Err(ErrorReported::at_span(parse_error.span)),
-            errors: vec![parse_error.span],
-        },
+        Err(parse_error) => {
+            log::error!("parse error for {}: {:?}", path.debug_with(db), parse_error);
+            WithError {
+                value: Err(ErrorReported::at_span(parse_error.span)),
+                errors: vec![parse_error.span],
+            }
+        }
     }
 }
 

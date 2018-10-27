@@ -51,6 +51,11 @@ salsa::query_group! {
             use fn query_definitions::member_entity;
         }
 
+        fn subentities(entity: Entity) -> Arc<Vec<Entity>> {
+            type SubentitiesQuery;
+            use fn query_definitions::subentities;
+        }
+
         /// Get the type of something.
         fn ty(key: Entity) -> WithError<ty::Ty<Declaration>> {
             type TyQuery;

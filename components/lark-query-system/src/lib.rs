@@ -63,6 +63,7 @@ salsa::database_storage! {
             fn fn_body() for hir::FnBodyQuery;
             fn members() for hir::MembersQuery;
             fn member_entity() for hir::MemberEntityQuery;
+            fn subentities() for hir::SubentitiesQuery;
             fn ty() for hir::TyQuery;
             fn signature() for hir::SignatureQuery;
             fn generic_declarations() for hir::GenericDeclarationsQuery;
