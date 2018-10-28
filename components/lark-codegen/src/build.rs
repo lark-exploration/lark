@@ -70,11 +70,24 @@ fn build_c(target_filename: &str, src: &String) -> std::io::Result<()> {
     let src_file_name = src_file.path().to_string_lossy().to_string();
     let _ = src_file.persist(&src_file_name);
 
-    let output = Command::new(r"cl.exe")
+    // TODO: Support mingw also
+    #[cfg(all(windows, target_pointer_width = "32"))]
+    let target = "x86-pc-windows-msvc";
+    #[cfg(all(windows, target_pointer_width = "64"))]
+    let target = "x86_64-pc-windows-msvc";
+
+    let tool = cc::windows_registry::find_tool(&target, "cl.exe")
+        .expect("Can't find Visual Studio C compiler tools");
+
+    let tool_env: Vec<(std::ffi::OsString, std::ffi::OsString)> =
+        tool.env().iter().map(|x| x.clone()).collect();
+
+    let output = Command::new(tool.path())
         .arg("/w")
         .arg(&format!("/Fo{}.obj", target_filename))
         .arg(&format!("/Fe{}", target_filename))
         .arg(&src_file_name)
+        .envs(tool_env)
         .output()
         .expect("Failed to run C compiler");
 
