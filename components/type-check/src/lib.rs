@@ -150,10 +150,22 @@ pub struct TypeCheckResults<F: TypeFamily> {
     /// return the unification table too.
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
 
+    /// For "type-relative" identifiers, stores the entity that we resolved
+    /// to. Examples:
+    ///
+    /// - `foo.bar` -- attached to the identifier `bar`, entity of the field
+    /// - `foo.bar(..)` -- attached to the identifier `bar`, entity of the method
+    /// - `Foo { a: b }` -- attached to the identifier `a`, entity of the field
+    entities: std::collections::BTreeMap<hir::Identifier, Entity>,
+
     errors: Vec<Error>,
 }
 
 impl<F: TypeFamily> TypeCheckResults<F> {
+    fn record_entity(&mut self, index: hir::Identifier, entity: Entity) {
+        self.entities.insert(index.into(), entity);
+    }
+
     fn record_ty(&mut self, index: impl Into<hir::MetaIndex>, ty: Ty<F>) {
         self.types.insert(index.into(), ty);
     }
@@ -173,6 +185,7 @@ impl<F: TypeFamily> Default for TypeCheckResults<F> {
     fn default() -> Self {
         Self {
             types: Default::default(),
+            entities: Default::default(),
             errors: Default::default(),
         }
     }

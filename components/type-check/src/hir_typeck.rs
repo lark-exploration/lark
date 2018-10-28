@@ -140,6 +140,8 @@ where
                         BaseKind::Named(def_id) => {
                             match this.db().member_entity(def_id, MemberKind::Field, text) {
                                 Some(field_entity) => {
+                                    this.results.record_entity(name, field_entity);
+
                                     let field_decl_ty = this.db().ty(field_entity).into_value();
                                     let field_ty = this.substitute(place, &generics, field_decl_ty);
                                     this.apply_owner_perm(place, owner_ty.perm, field_ty)
@@ -196,6 +198,8 @@ where
                 };
 
                 // FIXME -- what role does `owner_ty` place here??
+
+                self.results.record_entity(method_name, method_entity);
 
                 let signature_decl = match self.db().signature(method_entity).into_value() {
                     Ok(s) => s,
