@@ -1,15 +1,13 @@
 #![allow(unused_variables)]
 #![allow(unreachable_patterns)]
 
+use crate::prelude::*;
+
 crate mod annotate_lines;
 
+use crate::intern::ModuleTable;
+use crate::lexer::tools::*;
 use crate::parser::ast::DebugModuleTable;
-use crate::parser::lexer_helpers::{consume, consume_n, reconsume};
-use crate::parser::lexer_helpers::{
-    LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, ParseError, Tokenizer,
-};
-use crate::parser::program::ModuleTable;
-use crate::parser::program::StringId;
 
 use std::fmt;
 

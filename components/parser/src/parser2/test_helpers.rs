@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
+use crate::intern::ModuleTable;
 use crate::parser::test_helpers::{LineTokenizer, Token};
-use crate::{ModuleTable, ParseError, StringId};
 
 use codespan::ByteIndex;
 use codespan::{ByteOffset, CodeMap};

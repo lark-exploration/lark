@@ -1,6 +1,5 @@
 use crate::prelude::*;
 
-use crate::parser::ParseError;
 use crate::parser2::allow::{ALLOW_EOF, ALLOW_NEWLINE};
 use crate::parser2::reader::{PairedDelimiter, Reader, ShapeContinue, ShapeStart};
 use crate::parser2::Handle;

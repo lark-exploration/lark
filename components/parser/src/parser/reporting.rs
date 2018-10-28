@@ -1,5 +1,4 @@
-use crate::parser::lexer_helpers::ParseError;
-use crate::parser::pos::Span;
+use crate::prelude::*;
 
 use codespan::CodeMap;
 use language_reporting::{emit, Diagnostic, Label, Severity};

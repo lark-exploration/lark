@@ -1,7 +1,8 @@
 use crate::prelude::*;
 
+use crate::intern::ModuleTable;
 use crate::parser2::token_tree::{TokenPos, TokenSpan};
-use crate::{LexToken, ModuleTable, StringId};
+use crate::LexToken;
 
 use derive_new::new;
 use map::FxIndexMap;

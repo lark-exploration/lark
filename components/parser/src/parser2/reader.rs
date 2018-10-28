@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use crate::parser::{ModuleTable, ParseError, Span, Spanned, StringId};
+use crate::intern::ModuleTable;
 use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
 use crate::parser2::builtins::ExprParser;
 use crate::parser2::builtins::Paired;
@@ -751,7 +751,7 @@ mod tests {
     #[derive(Debug, new)]
     struct AssertEntities<'test> {
         tree: &'test crate::Entities,
-        table: &'test crate::ModuleTable,
+        table: &'test crate::intern::ModuleTable,
         tokens: &'test [Spanned<crate::LexToken>],
     }
 

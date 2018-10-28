@@ -1,18 +1,15 @@
+use crate::prelude::*;
+
 crate mod debug;
 
 #[cfg(test)]
 mod test_helpers;
 
-use crate::parser::pos::HasSpan;
-use crate::parser::pos::Span;
-use crate::parser::pos::Spanned;
-use crate::parser::StringId;
-
 use derive_new::new;
 use std::fmt;
 use std::sync::Arc;
 
-crate use self::debug::{DebugModuleTable, Debuggable};
+crate use self::debug::DebugModuleTable;
 
 pub type Identifier = Spanned<StringId>;
 

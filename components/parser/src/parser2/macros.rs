@@ -1,11 +1,8 @@
-#[allow(unused_imports)]
 use crate::prelude::*;
 
 use super::lite_parse::ScopeId;
 
-use crate::parser::program::ModuleTable;
-use crate::parser::program::StringId;
-use crate::parser::ParseError;
+use crate::intern::ModuleTable;
 use crate::parser2::builtins;
 use crate::parser2::lite_parse::LiteParser;
 use crate::parser2::reader::Reader;

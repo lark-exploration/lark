@@ -1,8 +1,8 @@
 // auto-generated: "lalrpop 0.16.0"
-// sha256: 4fc510ad4eb0789865e89399d85bac74baec269299ee2c9107cec5fa5d599
-use crate::{Token, ParseError, StringId};
+// sha256: 5f255964afa0bedf9835d9b5db9e9235f592093ce5922dcb4af8bc9f1c742b
+use crate::prelude::*;
+use crate::Token;
 use crate::parser::ast::*;
-use crate::parser::pos::{Span, Spanned};
 use codespan::{ByteIndex};
 use std::sync::Arc;
 #[allow(unused_extern_crates)]
@@ -12,9 +12,9 @@ extern crate lalrpop_util as __lalrpop_util;
 mod __parse__Program {
     #![allow(non_snake_case, non_camel_case_types, unused_mut, unused_variables, unused_imports, unused_parens)]
 
-    use crate::{Token, ParseError, StringId};
+    use crate::prelude::*;
+    use crate::Token;
     use crate::parser::ast::*;
-    use crate::parser::pos::{Span, Spanned};
     use codespan::{ByteIndex};
     use std::sync::Arc;
     #[allow(unused_extern_crates)]
