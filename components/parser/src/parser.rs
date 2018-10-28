@@ -1,12 +1,12 @@
 #![allow(unused_variables)]
 #![allow(unused_mut)]
 
+use crate::prelude::*;
+
 pub mod ast;
-pub mod pos;
 
 crate mod grammar;
 crate mod keywords;
-pub mod lexer_helpers;
 crate mod program;
 pub mod reporting;
 crate mod token;
@@ -16,13 +16,10 @@ crate mod tokenizer;
 pub mod test_helpers;
 
 crate use self::grammar::ProgramParser;
-crate use self::lexer_helpers::ParseError;
-crate use self::program::{ModuleTable, StringId};
 crate use self::token::Token;
 crate use self::tokenizer::Tokenizer;
 
-pub use self::pos::{Span, Spanned};
-
+use crate::intern::ModuleTable;
 use crate::lexer::KeywordList;
 
 use codespan::ByteIndex;
@@ -32,7 +29,7 @@ pub fn parse(
     source: impl Into<Cow<'source, str>>,
     table: &'source mut ModuleTable,
     start: u32,
-) -> Result<ast::Module, ParseError> {
+) -> Result<ast::Module, crate::errors::ParseError> {
     let cow = source.into();
     let tokenizer = Tokenizer::new(table, cow.borrow(), start);
     let parser = ProgramParser::new();

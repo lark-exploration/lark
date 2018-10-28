@@ -1,7 +1,7 @@
-use crate::parser::lexer_helpers::{consume, consume_n, reconsume};
-use crate::parser::lexer_helpers::{
-    LexerDelegateTrait, LexerNext, ParseError, Tokenizer as GenericTokenizer,
-};
+use crate::prelude::*;
+
+use crate::lexer::tools::Tokenizer as GenericTokenizer;
+use crate::lexer::tools::*;
 use crate::parser2::LexToken;
 
 use unicode_xid::UnicodeXID;
@@ -161,8 +161,6 @@ mod tests {
     use crate::prelude::*;
 
     use super::Tokenizer;
-    use crate::parser::lexer_helpers::ParseError;
-    use crate::parser::Spanned;
     use crate::parser2::test_helpers::process;
     use crate::LexToken;
 

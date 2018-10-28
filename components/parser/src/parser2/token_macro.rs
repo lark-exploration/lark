@@ -42,7 +42,7 @@ macro_rules! token_impl {
     } => {
         token_impl! {
             @tokens = { $($rest)* }
-            @list = [ $($list)* { $name($crate::parser::program::StringId) } ]
+            @list = [ $($list)* { $name($crate::intern::StringId) } ]
         }
     };
 

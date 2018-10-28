@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use crate::{ModuleTable, StringId};
+use crate::intern::ModuleTable;
 
 use std::fmt;
 
@@ -129,7 +129,7 @@ impl DebugModuleTable for Token {
     fn debug(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        table: &'table crate::parser::ModuleTable,
+        table: &'table crate::intern::ModuleTable,
     ) -> std::fmt::Result {
         use self::Token::*;
 

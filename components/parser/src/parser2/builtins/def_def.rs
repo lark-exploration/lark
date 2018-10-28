@@ -1,6 +1,5 @@
 use crate::prelude::*;
 
-use crate::parser::{ParseError, Spanned};
 use crate::parser2::allow::ALLOW_NEWLINE;
 use crate::parser2::entity_tree::EntityKind;
 use crate::parser2::lite_parse::{BindingId, ScopeId};

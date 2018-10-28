@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use crate::parser::{ModuleTable, ParseError, Span, Spanned, StringId};
+use crate::intern::ModuleTable;
 use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
 use crate::parser2::entity_tree::{Entities, EntitiesBuilder, EntityKind};
 use crate::parser2::macros::{MacroRead, Macros};

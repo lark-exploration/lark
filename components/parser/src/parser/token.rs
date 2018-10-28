@@ -1,5 +1,7 @@
+use crate::prelude::*;
+
+use crate::intern::ModuleTable;
 use crate::parser::ast::DebugModuleTable;
-use crate::parser::program::{ModuleTable, StringId};
 
 use std::borrow::Cow;
 use std::fmt;

@@ -1,11 +1,8 @@
-use codespan::{ByteIndex, ByteSpan};
-use lark_debug_derive::DebugWith;
-use std::fmt;
-use std::hash::Hash;
-use std::hash::Hasher;
+use crate::pos::Spanned;
 
-#[cfg(test)]
-use codespan::ByteOffset;
+use codespan::{ByteIndex, ByteSpan};
+use std::fmt;
+use std::hash::{Hash, Hasher};
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Span {
@@ -13,25 +10,6 @@ pub enum Span {
     EOF,
     Synthetic,
 }
-
-impl fmt::Debug for Span {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Span::Real(span) => {
-                let start = span.start();
-                let end = span.end();
-
-                write!(f, "{}..{}", start, end)
-            }
-
-            Span::Synthetic => write!(f, "synthetic"),
-            Span::EOF => write!(f, "EOF"),
-        }
-    }
-}
-
-debug::debug_fallback_impl!(Span);
-
 impl From<ByteSpan> for Span {
     fn from(v: ByteSpan) -> Self {
         Span::Real(v)
@@ -56,19 +34,6 @@ impl Span {
             (Span::Real(left), Span::Real(right)) => Span::Real(left.to(right)),
             _ => Span::Synthetic,
         }
-    }
-
-    #[cfg(test)]
-    crate fn to_range(&self, start: i32) -> std::ops::Range<usize> {
-        let span = match self {
-            Span::Real(span) => *span,
-            other => unimplemented!("Can't turn {:?} into range", other),
-        };
-
-        let start_pos = span.start() + ByteOffset(start as i64);
-        let end_pos = span.end() + ByteOffset(start as i64);
-
-        start_pos.to_usize()..end_pos.to_usize()
     }
 
     pub fn start(&self) -> Option<ByteIndex> {
@@ -123,36 +88,6 @@ impl fmt::Display for Span {
             Span::Synthetic => write!(f, "synthetic"),
             Span::EOF => write!(f, "end of file"),
         }
-    }
-}
-
-#[derive(Copy, Clone, DebugWith, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Spanned<T>(pub T, pub Span);
-
-impl<T> std::ops::Deref for Spanned<T> {
-    type Target = T;
-
-    fn deref(&self) -> &T {
-        &self.0
-    }
-}
-
-impl<T> fmt::Debug for Spanned<T>
-where
-    T: fmt::Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?} at {:?}", self.0, self.1)
-    }
-}
-
-impl<T> Spanned<T> {
-    crate fn wrap_span(node: T, span: Span) -> Spanned<T> {
-        Spanned(node, span)
-    }
-
-    crate fn from(node: T, left: ByteIndex, right: ByteIndex) -> Spanned<T> {
-        Spanned(node, Span::Real(ByteSpan::new(left, right)))
     }
 }
 

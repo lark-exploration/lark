@@ -8,11 +8,13 @@
 #![feature(cell_update)]
 
 #[macro_use]
-mod lexer;
+pub mod lexer;
 
+pub mod errors;
+pub mod intern;
 pub mod parser;
 crate mod parser2;
-
+pub mod pos;
 pub mod prelude;
 
 #[cfg(test)]
@@ -21,11 +23,10 @@ mod test_helpers;
 #[cfg(test)]
 crate use self::test_helpers::init_logger;
 
+pub use self::errors::ParseError;
+pub use self::intern::{LookupStringId, ModuleTable, Seahash, StringId};
 pub use self::parser::ast;
-pub use self::parser::lexer_helpers::ParseError;
 pub use self::parser::parse;
-pub use self::parser::pos;
-pub use self::parser::program::{LookupStringId, ModuleTable, Seahash, StringId};
 pub use self::parser::reporting::print_parse_error;
 pub use self::parser::token::Token;
 pub use self::parser2::allow::*;
