@@ -3,8 +3,11 @@ use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::TypeCheckerFields;
 use hir;
-use lark_entity::MemberKind;
+use intern::Untern;
+use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
+use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
+use map::FxIndexSet;
 use std::sync::Arc;
 use ty::Signature;
 use ty::Ty;
@@ -90,6 +93,10 @@ where
             } => {
                 let owner_ty = self.check_place(owner);
                 self.compute_method_call_ty(expression, owner_ty, method, arguments)
+            }
+
+            hir::ExpressionData::Aggregate { entity, fields } => {
+                self.check_aggregate(expression, entity, fields)
             }
 
             hir::ExpressionData::Sequence { first, second } => {
@@ -220,5 +227,88 @@ where
 
             BaseKind::Error => self.error_type(),
         }
+    }
+
+    fn check_aggregate(
+        &mut self,
+        expression: hir::Expression,
+        entity: Entity,
+        fields: Arc<Vec<hir::IdentifiedExpression>>,
+    ) -> Ty<F> {
+        match entity.untern(self) {
+            EntityData::ItemName {
+                kind: ItemKind::Struct,
+                ..
+            } => {
+                // see code below
+            }
+
+            EntityData::Error(_) => {
+                // If we can't resolve the type of the struct, then just
+                // check the inner expressions. Resolve all the identifiers
+                // to error.
+                let error_type = self.error_type();
+                for &field in fields.iter() {
+                    let field_data = self.hir[field];
+                    self.results.record_entity(field_data.identifier, entity);
+                    self.results.record_ty(field, error_type);
+                    self.check_expression_has_type(error_type, field_data.expression);
+                }
+                return error_type;
+            }
+
+            // Something like `def foo() { .. } foo { .. }` is just not legal.
+            _ => {
+                self.results.record_error(expression);
+                return self.error_type();
+            }
+        };
+
+        let generics = self.inference_variables_for(entity);
+
+        // Get a vector of **all** the fields.
+        let mut missing_members: FxIndexSet<Entity> =
+            or_return_sentinel!(self.db, self.db.members(entity))
+                .iter()
+                .map(|m| m.entity)
+                .collect();
+
+        // Find the entity for each of the field names that the user gave us.
+        for &field in fields.iter() {
+            let field_data = self.hir[field];
+            let field_name = self.hir[field_data.identifier].text;
+            let field_ty = match self.db.member_entity(entity, MemberKind::Field, field_name) {
+                Some(field_entity) => {
+                    self.results
+                        .record_entity(field_data.identifier, field_entity);
+
+                    missing_members.remove(&field_entity);
+
+                    let field_ty = self.db.ty(field_entity).into_value();
+                    self.substitute(expression, &generics, field_ty)
+                }
+
+                None => {
+                    self.results.record_error(field_data.identifier);
+                    self.error_type()
+                }
+            };
+
+            // Record the formal type of the field on the `IdentifiedExpression`.
+            self.results.record_ty(field, field_ty);
+
+            // Check the expression against this formal type.
+            self.check_expression_has_type(field_ty, field_data.expression);
+        }
+
+        // If we are missing any members, that's an error.
+        for _missing_member in missing_members {
+            self.results.record_error(expression);
+        }
+
+        // The final type is the type of the entity with the given
+        // generics substituted.
+        let entity_ty = self.db.ty(entity).into_value();
+        self.substitute(expression, &generics, entity_ty)
     }
 }

@@ -6,7 +6,7 @@
 use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
-use lark_entity::Entity;
+use lark_entity::{Entity, EntityTables};
 use map::FxIndexMap;
 use std::sync::Arc;
 use ty::base_inferred::BaseInferred;
@@ -202,6 +202,16 @@ where
     F: TypeCheckFamily,
 {
     fn as_ref(&self) -> &TyInternTables {
+        self.db.as_ref()
+    }
+}
+
+impl<DB, F> AsRef<EntityTables> for TypeChecker<'_, DB, F>
+where
+    DB: TypeCheckDatabase,
+    F: TypeCheckFamily,
+{
+    fn as_ref(&self) -> &EntityTables {
         self.db.as_ref()
     }
 }

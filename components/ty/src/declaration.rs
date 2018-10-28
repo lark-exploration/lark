@@ -6,14 +6,11 @@ use crate::interners::TyInternTables;
 use crate::BaseData;
 use crate::BoundVarOr;
 use crate::Erased;
-use crate::Ty;
 use crate::TypeFamily;
 use debug::{DebugWith, FmtWithSpecialized};
 use intern::Intern;
 use intern::Untern;
 use lark_debug_derive::DebugWith;
-use lark_error::ErrorSentinel;
-use parser::pos::Span;
 use std::fmt;
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -50,14 +47,5 @@ where
 {
     fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.untern(cx).fmt_with(cx, fmt)
-    }
-}
-
-impl<DB> ErrorSentinel<&DB> for Ty<Declaration>
-where
-    DB: AsRef<TyInternTables>,
-{
-    fn error_sentinel(db: &DB, _spans: &[Span]) -> Self {
-        Declaration::error_type(db)
     }
 }

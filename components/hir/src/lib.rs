@@ -109,6 +109,9 @@ pub struct FnBodyTables {
     /// Map each expression index to its associated data.
     pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
 
+    /// A `a: b` pair.
+    pub identified_expressions: IndexVec<IdentifiedExpression, Spanned<IdentifiedExpressionData>>,
+
     /// Map each place index to its associated data.
     pub places: IndexVec<Place, Spanned<PlaceData>>,
 
@@ -253,6 +256,7 @@ macro_rules! define_meta_index {
 
 define_meta_index! {
     (Expression, ExpressionData, expressions),
+    (IdentifiedExpression, IdentifiedExpressionData, identified_expressions),
     (Place, PlaceData, places),
     (Perm, PermData, perms),
     (Variable, VariableData, variables),
@@ -299,11 +303,30 @@ pub enum ExpressionData {
         if_false: Expression,
     },
 
+    /// Construct a value of some aggregate type, such as a struct or
+    /// tuple:
+    ///
+    /// - `Struct { field1: expression1, ... fieldN: expressionN }`
+    Aggregate {
+        entity: Entity,
+        fields: Arc<Vec<IdentifiedExpression>>,
+    },
+
     /// `()`
     Unit {},
 
     /// `Error` -- some error condition
     Error { error: Error },
+}
+
+indices::index_type! {
+    pub struct IdentifiedExpression { .. }
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub struct IdentifiedExpressionData {
+    pub identifier: Identifier,
+    pub expression: Expression,
 }
 
 indices::index_type! {

@@ -147,6 +147,32 @@ where
         generics
     }
 
+    pub(super) fn inference_variables_for(&mut self, def_id: Entity) -> Generics<F> {
+        let GenericDeclarations {
+            parent_item,
+            declarations,
+        } = &*self
+            .db
+            .generic_declarations(def_id)
+            .into_value()
+            .unwrap_or_else(|ErrorReported(_)| Arc::new(GenericDeclarations::default()));
+
+        let mut generics = match parent_item {
+            Some(def_id) => self.inference_variables_for(*def_id),
+            None => Generics::empty(),
+        };
+
+        if !declarations.is_empty() {
+            generics.extend(
+                declarations
+                    .indices()
+                    .map(|_| GenericKind::Ty(self.new_infer_ty())),
+            );
+        }
+
+        generics
+    }
+
     /// Create a fresh universe (one that did not exist before) with
     /// the given binder. This universe will be able to see names
     /// from all previously existing universes.
