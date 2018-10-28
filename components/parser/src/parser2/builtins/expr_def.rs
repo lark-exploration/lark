@@ -1,9 +1,9 @@
 use crate::prelude::*;
 
 use crate::parser::ParseError;
-use crate::parser2::allow::{ALLOW_EOF, ALLOW_NEWLINE, ALLOW_NONE};
-use crate::parser2::reader::{self, PairedDelimiter, Reader, ShapeContinue, ShapeStart};
-use crate::parser2::{Handle, LiteParser, ScopeId};
+use crate::parser2::allow::{ALLOW_EOF, ALLOW_NEWLINE};
+use crate::parser2::reader::{PairedDelimiter, Reader, ShapeContinue, ShapeStart};
+use crate::parser2::Handle;
 
 use derive_new::new;
 use log::trace;
@@ -130,18 +130,4 @@ impl ExprParser {
 enum Continue {
     PossibleEnd,
     Terminator,
-}
-
-#[derive(Debug)]
-enum States {
-    Initial,
-    Delimited(Vec<Delimiter>),
-    PossibleEnd,
-}
-
-#[derive(Debug)]
-enum Delimiter {
-    Curly,
-    Round,
-    Square,
 }

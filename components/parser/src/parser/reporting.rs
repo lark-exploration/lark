@@ -1,20 +1,8 @@
-use codespan::ByteOffset;
-use crate::parser::ast::DebugModuleTable;
-
-use codespan::ByteIndex;
-use codespan::CodeMap;
-use crate::parser::ast::{Debuggable, DebuggableVec, Mode};
 use crate::parser::lexer_helpers::ParseError;
-use crate::parser::pos::{Span, Spanned};
-use crate::parser::program::ModuleTable;
-use crate::parser::program::StringId;
-use crate::parser::{self, ast};
+use crate::parser::pos::Span;
 
-use derive_new::new;
-use itertools::Itertools;
+use codespan::CodeMap;
 use language_reporting::{emit, Diagnostic, Label, Severity};
-use log::{debug, trace, warn};
-use std::collections::HashMap;
 use termcolor::{ColorChoice, StandardStream};
 
 pub fn print_parse_error(e: ParseError, codemap: &CodeMap) -> ! {

@@ -1,29 +1,12 @@
-use crate::parser::ast::{DebugModuleTable, Debuggable};
-use crate::parser::keywords::{KEYWORDS, SIGILS};
-use crate::parser::lexer_helpers::{begin, consume, consume_n, reconsume};
+use crate::parser::lexer_helpers::{consume, consume_n, reconsume};
 use crate::parser::lexer_helpers::{
-    LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError,
-    Tokenizer as GenericTokenizer,
+    LexerDelegateTrait, LexerNext, ParseError, Tokenizer as GenericTokenizer,
 };
-use crate::parser::program::StringId;
-use crate::parser::{ModuleTable, Span, Spanned};
 use crate::parser2::LexToken;
 
-use codespan::ByteOffset;
-use derive_new::new;
-use lazy_static::lazy_static;
-use log::{trace, warn};
-use std::fmt;
 use unicode_xid::UnicodeXID;
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
-
-// impl Tokenizer<'table> {
-//     fn tokens(self) -> Result<Vec<Spanned<Token>>, ParseError> {
-//         self.map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
-//             .collect()
-//     }
-// }
 
 #[derive(Debug, Copy, Clone)]
 pub enum LexerState {
@@ -175,11 +158,12 @@ fn is_delimiter_sigil_char(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use crate::prelude::*;
+
     use super::Tokenizer;
-    use crate::parser::ast::DebuggableVec;
     use crate::parser::lexer_helpers::ParseError;
-    use crate::parser::{Span, Spanned};
-    use crate::parser2::test_helpers::{process, Annotations, Position};
+    use crate::parser::Spanned;
+    use crate::parser2::test_helpers::process;
     use crate::LexToken;
 
     use log::trace;

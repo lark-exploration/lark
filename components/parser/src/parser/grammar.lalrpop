@@ -1,8 +1,7 @@
 use crate::{Token, ParseError, StringId};
-use crate::parser::grammar_helpers::*;
 use crate::parser::ast::*;
 use crate::parser::pos::{Span, Spanned};
-use codespan::{ByteIndex, ByteOffset};
+use codespan::{ByteIndex};
 use std::sync::Arc;
 
 grammar;

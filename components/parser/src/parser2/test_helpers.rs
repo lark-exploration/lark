@@ -1,17 +1,13 @@
 use crate::prelude::*;
 
-use crate::parser::lexer_helpers::ParseError;
 use crate::parser::test_helpers::{LineTokenizer, Token};
-use crate::parser::{ast, ModuleTable, Span, Spanned, StringId};
-use crate::parser2::TokenPos;
-use crate::LexToken;
+use crate::{ModuleTable, ParseError, StringId};
 
 use codespan::ByteIndex;
 use codespan::{ByteOffset, CodeMap};
 use derive_new::new;
 use itertools::Itertools;
 use log::{debug, trace};
-use std::collections::HashMap;
 use unicode_xid::UnicodeXID;
 
 pub fn process(source: &str) -> (String, Annotations) {
@@ -22,7 +18,6 @@ pub fn process(source: &str) -> (String, Annotations) {
 #[derive(Debug, Copy, Clone)]
 pub enum Annotation {
     Whitespace(Span),
-    Newline(Span),
     Identifier(Span),
     String(Span),
     Sigil(Span),
@@ -184,9 +179,5 @@ impl Annotations {
 
     pub fn table(&mut self) -> &mut ModuleTable {
         &mut self.table
-    }
-
-    pub fn tokens(&mut self) -> &mut [Annotation] {
-        &mut self.tokens
     }
 }

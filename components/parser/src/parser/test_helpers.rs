@@ -6,14 +6,11 @@ crate mod annotate_lines;
 use crate::parser::ast::DebugModuleTable;
 use crate::parser::lexer_helpers::{consume, consume_n, reconsume};
 use crate::parser::lexer_helpers::{
-    LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError, Tokenizer,
+    LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, ParseError, Tokenizer,
 };
 use crate::parser::program::ModuleTable;
 use crate::parser::program::StringId;
 
-use codespan::ByteSpan;
-use derive_new::new;
-use log::trace;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy)]
@@ -47,10 +44,6 @@ pub type LineTokenizer<'source> = Tokenizer<'source, LexerState>;
 
 fn tk_underline(_: StringId) -> Token {
     Token::Underline
-}
-
-fn tk_name(id: StringId) -> Token {
-    Token::Name(id)
 }
 
 impl LexerDelegateTrait for LexerState {

@@ -2,30 +2,16 @@ use crate::prelude::*;
 
 use crate::parser::{ModuleTable, ParseError, Span, Spanned, StringId};
 use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
-use crate::parser2::builtins::{self, ExprParser};
-use crate::parser2::entity_tree::{
-    Entities, EntitiesBuilder, EntityKind, EntityTree, EntityTreeBuilder,
-};
-use crate::parser2::macros::{macros, MacroRead, Macros};
-use crate::parser2::quicklex;
+use crate::parser2::entity_tree::{Entities, EntitiesBuilder, EntityKind};
+use crate::parser2::macros::{MacroRead, Macros};
 use crate::parser2::token;
-use crate::parser2::token_tree::{Handle, TokenPos, TokenSpan, TokenTree};
+use crate::parser2::token_tree::{Handle, TokenPos, TokenTree};
 use crate::LexToken;
 
 use bimap::BiMap;
 use codespan::CodeMap;
-use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
-
-use derive_new::new;
-use std::collections::BTreeMap;
-
-#[derive(Debug, Copy, Clone)]
-enum NextAction {
-    Top,
-    Macro(StringId),
-}
 
 #[derive(Debug, Copy, Clone)]
 pub struct ScopeId {
@@ -35,11 +21,6 @@ pub struct ScopeId {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct BindingId {
     id: usize,
-}
-
-pub struct ReferenceId {
-    scope_id: ScopeId,
-    binding_id: BindingId,
 }
 
 #[derive(Debug)]
@@ -95,6 +76,7 @@ impl Scopes {
         &mut self.list[id.id]
     }
 
+    #[allow(unused)]
     fn has(&self, scope: &ScopeId, name: &StringId) -> bool {
         let scope = self.get(scope);
 
@@ -134,10 +116,6 @@ impl Scopes {
 
         id
     }
-}
-
-struct File {
-    scopes: Vec<Scope>,
 }
 
 #[derive(Debug)]
@@ -208,10 +186,6 @@ pub enum NonSemantic {
     Newline,
 }
 
-struct AnnotatedShape {
-    tokens: Vec<AnnotatedToken>,
-}
-
 #[derive(Debug)]
 pub struct LiteParser<'codemap> {
     tokens: Vec<Spanned<LexToken>>,
@@ -257,7 +231,11 @@ pub enum RelativePosition {
 }
 
 pub enum IdPolicy {
-    Export { scope: ScopeId, hoist: bool },
+    Export {
+        scope: ScopeId,
+        hoist: bool,
+    },
+    #[allow(unused)]
     Bind(ScopeId),
     Refer(ScopeId),
     Label,
@@ -335,6 +313,20 @@ pub struct ParseResult {
     tree: TokenTree,
     tokens: Vec<Spanned<Token>>,
     entity_tree: Entities,
+}
+
+impl ParseResult {
+    pub fn tree(&self) -> &TokenTree {
+        &self.tree
+    }
+
+    pub fn tokens(&self) -> &[Spanned<Token>] {
+        &self.tokens
+    }
+
+    pub fn entities(&self) -> &Entities {
+        &self.entity_tree
+    }
 }
 
 impl LiteParser<'codemap> {
@@ -657,8 +649,6 @@ impl LiteParser<'codemap> {
         Ok(token)
     }
 
-    fn push_single(&mut self, _token: Spanned<Token>) {}
-
     fn push_out(&mut self, token: Spanned<Token>) {
         println!(
             "Pushing token: {:?}",
@@ -667,103 +657,4 @@ impl LiteParser<'codemap> {
         self.tree.tick();
         self.out_tokens.push(token)
     }
-}
-
-fn expect(
-    token: Option<Spanned<LexToken>>,
-    condition: impl FnOnce(LexToken) -> bool,
-) -> Result<Spanned<LexToken>, ParseError> {
-    match token {
-        None => Err(ParseError::new(format!("Unexpected EOF"), Span::EOF)),
-
-        Some(token) if condition(*token) => Ok(token),
-
-        Some(other) => Err(ParseError::new(
-            format!("Unexpected {:?}", other),
-            other.span(),
-        )),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::LiteParser;
-
-    use crate::parser::ast::DebuggableVec;
-    use crate::parser::lexer_helpers::ParseError;
-    use crate::parser::reporting::print_parse_error;
-    use crate::parser::{Span, Spanned};
-    use crate::parser2::macros::{macros, Macros};
-    use crate::parser2::quicklex::Tokenizer;
-    use crate::parser2::test_helpers::{process, Annotations, Position};
-    use crate::LexToken;
-
-    use log::trace;
-    use std::collections::HashMap;
-    use unindent::unindent;
-
-    /*
-    #[test]
-    fn test_lite_parse() {
-        return;
-        crate::init_logger();
-    
-        // let source = unindent(
-        //     r##"
-        //     struct Diagnostic {
-        //     ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
-        //       msg: String,
-        //       ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
-        //       level: String,
-        //       ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
-        //     }
-        //     ^ #}#
-        //     "##,
-        // );
-    
-        let source = unindent(
-            r##"
-            struct Diagnostic {
-            ^^^^^^~^^^^^^^^^^~^ @struct@ ws @Diagnostic@ ws #{#
-              msg: String,
-              ^^^~^~~~~~~^ @msg@ #:# ws @String@ #,#
-              level: String,
-              ^^^^^~^~~~~~~^ @level@ #:# ws @String@ #,#
-            }
-            ^ #}#
-            def new(msg: String, level: String) -> Diagnostic {
-            ^^^~^^^~^^^~^~~~~~~^~^^^^^~^~~~~~~^~^^~^^^^^^^^^^~^ @def@ ws @new@ #(# @msg@ #:# ws @String@ #,# ws @level@ #:# ws @String@ #)# ws #-># ws @Diagnostic@ ws #{#
-              Diagnostic { msg, level }
-              ^^^^^^^^^^~^~^^^~^~~~~~^~ @Diagnostic@ ws #{# ws @msg@ #,# ws @level@ ws #}#
-            }
-            ^ #}#
-            "##,
-        );
-    
-        let (source, ann) = process(&source);
-    
-        let filemap = ann.codemap().add_filemap("test".into(), source.clone());
-        let start = filemap.span().start().0;
-    
-        let tokens = match Tokenizer::new(ann.table(), &source, start).tokens() {
-            Ok(tokens) => tokens,
-            Err(e) => print_parse_error(e, ann.codemap()),
-        };
-    
-        // let tokens: Result<Vec<Spanned<Token>>, ParseError> = lexed
-        //     .map(|result| result.map(|(start, tok, end)| Spanned::from(tok, start, end)))
-        //     .collect();
-    
-        println!("{:#?}", DebuggableVec::from(&tokens.clone(), ann.table()));
-    
-        let builtin_macros = macros(ann.table());
-    
-        let parser = LiteParser::new(tokens, builtin_macros, ann.table().clone(), ann.codemap());
-    
-        match parser.process() {
-            Ok(_) => {}
-            Err(e) => print_parse_error(e, ann.codemap()),
-        };
-    }
-    */
 }

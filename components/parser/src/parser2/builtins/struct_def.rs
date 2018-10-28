@@ -49,6 +49,7 @@ impl MacroRead for StructDef {
         Ok(())
     }
 
+    #[allow(unused)]
     fn read(
         &self,
         scope: ScopeId,
@@ -95,11 +96,6 @@ impl MacroRead for StructDef {
 struct ExtentField {
     name: Spanned<LexToken>,
     ty: Handle,
-}
-
-#[derive(Debug)]
-struct StructExtentTerm {
-    name: Spanned<LexToken>,
 }
 
 #[derive(Debug)]

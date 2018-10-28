@@ -1,15 +1,10 @@
-use codespan::ByteOffset;
 use crate::parser::keywords::{KEYWORDS, SIGILS};
 use crate::parser::lexer_helpers::{
     LexerAccumulate, LexerAction, LexerDelegateTrait, LexerNext, LexerToken, ParseError,
     Tokenizer as GenericTokenizer,
 };
 use crate::parser::program::StringId;
-use crate::parser::{ModuleTable, Span, Token};
-use derive_new::new;
-use lazy_static::lazy_static;
-use log::{trace, warn};
-use std::fmt;
+use crate::parser::Token;
 use unicode_xid::UnicodeXID;
 
 pub type Tokenizer<'table> = GenericTokenizer<'table, LexerState>;
@@ -20,7 +15,6 @@ pub enum LexerState {
     Integer,
     StartStringLiteral,
     StringLiteral,
-    OpenCurly,
     Whitespace,
     StartIdent,
     ContinueIdent,

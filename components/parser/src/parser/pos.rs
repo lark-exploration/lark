@@ -1,8 +1,11 @@
-use codespan::{ByteIndex, ByteOffset, ByteSpan};
+use codespan::{ByteIndex, ByteSpan};
 use lark_debug_derive::DebugWith;
 use std::fmt;
 use std::hash::Hash;
 use std::hash::Hasher;
+
+#[cfg(test)]
+use codespan::ByteOffset;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Span {
@@ -55,13 +58,7 @@ impl Span {
         }
     }
 
-    // crate fn to_codespan(&self) -> ByteSpan {
-    //     match self {
-    //         Span::Real(span) => *span,
-    //         other => unimplemented!("{:?}", other),
-    //     }
-    // }
-
+    #[cfg(test)]
     crate fn to_range(&self, start: i32) -> std::ops::Range<usize> {
         let span = match self {
             Span::Real(span) => *span,
@@ -150,20 +147,12 @@ where
 }
 
 impl<T> Spanned<T> {
-    crate fn wrap_codespan(node: T, span: ByteSpan) -> Spanned<T> {
-        Spanned(node, Span::Real(span))
-    }
-
     crate fn wrap_span(node: T, span: Span) -> Spanned<T> {
         Spanned(node, span)
     }
 
     crate fn from(node: T, left: ByteIndex, right: ByteIndex) -> Spanned<T> {
         Spanned(node, Span::Real(ByteSpan::new(left, right)))
-    }
-
-    crate fn synthetic(node: T) -> Spanned<T> {
-        Spanned(node, Span::Synthetic)
     }
 }
 

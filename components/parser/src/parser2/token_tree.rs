@@ -1,5 +1,3 @@
-use crate::parser::program::StringId;
-
 use derive_new::new;
 use log::trace;
 use std::fmt;

@@ -1,22 +1,15 @@
+#[allow(unused_imports)]
 use crate::prelude::*;
 
 use super::lite_parse::ScopeId;
 
-use crate::parser::ast::Debuggable;
 use crate::parser::program::ModuleTable;
 use crate::parser::program::StringId;
-use crate::parser::{ParseError, Spanned};
-use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE, ALLOW_NONE};
+use crate::parser::ParseError;
 use crate::parser2::builtins;
-use crate::parser2::lite_parse::{
-    BindingId, Expected, ExpectedId, LiteParser, MaybeTerminator, RelativePosition, Token,
-};
-use crate::LexToken;
+use crate::parser2::lite_parse::LiteParser;
 use crate::parser2::reader::Reader;
-use crate::parser2::token_tree::Handle;
 
-use derive_new::new;
-use log::trace;
 use map::FxIndexMap;
 use std::fmt::{self, Debug};
 use std::sync::Arc;
@@ -50,7 +43,10 @@ impl Debug for MacroMap {
 #[derive(Default)]
 pub struct Macros {
     named: MacroMap,
+
+    #[allow(unused)]
     operator: MacroMap,
+    #[allow(unused)]
     prefix: MacroMap,
 }
 
@@ -84,27 +80,6 @@ impl Macros {
         self.named.has(name)
     }
 }
-
-// #[derive(new)]
-// pub struct MacroReadFn<F>
-// where
-//     F: Fn(ScopeId, &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>,
-// {
-//     func: F,
-// }
-
-// impl<F> MacroRead for MacroReadFn<F>
-// where
-//     F: Fn(ScopeId, &mut LiteParser<'_>) -> Result<Box<dyn Term>, ParseError>,
-// {
-//     fn read(
-//         &self,
-//         scope: ScopeId,
-//         reader: &mut LiteParser<'_>,
-//     ) -> Result<Box<dyn Term>, ParseError> {
-//         (self.func)(scope, reader)
-//     }
-// }
 
 pub fn macros(table: &mut ModuleTable) -> Macros {
     Macros::default()

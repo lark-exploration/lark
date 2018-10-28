@@ -1,6 +1,5 @@
 use crate::prelude::*;
 
-use crate::parser2::reader::EOF;
 use crate::parser2::token::{self, ClassifiedSigil};
 use crate::{LexToken, ModuleTable, PairedDelimiter, ParseError, Reader};
 

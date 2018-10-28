@@ -2,31 +2,18 @@ use crate::prelude::*;
 
 use crate::parser::{ModuleTable, ParseError, Span, Spanned, StringId};
 use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
+use crate::parser2::builtins::ExprParser;
 use crate::parser2::builtins::Paired;
-use crate::parser2::builtins::{self, ExprParser};
-use crate::parser2::entity_tree::{
-    Entities, EntitiesBuilder, EntityKind, EntityTree, EntityTreeBuilder,
-};
-use crate::parser2::macros::{macros, MacroRead, Macros};
+use crate::parser2::entity_tree::{Entities, EntitiesBuilder, EntityKind};
+use crate::parser2::macros::{MacroRead, Macros};
 use crate::parser2::token;
-use crate::parser2::token_tree::{Handle, TokenNode, TokenPos, TokenSpan, TokenTree};
+use crate::parser2::token_tree::{Handle, TokenNode, TokenPos, TokenTree};
 use crate::LexToken;
 
-use bimap::BiMap;
 use codespan::CodeMap;
 use log::{debug, trace};
-use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
-
-use derive_new::new;
-use std::collections::BTreeMap;
-
-#[derive(Debug, Copy, Clone)]
-enum NextAction {
-    Top,
-    Macro(StringId),
-}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum PairedDelimiter {
@@ -88,7 +75,9 @@ impl Reader<'codemap> {
 
 #[derive(Debug, Copy, Clone)]
 pub enum RelativePosition {
+    #[allow(unused)]
     Hoist,
+    #[allow(unused)]
     After,
 }
 
@@ -570,8 +559,6 @@ impl Reader<'codemap> {
         self.entity_tree.finish(TokenPos(self.tree.last_non_ws()));
     }
 
-    fn mark_backtrack_point(&mut self) {}
-
     fn consume(&mut self) -> Spanned<LexToken> {
         if self.tree().is_done() {
             trace!(target: "lark::reader", "in token=EOF")
@@ -651,31 +638,6 @@ impl Reader<'codemap> {
 
         self.tree.tick();
     }
-
-    fn backtrack(&mut self, debug_from: &str) {
-        trace!(target: "lark::reader",
-            "backtrack: backtracked token: {:?} (from: {})",
-            Debuggable::from(&self.tokens[self.pos()], self.table()),
-            debug_from,
-        );
-        self.tree.backtrack(debug_from);
-    }
-}
-
-fn expect(
-    token: Option<Spanned<LexToken>>,
-    condition: impl FnOnce(LexToken) -> bool,
-) -> Result<Spanned<LexToken>, ParseError> {
-    match token {
-        None => Err(ParseError::new(format!("Unexpected EOF"), Span::EOF)),
-
-        Some(token) if condition(*token) => Ok(token),
-
-        Some(other) => Err(ParseError::new(
-            format!("Unexpected {:?}", other),
-            other.span(),
-        )),
-    }
 }
 
 #[cfg(test)]
@@ -684,19 +646,14 @@ mod tests {
 
     use super::{ParseResult, Reader};
 
-    use crate::parser::ast::DebuggableVec;
-    use crate::parser::lexer_helpers::ParseError;
     use crate::parser::reporting::print_parse_error;
-    use crate::parser::{Span, Spanned};
-    use crate::parser2::macros::{macros, Macros};
+    use crate::parser2::macros::macros;
     use crate::parser2::quicklex::Tokenizer;
-    use crate::parser2::test_helpers::{process, Annotations, Position};
+    use crate::parser2::test_helpers::process;
     use crate::parser2::token::token_pos_at;
-    use crate::LexToken;
 
     use derive_new::new;
-    use log::{debug, trace};
-    use std::collections::HashMap;
+    use log::debug;
     use unindent::unindent;
 
     #[test]

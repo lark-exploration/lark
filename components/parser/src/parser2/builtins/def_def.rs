@@ -9,7 +9,6 @@ use crate::parser2::lite_parse::{
 };
 use crate::parser2::macros::{MacroRead, Term};
 use crate::parser2::reader::{self, PairedDelimiter, Reader};
-use crate::parser2::token;
 use crate::parser2::token_tree::Handle;
 use crate::LexToken;
 
@@ -63,6 +62,7 @@ impl MacroRead for DefDef {
         Ok(())
     }
 
+    #[allow(unused)]
     fn read(
         &self,
         scope: ScopeId,
@@ -134,16 +134,6 @@ struct ExtentParam {
     ty: Handle,
 }
 
-pub struct ExtentDef;
-
-struct DefExtentTerm {
-    name: Spanned<LexToken>,
-    params: Vec<ExtentParam>,
-    ret: Option<Handle>,
-}
-
-impl Term for DefExtentTerm {}
-
 #[derive(Debug)]
 struct Param {
     name: Spanned<Token>,
@@ -152,6 +142,7 @@ struct Param {
 
 pub struct DefDef;
 
+#[allow(unused)]
 struct DefDefTerm {
     name: Spanned<BindingId>,
     params: Vec<Param>,

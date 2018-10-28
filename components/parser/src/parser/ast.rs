@@ -6,14 +6,13 @@ mod test_helpers;
 use crate::parser::pos::HasSpan;
 use crate::parser::pos::Span;
 use crate::parser::pos::Spanned;
-use crate::parser::{Environment, ModuleTable, StringId, Token};
+use crate::parser::StringId;
 
-use codespan::ByteIndex;
 use derive_new::new;
 use std::fmt;
 use std::sync::Arc;
 
-crate use self::debug::{DebugModuleTable, Debuggable, DebuggableVec};
+crate use self::debug::{DebugModuleTable, Debuggable};
 
 pub type Identifier = Spanned<StringId>;
 
