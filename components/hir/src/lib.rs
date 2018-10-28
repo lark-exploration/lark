@@ -371,7 +371,7 @@ indices::index_type! {
     pub struct Expression { .. }
 }
 
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ExpressionData {
     /// `let <var> = <initializer> in <body>`
     Let {
