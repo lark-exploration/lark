@@ -145,6 +145,7 @@ impl DebugModuleTable for Token {
     }
 }
 
+#[cfg(test)]
 pub fn token_pos_at(line: usize, pos: usize, tokens: &[Spanned<Token>]) -> crate::TokenPos {
     let mut current_line = 1;
     let mut current_pos = 0;

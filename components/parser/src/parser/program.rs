@@ -102,29 +102,6 @@ pub struct Environment<'parent> {
     parent: Option<&'parent Environment<'parent>>,
 }
 
-impl Environment<'parent> {
-    crate fn child(&'current self) -> Environment<'current> {
-        Environment {
-            to_name: BTreeMap::new(),
-            parent: Some(self),
-        }
-    }
-
-    crate fn bind(&mut self, name: StringId, value: NameId) {
-        self.to_name.insert(name, value);
-    }
-
-    crate fn get(&self, name: StringId) -> Option<NameId> {
-        self.to_name.get(&name).map(|id| *id)
-    }
-
-    crate fn get_str(&self, program: &ModuleTable, key: &impl Seahash) -> Option<NameId> {
-        let id = program.get(key)?;
-
-        self.get(id)
-    }
-}
-
 pub trait Seahash {
     fn seahash(&self) -> u64;
     fn to_seahashed_string(&self) -> String;
@@ -138,9 +115,4 @@ impl Seahash for &str {
     fn to_seahashed_string(&self) -> String {
         self.to_string()
     }
-}
-
-pub struct Module<'table> {
-    table: &'table mut ModuleTable,
-    names: BTreeMap<NameId, StringId>,
 }

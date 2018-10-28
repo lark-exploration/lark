@@ -1,11 +1,11 @@
 #[macro_use]
 mod token_macro;
 
-mod allow;
+pub mod allow;
 mod builtins;
 pub mod entity_tree;
 mod lite_parse;
-mod macros;
+pub mod macros;
 pub mod quicklex;
 pub mod reader;
 mod token;

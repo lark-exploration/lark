@@ -5,7 +5,7 @@ use crate::parser::ast::{DebugModuleTable, Debuggable};
 use crate::parser::pos::{Span, Spanned};
 use crate::parser::program::{ModuleTable, StringId};
 use derive_new::new;
-use log::{debug, trace, warn};
+use log::{debug, trace};
 use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
@@ -40,25 +40,6 @@ impl<Delegate: LexerDelegateTrait> LexerNext<Delegate> {
         })
     }
 
-    pub fn dynamic_sigil(token: fn(StringId) -> Delegate::Token) -> Self {
-        LexerNext::Remain(LexerAccumulate::Emit {
-            before: Some(LexerAction::Consume(1)),
-            after: None,
-            token: LexerToken::Dynamic(token),
-        })
-    }
-
-    pub fn emit(token: Delegate::Token, state: Delegate) -> Self {
-        LexerNext::Transition(
-            LexerAccumulate::Emit {
-                before: None,
-                after: None,
-                token: LexerToken::Fixed(token),
-            },
-            state,
-        )
-    }
-
     pub fn emit_dynamic(token: fn(StringId) -> Delegate::Token, state: Delegate) -> Self {
         LexerNext::Transition(
             LexerAccumulate::Emit {
@@ -68,18 +49,6 @@ impl<Delegate: LexerDelegateTrait> LexerNext<Delegate> {
             },
             state,
         )
-    }
-
-    pub fn discard(state: Delegate) -> Self {
-        LexerNext::Transition(LexerAccumulate::Skip(LexerAction::Reconsume), state)
-    }
-
-    pub fn consume() -> Self {
-        LexerNext::Remain(LexerAccumulate::Continue(LexerAction::Consume(1)))
-    }
-
-    pub fn transition(state: Delegate) -> Self {
-        LexerNext::Transition(LexerAccumulate::Continue(LexerAction::Consume(1)), state)
     }
 }
 

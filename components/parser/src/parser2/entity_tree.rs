@@ -148,14 +148,16 @@ impl fmt::Debug for EntitiesBuilder {
 
 impl EntitiesBuilder {
     pub fn push(&mut self, name: &StringId, start: TokenPos, kind: EntityKind) {
-        let tree = self.tree.take().push(name, start, kind);
-        self.tree.set(tree);
+        self.update(|tree| tree.push(name, start, kind));
+        // let tree = self.tree.take().push(name, start, kind);
+        // self.tree.set(tree);
         // self.tree.update(|tree| tree.push(name, start, kind));
     }
 
     pub fn finish(&mut self, finish: TokenPos) {
-        let tree = self.tree.take().finish(finish);
-        self.tree.set(tree);
+        self.update(|tree| tree.finish(finish));
+        // let tree = self.tree.take().finish(finish);
+        // self.tree.set(tree);
     }
 
     pub fn finalize(self) -> Entities {
