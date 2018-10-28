@@ -391,6 +391,7 @@ dependencies = [
 name = "lark-codegen"
 version = "0.1.0"
 dependencies = [
+ "cc 1.0.23 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-mir 0.1.0",
  "tempfile 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

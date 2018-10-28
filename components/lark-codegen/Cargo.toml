@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 lark-mir = { path = "../lark-mir" }
 tempfile = "2.0"
+cc = "1.0"
