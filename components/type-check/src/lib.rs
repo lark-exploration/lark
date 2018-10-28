@@ -6,7 +6,7 @@
 use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
-use lark_entity::Entity;
+use lark_entity::{Entity, EntityTables};
 use map::FxIndexMap;
 use std::sync::Arc;
 use ty::base_inferred::BaseInferred;
@@ -150,10 +150,22 @@ pub struct TypeCheckResults<F: TypeFamily> {
     /// return the unification table too.
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
 
+    /// For "type-relative" identifiers, stores the entity that we resolved
+    /// to. Examples:
+    ///
+    /// - `foo.bar` -- attached to the identifier `bar`, entity of the field
+    /// - `foo.bar(..)` -- attached to the identifier `bar`, entity of the method
+    /// - `Foo { a: b }` -- attached to the identifier `a`, entity of the field
+    entities: std::collections::BTreeMap<hir::Identifier, Entity>,
+
     errors: Vec<Error>,
 }
 
 impl<F: TypeFamily> TypeCheckResults<F> {
+    fn record_entity(&mut self, index: hir::Identifier, entity: Entity) {
+        self.entities.insert(index.into(), entity);
+    }
+
     fn record_ty(&mut self, index: impl Into<hir::MetaIndex>, ty: Ty<F>) {
         self.types.insert(index.into(), ty);
     }
@@ -173,6 +185,7 @@ impl<F: TypeFamily> Default for TypeCheckResults<F> {
     fn default() -> Self {
         Self {
             types: Default::default(),
+            entities: Default::default(),
             errors: Default::default(),
         }
     }
@@ -189,6 +202,16 @@ where
     F: TypeCheckFamily,
 {
     fn as_ref(&self) -> &TyInternTables {
+        self.db.as_ref()
+    }
+}
+
+impl<DB, F> AsRef<EntityTables> for TypeChecker<'_, DB, F>
+where
+    DB: TypeCheckDatabase,
+    F: TypeCheckFamily,
+{
+    fn as_ref(&self) -> &EntityTables {
         self.db.as_ref()
     }
 }

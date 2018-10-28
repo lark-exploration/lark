@@ -11,6 +11,8 @@ use debug::DebugWith;
 use indices::IndexVec;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
+use lark_error::ErrorSentinel;
+use parser::pos::Span;
 use parser::StringId;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
@@ -61,6 +63,16 @@ pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
 pub struct Ty<F: TypeFamily> {
     pub perm: F::Perm,
     pub base: F::Base,
+}
+
+impl<DB, F> ErrorSentinel<&DB> for Ty<F>
+where
+    DB: AsRef<TyInternTables>,
+    F: TypeFamily,
+{
+    fn error_sentinel(db: &DB, _spans: &[Span]) -> Self {
+        F::error_type(db)
+    }
 }
 
 /// Indicates something that we've opted not to track statically.
