@@ -8,7 +8,6 @@ use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
 use map::FxIndexSet;
-use std::sync::Arc;
 use ty::Signature;
 use ty::Ty;
 use ty::{BaseData, BaseKind};
@@ -176,7 +175,7 @@ where
         expression: hir::Expression,
         owner_ty: Ty<F>,
         method_name: hir::Identifier,
-        arguments: Arc<Vec<hir::Expression>>,
+        arguments: hir::List<hir::Expression>,
     ) -> Ty<F> {
         self.with_base_data(expression, owner_ty.base.into(), move |this, base_data| {
             this.check_method_call(expression, owner_ty, method_name, arguments, base_data)
@@ -188,7 +187,7 @@ where
         expression: hir::Expression,
         _owner_ty: Ty<F>,
         method_name: hir::Identifier,
-        arguments: Arc<Vec<hir::Expression>>,
+        arguments: hir::List<hir::Expression>,
         base_data: BaseData<F>,
     ) -> Ty<F> {
         let BaseData { kind, generics } = base_data;
@@ -216,7 +215,9 @@ where
                 if signature.inputs.len() != arguments.len() {
                     self.results.record_error(expression);
                 }
-                for (&expected_ty, &argument_expr) in signature.inputs.iter().zip(arguments.iter())
+                let hir = &self.hir.clone();
+                for (&expected_ty, argument_expr) in
+                    signature.inputs.iter().zip(arguments.iter(hir))
                 {
                     self.check_expression_has_type(expected_ty, argument_expr);
                 }
@@ -233,7 +234,7 @@ where
         &mut self,
         expression: hir::Expression,
         entity: Entity,
-        fields: Arc<Vec<hir::IdentifiedExpression>>,
+        fields: hir::List<hir::IdentifiedExpression>,
     ) -> Ty<F> {
         match entity.untern(self) {
             EntityData::ItemName {
@@ -248,7 +249,8 @@ where
                 // check the inner expressions. Resolve all the identifiers
                 // to error.
                 let error_type = self.error_type();
-                for &field in fields.iter() {
+                let hir = &self.hir.clone();
+                for field in fields.iter(hir) {
                     let field_data = self.hir[field];
                     self.results.record_entity(field_data.identifier, entity);
                     self.results.record_ty(field, error_type);
@@ -274,9 +276,9 @@ where
                 .collect();
 
         // Find the entity for each of the field names that the user gave us.
-        for &field in fields.iter() {
-            let field_data = self.hir[field];
-            let field_name = self.hir[field_data.identifier].text;
+        let hir = &self.hir.clone();
+        for (field, field_data) in fields.iter_enumerated_data(hir) {
+            let field_name = hir[field_data.identifier].text;
             let field_ty = match self.db.member_entity(entity, MemberKind::Field, field_name) {
                 Some(field_entity) => {
                     self.results

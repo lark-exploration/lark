@@ -4,6 +4,7 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(decl_macro)]
+#![feature(in_band_lifetimes)]
 #![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 
@@ -126,18 +127,26 @@ pub struct FnBodyTables {
 
     /// Errors we encountered constructing the hir
     pub errors: IndexVec<Error, Spanned<ErrorData>>,
+
+    /// The data values for any `List<I>` values that appear elsewhere
+    /// in the HIR; the way this works is that all of the list value
+    /// are concatenated into one big vector, and each list just pulls
+    /// out a slice of that. Note that this just contains `u32` values
+    /// -- the actual `List<I>` remembers the index type `I` for its
+    /// own values and does the casting back and forth.
+    pub list_entries: Vec<u32>,
 }
 
 /// Trait implemented by the various kinds of indices that reach into
 /// the HIR; allows us to grab the vector that they correspond to.
 pub trait HirIndex: U32Index + Into<MetaIndex> {
-    type Data;
+    type Data: Clone;
 
     fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>>;
     fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Spanned<Self::Data>>;
 }
 
-pub trait HirIndexData: Sized {
+pub trait HirIndexData: Sized + Clone {
     type Index: HirIndex<Data = Self>;
 
     fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Spanned<Self>> {
@@ -146,6 +155,18 @@ pub trait HirIndexData: Sized {
 
     fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Spanned<Self>> {
         <<Self as HirIndexData>::Index as HirIndex>::index_vec_mut(hir)
+    }
+}
+
+impl AsRef<FnBodyTables> for FnBody {
+    fn as_ref(&self) -> &FnBodyTables {
+        &self.tables
+    }
+}
+
+impl AsRef<FnBodyTables> for Arc<FnBody> {
+    fn as_ref(&self) -> &FnBodyTables {
+        &self.tables
     }
 }
 
@@ -264,6 +285,88 @@ define_meta_index! {
     (Error, ErrorData, errors),
 }
 
+/// A list of "HIR indices" of type `I`.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct List<I: HirIndex> {
+    start_index: u32,
+    len: u32,
+    marker: std::marker::PhantomData<I>,
+}
+
+impl<I: HirIndex> List<I> {
+    /// Creates a list containing the values from in the
+    /// `start_index..end_index` from the enclosing `FnBodyTables`.
+    /// Ordinarily, you would not use this constructor, but rather
+    /// `from_iterator`.
+    pub(crate) fn new(start_index: usize, end_index: usize) -> Self {
+        assert_eq!((start_index as u32) as usize, start_index);
+        assert!(end_index >= start_index);
+
+        List {
+            start_index: start_index as u32,
+            len: (end_index - start_index) as u32,
+            marker: std::marker::PhantomData,
+        }
+    }
+
+    /// Creates a `List` containing the results of `from_iterator`.
+    pub fn from_iterator(
+        mut fn_body: impl AsMut<FnBodyTables>,
+        iterator: impl IntoIterator<Item = I>,
+    ) -> Self {
+        let tables = fn_body.as_mut();
+        let start_index = tables.list_entries.len();
+        tables
+            .list_entries
+            .extend(iterator.into_iter().map(|i| i.as_u32()));
+        let end_index = tables.list_entries.len();
+        List::new(start_index, end_index)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    pub fn len(&self) -> usize {
+        self.len as usize
+    }
+
+    /// Iterate over the elements in the list.
+    pub fn iter(&self, fn_body: &'f impl AsRef<FnBodyTables>) -> impl Iterator<Item = I> + 'f {
+        let tables: &FnBodyTables = fn_body.as_ref();
+        let start_index = self.start_index as usize;
+        let end_index = start_index + self.len as usize;
+        tables.list_entries[start_index..end_index]
+            .iter()
+            .cloned()
+            .map(I::from_u32)
+    }
+
+    /// Iterate over the data for each the element in the list.
+    pub fn iter_data(
+        &self,
+        fn_body: &'f impl AsRef<FnBodyTables>,
+    ) -> impl Iterator<Item = I::Data> + 'f {
+        self.iter_enumerated_data(fn_body).map(|(_, d)| d)
+    }
+
+    /// Iterate over the elements in the list *and* their associated
+    /// data.
+    pub fn iter_enumerated_data(
+        &self,
+        fn_body: &'f impl AsRef<FnBodyTables>,
+    ) -> impl Iterator<Item = (I, I::Data)> + 'f {
+        let tables: &FnBodyTables = fn_body.as_ref();
+        let data_vec = I::index_vec(tables);
+        self.iter(fn_body).map(move |i| {
+            let data: &I::Data = &data_vec[i];
+            (i, data.clone())
+        })
+    }
+}
+
+debug::debug_fallback_impl!(for[I: HirIndex] List<I>);
+
 indices::index_type! {
     pub struct Expression { .. }
 }
@@ -287,7 +390,7 @@ pub enum ExpressionData {
     MethodCall {
         owner: Place,
         method: Identifier,
-        arguments: Arc<Vec<Expression>>,
+        arguments: List<Expression>,
     },
 
     /// E1; E2
@@ -309,7 +412,7 @@ pub enum ExpressionData {
     /// - `Struct { field1: expression1, ... fieldN: expressionN }`
     Aggregate {
         entity: Entity,
-        fields: Arc<Vec<IdentifiedExpression>>,
+        fields: List<IdentifiedExpression>,
     },
 
     /// `()`
