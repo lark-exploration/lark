@@ -1,9 +1,9 @@
+use lark_task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
 use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
 use std::io;
 use std::io::prelude::{Read, Write};
 use std::sync::mpsc::Sender;
-use lark_task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method")]
@@ -44,14 +44,14 @@ enum LSPCommand {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct LSPJsonRPC<T> {
+struct JsonRPCResponse<T> {
     jsonrpc: String,
     id: usize,
     result: T,
 }
-impl<T> LSPJsonRPC<T> {
-    pub fn new(id: usize, result: T) -> LSPJsonRPC<T> {
-        LSPJsonRPC {
+impl<T> JsonRPCResponse<T> {
+    pub fn new(id: usize, result: T) -> Self {
+        JsonRPCResponse {
             jsonrpc: "2.0".into(),
             id,
             result,
@@ -59,8 +59,33 @@ impl<T> LSPJsonRPC<T> {
     }
 }
 
-fn send_result<T: Serialize>(id: usize, result: T) {
-    let response = LSPJsonRPC::new(id, result);
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonRPCNotification<T> {
+    jsonrpc: String,
+    method: String,
+    params: T,
+}
+impl<T> JsonRPCNotification<T> {
+    pub fn new(method: String, params: T) -> Self {
+        JsonRPCNotification {
+            jsonrpc: "2.0".into(),
+            method,
+            params,
+        }
+    }
+}
+
+fn send_response<T: Serialize>(id: usize, result: T) {
+    let response = JsonRPCResponse::new(id, result);
+    let response_raw = serde_json::to_string(&response).unwrap();
+
+    print!("Content-Length: {}\r\n\r\n", response_raw.len());
+    print!("{}", response_raw);
+    let _ = io::stdout().flush();
+}
+
+fn send_notification<T: Serialize>(method: String, notice: T) {
+    let response = JsonRPCNotification::new(method, notice);
     let response_raw = serde_json::to_string(&response).unwrap();
 
     print!("Content-Length: {}\r\n\r\n", response_raw.len());
@@ -94,7 +119,7 @@ impl Actor for LspResponder {
                     range: None,
                 };
 
-                send_result(id, result);
+                send_response(id, result);
             }
             LspResponse::Completions(id, completions) => {
                 let mut completion_items = vec![];
@@ -111,7 +136,7 @@ impl Actor for LspResponder {
                     items: completion_items,
                 };
 
-                send_result(id, result);
+                send_response(id, result);
             }
             LspResponse::Initialized(id) => {
                 let result = languageserver_types::InitializeResult {
@@ -150,7 +175,22 @@ impl Actor for LspResponder {
                     },
                 };
 
-                send_result(id, result);
+                send_response(id, result);
+            }
+            LspResponse::Diagnostics(url, diagnostics) => {
+                let lsp_diagnostics: Vec<languageserver_types::Diagnostic> = diagnostics
+                    .iter()
+                    .map(|(range, diag)| {
+                        languageserver_types::Diagnostic::new_simple(*range, diag.clone())
+                    })
+                    .collect();
+
+                let notice = languageserver_types::PublishDiagnosticsParams {
+                    uri: url,
+                    diagnostics: lsp_diagnostics,
+                };
+
+                send_notification("textDocument/publishDiagnostics".into(), notice);
             }
         }
     }
