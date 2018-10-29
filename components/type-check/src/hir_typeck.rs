@@ -115,7 +115,7 @@ where
                 self.least_upper_bound(expression, true_ty, false_ty)
             }
 
-            hir::ExpressionData::Unit {} => unimplemented!(),
+            hir::ExpressionData::Unit {} => self.unit_type(),
 
             hir::ExpressionData::Error { error: _ } => self.error_type(),
         }

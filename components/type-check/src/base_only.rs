@@ -4,6 +4,9 @@ use crate::TypeCheckFamily;
 use crate::TypeCheckerFields;
 use hir;
 use hir::HirDatabase;
+use intern::Intern;
+use lark_entity::EntityData;
+use lark_entity::LangItem;
 use ty::base_only::{Base, BaseOnly, BaseTy};
 use ty::declaration::Declaration;
 use ty::identity::Identity;
@@ -79,6 +82,20 @@ impl TypeCheckFamily for BaseOnly {
                 this.db(),
                 BaseData {
                     kind: BaseKind::Named(boolean_entity),
+                    generics: Generics::empty(),
+                },
+            ),
+        }
+    }
+
+    fn unit_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+        let entity = EntityData::LangItem(LangItem::Tuple(0)).intern(this);
+        Ty {
+            perm: Erased,
+            base: BaseOnly::intern_base_data(
+                this.db(),
+                BaseData {
+                    kind: BaseKind::Named(entity),
                     generics: Generics::empty(),
                 },
             ),

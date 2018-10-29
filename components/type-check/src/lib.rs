@@ -73,6 +73,8 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
 
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    fn unit_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
+
     fn require_assignable(
         this: &mut impl TypeCheckerFields<Self>,
         expression: hir::Expression,
@@ -116,7 +118,7 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         M: Map<Self, Self>;
 }
 
-trait TypeCheckerFields<F: TypeCheckFamily>: AsRef<TyInternTables> {
+trait TypeCheckerFields<F: TypeCheckFamily>: AsRef<TyInternTables> + AsRef<EntityTables> {
     type DB: TypeCheckDatabase;
 
     fn db(&self) -> &Self::DB;

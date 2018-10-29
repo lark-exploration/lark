@@ -57,6 +57,10 @@ where
         F::boolean_type(self)
     }
 
+    pub(super) fn unit_type(&self) -> Ty<F> {
+        F::unit_type(self)
+    }
+
     pub(super) fn error_type(&self) -> Ty<F> {
         F::error_type(self)
     }
