@@ -208,6 +208,7 @@ fn codegen_struct(rust: &mut RustFile, context: &Context, s: &Struct) {
     rust.output_raw("}\n");
 }
 
+/// Converts the MIR context of definitions into Rust source
 pub fn codegen_rust(context: &Context) -> String {
     let mut rust_file = RustFile::new();
     for definition in &context.definitions {

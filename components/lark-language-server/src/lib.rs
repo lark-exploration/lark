@@ -63,6 +63,8 @@ impl<T> JsonRPCResponse<T> {
     }
 }
 
+/// A wrapper for proactive notifications to the IDE (eg. diagnostics). These must
+/// follow the JSON 2.0 RPC spec
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonRPCNotification<T> {
     jsonrpc: String,
@@ -191,8 +193,7 @@ impl Actor for LspResponder {
                     .iter()
                     .map(|(range, diag)| {
                         languageserver_types::Diagnostic::new_simple(*range, diag.clone())
-                    })
-                    .collect();
+                    }).collect();
 
                 let notice = languageserver_types::PublishDiagnosticsParams {
                     uri: url,
@@ -205,6 +206,9 @@ impl Actor for LspResponder {
     }
 }
 
+/// The workhorse function for handling incoming requests from the IDE. This will
+/// take instructions from stdin sent by the IDE and then send them to the appropriate
+/// system.
 pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager>) {
     loop {
         let mut input = String::new();

@@ -7,24 +7,16 @@ use languageserver_types::{Position, Range};
 
 pub type TaskId = usize;
 
+/// A message the manager sends to the subsystem
+/// This enables it both to control the subsystem and
+/// transmit data.
 enum MsgFromManager<T> {
     Shutdown,
     Message(T),
 }
 
-pub enum LspRequest {
-    TypeForPos(TaskId, Url, Position),
-    OpenFile(Url, String),
-    Initialize(TaskId),
-}
-
-pub enum LspResponse {
-    Type(TaskId, String),
-    Completions(TaskId, Vec<(String, String)>),
-    Initialized(TaskId),
-    Diagnostics(Url, Vec<(Range, String)>),
-}
-
+/// Message that the manager can understand from
+/// the subsystems.
 pub enum MsgToManager {
     QueryResponse(QueryResponse),
     LspRequest(LspRequest),
@@ -32,6 +24,25 @@ pub enum MsgToManager {
     Shutdown,
 }
 
+/// Tasks that the LSP service can request
+/// from the manager.
+pub enum LspRequest {
+    TypeForPos(TaskId, Url, Position),
+    OpenFile(Url, String),
+    Initialize(TaskId),
+}
+
+/// Responses back to the LSP services from
+/// the manager.
+pub enum LspResponse {
+    Type(TaskId, String),
+    Completions(TaskId, Vec<(String, String)>),
+    Initialized(TaskId),
+    Diagnostics(Url, Vec<(Range, String)>),
+}
+
+/// Requests from the manager to the query
+/// system
 pub enum QueryRequest {
     /// URI followed by contents
     OpenFile(Url, String),
@@ -39,10 +50,16 @@ pub enum QueryRequest {
     TypeAtPosition(TaskId, Url, Position),
 }
 
+/// Responses from the query system back to the
+/// manager
 pub enum QueryResponse {
     Type(TaskId, String),
 }
 
+/// Requests are broken into a series of steps called a recipe, each
+/// composed of finer-grained steps. This stepping allows a bit more
+/// control over when tasks are cancelled, their priority, and how
+/// they become parallel.
 enum RecipeStep {
     GetTextForFile,
 
@@ -50,6 +67,8 @@ enum RecipeStep {
     RespondWithInitialized,
 }
 
+/// An actor in the task system. This gives a uniform way to
+/// create, control, message, and shutdown concurrent workers.
 pub trait Actor {
     type InMessage: Send + Sync + 'static;
     type OutMessage: Send + Sync + 'static;
@@ -92,6 +111,8 @@ pub struct ActorControl<MessageType: Send + Sync + 'static> {
     pub join_handle: std::thread::JoinHandle<()>,
 }
 
+/// The coordinator of tasks coming in from the IDE services to the
+/// parts of the system that will do the processing.
 pub struct TaskManager {
     live_recipes: HashMap<TaskId, Vec<RecipeStep>>,
     receive_channel: Receiver<MsgToManager>,
@@ -152,8 +173,7 @@ impl TaskManager {
                                     .channel
                                     .send(MsgFromManager::Message(QueryRequest::TypeAtPosition(
                                         task_id, location.0, location.1,
-                                    )))
-                                    .unwrap();
+                                    ))).unwrap();
                             }
                         }
                         RecipeStep::RespondWithType => {
@@ -194,8 +214,7 @@ impl TaskManager {
                     .channel
                     .send(MsgFromManager::Message(QueryRequest::OpenFile(
                         url, contents,
-                    )))
-                    .unwrap();
+                    ))).unwrap();
             }
             LspRequest::Initialize(task_id) => {
                 let recipe = vec![RecipeStep::RespondWithInitialized];
