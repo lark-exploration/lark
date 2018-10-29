@@ -7,11 +7,12 @@
 use codespan::{ByteIndex, ColumnIndex, FileMap, LineIndex};
 use debug::DebugWith;
 use intern::{Intern, Untern};
-use languageserver_types::Position;
+use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use map::FxIndexMap;
 use parking_lot::RwLock;
 use parser::StringId;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 pub(crate) struct Cancelled;
@@ -27,6 +28,43 @@ pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
         } else {
             Ok(())
         }
+    }
+
+    fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<Range>>> {
+        let input_files = self.input_files(());
+        let mut file_errors = HashMap::new();
+
+        for input_file in &*input_files {
+            self.check_for_cancellation()?;
+
+            let mut errors = vec![];
+            let _ = self
+                .ast_of_file(*input_file)
+                .accumulate_errors_into(&mut errors);
+            let filename = self.untern_string(*input_file).to_string();
+            let file_maps = self.file_maps().read().get(&filename).unwrap().clone();
+
+            let error_ranges = errors
+                .iter()
+                .map(|x| {
+                    let left_side = x.start().unwrap();
+                    let (left_line, left_col) = file_maps.location(left_side).unwrap();
+                    let left_position =
+                        Position::new(left_line.to_usize() as u64, left_col.to_usize() as u64);
+
+                    let right_side = x.end().unwrap();
+                    let (right_line, right_col) = file_maps.location(right_side).unwrap();
+                    let right_position =
+                        Position::new(right_line.to_usize() as u64, right_col.to_usize() as u64);
+
+                    Range::new(left_position, right_position)
+                })
+                .collect();
+
+            file_errors.insert(filename, error_ranges);
+        }
+
+        Ok(file_errors)
     }
 
     /// Returns the hover text to display for a given position (if

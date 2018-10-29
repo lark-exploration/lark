@@ -193,7 +193,8 @@ impl Actor for LspResponder {
                     .iter()
                     .map(|(range, diag)| {
                         languageserver_types::Diagnostic::new_simple(*range, diag.clone())
-                    }).collect();
+                    })
+                    .collect();
 
                 let notice = languageserver_types::PublishDiagnosticsParams {
                     uri: url,
@@ -244,6 +245,16 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                         }
                         Ok(LSPCommand::didChange { params }) => {
                             eprintln!("didChange: {:#?}", params);
+
+                            let changes = params
+                                .content_changes
+                                .iter()
+                                .map(|x| (x.range.unwrap(), x.text.clone()))
+                                .collect();
+
+                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
+                                LspRequest::EditFile(params.text_document.uri.clone(), changes),
+                            ));
                         }
                         Ok(LSPCommand::hover { id, params }) => {
                             eprintln!("hover: id={} {:#?}", id, params);
