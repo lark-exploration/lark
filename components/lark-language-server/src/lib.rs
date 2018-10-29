@@ -5,6 +5,8 @@ use std::io;
 use std::io::prelude::{Read, Write};
 use std::sync::mpsc::Sender;
 
+/// The command given by the IDE to the LSP server. These represent the actions of the user in the IDE,
+/// as well as actions the IDE might perform as a result of user actions (like cancelling a task)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method")]
 #[allow(non_camel_case_types)]
@@ -43,6 +45,8 @@ enum LSPCommand {
     },
 }
 
+/// A wrapper for responses back to the IDE from the LSP service. These must follow
+/// the JSON 2.0 RPC spec
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonRPCResponse<T> {
     jsonrpc: String,
@@ -75,6 +79,7 @@ impl<T> JsonRPCNotification<T> {
     }
 }
 
+/// Helper function to do the work of sending a result back to the IDE
 fn send_response<T: Serialize>(id: usize, result: T) {
     let response = JsonRPCResponse::new(id, result);
     let response_raw = serde_json::to_string(&response).unwrap();
@@ -84,6 +89,7 @@ fn send_response<T: Serialize>(id: usize, result: T) {
     let _ = io::stdout().flush();
 }
 
+/// Helper function to send a proactive notification back to the IDE
 fn send_notification<T: Serialize>(method: String, notice: T) {
     let response = JsonRPCNotification::new(method, notice);
     let response_raw = serde_json::to_string(&response).unwrap();
@@ -109,6 +115,9 @@ impl Actor for LspResponder {
 
     fn shutdown(&mut self) {}
 
+    /// Receive messages from the task manager that contain the results of
+    /// a given task. This allows us to repond to the IDE in an orderly
+    /// manner.
     fn receive_message(&mut self, message: Self::InMessage) {
         match message {
             LspResponse::Type(id, ty) => {
