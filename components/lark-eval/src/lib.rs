@@ -190,6 +190,10 @@ pub fn eval_fn(
     }
 }
 
+/// Starting place for eval of a project or file.
+///   * context - the full set of definitions from MIR
+///   * starting_fn - the "main" function to begin evaluation
+///   * io_handler - a helper to handle output to console or capture for testing
 pub fn eval_context(context: &Context, starting_fn: DefId, io_handler: &mut IOHandler) {
     match context.definitions[starting_fn] {
         Definition::Fn(ref f) => {

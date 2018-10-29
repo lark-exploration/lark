@@ -1,5 +1,6 @@
 use crate::CodegenType;
 
+/// Build a source file using the default tools on the given platform
 pub fn build(
     target_filename: &str,
     src: &String,
@@ -11,6 +12,7 @@ pub fn build(
     }
 }
 
+/// Create a temporary file we can write the source into for compilation
 fn create_src_file(codegen_type: CodegenType) -> tempfile::NamedTempFile {
     let temp_file = match codegen_type {
         CodegenType::Rust => tempfile::NamedTempFileOptions::new()
@@ -30,6 +32,7 @@ fn create_src_file(codegen_type: CodegenType) -> tempfile::NamedTempFile {
     temp_file
 }
 
+/// Invoke the Rust compiler to build the source file
 fn build_rust(target_filename: &str, src: &String) -> std::io::Result<()> {
     use std::io::Write;
     use std::process::Command;
@@ -59,6 +62,9 @@ fn build_rust(target_filename: &str, src: &String) -> std::io::Result<()> {
     }
 }
 
+/// Invoke the platform specific C compiler.
+/// For Unix platforms, this is 'clang'.
+/// For Windows platforms, this is 'cl.exe' from Visual Studio.
 #[cfg(windows)]
 fn build_c(target_filename: &str, src: &String) -> std::io::Result<()> {
     use std::io::Write;
@@ -107,6 +113,9 @@ fn build_c(target_filename: &str, src: &String) -> std::io::Result<()> {
     }
 }
 
+/// Invoke the platform specific C compiler.
+/// For Unix platforms, this is 'clang'.
+/// For Windows platforms, this is 'cl.exe' from Visual Studio.
 #[cfg(unix)]
 fn build_c(target_filename: &str, src: &String) -> std::io::Result<()> {
     use std::io::Write;
