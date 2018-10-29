@@ -29,6 +29,7 @@ pub enum MsgToManager {
 pub enum LspRequest {
     TypeForPos(TaskId, Url, Position),
     OpenFile(Url, String),
+    EditFile(Url, Vec<(Range, String)>),
     Initialize(TaskId),
 }
 
@@ -46,7 +47,7 @@ pub enum LspResponse {
 pub enum QueryRequest {
     /// URI followed by contents
     OpenFile(Url, String),
-    EditFile(String),
+    EditFile(Url, Vec<(Range, String)>),
     TypeAtPosition(TaskId, Url, Position),
 }
 
@@ -54,6 +55,7 @@ pub enum QueryRequest {
 /// manager
 pub enum QueryResponse {
     Type(TaskId, String),
+    Diagnostics(Url, Vec<(Range, String)>),
 }
 
 /// Requests are broken into a series of steps called a recipe, each
@@ -173,7 +175,8 @@ impl TaskManager {
                                     .channel
                                     .send(MsgFromManager::Message(QueryRequest::TypeAtPosition(
                                         task_id, location.0, location.1,
-                                    ))).unwrap();
+                                    )))
+                                    .unwrap();
                             }
                         }
                         RecipeStep::RespondWithType => {
@@ -214,7 +217,16 @@ impl TaskManager {
                     .channel
                     .send(MsgFromManager::Message(QueryRequest::OpenFile(
                         url, contents,
-                    ))).unwrap();
+                    )))
+                    .unwrap();
+            }
+            LspRequest::EditFile(url, changes) => {
+                self.query_system
+                    .channel
+                    .send(MsgFromManager::Message(QueryRequest::EditFile(
+                        url, changes,
+                    )))
+                    .unwrap();
             }
             LspRequest::Initialize(task_id) => {
                 let recipe = vec![RecipeStep::RespondWithInitialized];
@@ -230,6 +242,11 @@ impl TaskManager {
             match self.receive_channel.recv() {
                 Ok(MsgToManager::QueryResponse(QueryResponse::Type(task_id, contents))) => {
                     self.send_next_step(task_id, Box::new(contents));
+                }
+                Ok(MsgToManager::QueryResponse(QueryResponse::Diagnostics(url, errors))) => {
+                    let _ = self.lsp_responder.channel.send(MsgFromManager::Message(
+                        LspResponse::Diagnostics(url, errors),
+                    ));
                 }
                 Ok(MsgToManager::LspRequest(lsp_request)) => {
                     self.do_recipe_for_lsp_request(lsp_request);

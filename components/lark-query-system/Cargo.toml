@@ -19,3 +19,4 @@ parser = { path = "../parser" }
 salsa = "0.6.2"
 ty = { path = "../ty" }
 type-check = { path = "../type-check" }
+url = "1.7"
