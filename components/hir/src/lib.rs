@@ -94,7 +94,7 @@ pub struct Member {
 pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
-    pub arguments: Vec<Variable>,
+    pub arguments: List<Variable>,
 
     /// Index of the root expression in the function body. Its result
     /// will be returned.
@@ -135,6 +135,12 @@ pub struct FnBodyTables {
     /// -- the actual `List<I>` remembers the index type `I` for its
     /// own values and does the casting back and forth.
     pub list_entries: Vec<u32>,
+}
+
+impl AsMut<FnBodyTables> for FnBodyTables {
+    fn as_mut(&mut self) -> &mut Self {
+        self
+    }
 }
 
 /// Trait implemented by the various kinds of indices that reach into
@@ -293,19 +299,33 @@ pub struct List<I: HirIndex> {
     marker: std::marker::PhantomData<I>,
 }
 
+impl<I: HirIndex> Default for List<I> {
+    fn default() -> Self {
+        List {
+            start_index: 0,
+            len: 0,
+            marker: std::marker::PhantomData,
+        }
+    }
+}
+
 impl<I: HirIndex> List<I> {
     /// Creates a list containing the values from in the
     /// `start_index..end_index` from the enclosing `FnBodyTables`.
     /// Ordinarily, you would not use this constructor, but rather
     /// `from_iterator`.
-    pub(crate) fn new(start_index: usize, end_index: usize) -> Self {
+    fn from_start_and_end(start_index: usize, end_index: usize) -> Self {
         assert_eq!((start_index as u32) as usize, start_index);
         assert!(end_index >= start_index);
 
-        List {
-            start_index: start_index as u32,
-            len: (end_index - start_index) as u32,
-            marker: std::marker::PhantomData,
+        if start_index == end_index {
+            List::default()
+        } else {
+            List {
+                start_index: start_index as u32,
+                len: (end_index - start_index) as u32,
+                marker: std::marker::PhantomData,
+            }
         }
     }
 
@@ -320,7 +340,7 @@ impl<I: HirIndex> List<I> {
             .list_entries
             .extend(iterator.into_iter().map(|i| i.as_u32()));
         let end_index = tables.list_entries.len();
-        List::new(start_index, end_index)
+        List::from_start_and_end(start_index, end_index)
     }
 
     pub fn is_empty(&self) -> bool {

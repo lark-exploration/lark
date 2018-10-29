@@ -32,7 +32,12 @@ where
             declaration_signature,
         );
         assert_eq!(signature.inputs.len(), self.hir.arguments.len());
-        for (&argument, &input) in self.hir.arguments.iter().zip(signature.inputs.iter()) {
+        for (argument, &input) in self
+            .hir
+            .arguments
+            .iter(&self.hir)
+            .zip(signature.inputs.iter())
+        {
             self.results.record_ty(argument, input);
         }
         self.check_expression_has_type(signature.output, self.hir.root_expression);

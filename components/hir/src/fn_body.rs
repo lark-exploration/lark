@@ -68,6 +68,8 @@ where
 
                     let root_expression = self.lower_block(&def.body);
 
+                    let arguments = hir::List::from_iterator(&mut self.fn_body_tables, arguments);
+
                     hir::FnBody {
                         arguments,
                         root_expression,
@@ -81,7 +83,7 @@ where
                     self.error_expression(*spans.first().unwrap(), hir::ErrorData::Misc);
 
                 hir::FnBody {
-                    arguments: vec![],
+                    arguments: hir::List::default(),
                     root_expression,
                     tables: self.fn_body_tables,
                 }
