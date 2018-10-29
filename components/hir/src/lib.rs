@@ -420,6 +420,19 @@ pub enum ExpressionData {
         if_false: Expression,
     },
 
+    /// E1 (op) E2
+    Binary {
+        operator: BinaryOperator,
+        left: Expression,
+        right: Expression,
+    },
+
+    /// (op) E
+    Unary {
+        operator: UnaryOperator,
+        value: Expression,
+    },
+
     /// Construct a value of some aggregate type, such as a struct or
     /// tuple:
     ///
@@ -434,6 +447,21 @@ pub enum ExpressionData {
 
     /// `Error` -- some error condition
     Error { error: Error },
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum BinaryOperator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Equals,
+    NotEquals,
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum UnaryOperator {
+    Not,
 }
 
 indices::index_type! {

@@ -217,7 +217,7 @@ where
         }
     }
 
-    pub(super) fn with_base_data_unify_with(
+    fn with_base_data_unify_with(
         &mut self,
         cause: hir::MetaIndex,
         base: F::TcBase,
