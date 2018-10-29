@@ -3,7 +3,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use url::Url;
 
-use languageserver_types::Position;
+use languageserver_types::{Position, Range};
 
 pub type TaskId = usize;
 
@@ -22,6 +22,7 @@ pub enum LspResponse {
     Type(TaskId, String),
     Completions(TaskId, Vec<(String, String)>),
     Initialized(TaskId),
+    Diagnostics(Url, Vec<(Range, String)>),
 }
 
 pub enum MsgToManager {
