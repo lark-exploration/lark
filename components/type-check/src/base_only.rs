@@ -166,7 +166,7 @@ impl TypeCheckFamily for BaseOnly {
     where
         M: Map<Declaration, Self>,
     {
-        value.map(&mut Substitution::new(this, generics))
+        value.map(&mut Substitution::new(this, this, generics))
     }
 
     fn apply_owner_perm<M>(

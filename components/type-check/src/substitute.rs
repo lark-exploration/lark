@@ -1,6 +1,6 @@
 use intern::Untern;
 use ty::declaration::Declaration;
-use ty::interners::TyInternTables;
+use ty::declaration::DeclarationTables;
 use ty::map_family::FamilyMapper;
 use ty::map_family::Map;
 use ty::BoundVar;
@@ -15,7 +15,8 @@ where
     T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
-    intern_tables: &'me TyInternTables,
+    declaration_tables: &'me DeclarationTables,
+    output_tables: &'me T::InternTables,
     values: &'me V,
 }
 
@@ -24,27 +25,32 @@ where
     T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
-    crate fn new(intern_tables: &'me dyn AsRef<TyInternTables>, values: &'me V) -> Self {
+    crate fn new(
+        declaration_tables: &'me dyn AsRef<DeclarationTables>,
+        output_tables: &'me dyn AsRef<T::InternTables>,
+        values: &'me V,
+    ) -> Self {
         Substitution {
-            intern_tables: intern_tables.as_ref(),
+            declaration_tables: declaration_tables.as_ref(),
+            output_tables: output_tables.as_ref(),
             values,
         }
     }
 }
 
-impl<T, V> AsRef<TyInternTables> for Substitution<'me, T, V>
+impl<T, V> AsRef<DeclarationTables> for Substitution<'me, T, V>
 where
     T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
-    fn as_ref(&self) -> &TyInternTables {
-        &self.intern_tables
+    fn as_ref(&self) -> &DeclarationTables {
+        &self.declaration_tables
     }
 }
 
 impl<T, V> FamilyMapper<Declaration, T> for Substitution<'me, T, V>
 where
-    T: TypeFamily<Perm = Erased, InternTables = TyInternTables>,
+    T: TypeFamily<Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
     fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<T> {
@@ -57,7 +63,7 @@ where
                 let base_data1 = base_data.map(self);
                 Ty {
                     perm: Erased,
-                    base: T::intern_base_data(self, base_data1),
+                    base: T::intern_base_data(self.output_tables, base_data1),
                 }
             }
         }

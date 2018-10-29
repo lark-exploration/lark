@@ -11,6 +11,7 @@ use map::FxIndexMap;
 use std::sync::Arc;
 use ty::base_inferred::BaseInferred;
 use ty::declaration::Declaration;
+use ty::declaration::DeclarationTables;
 use ty::interners::TyInternTables;
 use ty::map_family::Map;
 use ty::Generics;
@@ -122,7 +123,9 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         M: Map<Self, Self>;
 }
 
-trait TypeCheckerFields<F: TypeCheckFamily>: AsRef<F::InternTables> + AsRef<EntityTables> {
+trait TypeCheckerFields<F: TypeCheckFamily>:
+    AsRef<F::InternTables> + AsRef<DeclarationTables> + AsRef<EntityTables>
+{
     type DB: TypeCheckDatabase;
 
     fn db(&self) -> &Self::DB;
@@ -208,6 +211,16 @@ where
     F: TypeCheckFamily,
 {
     fn as_ref(&self) -> &TyInternTables {
+        self.db.as_ref()
+    }
+}
+
+impl<DB, F> AsRef<DeclarationTables> for TypeChecker<'_, DB, F>
+where
+    DB: TypeCheckDatabase,
+    F: TypeCheckFamily,
+{
+    fn as_ref(&self) -> &DeclarationTables {
         self.db.as_ref()
     }
 }

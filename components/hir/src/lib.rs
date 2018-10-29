@@ -18,8 +18,7 @@ use lark_error::WithError;
 use parser::pos::{HasSpan, Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
-use ty::declaration::Declaration;
-use ty::interners::TyInternTables;
+use ty::declaration::{Declaration, DeclarationTables};
 
 mod fn_body;
 mod query_definitions;
@@ -27,7 +26,7 @@ mod scope;
 mod type_conversion;
 
 salsa::query_group! {
-    pub trait HirDatabase: AstDatabase + AsRef<TyInternTables> {
+    pub trait HirDatabase: AstDatabase + AsRef<DeclarationTables> {
         /// Get the fn-body for a given def-id.
         fn fn_body(key: Entity) -> Arc<FnBody> {
             type FnBodyQuery;

@@ -27,7 +27,7 @@ pub mod interners;
 pub mod map_family;
 
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
-    type InternTables;
+    type InternTables: AsRef<Self::InternTables>;
 
     type Perm: Copy + Clone + Debug + DebugWith + Eq + Hash;
     type Base: Copy + Clone + Debug + DebugWith + Eq + Hash;
