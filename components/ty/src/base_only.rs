@@ -16,6 +16,7 @@ use unify::{InferVar, Inferable};
 pub struct BaseOnly;
 
 impl TypeFamily for BaseOnly {
+    type InternTables = crate::interners::TyInternTables;
     type Perm = Erased;
     type Base = Base;
     type Placeholder = Placeholder;

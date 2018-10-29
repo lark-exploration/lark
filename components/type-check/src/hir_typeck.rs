@@ -15,7 +15,7 @@ use ty::{BaseData, BaseKind};
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckFamily<InternTables = ty::interners::TyInternTables>,
 {
     pub(super) fn check_fn_body(&mut self) {
         let declaration_signature = self

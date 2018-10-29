@@ -17,6 +17,7 @@ use std::fmt;
 pub struct Declaration;
 
 impl TypeFamily for Declaration {
+    type InternTables = crate::interners::TyInternTables;
     type Perm = Erased; // Not Yet Implemented
     type Base = Base;
     type Placeholder = !;

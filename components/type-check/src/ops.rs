@@ -43,7 +43,7 @@ where
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: crate::TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckFamily<InternTables = ty::interners::TyInternTables>,
 {
     pub(super) fn new_infer_ty(&mut self) -> Ty<F> {
         F::new_infer_ty(self)

@@ -44,7 +44,7 @@ where
 
 impl<T, V> FamilyMapper<Declaration, T> for Substitution<'me, T, V>
 where
-    T: TypeFamily<Perm = Erased>,
+    T: TypeFamily<Perm = Erased, InternTables = TyInternTables>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
     fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<T> {

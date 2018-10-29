@@ -122,7 +122,7 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         M: Map<Self, Self>;
 }
 
-trait TypeCheckerFields<F: TypeCheckFamily>: AsRef<TyInternTables> + AsRef<EntityTables> {
+trait TypeCheckerFields<F: TypeCheckFamily>: AsRef<F::InternTables> + AsRef<EntityTables> {
     type DB: TypeCheckDatabase;
 
     fn db(&self) -> &Self::DB;
@@ -133,7 +133,7 @@ trait TypeCheckerFields<F: TypeCheckFamily>: AsRef<TyInternTables> + AsRef<Entit
 impl<'me, DB, F> TypeCheckerFields<F> for TypeChecker<'me, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckFamily<InternTables = TyInternTables>,
 {
     type DB = DB;
 
