@@ -44,6 +44,8 @@ pub enum EntityData {
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum LangItem {
     Boolean,
+    Int,
+    Uint,
     Tuple(usize),
 }
 

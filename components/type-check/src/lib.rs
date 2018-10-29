@@ -73,6 +73,10 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
 
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    fn int_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
+
+    fn uint_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
+
     fn unit_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
     fn require_assignable(

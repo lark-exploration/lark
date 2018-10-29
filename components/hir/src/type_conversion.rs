@@ -39,7 +39,9 @@ crate fn generic_declarations(
     match entity.untern(db) {
         EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
 
-        EntityData::LangItem(LangItem::Boolean) => WithError::ok(Ok(empty_declarations(None))),
+        EntityData::LangItem(LangItem::Boolean)
+        | EntityData::LangItem(LangItem::Int)
+        | EntityData::LangItem(LangItem::Uint) => WithError::ok(Ok(empty_declarations(None))),
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {
             if arity != 0 {
@@ -81,7 +83,9 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declarati
     match entity.untern(db) {
         EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
 
-        EntityData::LangItem(LangItem::Boolean) => {
+        EntityData::LangItem(LangItem::Boolean)
+        | EntityData::LangItem(LangItem::Int)
+        | EntityData::LangItem(LangItem::Uint) => {
             WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
         }
 

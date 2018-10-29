@@ -28,12 +28,6 @@ mod type_conversion;
 
 salsa::query_group! {
     pub trait HirDatabase: AstDatabase + AsRef<TyInternTables> {
-        /// Get the def-id for the built-in boolean type.
-        fn boolean_entity() -> Entity {
-            type BooleanEntityQuery;
-            use fn query_definitions::boolean_entity;
-        }
-
         /// Get the fn-body for a given def-id.
         fn fn_body(key: Entity) -> Arc<FnBody> {
             type FnBodyQuery;

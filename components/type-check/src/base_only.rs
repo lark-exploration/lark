@@ -3,7 +3,6 @@ use crate::Error;
 use crate::TypeCheckFamily;
 use crate::TypeCheckerFields;
 use hir;
-use hir::HirDatabase;
 use intern::Intern;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
@@ -75,13 +74,41 @@ impl TypeCheckFamily for BaseOnly {
     }
 
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
-        let boolean_entity = this.db().boolean_entity();
+        let entity = EntityData::LangItem(LangItem::Boolean).intern(this);
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
                 this.db(),
                 BaseData {
-                    kind: BaseKind::Named(boolean_entity),
+                    kind: BaseKind::Named(entity),
+                    generics: Generics::empty(),
+                },
+            ),
+        }
+    }
+
+    fn int_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+        let entity = EntityData::LangItem(LangItem::Int).intern(this);
+        Ty {
+            perm: Erased,
+            base: BaseOnly::intern_base_data(
+                this.db(),
+                BaseData {
+                    kind: BaseKind::Named(entity),
+                    generics: Generics::empty(),
+                },
+            ),
+        }
+    }
+
+    fn uint_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+        let entity = EntityData::LangItem(LangItem::Uint).intern(this);
+        Ty {
+            perm: Erased,
+            base: BaseOnly::intern_base_data(
+                this.db(),
+                BaseData {
+                    kind: BaseKind::Named(entity),
                     generics: Generics::empty(),
                 },
             ),

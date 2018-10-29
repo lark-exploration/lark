@@ -61,7 +61,6 @@ salsa::database_storage! {
             fn entity_span() for ast::EntitySpanQuery;
         }
         impl hir::HirDatabase {
-            fn boolean_entity() for hir::BooleanEntityQuery;
             fn fn_body() for hir::FnBodyQuery;
             fn members() for hir::MembersQuery;
             fn member_entity() for hir::MemberEntityQuery;
