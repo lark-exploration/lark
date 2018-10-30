@@ -8,7 +8,6 @@ use parser::pos::Span;
 use salsa::{Database, ParallelDatabase};
 use std::borrow::Cow;
 use std::sync::Arc;
-use ty::interners::TyInternTables;
 use url::Url;
 
 mod ls_ops;
@@ -22,7 +21,7 @@ struct LarkDatabase {
     parser_state: Arc<ParserState>,
     item_id_tables: Arc<EntityTables>,
     declaration_tables: Arc<ty::declaration::DeclarationTables>,
-    ty_intern_tables: Arc<TyInternTables>,
+    base_inferred_tables: Arc<ty::base_inferred::BaseInferredTables>,
 }
 
 impl Database for LarkDatabase {
@@ -40,7 +39,7 @@ impl ParallelDatabase for LarkDatabase {
             parser_state: self.parser_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
             declaration_tables: self.declaration_tables.clone(),
-            ty_intern_tables: self.ty_intern_tables.clone(),
+            base_inferred_tables: self.base_inferred_tables.clone(),
         }
     }
 }
@@ -96,9 +95,9 @@ impl AsRef<ty::declaration::DeclarationTables> for LarkDatabase {
     }
 }
 
-impl AsRef<TyInternTables> for LarkDatabase {
-    fn as_ref(&self) -> &TyInternTables {
-        &self.ty_intern_tables
+impl AsRef<ty::base_inferred::BaseInferredTables> for LarkDatabase {
+    fn as_ref(&self) -> &ty::base_inferred::BaseInferredTables {
+        &self.base_inferred_tables
     }
 }
 

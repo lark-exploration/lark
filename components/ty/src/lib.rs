@@ -23,7 +23,6 @@ pub mod base_inferred;
 pub mod base_only;
 pub mod declaration;
 pub mod identity;
-pub mod interners;
 pub mod map_family;
 
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
