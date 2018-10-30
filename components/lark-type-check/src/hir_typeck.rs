@@ -7,11 +7,11 @@ use intern::Untern;
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
+use lark_ty::declaration::Declaration;
+use lark_ty::Signature;
+use lark_ty::Ty;
+use lark_ty::{BaseData, BaseKind};
 use map::FxIndexSet;
-use ty::declaration::Declaration;
-use ty::Signature;
-use ty::Ty;
-use ty::{BaseData, BaseKind};
 
 impl<DB, F> TypeChecker<'_, DB, F>
 where

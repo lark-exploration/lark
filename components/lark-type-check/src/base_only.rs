@@ -8,15 +8,15 @@ use hir;
 use intern::Intern;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
-use ty::base_only::{Base, BaseOnly, BaseOnlyTables, BaseTy};
-use ty::declaration::Declaration;
-use ty::identity::Identity;
-use ty::map_family::Map;
-use ty::Erased;
-use ty::Ty;
-use ty::TypeFamily;
-use ty::{BaseData, BaseKind};
-use ty::{GenericKind, Generics};
+use lark_ty::base_only::{Base, BaseOnly, BaseOnlyTables, BaseTy};
+use lark_ty::declaration::Declaration;
+use lark_ty::identity::Identity;
+use lark_ty::map_family::Map;
+use lark_ty::Erased;
+use lark_ty::Ty;
+use lark_ty::TypeFamily;
+use lark_ty::{BaseData, BaseKind};
+use lark_ty::{GenericKind, Generics};
 
 impl TypeCheckFamily for BaseOnly {
     type TcBase = Base;

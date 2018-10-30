@@ -4,18 +4,18 @@ use crate::UniverseBinder;
 use hir;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
+use lark_ty::declaration::Declaration;
+use lark_ty::map_family::Map;
+use lark_ty::BaseData;
+use lark_ty::GenericDeclarations;
+use lark_ty::GenericKind;
+use lark_ty::Generics;
+use lark_ty::Placeholder;
+use lark_ty::Ty;
+use lark_ty::Universe;
 use lark_unify::InferVar;
 use lark_unify::Inferable;
 use std::sync::Arc;
-use ty::declaration::Declaration;
-use ty::map_family::Map;
-use ty::BaseData;
-use ty::GenericDeclarations;
-use ty::GenericKind;
-use ty::Generics;
-use ty::Placeholder;
-use ty::Ty;
-use ty::Universe;
 
 #[derive(Copy, Clone, Debug)]
 pub(super) struct OpIndex {

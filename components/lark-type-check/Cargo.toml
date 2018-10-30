@@ -1,5 +1,5 @@
 [package]
-name = "type-check"
+name = "lark-type-check"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
@@ -17,5 +17,5 @@ lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 map = { path = "../map" }
 parser = { path = "../parser" }
-ty = { path = "../ty" }
+lark-ty = { path = "../lark-ty" }
 lark-unify = { path = "../lark-unify" }

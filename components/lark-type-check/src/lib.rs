@@ -7,20 +7,21 @@ use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
 use lark_entity::{Entity, EntityTables};
+use lark_ty::base_inferred::BaseInferred;
+use lark_ty::declaration::Declaration;
+use lark_ty::declaration::DeclarationTables;
+use lark_ty::map_family::Map;
+use lark_ty::BaseData;
+use lark_ty::Generics;
+use lark_ty::Placeholder;
+use lark_ty::Ty;
+use lark_ty::TypeFamily;
+use lark_ty::Universe;
 use lark_unify::InferVar;
 use lark_unify::Inferable;
 use lark_unify::UnificationTable;
 use map::FxIndexMap;
 use std::sync::Arc;
-use ty::base_inferred::BaseInferred;
-use ty::declaration::Declaration;
-use ty::declaration::DeclarationTables;
-use ty::map_family::Map;
-use ty::Generics;
-use ty::Placeholder;
-use ty::Ty;
-use ty::TypeFamily;
-use ty::Universe;
 
 mod base_only;
 mod hir_typeck;
@@ -83,7 +84,7 @@ enum UniverseBinder {
 trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
     type TcBase: From<Self::Base>
         + Into<Self::Base>
-        + Inferable<Self::InternTables, KnownData = ty::BaseData<Self>>;
+        + Inferable<Self::InternTables, KnownData = BaseData<Self>>;
 
     /// Creates a new type with fresh inference variables.
     fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self>;

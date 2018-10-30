@@ -20,8 +20,8 @@ struct LarkDatabase {
     file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
     parser_state: Arc<ParserState>,
     item_id_tables: Arc<EntityTables>,
-    declaration_tables: Arc<ty::declaration::DeclarationTables>,
-    base_inferred_tables: Arc<ty::base_inferred::BaseInferredTables>,
+    declaration_tables: Arc<lark_ty::declaration::DeclarationTables>,
+    base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
 }
 
 impl Database for LarkDatabase {
@@ -71,8 +71,8 @@ salsa::database_storage! {
             fn generic_declarations() for hir::GenericDeclarationsQuery;
             fn resolve_name() for hir::ResolveNameQuery;
         }
-        impl type_check::TypeCheckDatabase {
-            fn base_type_check() for type_check::BaseTypeCheckQuery;
+        impl lark_type_check::TypeCheckDatabase {
+            fn base_type_check() for lark_type_check::BaseTypeCheckQuery;
         }
     }
 }
@@ -89,14 +89,14 @@ impl AsRef<EntityTables> for LarkDatabase {
     }
 }
 
-impl AsRef<ty::declaration::DeclarationTables> for LarkDatabase {
-    fn as_ref(&self) -> &ty::declaration::DeclarationTables {
+impl AsRef<lark_ty::declaration::DeclarationTables> for LarkDatabase {
+    fn as_ref(&self) -> &lark_ty::declaration::DeclarationTables {
         &self.declaration_tables
     }
 }
 
-impl AsRef<ty::base_inferred::BaseInferredTables> for LarkDatabase {
-    fn as_ref(&self) -> &ty::base_inferred::BaseInferredTables {
+impl AsRef<lark_ty::base_inferred::BaseInferredTables> for LarkDatabase {
+    fn as_ref(&self) -> &lark_ty::base_inferred::BaseInferredTables {
         &self.base_inferred_tables
     }
 }

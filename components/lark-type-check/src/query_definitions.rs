@@ -5,11 +5,11 @@ use crate::UniverseBinder;
 use generational_arena::Arena;
 use indices::IndexVec;
 use lark_entity::Entity;
+use lark_ty::base_inferred::BaseInferred;
+use lark_ty::base_only::{BaseOnly, BaseOnlyTables};
 use lark_unify::InferVar;
 use lark_unify::UnificationTable;
 use map::FxIndexMap;
-use ty::base_inferred::BaseInferred;
-use ty::base_only::{BaseOnly, BaseOnlyTables};
 
 crate fn base_type_check(
     db: &impl TypeCheckDatabase,

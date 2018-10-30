@@ -19,7 +19,7 @@ pub(crate) struct Cancelled;
 
 pub(crate) type Cancelable<T> = Result<T, Cancelled>;
 
-pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
+pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
     fn file_maps(&self) -> &RwLock<FxIndexMap<String, Arc<FileMap>>>;
 
     fn check_for_cancellation(&self) -> Cancelable<()> {

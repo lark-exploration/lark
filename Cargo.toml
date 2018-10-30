@@ -44,8 +44,8 @@ lark-string = { path = "components/lark-string" }
 lark-task-manager = { path = "components/lark-task-manager" }
 map = { path = "components/map" }
 parser = { path = "components/parser" }
-ty = { path = "components/ty" }
-type-check = { path = "components/type-check" }
+lark-ty = { path = "components/lark-ty" }
+lark-type-check = { path = "components/lark-type-check" }
 lark-unify = { path = "components/lark-unify" }
 
 [dev-dependencies]
