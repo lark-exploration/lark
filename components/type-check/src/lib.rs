@@ -40,13 +40,32 @@ salsa::query_group! {
 }
 
 struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
+    /// Salsa database.
     db: &'db DB,
+
+    /// Intern tables for the family `F`. These are typically local to
+    /// the type-check itself.
     f_tables: F::InternTables,
+
+    /// Entity being type-checked.
     fn_entity: Entity,
+
+    /// HIR for the `fn_entity` being type-checked.
     hir: Arc<hir::FnBody>,
+
+    /// Arena where we allocate suspended type-check operations;
+    /// operations are suspended until type-inference variables
+    /// get unified.
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<Self>>>,
+
+    /// Map storing blocked operations: once the given infer variable
+    /// is unified, we should execute the operation.
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
+
+    /// Unification table for the type-check family.
     unify: UnificationTable<F::InternTables, hir::MetaIndex>,
+
+    /// Results that we are generating.
     results: TypeCheckResults<F>,
 
     /// Information about each universe that we have created.
@@ -58,13 +77,19 @@ enum UniverseBinder {
     FromItem(Entity),
 }
 
+/// An extension of the `TypeFamily` trait, describing a family of
+/// types that can be used in the type-checker. This family must
+/// support inference.
 trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
     type TcBase: From<Self::Base>
         + Into<Self::Base>
         + Inferable<Self::InternTables, KnownData = ty::BaseData<Self>>;
 
+    /// Creates a new type with fresh inference variables.
     fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    /// Equates two types (producing an error if they are not
+    /// equatable).
     fn equate_types(
         this: &mut impl TypeCheckerFields<Self>,
         cause: hir::MetaIndex,
@@ -72,14 +97,22 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         ty2: Ty<Self>,
     );
 
+    /// Returns the type for booleans.
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    /// Returns the type for signed integers.
     fn int_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    /// Returns the type for unsigned integers.
     fn uint_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    /// Returns the type for `()`.
     fn unit_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    /// Generates the constraint that a value with type `value_ty` is
+    /// assignable to a place with the type `place_ty`; `expression`
+    /// is the location that is requiring this type to be assignable
+    /// (used in case of error).
     fn require_assignable(
         this: &mut impl TypeCheckerFields<Self>,
         expression: hir::Expression,
@@ -87,12 +120,18 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         place_ty: Ty<Self>,
     );
 
+    /// Given a permission `perm` written by the user, apply it to the
+    /// type of the place `place_ty` that was accessed to produce the
+    /// resulting type.
     fn apply_user_perm(
         this: &mut impl TypeCheckerFields<Self>,
         perm: hir::Perm,
         place_ty: Ty<Self>,
     ) -> Ty<Self>;
 
+    /// Computes and returns the least-upper-bound of two types. If
+    /// the types have no LUB, then reports an error at
+    /// `if_expression`.
     fn least_upper_bound(
         this: &mut impl TypeCheckerFields<Self>,
         if_expression: hir::Expression,
@@ -100,10 +139,9 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         false_ty: Ty<Self>,
     ) -> Ty<Self>;
 
-    // FIXME -- This *almost* could be done generically but that
-    // `Substitution` currently requires that `Perm = Erased`; we'll
-    // have to push the "perm combination" into `TypeFamily` or
-    // something.  Cross that bridge when we come to it.
+    /// Substitute the given generics into the value `M`, which must
+    /// be something in the `Declaration` type family (e.g., the type
+    /// of a field).
     fn substitute<M>(
         this: &mut impl TypeCheckerFields<Self>,
         location: hir::MetaIndex,
@@ -113,6 +151,9 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
     where
         M: Map<Declaration, Self>;
 
+    /// Adjust the type of `value` to account for having been
+    /// projected from an owned with the given permissions
+    /// `owner_perm` (e.g., when accessing a field).
     fn apply_owner_perm<M>(
         this: &mut impl TypeCheckerFields<Self>,
         location: impl Into<hir::MetaIndex>,
@@ -123,6 +164,8 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         M: Map<Self, Self>;
 }
 
+/// Trait implemented by `TypeChecker` to allow access to a few useful
+/// fields. This is used in the implementations of `TypeCheckFamily`.
 trait TypeCheckerFields<F: TypeCheckFamily>:
     AsRef<F::InternTables> + AsRef<DeclarationTables> + AsRef<EntityTables>
 {
@@ -156,8 +199,8 @@ where
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct TypeCheckResults<F: TypeFamily> {
-    /// FIXME-- this will actually not want `BaseTy` unless we want to
-    /// return the unification table too.
+    /// The type computed for expressions, identified-expressions, and
+    /// other things that have a type.
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
 
     /// For "type-relative" identifiers, stores the entity that we resolved
@@ -168,26 +211,34 @@ pub struct TypeCheckResults<F: TypeFamily> {
     /// - `Foo { a: b }` -- attached to the identifier `a`, entity of the field
     entities: std::collections::BTreeMap<hir::Identifier, Entity>,
 
+    /// Errors that we encountered during the type-check.
     errors: Vec<Error>,
 }
 
 impl<F: TypeFamily> TypeCheckResults<F> {
+    /// Record the entity assigned with a given element of the HIR
+    /// (e.g. the identifier of a field).
     fn record_entity(&mut self, index: hir::Identifier, entity: Entity) {
         self.entities.insert(index.into(), entity);
     }
 
+    /// Record the type assigned with a given element of the HIR
+    /// (typically an expression).
     fn record_ty(&mut self, index: impl Into<hir::MetaIndex>, ty: Ty<F>) {
         self.types.insert(index.into(), ty);
     }
 
-    pub fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
-        self.types[&index.into()]
-    }
-
+    /// Record that an error occurred at the given location.
     fn record_error(&mut self, location: impl Into<hir::MetaIndex>) {
         self.errors.push(Error {
             location: location.into(),
         });
+    }
+
+    /// Access the type stored for the given `index`, usually the
+    /// index of an expression.
+    pub fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
+        self.types[&index.into()]
     }
 }
 
@@ -201,8 +252,10 @@ impl<F: TypeFamily> Default for TypeCheckResults<F> {
     }
 }
 
+/// Information about a type-check error.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Error {
+    /// Index of HIR element where the error occurred.
     location: hir::MetaIndex,
 }
 
