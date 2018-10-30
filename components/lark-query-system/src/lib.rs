@@ -124,9 +124,10 @@ impl QuerySystem {
         std::thread::spawn({
             let db = self.lark_db.fork();
             let send_channel = self.send_channel.clone_send_channel();
+            let lock = db.salsa_runtime().lock_revision();
 
             move || {
-                let _lock = db.salsa_runtime().lock_revision();
+                let _ = lock; // this moves the `lock` into the closure
 
                 match db.errors_for_project() {
                     Ok(errors) => {
@@ -274,9 +275,9 @@ impl Actor for QuerySystem {
                 std::thread::spawn({
                     let db = self.lark_db.fork();
                     let send_channel = self.send_channel.clone_send_channel();
+                    let lock = db.salsa_runtime().lock_revision();
                     move || {
-                        // Ensure that `type_at_position` executes atomically
-                        let _lock = db.salsa_runtime().lock_revision();
+                        let _ = lock; // this moves the `lock` into the closure
 
                         match db.hover_text_at_position(url.as_str(), position) {
                             Ok(Some(v)) => {
