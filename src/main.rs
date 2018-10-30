@@ -38,7 +38,7 @@ fn ide() {
 }
 
 fn main() {
-    Logger::with_env_or_str("debug")
+    Logger::with_env_or_str("error")
         .log_to_file()
         .directory("log_files")
         .format(opt_format)

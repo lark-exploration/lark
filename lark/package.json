@@ -70,7 +70,8 @@
 		"compile:client": "tsc -p ./client/tsconfig.json",
 		"watch:client": "tsc -w -p ./client/tsconfig.json",
 		"compile": "npm run compile:client",
-		"postinstall": "cd client && npm install && npm install && cd .."
+		"postinstall": "cd client && npm install && npm install && cd ..",
+		"buildall": "npm install && cd client && npm run update-vscode && cd .. && npm run compile"
 	},
 	"devDependencies": {
 		"@types/mocha": "^5.2.0",
