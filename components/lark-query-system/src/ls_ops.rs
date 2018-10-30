@@ -31,8 +31,6 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
     }
 
     fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<Range>>> {
-        use ast::ast as a;
-
         let input_files = self.input_files(());
         let mut file_errors = HashMap::new();
 
@@ -47,25 +45,48 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
 
             // Next, check entities in file for type-safety
             let file_entity = EntityData::InputFile { file: *input_file }.intern(self);
-            for entity in self.subentities(file_entity).iter() {
+            for &entity in self.subentities(file_entity).iter() {
                 match entity.untern(self) {
                     EntityData::InputFile { .. } => {}
-                    x => {
-                        self.ty(*entity).accumulate_errors_into(&mut errors);
-                        match x {
-                            EntityData::ItemName { .. } => match self.ast_of_item(*entity) {
-                                Ok(x) => match &*x {
-                                    a::Item::Def(_) => {
-                                        let _ = self
-                                            .signature(*entity)
-                                            .accumulate_errors_into(&mut errors);
-                                    }
-                                    _ => {}
-                                },
-                                _ => {}
-                            },
-                            _ => {}
-                        }
+                    EntityData::LangItem(_) => {}
+                    EntityData::Error(_) => {}
+                    EntityData::ItemName {
+                        kind: ItemKind::Struct,
+                        ..
+                    } => {
+                        let _ = self
+                            .generic_declarations(entity)
+                            .accumulate_errors_into(&mut errors);
+                        let _ = self.ty(entity).accumulate_errors_into(&mut errors);
+                    }
+                    EntityData::MemberName {
+                        kind: MemberKind::Field,
+                        ..
+                    } => {
+                        let _ = self
+                            .generic_declarations(entity)
+                            .accumulate_errors_into(&mut errors);
+                        let _ = self.ty(entity).accumulate_errors_into(&mut errors);
+                    }
+                    EntityData::ItemName {
+                        kind: ItemKind::Function,
+                        ..
+                    } => {
+                        let _ = self
+                            .generic_declarations(entity)
+                            .accumulate_errors_into(&mut errors);
+                        let _ = self.ty(entity).accumulate_errors_into(&mut errors);
+                        let _ = self.signature(entity).accumulate_errors_into(&mut errors);
+                    }
+                    EntityData::MemberName {
+                        kind: MemberKind::Method,
+                        ..
+                    } => {
+                        let _ = self
+                            .generic_declarations(entity)
+                            .accumulate_errors_into(&mut errors);
+                        let _ = self.ty(entity).accumulate_errors_into(&mut errors);
+                        let _ = self.signature(entity).accumulate_errors_into(&mut errors);
                     }
                 }
             }
