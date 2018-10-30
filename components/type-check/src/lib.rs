@@ -12,7 +12,6 @@ use std::sync::Arc;
 use ty::base_inferred::BaseInferred;
 use ty::declaration::Declaration;
 use ty::declaration::DeclarationTables;
-use ty::interners::TyInternTables;
 use ty::map_family::Map;
 use ty::Generics;
 use ty::Placeholder;
@@ -30,7 +29,7 @@ mod query_definitions;
 mod substitute;
 
 salsa::query_group! {
-    pub trait TypeCheckDatabase: hir::HirDatabase + AsRef<TyInternTables> {
+    pub trait TypeCheckDatabase: hir::HirDatabase {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: Entity) -> TypeCheckResults<BaseInferred> {
@@ -42,11 +41,12 @@ salsa::query_group! {
 
 struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     db: &'db DB,
+    f_tables: F::InternTables,
     fn_entity: Entity,
     hir: Arc<hir::FnBody>,
     ops_arena: Arena<Box<dyn ops::BoxedTypeCheckerOp<Self>>>,
     ops_blocked: FxIndexMap<InferVar, Vec<ops::OpIndex>>,
-    unify: UnificationTable<TyInternTables, hir::MetaIndex>,
+    unify: UnificationTable<F::InternTables, hir::MetaIndex>,
     results: TypeCheckResults<F>,
 
     /// Information about each universe that we have created.
@@ -61,7 +61,7 @@ enum UniverseBinder {
 trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
     type TcBase: From<Self::Base>
         + Into<Self::Base>
-        + Inferable<TyInternTables, KnownData = ty::BaseData<Self>>;
+        + Inferable<Self::InternTables, KnownData = ty::BaseData<Self>>;
 
     fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self>;
 
@@ -129,14 +129,15 @@ trait TypeCheckerFields<F: TypeCheckFamily>:
     type DB: TypeCheckDatabase;
 
     fn db(&self) -> &Self::DB;
-    fn unify(&mut self) -> &mut UnificationTable<TyInternTables, hir::MetaIndex>;
+    fn unify(&mut self) -> &mut UnificationTable<F::InternTables, hir::MetaIndex>;
     fn results(&mut self) -> &mut TypeCheckResults<F>;
 }
 
 impl<'me, DB, F> TypeCheckerFields<F> for TypeChecker<'me, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily<InternTables = TyInternTables>,
+    F: TypeCheckFamily,
+    Self: AsRef<F::InternTables>,
 {
     type DB = DB;
 
@@ -144,7 +145,7 @@ where
         &self.db
     }
 
-    fn unify(&mut self) -> &mut UnificationTable<TyInternTables, hir::MetaIndex> {
+    fn unify(&mut self) -> &mut UnificationTable<F::InternTables, hir::MetaIndex> {
         &mut self.unify
     }
 
@@ -203,16 +204,6 @@ impl<F: TypeFamily> Default for TypeCheckResults<F> {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Error {
     location: hir::MetaIndex,
-}
-
-impl<DB, F> AsRef<TyInternTables> for TypeChecker<'_, DB, F>
-where
-    DB: TypeCheckDatabase,
-    F: TypeCheckFamily,
-{
-    fn as_ref(&self) -> &TyInternTables {
-        self.db.as_ref()
-    }
 }
 
 impl<DB, F> AsRef<DeclarationTables> for TypeChecker<'_, DB, F>

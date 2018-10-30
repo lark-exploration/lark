@@ -8,6 +8,7 @@ use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
 use map::FxIndexSet;
+use ty::declaration::Declaration;
 use ty::Signature;
 use ty::Ty;
 use ty::{BaseData, BaseKind};
@@ -15,7 +16,8 @@ use ty::{BaseData, BaseKind};
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily<InternTables = ty::interners::TyInternTables>,
+    F: TypeCheckFamily,
+    Self: AsRef<F::InternTables>,
 {
     pub(super) fn check_fn_body(&mut self) {
         let declaration_signature = self
@@ -23,7 +25,7 @@ where
             .signature(self.fn_entity)
             .into_value()
             .unwrap_or_else(|ErrorReported(_)| {
-                Signature::error_sentinel(self, self.hir.arguments.len())
+                <Signature<Declaration>>::error_sentinel(self, self.hir.arguments.len())
             });
         let placeholders = self.placeholders_for(self.fn_entity);
         let signature = self.substitute(
@@ -224,7 +226,9 @@ where
 
                 let signature_decl = match self.db().signature(method_entity).into_value() {
                     Ok(s) => s,
-                    Err(ErrorReported(_)) => Signature::error_sentinel(self, arguments.len()),
+                    Err(ErrorReported(_)) => {
+                        <Signature<Declaration>>::error_sentinel(self, arguments.len())
+                    }
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
@@ -285,7 +289,7 @@ where
 
         // Get a vector of **all** the fields.
         let mut missing_members: FxIndexSet<Entity> =
-            or_return_sentinel!(self.db, self.db.members(entity))
+            or_return_sentinel!(&*self, self.db.members(entity))
                 .iter()
                 .map(|m| m.entity)
                 .collect();

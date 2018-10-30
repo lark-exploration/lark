@@ -1,12 +1,14 @@
 use crate::substitute::Substitution;
 use crate::Error;
+use crate::TypeCheckDatabase;
 use crate::TypeCheckFamily;
+use crate::TypeChecker;
 use crate::TypeCheckerFields;
 use hir;
 use intern::Intern;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
-use ty::base_only::{Base, BaseOnly, BaseTy};
+use ty::base_only::{Base, BaseOnly, BaseOnlyTables, BaseTy};
 use ty::declaration::Declaration;
 use ty::identity::Identity;
 use ty::map_family::Map;
@@ -78,7 +80,7 @@ impl TypeCheckFamily for BaseOnly {
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
-                this.db(),
+                this,
                 BaseData {
                     kind: BaseKind::Named(entity),
                     generics: Generics::empty(),
@@ -92,7 +94,7 @@ impl TypeCheckFamily for BaseOnly {
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
-                this.db(),
+                this,
                 BaseData {
                     kind: BaseKind::Named(entity),
                     generics: Generics::empty(),
@@ -106,7 +108,7 @@ impl TypeCheckFamily for BaseOnly {
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
-                this.db(),
+                this,
                 BaseData {
                     kind: BaseKind::Named(entity),
                     generics: Generics::empty(),
@@ -120,7 +122,7 @@ impl TypeCheckFamily for BaseOnly {
         Ty {
             perm: Erased,
             base: BaseOnly::intern_base_data(
-                this.db(),
+                this,
                 BaseData {
                     kind: BaseKind::Named(entity),
                     generics: Generics::empty(),
@@ -178,7 +180,7 @@ impl TypeCheckFamily for BaseOnly {
     where
         M: Map<Self, Self>,
     {
-        value.map(&mut Identity::new(this.db()))
+        value.map(&mut Identity::new(this))
     }
 }
 
@@ -195,5 +197,14 @@ fn propagate_error<F: TypeCheckFamily>(
         match generic {
             GenericKind::Ty(ty) => F::equate_types(this, cause, error_type, ty),
         }
+    }
+}
+
+impl<DB> AsRef<BaseOnlyTables> for TypeChecker<'_, DB, BaseOnly>
+where
+    DB: TypeCheckDatabase,
+{
+    fn as_ref(&self) -> &BaseOnlyTables {
+        &self.f_tables
     }
 }

@@ -6,7 +6,6 @@ use lark_entity::Entity;
 use lark_error::ErrorReported;
 use std::sync::Arc;
 use ty::declaration::Declaration;
-use ty::interners::TyInternTables;
 use ty::map_family::Map;
 use ty::BaseData;
 use ty::GenericDeclarations;
@@ -43,7 +42,8 @@ where
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: crate::TypeCheckDatabase,
-    F: TypeCheckFamily<InternTables = ty::interners::TyInternTables>,
+    F: TypeCheckFamily,
+    Self: AsRef<F::InternTables>,
 {
     pub(super) fn new_infer_ty(&mut self) -> Ty<F> {
         F::new_infer_ty(self)
@@ -240,7 +240,7 @@ where
     /// variables in `values` are unified.
     pub(super) fn enqueue_op(
         &mut self,
-        values: impl IntoIterator<Item = impl Inferable<TyInternTables>>,
+        values: impl IntoIterator<Item = impl Inferable<F::InternTables>>,
         closure: impl FnOnce(&mut Self) + 'static,
     ) {
         let op: Box<dyn BoxedTypeCheckerOp<Self>> = Box::new(ClosureTypeCheckerOp { closure });
