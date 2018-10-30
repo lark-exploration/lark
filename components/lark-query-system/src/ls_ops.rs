@@ -31,16 +31,45 @@ pub(crate) trait LsDatabase: type_check::TypeCheckDatabase {
     }
 
     fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<Range>>> {
+        use ast::ast as a;
+
         let input_files = self.input_files(());
         let mut file_errors = HashMap::new();
 
         for input_file in &*input_files {
             self.check_for_cancellation()?;
 
+            // Check file for syntax errors
             let mut errors = vec![];
             let _ = self
                 .ast_of_file(*input_file)
                 .accumulate_errors_into(&mut errors);
+
+            // Next, check entities in file for type-safety
+            let file_entity = EntityData::InputFile { file: *input_file }.intern(self);
+            for entity in self.subentities(file_entity).iter() {
+                match entity.untern(self) {
+                    EntityData::InputFile { .. } => {}
+                    x => {
+                        self.ty(*entity).accumulate_errors_into(&mut errors);
+                        match x {
+                            EntityData::ItemName { .. } => match self.ast_of_item(*entity) {
+                                Ok(x) => match &*x {
+                                    a::Item::Def(_) => {
+                                        let _ = self
+                                            .signature(*entity)
+                                            .accumulate_errors_into(&mut errors);
+                                    }
+                                    _ => {}
+                                },
+                                _ => {}
+                            },
+                            _ => {}
+                        }
+                    }
+                }
+            }
+
             let filename = self.untern_string(*input_file).to_string();
             let file_maps = self.file_maps().read().get(&filename).unwrap().clone();
 
