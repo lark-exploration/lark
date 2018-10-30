@@ -11,6 +11,7 @@ use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use map::FxIndexMap;
 use parking_lot::RwLock;
+use parser::pos::Span;
 use parser::StringId;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -46,49 +47,7 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
             // Next, check entities in file for type-safety
             let file_entity = EntityData::InputFile { file: *input_file }.intern(self);
             for &entity in self.subentities(file_entity).iter() {
-                match entity.untern(self) {
-                    EntityData::InputFile { .. } => {}
-                    EntityData::LangItem(_) => {}
-                    EntityData::Error(_) => {}
-                    EntityData::ItemName {
-                        kind: ItemKind::Struct,
-                        ..
-                    } => {
-                        let _ = self
-                            .generic_declarations(entity)
-                            .accumulate_errors_into(&mut errors);
-                        let _ = self.ty(entity).accumulate_errors_into(&mut errors);
-                    }
-                    EntityData::MemberName {
-                        kind: MemberKind::Field,
-                        ..
-                    } => {
-                        let _ = self
-                            .generic_declarations(entity)
-                            .accumulate_errors_into(&mut errors);
-                        let _ = self.ty(entity).accumulate_errors_into(&mut errors);
-                    }
-                    EntityData::ItemName {
-                        kind: ItemKind::Function,
-                        ..
-                    } => {
-                        let _ = self
-                            .generic_declarations(entity)
-                            .accumulate_errors_into(&mut errors);
-                        let _ = self.ty(entity).accumulate_errors_into(&mut errors);
-                        let _ = self.signature(entity).accumulate_errors_into(&mut errors);
-                    }
-                    EntityData::MemberName {
-                        kind: MemberKind::Method,
-                        ..
-                    } => {
-                        let _ = self
-                            .generic_declarations(entity)
-                            .accumulate_errors_into(&mut errors);
-                        let _ = self.ty(entity).accumulate_errors_into(&mut errors);
-                        let _ = self.signature(entity).accumulate_errors_into(&mut errors);
-                    }
-                }
+                self.accumulate_errors_for_entity(entity, &mut errors)?;
             }
 
             let filename = self.untern_string(*input_file).to_string();
@@ -115,6 +74,60 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
         }
 
         Ok(file_errors)
+    }
+
+    fn accumulate_errors_for_entity(
+        &self,
+        entity: Entity,
+        errors: &mut Vec<Span>,
+    ) -> Cancelable<()> {
+        self.check_for_cancellation()?;
+
+        match entity.untern(self) {
+            EntityData::InputFile { .. } => {}
+            EntityData::LangItem(_) => {}
+            EntityData::Error(_) => {}
+            EntityData::ItemName {
+                kind: ItemKind::Struct,
+                ..
+            } => {
+                let _ = self
+                    .generic_declarations(entity)
+                    .accumulate_errors_into(errors);
+                let _ = self.ty(entity).accumulate_errors_into(errors);
+            }
+            EntityData::MemberName {
+                kind: MemberKind::Field,
+                ..
+            } => {
+                let _ = self
+                    .generic_declarations(entity)
+                    .accumulate_errors_into(errors);
+                let _ = self.ty(entity).accumulate_errors_into(errors);
+            }
+            EntityData::ItemName {
+                kind: ItemKind::Function,
+                ..
+            } => {
+                let _ = self
+                    .generic_declarations(entity)
+                    .accumulate_errors_into(errors);
+                let _ = self.ty(entity).accumulate_errors_into(errors);
+                let _ = self.signature(entity).accumulate_errors_into(errors);
+            }
+            EntityData::MemberName {
+                kind: MemberKind::Method,
+                ..
+            } => {
+                let _ = self
+                    .generic_declarations(entity)
+                    .accumulate_errors_into(errors);
+                let _ = self.ty(entity).accumulate_errors_into(errors);
+                let _ = self.signature(entity).accumulate_errors_into(errors);
+            }
+        }
+
+        Ok(())
     }
 
     /// Returns the hover text to display for a given position (if
