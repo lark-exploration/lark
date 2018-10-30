@@ -467,6 +467,7 @@ dependencies = [
  "salsa 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ty 0.1.0",
  "type-check 0.1.0",
+ "url 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -997,6 +998,7 @@ dependencies = [
  "intern 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
+ "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "map 0.1.0",
  "parser 0.1.0",
  "salsa 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",

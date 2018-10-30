@@ -6,11 +6,12 @@
 #![feature(const_let)]
 #![warn(unused_imports)]
 
-use crate::interners::TyInternTables;
 use debug::DebugWith;
 use indices::IndexVec;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
+use lark_error::ErrorSentinel;
+use parser::pos::Span;
 use parser::StringId;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
@@ -26,26 +27,28 @@ pub mod interners;
 pub mod map_family;
 
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
+    type InternTables: AsRef<Self::InternTables>;
+
     type Perm: Copy + Clone + Debug + DebugWith + Eq + Hash;
     type Base: Copy + Clone + Debug + DebugWith + Eq + Hash;
 
     type Placeholder: Copy + Clone + Debug + DebugWith + Eq + Hash;
 
     fn intern_base_data(
-        tables: &dyn AsRef<TyInternTables>,
+        tables: &dyn AsRef<Self::InternTables>,
         base_data: BaseData<Self>,
     ) -> Self::Base;
 
-    fn own_perm(tables: &dyn AsRef<TyInternTables>) -> Self::Perm;
+    fn own_perm(tables: &dyn AsRef<Self::InternTables>) -> Self::Perm;
 
-    fn error_type(tables: &dyn AsRef<TyInternTables>) -> Ty<Self> {
+    fn error_type(tables: &dyn AsRef<Self::InternTables>) -> Ty<Self> {
         Ty {
             perm: Self::own_perm(tables),
             base: Self::error_base_data(tables),
         }
     }
 
-    fn error_base_data(tables: &dyn AsRef<TyInternTables>) -> Self::Base {
+    fn error_base_data(tables: &dyn AsRef<Self::InternTables>) -> Self::Base {
         Self::intern_base_data(
             tables,
             BaseData {
@@ -61,6 +64,16 @@ pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
 pub struct Ty<F: TypeFamily> {
     pub perm: F::Perm,
     pub base: F::Base,
+}
+
+impl<DB, F> ErrorSentinel<&DB> for Ty<F>
+where
+    DB: AsRef<F::InternTables>,
+    F: TypeFamily,
+{
+    fn error_sentinel(db: &DB, _spans: &[Span]) -> Self {
+        F::error_type(db)
+    }
 }
 
 /// Indicates something that we've opted not to track statically.
@@ -297,7 +310,7 @@ pub struct Signature<F: TypeFamily> {
 }
 
 impl<F: TypeFamily> Signature<F> {
-    pub fn error_sentinel(tables: &dyn AsRef<TyInternTables>, num_inputs: usize) -> Signature<F> {
+    pub fn error_sentinel(tables: &dyn AsRef<F::InternTables>, num_inputs: usize) -> Signature<F> {
         Signature {
             inputs: Arc::new((0..num_inputs).map(|_| F::error_type(tables)).collect()),
             output: F::error_type(tables),

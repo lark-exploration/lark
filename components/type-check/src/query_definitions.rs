@@ -7,8 +7,7 @@ use indices::IndexVec;
 use lark_entity::Entity;
 use map::FxIndexMap;
 use ty::base_inferred::BaseInferred;
-use ty::base_only::BaseOnly;
-use ty::interners::TyInternTables;
+use ty::base_only::{BaseOnly, BaseOnlyTables};
 use unify::InferVar;
 use unify::UnificationTable;
 
@@ -17,10 +16,11 @@ crate fn base_type_check(
     fn_entity: Entity,
 ) -> TypeCheckResults<BaseInferred> {
     let fn_body = db.fn_body(fn_entity);
-    let interners: &TyInternTables = db.as_ref();
+    let interners = BaseOnlyTables::default();
     let mut base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
         db,
         fn_entity,
+        f_tables: interners.clone(),
         hir: fn_body,
         ops_arena: Arena::new(),
         ops_blocked: FxIndexMap::default(),

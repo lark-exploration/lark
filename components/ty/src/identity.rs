@@ -1,4 +1,3 @@
-use crate::interners::TyInternTables;
 use crate::map_family::FamilyMapper;
 use crate::Ty;
 use crate::TypeFamily;
@@ -11,7 +10,7 @@ pub struct Identity<'me, DB> {
 
 impl<DB, F> FamilyMapper<F, F> for Identity<'_, DB>
 where
-    DB: AsRef<TyInternTables>,
+    DB: AsRef<F::InternTables>,
     F: TypeFamily,
 {
     fn map_ty(&mut self, ty: Ty<F>) -> Ty<F> {
@@ -23,11 +22,8 @@ where
     }
 }
 
-impl<DB> AsRef<TyInternTables> for Identity<'_, DB>
-where
-    DB: AsRef<TyInternTables>,
-{
-    fn as_ref(&self) -> &TyInternTables {
-        self.db.as_ref()
+impl<DB> AsRef<DB> for Identity<'_, DB> {
+    fn as_ref(&self) -> &DB {
+        self.db
     }
 }

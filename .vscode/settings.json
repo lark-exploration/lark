@@ -1,6 +1,5 @@
 {
     "editor.formatOnSave": true,
-    "rust-client.updateOnStartup": true,
     "rust.all_features": true,
     "rust.build_on_save": true,
     "rust.goto_def_racer_fallback": true

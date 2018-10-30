@@ -1,10 +1,12 @@
+use lark_task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
 use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
 use std::io;
 use std::io::prelude::{Read, Write};
 use std::sync::mpsc::Sender;
-use lark_task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
 
+/// The command given by the IDE to the LSP server. These represent the actions of the user in the IDE,
+/// as well as actions the IDE might perform as a result of user actions (like cancelling a task)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method")]
 #[allow(non_camel_case_types)]
@@ -43,15 +45,17 @@ enum LSPCommand {
     },
 }
 
+/// A wrapper for responses back to the IDE from the LSP service. These must follow
+/// the JSON 2.0 RPC spec
 #[derive(Debug, Serialize, Deserialize)]
-struct LSPJsonRPC<T> {
+struct JsonRPCResponse<T> {
     jsonrpc: String,
     id: usize,
     result: T,
 }
-impl<T> LSPJsonRPC<T> {
-    pub fn new(id: usize, result: T) -> LSPJsonRPC<T> {
-        LSPJsonRPC {
+impl<T> JsonRPCResponse<T> {
+    pub fn new(id: usize, result: T) -> Self {
+        JsonRPCResponse {
             jsonrpc: "2.0".into(),
             id,
             result,
@@ -59,8 +63,37 @@ impl<T> LSPJsonRPC<T> {
     }
 }
 
-fn send_result<T: Serialize>(id: usize, result: T) {
-    let response = LSPJsonRPC::new(id, result);
+/// A wrapper for proactive notifications to the IDE (eg. diagnostics). These must
+/// follow the JSON 2.0 RPC spec
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonRPCNotification<T> {
+    jsonrpc: String,
+    method: String,
+    params: T,
+}
+impl<T> JsonRPCNotification<T> {
+    pub fn new(method: String, params: T) -> Self {
+        JsonRPCNotification {
+            jsonrpc: "2.0".into(),
+            method,
+            params,
+        }
+    }
+}
+
+/// Helper function to do the work of sending a result back to the IDE
+fn send_response<T: Serialize>(id: usize, result: T) {
+    let response = JsonRPCResponse::new(id, result);
+    let response_raw = serde_json::to_string(&response).unwrap();
+
+    print!("Content-Length: {}\r\n\r\n", response_raw.len());
+    print!("{}", response_raw);
+    let _ = io::stdout().flush();
+}
+
+/// Helper function to send a proactive notification back to the IDE
+fn send_notification<T: Serialize>(method: String, notice: T) {
+    let response = JsonRPCNotification::new(method, notice);
     let response_raw = serde_json::to_string(&response).unwrap();
 
     print!("Content-Length: {}\r\n\r\n", response_raw.len());
@@ -84,6 +117,9 @@ impl Actor for LspResponder {
 
     fn shutdown(&mut self) {}
 
+    /// Receive messages from the task manager that contain the results of
+    /// a given task. This allows us to repond to the IDE in an orderly
+    /// manner.
     fn receive_message(&mut self, message: Self::InMessage) {
         match message {
             LspResponse::Type(id, ty) => {
@@ -94,7 +130,7 @@ impl Actor for LspResponder {
                     range: None,
                 };
 
-                send_result(id, result);
+                send_response(id, result);
             }
             LspResponse::Completions(id, completions) => {
                 let mut completion_items = vec![];
@@ -111,7 +147,7 @@ impl Actor for LspResponder {
                     items: completion_items,
                 };
 
-                send_result(id, result);
+                send_response(id, result);
             }
             LspResponse::Initialized(id) => {
                 let result = languageserver_types::InitializeResult {
@@ -150,12 +186,30 @@ impl Actor for LspResponder {
                     },
                 };
 
-                send_result(id, result);
+                send_response(id, result);
+            }
+            LspResponse::Diagnostics(url, diagnostics) => {
+                let lsp_diagnostics: Vec<languageserver_types::Diagnostic> = diagnostics
+                    .iter()
+                    .map(|(range, diag)| {
+                        languageserver_types::Diagnostic::new_simple(*range, diag.clone())
+                    })
+                    .collect();
+
+                let notice = languageserver_types::PublishDiagnosticsParams {
+                    uri: url,
+                    diagnostics: lsp_diagnostics,
+                };
+
+                send_notification("textDocument/publishDiagnostics".into(), notice);
             }
         }
     }
 }
 
+/// The workhorse function for handling incoming requests from the IDE. This will
+/// take instructions from stdin sent by the IDE and then send them to the appropriate
+/// system.
 pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager>) {
     loop {
         let mut input = String::new();
@@ -191,6 +245,16 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                         }
                         Ok(LSPCommand::didChange { params }) => {
                             eprintln!("didChange: {:#?}", params);
+
+                            let changes = params
+                                .content_changes
+                                .iter()
+                                .map(|x| (x.range.unwrap(), x.text.clone()))
+                                .collect();
+
+                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
+                                LspRequest::EditFile(params.text_document.uri.clone(), changes),
+                            ));
                         }
                         Ok(LSPCommand::hover { id, params }) => {
                             eprintln!("hover: id={} {:#?}", id, params);

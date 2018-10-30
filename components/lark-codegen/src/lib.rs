@@ -10,6 +10,7 @@ pub enum CodegenType {
     C,
 }
 
+/// Converts the MIR context of definitions into the chosen source type
 pub fn codegen(context: &Context, codegen_type: CodegenType) -> String {
     match codegen_type {
         CodegenType::Rust => codegen_rust::codegen_rust(context),
@@ -17,6 +18,7 @@ pub fn codegen(context: &Context, codegen_type: CodegenType) -> String {
     }
 }
 
+/// Builds source code for the given source type
 pub fn build(
     target_filename: &str,
     src: &String,

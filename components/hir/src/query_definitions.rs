@@ -6,16 +6,11 @@ use intern::Untern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::ItemKind;
-use lark_entity::LangItem;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use parser::StringId;
 use std::sync::Arc;
-
-crate fn boolean_entity(db: &impl HirDatabase) -> Entity {
-    EntityData::LangItem(LangItem::Boolean).intern(db)
-}
 
 crate fn members(db: &impl HirDatabase, owner: Entity) -> Result<Arc<Vec<Member>>, ErrorReported> {
     match &*db.ast_of_item(owner)? {

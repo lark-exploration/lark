@@ -1,5 +1,5 @@
 use ast::{HasParserState, InputText, ParserState};
-use codespan::{CodeMap, FileMap, FileName};
+use codespan::{CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
@@ -9,6 +9,7 @@ use salsa::{Database, ParallelDatabase};
 use std::borrow::Cow;
 use std::sync::Arc;
 use ty::interners::TyInternTables;
+use url::Url;
 
 mod ls_ops;
 use self::ls_ops::{Cancelled, LsDatabase};
@@ -20,6 +21,7 @@ struct LarkDatabase {
     file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
     parser_state: Arc<ParserState>,
     item_id_tables: Arc<EntityTables>,
+    declaration_tables: Arc<ty::declaration::DeclarationTables>,
     ty_intern_tables: Arc<TyInternTables>,
 }
 
@@ -37,6 +39,7 @@ impl ParallelDatabase for LarkDatabase {
             runtime: self.runtime.fork(),
             parser_state: self.parser_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
+            declaration_tables: self.declaration_tables.clone(),
             ty_intern_tables: self.ty_intern_tables.clone(),
         }
     }
@@ -60,7 +63,6 @@ salsa::database_storage! {
             fn entity_span() for ast::EntitySpanQuery;
         }
         impl hir::HirDatabase {
-            fn boolean_entity() for hir::BooleanEntityQuery;
             fn fn_body() for hir::FnBodyQuery;
             fn members() for hir::MembersQuery;
             fn member_entity() for hir::MemberEntityQuery;
@@ -88,6 +90,12 @@ impl AsRef<EntityTables> for LarkDatabase {
     }
 }
 
+impl AsRef<ty::declaration::DeclarationTables> for LarkDatabase {
+    fn as_ref(&self) -> &ty::declaration::DeclarationTables {
+        &self.declaration_tables
+    }
+}
+
 impl AsRef<TyInternTables> for LarkDatabase {
     fn as_ref(&self) -> &TyInternTables {
         &self.ty_intern_tables
@@ -111,6 +119,32 @@ impl QuerySystem {
             send_channel: Box::new(NoopSendChannel),
             lark_db: LarkDatabase::default(),
         }
+    }
+
+    pub fn check_for_errors_and_report(&self) {
+        std::thread::spawn({
+            let db = self.lark_db.fork();
+            let send_channel = self.send_channel.clone_send_channel();
+
+            move || {
+                let _lock = db.salsa_runtime().lock_revision();
+
+                match db.errors_for_project() {
+                    Ok(errors) => {
+                        // loop over hashmap and send messages
+                        for (key, value) in errors {
+                            let url = Url::parse(&key).unwrap();
+                            let ranges_with_default =
+                                value.iter().map(|x| (*x, "Error".to_string())).collect();
+                            send_channel.send(QueryResponse::Diagnostics(url, ranges_with_default));
+                        }
+                    }
+                    Err(Cancelled) => {
+                        // Ignore
+                    }
+                }
+            }
+        });
     }
 }
 
@@ -158,8 +192,85 @@ impl Actor for QuerySystem {
                         span: Span::from(file_span),
                     }),
                 );
+
+                self.check_for_errors_and_report();
             }
-            QueryRequest::EditFile(_) => {}
+            QueryRequest::EditFile(url, changes) => {
+                // Process sets on the same thread -- this not only gives them priority,
+                // it ensures an overall ordering to edits.
+                let interned_path = self.lark_db.intern_string(url.as_str());
+                let file_maps = self
+                    .lark_db
+                    .file_maps()
+                    .read()
+                    .get(url.as_str())
+                    .unwrap()
+                    .clone();
+
+                let mut current_contents = file_maps.src().to_string();
+
+                let origin_byte_offset =
+                    file_maps.byte_index(LineIndex(0), ColumnIndex(0)).unwrap();
+
+                for change in changes {
+                    let start_position = change.0.start;
+                    let start_byte_offset = file_maps
+                        .byte_index(
+                            LineIndex(start_position.line as u32),
+                            ColumnIndex((start_position.character) as u32),
+                        )
+                        .unwrap();
+
+                    let end_position = change.0.end;
+                    let end_byte_offset = file_maps
+                        .byte_index(
+                            LineIndex(end_position.line as u32),
+                            ColumnIndex((end_position.character) as u32),
+                        )
+                        .unwrap();
+
+                    unsafe {
+                        let vec = current_contents.as_mut_vec();
+                        vec.drain(
+                            (start_byte_offset - origin_byte_offset).to_usize()
+                                ..(end_byte_offset - origin_byte_offset).to_usize(),
+                        );
+                    }
+
+                    current_contents.insert_str(
+                        (start_byte_offset - origin_byte_offset).to_usize(),
+                        &change.1,
+                    );
+                }
+
+                let interned_contents = self.lark_db.intern_string(current_contents.as_str());
+
+                // Uh, adding a "new" file on each change seems a bit ungreat. But good
+                // enough for now.
+                let file_map = self.lark_db.code_map.write().add_filemap(
+                    FileName::Virtual(Cow::Owned(url.to_string())),
+                    current_contents.to_string(),
+                );
+                let file_span = file_map.span();
+                let start_offset = file_map.span().start().to_usize() as u32;
+
+                // Record the filemap for later
+                self.lark_db
+                    .file_maps
+                    .write()
+                    .insert(url.to_string(), file_map);
+
+                self.lark_db.query(ast::InputTextQuery).set(
+                    interned_path,
+                    Some(InputText {
+                        text: interned_contents,
+                        start_offset,
+                        span: Span::from(file_span),
+                    }),
+                );
+
+                self.check_for_errors_and_report();
+            }
             QueryRequest::TypeAtPosition(task_id, url, position) => {
                 std::thread::spawn({
                     let db = self.lark_db.fork();
