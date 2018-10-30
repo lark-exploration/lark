@@ -21,6 +21,7 @@ struct LarkDatabase {
     file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
     parser_state: Arc<ParserState>,
     item_id_tables: Arc<EntityTables>,
+    declaration_tables: Arc<ty::declaration::DeclarationTables>,
     ty_intern_tables: Arc<TyInternTables>,
 }
 
@@ -38,6 +39,7 @@ impl ParallelDatabase for LarkDatabase {
             runtime: self.runtime.fork(),
             parser_state: self.parser_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
+            declaration_tables: self.declaration_tables.clone(),
             ty_intern_tables: self.ty_intern_tables.clone(),
         }
     }
@@ -61,7 +63,6 @@ salsa::database_storage! {
             fn entity_span() for ast::EntitySpanQuery;
         }
         impl hir::HirDatabase {
-            fn boolean_entity() for hir::BooleanEntityQuery;
             fn fn_body() for hir::FnBodyQuery;
             fn members() for hir::MembersQuery;
             fn member_entity() for hir::MemberEntityQuery;
@@ -86,6 +87,12 @@ impl parser::LookupStringId for LarkDatabase {
 impl AsRef<EntityTables> for LarkDatabase {
     fn as_ref(&self) -> &EntityTables {
         &self.item_id_tables
+    }
+}
+
+impl AsRef<ty::declaration::DeclarationTables> for LarkDatabase {
+    fn as_ref(&self) -> &ty::declaration::DeclarationTables {
+        &self.declaration_tables
     }
 }
 

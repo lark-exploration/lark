@@ -14,6 +14,7 @@ use std::fmt;
 pub struct BaseInferred;
 
 impl TypeFamily for BaseInferred {
+    type InternTables = crate::interners::TyInternTables;
     type Perm = Erased;
     type Base = Base;
     type Placeholder = Placeholder;

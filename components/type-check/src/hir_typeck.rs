@@ -4,10 +4,11 @@ use crate::TypeChecker;
 use crate::TypeCheckerFields;
 use hir;
 use intern::Untern;
-use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
+use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
 use map::FxIndexSet;
+use ty::declaration::Declaration;
 use ty::Signature;
 use ty::Ty;
 use ty::{BaseData, BaseKind};
@@ -16,6 +17,7 @@ impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckFamily,
+    Self: AsRef<F::InternTables>,
 {
     pub(super) fn check_fn_body(&mut self) {
         let declaration_signature = self
@@ -23,7 +25,7 @@ where
             .signature(self.fn_entity)
             .into_value()
             .unwrap_or_else(|ErrorReported(_)| {
-                Signature::error_sentinel(self, self.hir.arguments.len())
+                <Signature<Declaration>>::error_sentinel(self, self.hir.arguments.len())
             });
         let placeholders = self.placeholders_for(self.fn_entity);
         let signature = self.substitute(
@@ -32,7 +34,12 @@ where
             declaration_signature,
         );
         assert_eq!(signature.inputs.len(), self.hir.arguments.len());
-        for (&argument, &input) in self.hir.arguments.iter().zip(signature.inputs.iter()) {
+        for (argument, &input) in self
+            .hir
+            .arguments
+            .iter(&self.hir)
+            .zip(signature.inputs.iter())
+        {
             self.results.record_ty(argument, input);
         }
         self.check_expression_has_type(signature.output, self.hir.root_expression);
@@ -115,9 +122,19 @@ where
                 self.least_upper_bound(expression, true_ty, false_ty)
             }
 
-            hir::ExpressionData::Unit {} => unimplemented!(),
+            hir::ExpressionData::Unit {} => self.unit_type(),
 
             hir::ExpressionData::Error { error: _ } => self.error_type(),
+
+            hir::ExpressionData::Binary {
+                operator,
+                left,
+                right,
+            } => self.check_binary(expression, operator, left, right),
+
+            hir::ExpressionData::Unary { operator, value } => {
+                self.check_unary(expression, operator, value)
+            }
         }
     }
 
@@ -209,7 +226,9 @@ where
 
                 let signature_decl = match self.db().signature(method_entity).into_value() {
                     Ok(s) => s,
-                    Err(ErrorReported(_)) => Signature::error_sentinel(self, arguments.len()),
+                    Err(ErrorReported(_)) => {
+                        <Signature<Declaration>>::error_sentinel(self, arguments.len())
+                    }
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
@@ -270,7 +289,7 @@ where
 
         // Get a vector of **all** the fields.
         let mut missing_members: FxIndexSet<Entity> =
-            or_return_sentinel!(self.db, self.db.members(entity))
+            or_return_sentinel!(&*self, self.db.members(entity))
                 .iter()
                 .map(|m| m.entity)
                 .collect();
@@ -312,5 +331,156 @@ where
         // generics substituted.
         let entity_ty = self.db.ty(entity).into_value();
         self.substitute(expression, &generics, entity_ty)
+    }
+
+    fn check_binary(
+        &mut self,
+        expression: hir::Expression,
+        operator: hir::BinaryOperator,
+        left: hir::Expression,
+        right: hir::Expression,
+    ) -> Ty<F> {
+        // For (most) binary operators, we need to know the type of
+        // left + right before we can say anything about the result
+        // type. So use `with_base_data` to get a callback once that is
+        // known.
+        let left_ty = self.check_expression(left);
+        let right_ty = self.check_expression(right);
+        let result_ty = self.with_base_data(
+            expression,
+            left_ty.base.into(),
+            move |this, left_base_data| {
+                this.with_base_data(
+                    expression,
+                    right_ty.base.into(),
+                    move |this, right_base_data| {
+                        this.check_binary_with_both_inputs_known(
+                            expression,
+                            operator,
+                            left_base_data,
+                            right_base_data,
+                        )
+                    },
+                )
+            },
+        );
+
+        match operator {
+            hir::BinaryOperator::Equals | hir::BinaryOperator::NotEquals => {
+                // One exception are the `==` and `!=` operators. They
+                // always yield boolean.
+                let boolean_type = self.boolean_type();
+                if result_ty != boolean_type {
+                    self.require_assignable(expression, result_ty, boolean_type);
+                }
+                boolean_type
+            }
+
+            hir::BinaryOperator::Add
+            | hir::BinaryOperator::Subtract
+            | hir::BinaryOperator::Multiply
+            | hir::BinaryOperator::Divide => result_ty,
+        }
+    }
+
+    /// Invoked to check a binary operator once the base-data for the
+    /// left and right types are known.
+    fn check_binary_with_both_inputs_known(
+        &mut self,
+        expression: hir::Expression,
+        operator: hir::BinaryOperator,
+        left_base_data: BaseData<F>,
+        right_base_data: BaseData<F>,
+    ) -> Ty<F> {
+        let int_type = self.int_type();
+        let uint_type = self.uint_type();
+        let boolean_type = self.boolean_type();
+
+        match operator {
+            hir::BinaryOperator::Add
+            | hir::BinaryOperator::Subtract
+            | hir::BinaryOperator::Multiply
+            | hir::BinaryOperator::Divide => match (&left_base_data.kind, &right_base_data.kind) {
+                (BaseKind::Named(entity), BaseKind::Named(right_entity))
+                    if entity == right_entity =>
+                {
+                    match entity.untern(self) {
+                        EntityData::LangItem(LangItem::Int) => int_type,
+                        EntityData::LangItem(LangItem::Uint) => uint_type,
+                        EntityData::Error(_) => self.error_type(),
+                        _ => {
+                            self.results.record_error(expression);
+                            self.error_type()
+                        }
+                    }
+                }
+
+                (BaseKind::Error, _) | (_, BaseKind::Error) => self.error_type(),
+
+                (BaseKind::Named(_), _) | (BaseKind::Placeholder(_), _) => {
+                    self.results.record_error(expression);
+                    self.error_type()
+                }
+            },
+
+            hir::BinaryOperator::Equals | hir::BinaryOperator::NotEquals => {
+                // Unclear what rule will eventually be... for now, require
+                // that the two types are the same?
+                if left_base_data != right_base_data {
+                    self.results.record_error(expression);
+                }
+
+                // Either way, yields a boolean
+                boolean_type
+            }
+        }
+    }
+
+    fn check_unary(
+        &mut self,
+        expression: hir::Expression,
+        operator: hir::UnaryOperator,
+        value: hir::Expression,
+    ) -> Ty<F> {
+        // We may want to add overloading later. So make sure we know
+        // the type of the expression before we determine the type of
+        // the output.
+        let value_ty = self.check_expression(value);
+        self.with_base_data(
+            expression,
+            value_ty.base.into(),
+            move |this, value_base_data| {
+                this.check_unary_with_input_known(expression, operator, value_base_data)
+            },
+        )
+    }
+
+    fn check_unary_with_input_known(
+        &mut self,
+        expression: hir::Expression,
+        operator: hir::UnaryOperator,
+        value_base_data: BaseData<F>,
+    ) -> Ty<F> {
+        match operator {
+            hir::UnaryOperator::Not => match &value_base_data.kind {
+                BaseKind::Named(entity) => match entity.untern(self) {
+                    EntityData::LangItem(LangItem::Boolean) => self.boolean_type(),
+
+                    EntityData::Error(_) => self.error_type(),
+
+                    _ => {
+                        self.results.record_error(expression);
+                        self.error_type()
+                    }
+                },
+
+                BaseKind::Error => self.error_type(),
+
+                BaseKind::Placeholder(_) => {
+                    self.results.record_error(expression);
+                    self.error_type()
+                }
+            },
+        }
     }
 }

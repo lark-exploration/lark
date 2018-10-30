@@ -16,7 +16,6 @@ use ty::declaration::Declaration;
 use ty::BaseData;
 use ty::BaseKind;
 use ty::BoundVar;
-use ty::BoundVarOr;
 use ty::Erased;
 use ty::GenericDeclarations;
 use ty::GenericKind;
@@ -39,7 +38,9 @@ crate fn generic_declarations(
     match entity.untern(db) {
         EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
 
-        EntityData::LangItem(LangItem::Boolean) => WithError::ok(Ok(empty_declarations(None))),
+        EntityData::LangItem(LangItem::Boolean)
+        | EntityData::LangItem(LangItem::Int)
+        | EntityData::LangItem(LangItem::Uint) => WithError::ok(Ok(empty_declarations(None))),
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {
             if arity != 0 {
@@ -81,15 +82,17 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declarati
     match entity.untern(db) {
         EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
 
-        EntityData::LangItem(LangItem::Boolean) => {
+        EntityData::LangItem(LangItem::Boolean)
+        | EntityData::LangItem(LangItem::Int)
+        | EntityData::LangItem(LangItem::Uint) => {
             WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
         }
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {
             let generics: Generics<Declaration> = (0..arity)
-                .map(|i| BoundVarOr::BoundVar(BoundVar::new(i)))
+                .map(|i| BoundVar::new(i))
                 .map(|bv| Ty {
-                    base: bv.intern(db),
+                    base: Declaration::intern_bound_var(db, bv),
                     perm: Declaration::own_perm(db),
                 })
                 .map(|ty| GenericKind::Ty(ty))
