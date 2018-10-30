@@ -84,4 +84,4 @@ pub fn macros(table: &mut ModuleTable) -> Macros {
         .add(table.intern(&"def"), builtins::DefDef)
 }
 
-pub trait Term {}
+pub trait Term: Debug {}

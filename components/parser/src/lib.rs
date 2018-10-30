@@ -16,6 +16,7 @@ pub mod parser;
 crate mod parser2;
 pub mod pos;
 pub mod prelude;
+pub mod reporting;
 
 #[cfg(test)]
 mod test_helpers;
@@ -27,7 +28,6 @@ pub use self::errors::ParseError;
 pub use self::intern::{LookupStringId, ModuleTable, Seahash, StringId};
 pub use self::parser::ast;
 pub use self::parser::parse;
-pub use self::parser::reporting::print_parse_error;
 pub use self::parser::token::Token;
 pub use self::parser2::allow::*;
 pub use self::parser2::entity_tree::Entities;
@@ -36,3 +36,4 @@ pub use self::parser2::quicklex::Tokenizer;
 pub use self::parser2::reader::{PairedDelimiter, Reader};
 pub use self::parser2::token_tree::{TokenPos, TokenSpan};
 pub use self::parser2::LexToken;
+pub use self::reporting::print_parse_error;

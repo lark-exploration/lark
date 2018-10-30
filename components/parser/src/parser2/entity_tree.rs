@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 use crate::intern::ModuleTable;
+use crate::parser2::macros::Term;
 use crate::parser2::token_tree::{TokenPos, TokenSpan};
 use crate::LexToken;
 
@@ -23,25 +24,35 @@ pub struct EntityTree {
 }
 
 impl EntityTree {
-    pub fn debug(&self, table: &ModuleTable, tokens: &[Spanned<LexToken>]) -> DebugEntityTree {
+    pub fn debug(
+        &self,
+        table: &ModuleTable,
+        tokens: &[Spanned<LexToken>],
+        entities: &'terms Entities,
+    ) -> DebugEntityTree<'terms> {
         DebugEntityTree {
-            entity: self.entity.debug(table, tokens),
+            entity: self.entity.debug(table, tokens, entities),
             children: self
                 .children
                 .iter()
-                .map(|(k, v)| (table.lookup(k).to_string(), v.debug(table, tokens)))
+                .map(|(k, v)| {
+                    (
+                        table.lookup(k).to_string(),
+                        v.debug(table, tokens, entities),
+                    )
+                })
                 .collect(),
         }
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct DebugEntityTree {
-    entity: DebugEntity,
-    children: FxIndexMap<String, DebugEntityTree>,
+#[derive(Debug)]
+pub struct DebugEntityTree<'terms> {
+    entity: DebugEntity<'terms>,
+    children: FxIndexMap<String, DebugEntityTree<'terms>>,
 }
 
-#[derive(Debug, Eq, PartialEq, Default, new)]
+#[derive(Debug, Default, new)]
 pub struct EntityTreeBuilder {
     #[new(value = "None")]
     parent: Option<Box<EntityTreeBuilder>>,
@@ -51,6 +62,9 @@ pub struct EntityTreeBuilder {
 
     #[new(value = "FxIndexMap::default()")]
     children: FxIndexMap<StringId, EntityTree>,
+
+    #[new(value = "Some(vec![])")]
+    terms: Option<Vec<Box<dyn Term>>>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -58,10 +72,16 @@ pub struct Entity {
     span: TokenSpan,
     name: StringId,
     kind: EntityKind,
+    term: TermId,
 }
 
 impl Entity {
-    pub fn debug(&self, table: &ModuleTable, tokens: &[Spanned<LexToken>]) -> DebugEntity {
+    pub fn debug(
+        &self,
+        table: &ModuleTable,
+        tokens: &[Spanned<LexToken>],
+        entities: &'terms Entities,
+    ) -> DebugEntity<'terms> {
         let start = tokens[(self.span.0).0].node();
         let end = tokens[(self.span.1).0].node();
         DebugEntity {
@@ -70,6 +90,7 @@ impl Entity {
             end: format!("{:?}", Debuggable::from(end, table)),
             name: table.lookup(&self.name).to_string(),
             kind: self.kind,
+            term: entities.get_term(&self.term),
         }
     }
 
@@ -82,52 +103,68 @@ impl Entity {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct DebugEntity {
+#[derive(Debug)]
+pub struct DebugEntity<'terms> {
     pub span: TokenSpan,
     pub start: String,
     pub end: String,
     pub name: String,
     pub kind: EntityKind,
+    pub term: &'terms dyn Term,
 }
 
 impl EntityTreeBuilder {
-    pub fn push(self, name: &StringId, start: TokenPos, kind: EntityKind) -> EntityTreeBuilder {
+    pub fn push(mut self, name: &StringId, start: TokenPos, kind: EntityKind) -> EntityTreeBuilder {
+        let terms = self.terms.take();
+
         EntityTreeBuilder {
             parent: Some(box self),
             entity: Some(Entity {
                 span: TokenSpan(start, TokenPos(0)),
                 name: *name,
                 kind,
+                term: TermId(-1),
             }),
             children: FxIndexMap::default(),
+            terms,
         }
     }
 
-    pub fn finish(self, finish: TokenPos) -> EntityTreeBuilder {
+    pub fn finish(self, finish: TokenPos, term: Box<dyn Term>) -> EntityTreeBuilder {
         let EntityTreeBuilder {
             parent,
             entity,
             children,
+            terms,
         } = self;
+
+        let mut terms = terms.expect("Expected terms when finishing node");
+        let term_id = TermId(terms.len() as isize);
+        terms.push(term);
 
         let mut entity = entity.expect("Can't finish the root node");
         let id = entity.name;
         entity.span.1 = finish;
+        entity.term = term_id;
 
         let finished = EntityTree { entity, children };
 
         let mut parent = parent.expect("Can't finish the root node");
 
         parent.children.insert(id, finished);
+        parent.terms = Some(terms);
 
         *parent
     }
 
-    pub fn finalize(self) -> FxIndexMap<StringId, EntityTree> {
-        assert!(self.parent == None, "Can only finalize the root node");
+    pub fn finalize(self) -> (FxIndexMap<StringId, EntityTree>, Vec<Box<dyn Term>>) {
+        assert!(self.parent.is_none(), "Can only finalize the root node");
 
-        self.children
+        (
+            self.children,
+            self.terms
+                .expect("Expected entity tree to have terms when finalized"),
+        )
     }
 }
 
@@ -150,21 +187,16 @@ impl fmt::Debug for EntitiesBuilder {
 impl EntitiesBuilder {
     pub fn push(&mut self, name: &StringId, start: TokenPos, kind: EntityKind) {
         self.update(|tree| tree.push(name, start, kind));
-        // let tree = self.tree.take().push(name, start, kind);
-        // self.tree.set(tree);
-        // self.tree.update(|tree| tree.push(name, start, kind));
     }
 
-    pub fn finish(&mut self, finish: TokenPos) {
-        self.update(|tree| tree.finish(finish));
-        // let tree = self.tree.take().finish(finish);
-        // self.tree.set(tree);
+    pub fn finish(&mut self, finish: TokenPos, term: Box<dyn Term>) {
+        self.update(|tree| tree.finish(finish, term));
     }
 
     pub fn finalize(self) -> Entities {
-        Entities {
-            tree: self.tree.into_inner().finalize(),
-        }
+        let (tree, terms) = self.tree.into_inner().finalize();
+
+        Entities { tree, terms }
     }
 
     fn update(&mut self, f: impl FnOnce(EntityTreeBuilder) -> EntityTreeBuilder) {
@@ -173,9 +205,13 @@ impl EntitiesBuilder {
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct TermId(isize);
+
 #[derive(Debug)]
 pub struct Entities {
     tree: FxIndexMap<StringId, EntityTree>,
+    terms: Vec<Box<dyn Term>>,
 }
 
 impl Entities {
@@ -184,7 +220,7 @@ impl Entities {
         table: &ModuleTable,
         tokens: &[Spanned<LexToken>],
     ) -> FxIndexMap<String, DebugEntityTree> {
-        debug_tree(&self.tree, table, tokens)
+        debug_tree(&self.tree, table, tokens, self)
     }
 
     pub fn len(&self) -> usize {
@@ -193,6 +229,12 @@ impl Entities {
 
     pub fn str_keys(&self, table: &'table ModuleTable) -> Vec<&'table str> {
         self.tree.keys().map(|id| table.lookup(id)).collect()
+    }
+
+    pub fn get_term(&self, term: &TermId) -> &dyn Term {
+        assert!(term.0 != -1, "BUG: TermId of -1 is a sentinel value");
+
+        &*self.terms[term.0 as usize]
     }
 
     pub fn get_entity(&self, name: &StringId) -> Option<&Entity> {
@@ -214,8 +256,14 @@ fn debug_tree(
     tree: &FxIndexMap<StringId, EntityTree>,
     table: &ModuleTable,
     tokens: &[Spanned<LexToken>],
-) -> FxIndexMap<String, DebugEntityTree> {
+    entities: &'terms Entities,
+) -> FxIndexMap<String, DebugEntityTree<'terms>> {
     tree.iter()
-        .map(|(k, v)| (table.lookup(k).to_string(), v.debug(table, tokens)))
+        .map(|(k, v)| {
+            (
+                table.lookup(k).to_string(),
+                v.debug(table, tokens, entities),
+            )
+        })
         .collect()
 }
