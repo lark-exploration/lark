@@ -16,7 +16,7 @@ lark-task-manager = { path = "../lark-task-manager" }
 map = { path = "../map" }
 parking_lot = "0.6.4"
 parser = { path = "../parser" }
-salsa = "0.6.2"
+salsa = "0.7"
 lark-ty = { path = "../lark-ty" }
 lark-type-check = { path = "../lark-type-check" }
 url = "1.7"
