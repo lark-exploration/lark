@@ -18,4 +18,4 @@ lark-entity = { path = "../lark-entity" }
 map = { path = "../map" }
 parser = { path = "../parser" }
 ty = { path = "../ty" }
-unify = { path = "../unify" }
+lark-unify = { path = "../lark-unify" }

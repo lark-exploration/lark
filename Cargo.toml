@@ -46,7 +46,7 @@ map = { path = "components/map" }
 parser = { path = "components/parser" }
 ty = { path = "components/ty" }
 type-check = { path = "components/type-check" }
-unify = { path = "components/unify" }
+lark-unify = { path = "components/lark-unify" }
 
 [dev-dependencies]
 unindent = "0.1.3"

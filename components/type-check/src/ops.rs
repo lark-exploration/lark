@@ -4,6 +4,8 @@ use crate::UniverseBinder;
 use hir;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
+use lark_unify::InferVar;
+use lark_unify::Inferable;
 use std::sync::Arc;
 use ty::declaration::Declaration;
 use ty::map_family::Map;
@@ -14,8 +16,6 @@ use ty::Generics;
 use ty::Placeholder;
 use ty::Ty;
 use ty::Universe;
-use unify::InferVar;
-use unify::Inferable;
 
 #[derive(Copy, Clone, Debug)]
 pub(super) struct OpIndex {

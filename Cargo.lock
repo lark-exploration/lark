@@ -368,6 +368,7 @@ dependencies = [
  "lark-query-system 0.1.0",
  "lark-string 0.1.0",
  "lark-task-manager 0.1.0",
+ "lark-unify 0.1.0",
  "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "map 0.1.0",
@@ -383,7 +384,6 @@ dependencies = [
  "type-check 0.1.0",
  "typed-arena 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "unify 0.1.0",
  "unindent 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -487,6 +487,15 @@ dependencies = [
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-mir 0.1.0",
  "url 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "lark-unify"
+version = "0.1.0"
+dependencies = [
+ "debug 0.1.0",
+ "indices 0.1.0",
+ "lark-debug-derive 0.1.0",
 ]
 
 [[package]]
@@ -982,9 +991,9 @@ dependencies = [
  "lark-debug-derive 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
+ "lark-unify 0.1.0",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parser 0.1.0",
- "unify 0.1.0",
 ]
 
 [[package]]
@@ -998,12 +1007,12 @@ dependencies = [
  "intern 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
+ "lark-unify 0.1.0",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "map 0.1.0",
  "parser 0.1.0",
  "salsa 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ty 0.1.0",
- "unify 0.1.0",
 ]
 
 [[package]]
@@ -1043,15 +1052,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "unicode-xid"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "unify"
-version = "0.1.0"
-dependencies = [
- "debug 0.1.0",
- "indices 0.1.0",
- "lark-debug-derive 0.1.0",
-]
 
 [[package]]
 name = "unindent"

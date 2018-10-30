@@ -8,8 +8,8 @@ use crate::TypeFamily;
 use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
+use lark_unify::{InferVar, Inferable};
 use std::fmt;
-use unify::{InferVar, Inferable};
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct BaseOnly;
