@@ -114,6 +114,7 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     .accumulate_errors_into(errors);
                 let _ = self.ty(entity).accumulate_errors_into(errors);
                 let _ = self.signature(entity).accumulate_errors_into(errors);
+                let _ = self.base_type_check(entity).accumulate_errors_into(errors);
             }
             EntityData::MemberName {
                 kind: MemberKind::Method,
@@ -124,6 +125,7 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     .accumulate_errors_into(errors);
                 let _ = self.ty(entity).accumulate_errors_into(errors);
                 let _ = self.signature(entity).accumulate_errors_into(errors);
+                let _ = self.base_type_check(entity).accumulate_errors_into(errors);
             }
         }
 
