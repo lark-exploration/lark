@@ -1,5 +1,5 @@
 [package]
-name = "ty"
+name = "lark-ty"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
@@ -12,8 +12,9 @@ ast = { path = "../ast" }
 debug = { path = "../debug" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }
+map = { path = "../map" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 parser = { path = "../parser" }
-unify = { path = "../unify" }
+lark-unify = { path = "../lark-unify" }

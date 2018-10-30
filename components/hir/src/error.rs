@@ -1,9 +1,9 @@
 use lark_debug_derive::DebugWith;
+use lark_ty::declaration::Declaration;
+use lark_ty::interners::TyInternTables;
+use lark_ty::{Ty, TypeFamily};
 use parser::pos::Span;
 use parser::ParseError;
-use ty::declaration::Declaration;
-use ty::interners::TyInternTables;
-use ty::{Ty, TypeFamily};
 
 /// Unit type used in `Result` to indicate a value derived from other
 /// value where an error was already reported.

@@ -11,23 +11,23 @@ use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_error::WithError;
+use lark_ty::declaration::Declaration;
+use lark_ty::BaseData;
+use lark_ty::BaseKind;
+use lark_ty::BoundVar;
+use lark_ty::Erased;
+use lark_ty::GenericDeclarations;
+use lark_ty::GenericKind;
+use lark_ty::Generics;
+use lark_ty::Signature;
+use lark_ty::Ty;
+use lark_ty::TypeFamily;
 use std::sync::Arc;
-use ty::declaration::Declaration;
-use ty::BaseData;
-use ty::BaseKind;
-use ty::BoundVar;
-use ty::Erased;
-use ty::GenericDeclarations;
-use ty::GenericKind;
-use ty::Generics;
-use ty::Signature;
-use ty::Ty;
-use ty::TypeFamily;
 
 crate fn generic_declarations(
     db: &impl HirDatabase,
     entity: Entity,
-) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
     let empty_declarations = |parent_item: Option<Entity>| {
         Arc::new(GenericDeclarations {
             parent_item,
@@ -78,7 +78,7 @@ crate fn generic_declarations(
     }
 }
 
-crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declaration>> {
+crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<Ty<Declaration>> {
     match entity.untern(db) {
         EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
 
@@ -133,7 +133,7 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<ty::Ty<Declarati
 crate fn signature(
     db: &impl HirDatabase,
     owner: Entity,
-) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+) -> WithError<Result<Signature<Declaration>, ErrorReported>> {
     let mut errors = vec![];
 
     match &*or_return_sentinel!(db, db.ast_of_item(owner)) {

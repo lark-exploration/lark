@@ -4,18 +4,18 @@ use crate::UniverseBinder;
 use hir;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
+use lark_ty::declaration::Declaration;
+use lark_ty::map_family::Map;
+use lark_ty::BaseData;
+use lark_ty::GenericDeclarations;
+use lark_ty::GenericKind;
+use lark_ty::Generics;
+use lark_ty::Placeholder;
+use lark_ty::Ty;
+use lark_ty::Universe;
+use lark_unify::InferVar;
+use lark_unify::Inferable;
 use std::sync::Arc;
-use ty::declaration::Declaration;
-use ty::map_family::Map;
-use ty::BaseData;
-use ty::GenericDeclarations;
-use ty::GenericKind;
-use ty::Generics;
-use ty::Placeholder;
-use ty::Ty;
-use ty::Universe;
-use unify::InferVar;
-use unify::Inferable;
 
 #[derive(Copy, Clone, Debug)]
 pub(super) struct OpIndex {
@@ -73,6 +73,12 @@ where
 
     pub(super) fn error_type(&self) -> Ty<F> {
         F::error_type(self)
+    }
+
+    /// Record that an error occurred at the given location.
+    pub(super) fn record_error(&mut self, location: impl Into<hir::MetaIndex>) {
+        let span = self.hir.span(location.into());
+        self.errors.push(span);
     }
 
     pub(super) fn substitute<M>(
@@ -276,6 +282,21 @@ where
 
                 Some(op) => {
                     op.execute(self);
+                }
+            }
+        }
+    }
+
+    /// Records any inference variables that are have
+    /// not-yet-triggered operations. These must all be currently
+    /// unresolved.
+    pub(super) fn untriggered_ops(&mut self, output: &mut Vec<InferVar>) {
+        'var_loop: for (&var, blocked_ops) in &self.ops_blocked {
+            assert!(!self.unify.var_is_known(var));
+            for &OpIndex { index } in blocked_ops {
+                if self.ops_arena.contains(index) {
+                    output.push(var);
+                    continue 'var_loop;
                 }
             }
         }

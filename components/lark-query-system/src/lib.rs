@@ -8,7 +8,6 @@ use parser::pos::Span;
 use salsa::{Database, ParallelDatabase};
 use std::borrow::Cow;
 use std::sync::Arc;
-use ty::interners::TyInternTables;
 use url::Url;
 
 mod ls_ops;
@@ -21,8 +20,8 @@ struct LarkDatabase {
     file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
     parser_state: Arc<ParserState>,
     item_id_tables: Arc<EntityTables>,
-    declaration_tables: Arc<ty::declaration::DeclarationTables>,
-    ty_intern_tables: Arc<TyInternTables>,
+    declaration_tables: Arc<lark_ty::declaration::DeclarationTables>,
+    base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
 }
 
 impl Database for LarkDatabase {
@@ -40,7 +39,7 @@ impl ParallelDatabase for LarkDatabase {
             parser_state: self.parser_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
             declaration_tables: self.declaration_tables.clone(),
-            ty_intern_tables: self.ty_intern_tables.clone(),
+            base_inferred_tables: self.base_inferred_tables.clone(),
         }
     }
 }
@@ -72,8 +71,8 @@ salsa::database_storage! {
             fn generic_declarations() for hir::GenericDeclarationsQuery;
             fn resolve_name() for hir::ResolveNameQuery;
         }
-        impl type_check::TypeCheckDatabase {
-            fn base_type_check() for type_check::BaseTypeCheckQuery;
+        impl lark_type_check::TypeCheckDatabase {
+            fn base_type_check() for lark_type_check::BaseTypeCheckQuery;
         }
     }
 }
@@ -90,15 +89,15 @@ impl AsRef<EntityTables> for LarkDatabase {
     }
 }
 
-impl AsRef<ty::declaration::DeclarationTables> for LarkDatabase {
-    fn as_ref(&self) -> &ty::declaration::DeclarationTables {
+impl AsRef<lark_ty::declaration::DeclarationTables> for LarkDatabase {
+    fn as_ref(&self) -> &lark_ty::declaration::DeclarationTables {
         &self.declaration_tables
     }
 }
 
-impl AsRef<TyInternTables> for LarkDatabase {
-    fn as_ref(&self) -> &TyInternTables {
-        &self.ty_intern_tables
+impl AsRef<lark_ty::base_inferred::BaseInferredTables> for LarkDatabase {
+    fn as_ref(&self) -> &lark_ty::base_inferred::BaseInferredTables {
+        &self.base_inferred_tables
     }
 }
 

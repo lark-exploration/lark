@@ -7,6 +7,10 @@ use crate::Signature;
 use crate::Ty;
 use crate::TypeFamily;
 use lark_entity::Entity;
+use map::FxIndexMap;
+use map::FxIndexSet;
+use std::collections::BTreeMap;
+use std::hash::Hash;
 use std::sync::Arc;
 
 pub trait Map<S: TypeFamily, T: TypeFamily>: Clone {
@@ -74,6 +78,52 @@ where
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         self.iter().map(|e| e.map(mapper)).collect()
+    }
+}
+
+impl<K, S, T, V> Map<S, T> for BTreeMap<K, V>
+where
+    K: Clone + Eq + Ord,
+    S: TypeFamily,
+    T: TypeFamily,
+    V: Map<S, T>,
+{
+    type Output = BTreeMap<K, V::Output>;
+
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        self.iter()
+            .map(|(k, v)| (k.clone(), v.map(mapper)))
+            .collect()
+    }
+}
+
+impl<K, S, T, V> Map<S, T> for FxIndexMap<K, V>
+where
+    K: Clone + Eq + Hash,
+    S: TypeFamily,
+    T: TypeFamily,
+    V: Map<S, T>,
+{
+    type Output = FxIndexMap<K, V::Output>;
+
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        self.iter()
+            .map(|(k, v)| (k.clone(), v.map(mapper)))
+            .collect()
+    }
+}
+
+impl<S, T, V> Map<S, T> for FxIndexSet<V>
+where
+    S: TypeFamily,
+    T: TypeFamily,
+    V: Map<S, T> + Eq + Hash,
+    V::Output: Eq + Hash,
+{
+    type Output = FxIndexSet<V::Output>;
+
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        self.iter().map(|v| v.map(mapper)).collect()
     }
 }
 

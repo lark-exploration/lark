@@ -15,10 +15,11 @@ use lark_entity::Entity;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_ty as ty;
+use lark_ty::declaration::{Declaration, DeclarationTables};
 use parser::pos::{HasSpan, Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
-use ty::declaration::{Declaration, DeclarationTables};
 
 mod fn_body;
 mod query_definitions;

@@ -11,19 +11,18 @@ use indices::IndexVec;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorSentinel;
+use lark_unify::InferVar;
 use parser::pos::Span;
 use parser::StringId;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
 use std::iter::IntoIterator;
 use std::sync::Arc;
-use unify::InferVar;
 
 pub mod base_inferred;
 pub mod base_only;
 pub mod declaration;
 pub mod identity;
-pub mod interners;
 pub mod map_family;
 
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {

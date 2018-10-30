@@ -1,14 +1,14 @@
 use intern::Untern;
-use ty::declaration::Declaration;
-use ty::declaration::DeclarationTables;
-use ty::map_family::FamilyMapper;
-use ty::map_family::Map;
-use ty::BoundVar;
-use ty::BoundVarOr;
-use ty::Erased;
-use ty::Generic;
-use ty::Ty;
-use ty::TypeFamily;
+use lark_ty::declaration::Declaration;
+use lark_ty::declaration::DeclarationTables;
+use lark_ty::map_family::FamilyMapper;
+use lark_ty::map_family::Map;
+use lark_ty::BoundVar;
+use lark_ty::BoundVarOr;
+use lark_ty::Erased;
+use lark_ty::Generic;
+use lark_ty::Ty;
+use lark_ty::TypeFamily;
 
 crate struct Substitution<'me, T, V>
 where

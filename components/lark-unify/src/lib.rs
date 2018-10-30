@@ -179,6 +179,11 @@ impl<Interners, Cause> UnificationTable<Interners, Cause> {
         self.shallow_resolve_data(index).is_ok()
     }
 
+    /// True if `var` has been assigned to a value, false otherwise.
+    pub fn var_is_known(&mut self, var: InferVar) -> bool {
+        self.probe(var).is_some()
+    }
+
     /// Creates a new inferable thing.
     pub fn new_inferable<K>(&mut self) -> K
     where
