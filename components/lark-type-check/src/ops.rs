@@ -280,4 +280,19 @@ where
             }
         }
     }
+
+    /// Records any inference variables that are have
+    /// not-yet-triggered operations. These must all be currently
+    /// unresolved.
+    pub(super) fn untriggered_ops(&mut self, output: &mut Vec<InferVar>) {
+        'var_loop: for (&var, blocked_ops) in &self.ops_blocked {
+            assert!(!self.unify.var_is_known(var));
+            for &OpIndex { index } in blocked_ops {
+                if self.ops_arena.contains(index) {
+                    output.push(var);
+                    continue 'var_loop;
+                }
+            }
+        }
+    }
 }

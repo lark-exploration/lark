@@ -8,9 +8,10 @@ use hir;
 use indices::IndexVec;
 use lark_entity::{Entity, EntityTables};
 use lark_ty::base_inferred::BaseInferred;
+use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
-use lark_ty::map_family::Map;
+use lark_ty::map_family::{FamilyMapper, Map};
 use lark_ty::BaseData;
 use lark_ty::Generics;
 use lark_ty::Placeholder;
@@ -27,10 +28,11 @@ mod base_only;
 mod hir_typeck;
 mod ops;
 mod query_definitions;
+mod resolve_to_base_inferred;
 mod substitute;
 
 salsa::query_group! {
-    pub trait TypeCheckDatabase: hir::HirDatabase {
+    pub trait TypeCheckDatabase: hir::HirDatabase + AsRef<BaseInferredTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: Entity) -> TypeCheckResults<BaseInferred> {
@@ -168,7 +170,7 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
 /// Trait implemented by `TypeChecker` to allow access to a few useful
 /// fields. This is used in the implementations of `TypeCheckFamily`.
 trait TypeCheckerFields<F: TypeCheckFamily>:
-    AsRef<F::InternTables> + AsRef<DeclarationTables> + AsRef<EntityTables>
+    AsRef<F::InternTables> + AsRef<DeclarationTables> + AsRef<BaseInferredTables> + AsRef<EntityTables>
 {
     type DB: TypeCheckDatabase;
 
@@ -253,11 +255,44 @@ impl<F: TypeFamily> Default for TypeCheckResults<F> {
     }
 }
 
+impl<S, T> Map<S, T> for TypeCheckResults<S>
+where
+    S: TypeFamily,
+    T: TypeFamily,
+{
+    type Output = TypeCheckResults<T>;
+
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        let TypeCheckResults {
+            types,
+            entities,
+            errors,
+        } = self;
+        TypeCheckResults {
+            types: types.map(mapper),
+            entities: entities.map(mapper),
+            errors: errors.map(mapper),
+        }
+    }
+}
+
 /// Information about a type-check error.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 crate struct Error {
     /// Index of HIR element where the error occurred.
     location: hir::MetaIndex,
+}
+
+impl<S, T> Map<S, T> for Error
+where
+    S: TypeFamily,
+    T: TypeFamily,
+{
+    type Output = Self;
+
+    fn map(&self, _: &mut impl FamilyMapper<S, T>) -> Self {
+        self.clone()
+    }
 }
 
 impl<DB, F> AsRef<DeclarationTables> for TypeChecker<'_, DB, F>
@@ -266,6 +301,16 @@ where
     F: TypeCheckFamily,
 {
     fn as_ref(&self) -> &DeclarationTables {
+        self.db.as_ref()
+    }
+}
+
+impl<DB, F> AsRef<BaseInferredTables> for TypeChecker<'_, DB, F>
+where
+    DB: TypeCheckDatabase,
+    F: TypeCheckFamily,
+{
+    fn as_ref(&self) -> &BaseInferredTables {
         self.db.as_ref()
     }
 }
