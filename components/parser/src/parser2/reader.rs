@@ -5,7 +5,7 @@ use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
 use crate::parser2::builtins::ExprParser;
 use crate::parser2::builtins::Paired;
 use crate::parser2::entity_tree::{Entities, EntitiesBuilder, EntityKind};
-use crate::parser2::macros::{MacroRead, Macros};
+use crate::parser2::macros::{MacroRead, Macros, Term};
 use crate::parser2::token;
 use crate::parser2::token_tree::{Handle, TokenNode, TokenPos, TokenTree};
 use crate::LexToken;
@@ -555,8 +555,9 @@ impl Reader<'codemap> {
             .push(name, TokenPos(self.tree.last_non_ws()), kind);
     }
 
-    pub fn end_entity(&mut self) {
-        self.entity_tree.finish(TokenPos(self.tree.last_non_ws()));
+    pub fn end_entity(&mut self, term: Box<dyn Term>) {
+        self.entity_tree
+            .finish(TokenPos(self.tree.last_non_ws()), term);
     }
 
     fn consume(&mut self) -> Spanned<LexToken> {
@@ -646,11 +647,11 @@ mod tests {
 
     use super::{ParseResult, Reader};
 
-    use crate::parser::reporting::print_parse_error;
     use crate::parser2::macros::macros;
     use crate::parser2::quicklex::Tokenizer;
     use crate::parser2::test_helpers::process;
     use crate::parser2::token::token_pos_at;
+    use crate::print_parse_error;
 
     use derive_new::new;
     use log::debug;

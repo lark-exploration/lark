@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::intern::ModuleTable;
 use crate::parser2::allow::{AllowPolicy, ALLOW_EOF, ALLOW_NEWLINE};
 use crate::parser2::entity_tree::{Entities, EntitiesBuilder, EntityKind};
-use crate::parser2::macros::{MacroRead, Macros};
+use crate::parser2::macros::{MacroRead, Macros, Term};
 use crate::parser2::token;
 use crate::parser2::token_tree::{Handle, TokenPos, TokenTree};
 use crate::LexToken;
@@ -537,8 +537,8 @@ impl LiteParser<'codemap> {
         self.entity_tree.push(&name, TokenPos(self.pos), kind);
     }
 
-    pub fn end_entity(&mut self) {
-        self.entity_tree.finish(TokenPos(self.pos));
+    pub fn end_entity(&mut self, term: Box<dyn Term>) {
+        self.entity_tree.finish(TokenPos(self.pos), term);
     }
 
     fn consume(&mut self) -> Spanned<LexToken> {
