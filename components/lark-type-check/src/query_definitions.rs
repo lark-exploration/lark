@@ -6,17 +6,19 @@ use crate::UniverseBinder;
 use generational_arena::Arena;
 use indices::IndexVec;
 use lark_entity::Entity;
+use lark_error::WithError;
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_only::{BaseOnly, BaseOnlyTables};
 use lark_ty::map_family::Map;
 use lark_unify::InferVar;
 use lark_unify::UnificationTable;
 use map::FxIndexMap;
+use std::sync::Arc;
 
 crate fn base_type_check(
     db: &impl TypeCheckDatabase,
     fn_entity: Entity,
-) -> TypeCheckResults<BaseInferred> {
+) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
     let fn_body = db.fn_body(fn_entity);
     let interners = BaseOnlyTables::default();
     let mut base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
@@ -29,6 +31,7 @@ crate fn base_type_check(
         unify: UnificationTable::new(interners.clone()),
         results: TypeCheckResults::default(),
         universe_binders: IndexVec::from(vec![UniverseBinder::Root]),
+        errors: vec![],
     };
 
     // Run the base type-check.
@@ -54,7 +57,7 @@ crate fn base_type_check(
 
     // Record the final results. If any unresolved type variables are
     // encountered, report an error.
-    let mut inferred_results = base_type_checker
+    let inferred_results = base_type_checker
         .results
         .map(&mut ResolveToBaseInferred::new(
             &mut base_type_checker.unify,
@@ -62,11 +65,15 @@ crate fn base_type_check(
             &mut unresolved_variables,
         ));
 
+    let mut errors = base_type_checker.errors;
     for _ in unresolved_variables {
         // FIXME: Decent diagnostics for unresolved inference
         // variables.
-        inferred_results.record_error(fn_body.root_expression);
+        errors.push(fn_body.span(fn_body.root_expression));
     }
 
-    inferred_results
+    WithError {
+        value: Arc::new(inferred_results),
+        errors,
+    }
 }

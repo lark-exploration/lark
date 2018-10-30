@@ -171,7 +171,7 @@ where
                                 }
 
                                 None => {
-                                    this.results.record_error(place);
+                                    this.record_error(place);
                                     this.error_type()
                                 }
                             }
@@ -215,7 +215,7 @@ where
                 {
                     Some(def_id) => def_id,
                     None => {
-                        self.results.record_error(expression);
+                        self.record_error(expression);
                         return self.error_type();
                     }
                 };
@@ -232,7 +232,7 @@ where
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
-                    self.results.record_error(expression);
+                    self.record_error(expression);
                 }
                 let hir = &self.hir.clone();
                 for (&expected_ty, argument_expr) in
@@ -280,7 +280,7 @@ where
 
             // Something like `def foo() { .. } foo { .. }` is just not legal.
             _ => {
-                self.results.record_error(expression);
+                self.record_error(expression);
                 return self.error_type();
             }
         };
@@ -310,7 +310,7 @@ where
                 }
 
                 None => {
-                    self.results.record_error(field_data.identifier);
+                    self.record_error(field_data.identifier);
                     self.error_type()
                 }
             };
@@ -324,7 +324,7 @@ where
 
         // If we are missing any members, that's an error.
         for _missing_member in missing_members {
-            self.results.record_error(expression);
+            self.record_error(expression);
         }
 
         // The final type is the type of the entity with the given
@@ -409,7 +409,7 @@ where
                         EntityData::LangItem(LangItem::Uint) => uint_type,
                         EntityData::Error(_) => self.error_type(),
                         _ => {
-                            self.results.record_error(expression);
+                            self.record_error(expression);
                             self.error_type()
                         }
                     }
@@ -418,7 +418,7 @@ where
                 (BaseKind::Error, _) | (_, BaseKind::Error) => self.error_type(),
 
                 (BaseKind::Named(_), _) | (BaseKind::Placeholder(_), _) => {
-                    self.results.record_error(expression);
+                    self.record_error(expression);
                     self.error_type()
                 }
             },
@@ -427,7 +427,7 @@ where
                 // Unclear what rule will eventually be... for now, require
                 // that the two types are the same?
                 if left_base_data != right_base_data {
-                    self.results.record_error(expression);
+                    self.record_error(expression);
                 }
 
                 // Either way, yields a boolean
@@ -469,7 +469,7 @@ where
                     EntityData::Error(_) => self.error_type(),
 
                     _ => {
-                        self.results.record_error(expression);
+                        self.record_error(expression);
                         self.error_type()
                     }
                 },
@@ -477,7 +477,7 @@ where
                 BaseKind::Error => self.error_type(),
 
                 BaseKind::Placeholder(_) => {
-                    self.results.record_error(expression);
+                    self.record_error(expression);
                     self.error_type()
                 }
             },

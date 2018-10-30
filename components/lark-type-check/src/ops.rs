@@ -75,6 +75,12 @@ where
         F::error_type(self)
     }
 
+    /// Record that an error occurred at the given location.
+    pub(super) fn record_error(&mut self, location: impl Into<hir::MetaIndex>) {
+        let span = self.hir.span(location.into());
+        self.errors.push(span);
+    }
+
     pub(super) fn substitute<M>(
         &mut self,
         location: impl Into<hir::MetaIndex>,

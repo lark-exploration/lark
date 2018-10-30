@@ -7,6 +7,7 @@ use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
 use lark_entity::{Entity, EntityTables};
+use lark_error::WithError;
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
@@ -22,6 +23,7 @@ use lark_unify::InferVar;
 use lark_unify::Inferable;
 use lark_unify::UnificationTable;
 use map::FxIndexMap;
+use parser::pos::Span;
 use std::sync::Arc;
 
 mod base_only;
@@ -35,16 +37,16 @@ salsa::query_group! {
     pub trait TypeCheckDatabase: hir::HirDatabase + AsRef<BaseInferredTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
-        fn base_type_check(key: Entity) -> TypeCheckResults<BaseInferred> {
+        fn base_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
             type BaseTypeCheckQuery;
             use fn query_definitions::base_type_check;
         }
     }
 }
 
-struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
+struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     /// Salsa database.
-    db: &'db DB,
+    db: &'me DB,
 
     /// Intern tables for the family `F`. These are typically local to
     /// the type-check itself.
@@ -73,6 +75,9 @@ struct TypeChecker<'db, DB: TypeCheckDatabase, F: TypeCheckFamily> {
 
     /// Information about each universe that we have created.
     universe_binders: IndexVec<Universe, UniverseBinder>,
+
+    /// Errors that we encountered during the type-check.
+    errors: Vec<Span>,
 }
 
 enum UniverseBinder {
@@ -177,6 +182,7 @@ trait TypeCheckerFields<F: TypeCheckFamily>:
     fn db(&self) -> &Self::DB;
     fn unify(&mut self) -> &mut UnificationTable<F::InternTables, hir::MetaIndex>;
     fn results(&mut self) -> &mut TypeCheckResults<F>;
+    fn record_error(&mut self, location: impl Into<hir::MetaIndex>);
 }
 
 impl<'me, DB, F> TypeCheckerFields<F> for TypeChecker<'me, DB, F>
@@ -198,6 +204,10 @@ where
     fn results(&mut self) -> &mut TypeCheckResults<F> {
         &mut self.results
     }
+
+    fn record_error(&mut self, location: impl Into<hir::MetaIndex>) {
+        self.record_error(location);
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -213,9 +223,6 @@ pub struct TypeCheckResults<F: TypeFamily> {
     /// - `foo.bar(..)` -- attached to the identifier `bar`, entity of the method
     /// - `Foo { a: b }` -- attached to the identifier `a`, entity of the field
     entities: std::collections::BTreeMap<hir::Identifier, Entity>,
-
-    /// Errors that we encountered during the type-check.
-    errors: Vec<Error>,
 }
 
 impl<F: TypeFamily> TypeCheckResults<F> {
@@ -231,13 +238,6 @@ impl<F: TypeFamily> TypeCheckResults<F> {
         self.types.insert(index.into(), ty);
     }
 
-    /// Record that an error occurred at the given location.
-    fn record_error(&mut self, location: impl Into<hir::MetaIndex>) {
-        self.errors.push(Error {
-            location: location.into(),
-        });
-    }
-
     /// Access the type stored for the given `index`, usually the
     /// index of an expression.
     pub fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
@@ -250,7 +250,6 @@ impl<F: TypeFamily> Default for TypeCheckResults<F> {
         Self {
             types: Default::default(),
             entities: Default::default(),
-            errors: Default::default(),
         }
     }
 }
@@ -263,35 +262,11 @@ where
     type Output = TypeCheckResults<T>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
-        let TypeCheckResults {
-            types,
-            entities,
-            errors,
-        } = self;
+        let TypeCheckResults { types, entities } = self;
         TypeCheckResults {
             types: types.map(mapper),
             entities: entities.map(mapper),
-            errors: errors.map(mapper),
         }
-    }
-}
-
-/// Information about a type-check error.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-crate struct Error {
-    /// Index of HIR element where the error occurred.
-    location: hir::MetaIndex,
-}
-
-impl<S, T> Map<S, T> for Error
-where
-    S: TypeFamily,
-    T: TypeFamily,
-{
-    type Output = Self;
-
-    fn map(&self, _: &mut impl FamilyMapper<S, T>) -> Self {
-        self.clone()
     }
 }
 

@@ -1,5 +1,4 @@
 use crate::substitute::Substitution;
-use crate::Error;
 use crate::TypeCheckDatabase;
 use crate::TypeCheckFamily;
 use crate::TypeChecker;
@@ -60,7 +59,7 @@ impl TypeCheckFamily for BaseOnly {
                 }
 
                 if data1.kind != data2.kind {
-                    this.results().errors.push(Error { location: cause });
+                    this.record_error(cause);
                     return;
                 }
 
