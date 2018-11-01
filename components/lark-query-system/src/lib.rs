@@ -159,6 +159,8 @@ impl Actor for QuerySystem {
     fn shutdown(&mut self) {}
 
     fn receive_message(&mut self, message: Self::InMessage) {
+        log::info!("receive_message(message={:#?})", message);
+
         match message {
             QueryRequest::OpenFile(url, contents) => {
                 // Process sets on the same thread -- this not only gives them priority,
@@ -297,6 +299,8 @@ impl Actor for QuerySystem {
                 });
             }
         }
+
+        log::info!("receive_message: awaiting next message");
     }
 }
 

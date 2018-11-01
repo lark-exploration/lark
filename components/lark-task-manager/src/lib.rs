@@ -44,6 +44,7 @@ pub enum LspResponse {
 
 /// Requests from the manager to the query
 /// system
+#[derive(Debug)]
 pub enum QueryRequest {
     /// URI followed by contents
     OpenFile(Url, String),
