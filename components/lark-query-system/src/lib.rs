@@ -5,7 +5,7 @@ use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, Sen
 use map::FxIndexMap;
 use parking_lot::RwLock;
 use parser::pos::Span;
-use salsa::{Database, ParallelDatabase};
+use salsa::{Database, ParallelDatabase, Snapshot};
 use std::borrow::Cow;
 use std::sync::Arc;
 use url::Url;
@@ -31,16 +31,16 @@ impl Database for LarkDatabase {
 }
 
 impl ParallelDatabase for LarkDatabase {
-    fn fork(&self) -> Self {
-        LarkDatabase {
+    fn snapshot(&self) -> Snapshot<Self> {
+        Snapshot::new(LarkDatabase {
             code_map: self.code_map.clone(),
             file_maps: self.file_maps.clone(),
-            runtime: self.runtime.fork(),
+            runtime: self.runtime.snapshot(self),
             parser_state: self.parser_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
             declaration_tables: self.declaration_tables.clone(),
             base_inferred_tables: self.base_inferred_tables.clone(),
-        }
+        })
     }
 }
 
@@ -122,13 +122,9 @@ impl QuerySystem {
 
     pub fn check_for_errors_and_report(&self) {
         std::thread::spawn({
-            let db = self.lark_db.fork();
+            let db = self.lark_db.snapshot();
             let send_channel = self.send_channel.clone_send_channel();
-            let lock = db.salsa_runtime().lock_revision();
-
             move || {
-                let _ = lock; // this moves the `lock` into the closure
-
                 match db.errors_for_project() {
                     Ok(errors) => {
                         // loop over hashmap and send messages
@@ -168,7 +164,7 @@ impl Actor for QuerySystem {
                 let interned_path = self.lark_db.intern_string(url.as_str());
                 let interned_contents = self.lark_db.intern_string(contents.as_str());
                 self.lark_db
-                    .query(ast::InputFilesQuery)
+                    .query_mut(ast::InputFilesQuery)
                     .set((), Arc::new(vec![interned_path]));
 
                 // Uh, adding a "new" file on each change seems a bit ungreat. But good
@@ -186,7 +182,7 @@ impl Actor for QuerySystem {
                     .write()
                     .insert(url.to_string(), file_map);
 
-                self.lark_db.query(ast::InputTextQuery).set(
+                self.lark_db.query_mut(ast::InputTextQuery).set(
                     interned_path,
                     Some(InputText {
                         text: interned_contents,
@@ -262,7 +258,7 @@ impl Actor for QuerySystem {
                     .write()
                     .insert(url.to_string(), file_map);
 
-                self.lark_db.query(ast::InputTextQuery).set(
+                self.lark_db.query_mut(ast::InputTextQuery).set(
                     interned_path,
                     Some(InputText {
                         text: interned_contents,
@@ -275,12 +271,9 @@ impl Actor for QuerySystem {
             }
             QueryRequest::TypeAtPosition(task_id, url, position) => {
                 std::thread::spawn({
-                    let db = self.lark_db.fork();
+                    let db = self.lark_db.snapshot();
                     let send_channel = self.send_channel.clone_send_channel();
-                    let lock = db.salsa_runtime().lock_revision();
                     move || {
-                        let _ = lock; // this moves the `lock` into the closure
-
                         match db.hover_text_at_position(url.as_str(), position) {
                             Ok(Some(v)) => {
                                 send_channel.send(QueryResponse::Type(task_id, v.to_string()));
