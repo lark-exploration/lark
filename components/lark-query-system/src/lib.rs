@@ -7,6 +7,7 @@ use parking_lot::RwLock;
 use parser::pos::Span;
 use salsa::{Database, ParallelDatabase, Snapshot};
 use std::borrow::Cow;
+use std::collections::VecDeque;
 use std::sync::Arc;
 use url::Url;
 
@@ -154,7 +155,9 @@ impl Actor for QuerySystem {
 
     fn shutdown(&mut self) {}
 
-    fn receive_message(&mut self, message: Self::InMessage) {
+    fn receive_messages(&mut self, messages: &mut VecDeque<Self::InMessage>) {
+        let message = messages.pop_front().unwrap();
+
         log::info!("receive_message(message={:#?})", message);
 
         match message {

@@ -487,6 +487,7 @@ version = "0.1.0"
 dependencies = [
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-mir 0.1.0",
+ "map 0.1.0",
  "url 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

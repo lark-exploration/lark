@@ -1,6 +1,7 @@
 use lark_task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
 use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use std::io;
 use std::io::prelude::{Read, Write};
 use std::sync::mpsc::Sender;
@@ -120,8 +121,8 @@ impl Actor for LspResponder {
     /// Receive messages from the task manager that contain the results of
     /// a given task. This allows us to repond to the IDE in an orderly
     /// manner.
-    fn receive_message(&mut self, message: Self::InMessage) {
-        match message {
+    fn receive_messages(&mut self, messages: &mut VecDeque<Self::InMessage>) {
+        match messages.pop_front().unwrap() {
             LspResponse::Type(id, ty) => {
                 let result = languageserver_types::Hover {
                     contents: languageserver_types::HoverContents::Scalar(

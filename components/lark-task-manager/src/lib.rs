@@ -1,5 +1,6 @@
-use std::collections::HashMap;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use map::FxIndexMap;
+use std::collections::VecDeque;
+use std::sync::mpsc::{channel, Receiver, RecvError, Sender, TryRecvError};
 use std::thread;
 use url::Url;
 
@@ -77,7 +78,26 @@ pub trait Actor {
     type OutMessage: Send + Sync + 'static;
 
     fn startup(&mut self, send_channel: &dyn SendChannel<Self::OutMessage>);
-    fn receive_message(&mut self, message: Self::InMessage);
+
+    /// Invoked when new message(s) arrive. Contains all the messages
+    /// that can be pulled at this time. The actor is free to process
+    /// as many as they like. So long as messages remain in the
+    /// dequeue, we'll just keep calling back (possibly appending more
+    /// messages to the back). Once the queue is empty, we'll block
+    /// until we can fetch more.
+    ///
+    /// The intended workflow is as follows:
+    ///
+    /// - If desired, inspect `messages` and prune messages that become outdated
+    ///   due to later messages in the queue.
+    /// - Invoke `messages.pop_front().unwrap()` and process that message,
+    ///   then return.
+    ///   - In particular, it is probably better to return than to eagerly process
+    ///     all messages in the queue, as it gives the actor a chance to add more
+    ///     messages if they have arrived in the meantime.
+    ///     - This is only important if you are trying to remove outdated messages.
+    fn receive_messages(&mut self, messages: &mut VecDeque<Self::InMessage>);
+
     fn shutdown(&mut self);
 }
 
@@ -117,7 +137,7 @@ pub struct ActorControl<MessageType: Send + Sync + 'static> {
 /// The coordinator of tasks coming in from the IDE services to the
 /// parts of the system that will do the processing.
 pub struct TaskManager {
-    live_recipes: HashMap<TaskId, Vec<RecipeStep>>,
+    live_recipes: FxIndexMap<TaskId, Vec<RecipeStep>>,
     receive_channel: Receiver<MsgToManager>,
 
     /// Control points to communicate with other subsystems
@@ -141,7 +161,7 @@ impl TaskManager {
         let lsp_responder_actor = TaskManager::spawn_actor(lsp_responder);
 
         let task_manager = TaskManager {
-            live_recipes: HashMap::new(),
+            live_recipes: FxIndexMap::default(),
             receive_channel: manager_rx,
 
             query_system: query_system_actor,
@@ -274,13 +294,22 @@ impl TaskManager {
         mut actor: T,
     ) -> ActorControl<MsgFromManager<T::InMessage>> {
         let (actor_tx, actor_rx) = channel();
+        let mut message_queue = VecDeque::default();
 
         let handle = thread::spawn(move || loop {
-            match actor_rx.recv() {
-                Ok(MsgFromManager::Message(message)) => actor.receive_message(message),
-                Ok(MsgFromManager::Shutdown) => break,
-                Err(_) => {
-                    eprintln!("Failure during top-level message receive");
+            match push_all_pending(&actor_rx, &mut message_queue) {
+                Ok(()) => {
+                    actor.receive_messages(&mut message_queue);
+                }
+                Err(error) => {
+                    match error {
+                        PushAllPendingError::Disconnected => {
+                            eprintln!("Failure during top-level message receive");
+                        }
+
+                        PushAllPendingError::ControlledShutdown => {}
+                    }
+
                     break;
                 }
             }
@@ -289,6 +318,36 @@ impl TaskManager {
         ActorControl {
             channel: actor_tx,
             join_handle: handle,
+        }
+    }
+}
+
+enum PushAllPendingError {
+    ControlledShutdown,
+    Disconnected,
+}
+
+fn push_all_pending<T>(
+    rx: &Receiver<MsgFromManager<T>>,
+    vec: &mut VecDeque<T>,
+) -> Result<(), PushAllPendingError> {
+    // If the queue is currently empty, then block until we get at
+    // least one message.
+    if vec.is_empty() {
+        match rx.recv() {
+            Ok(MsgFromManager::Message(m)) => vec.push_back(m),
+            Ok(MsgFromManager::Shutdown) => return Err(PushAllPendingError::ControlledShutdown),
+            Err(RecvError) => return Err(PushAllPendingError::Disconnected),
+        }
+    }
+
+    // Once the queue is non-empty, opportunistically poll for more.
+    loop {
+        match rx.try_recv() {
+            Ok(MsgFromManager::Message(m)) => vec.push_back(m),
+            Err(TryRecvError::Empty) => break Ok(()),
+            Ok(MsgFromManager::Shutdown) => return Err(PushAllPendingError::ControlledShutdown),
+            Err(TryRecvError::Disconnected) => break Err(PushAllPendingError::Disconnected),
         }
     }
 }
