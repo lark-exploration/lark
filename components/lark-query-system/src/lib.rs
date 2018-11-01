@@ -111,6 +111,7 @@ impl HasParserState for LarkDatabase {
 pub struct QuerySystem {
     send_channel: Box<dyn SendChannel<QueryResponse>>,
     lark_db: LarkDatabase,
+    needs_error_check: bool,
 }
 
 impl QuerySystem {
@@ -118,10 +119,55 @@ impl QuerySystem {
         QuerySystem {
             send_channel: Box::new(NoopSendChannel),
             lark_db: LarkDatabase::default(),
+            needs_error_check: false,
         }
     }
+}
 
-    pub fn check_for_errors_and_report(&self) {
+impl Actor for QuerySystem {
+    type InMessage = QueryRequest;
+    type OutMessage = QueryResponse;
+
+    fn startup(&mut self, send_channel: &dyn SendChannel<QueryResponse>) {
+        self.send_channel = send_channel.clone_send_channel();
+    }
+
+    fn shutdown(&mut self) {}
+
+    fn receive_messages(&mut self, messages: &mut VecDeque<Self::InMessage>) {
+        log::info!("receive_messages({} messages pending)", messages.len());
+
+        // Find the last mutation in our list. Up until that point, we need to process *only*
+        // mutations.
+        if let Some(last_mutation) = messages.iter().rposition(|message| message.is_mutation()) {
+            for message in messages.drain(0..=last_mutation) {
+                if message.is_mutation() {
+                    self.process_message(message);
+                }
+            }
+
+            // After each mutation, we need to perform an error-check at some point.
+            self.needs_error_check = true;
+        }
+
+        // OK, all mutations are processed. Now we can process the next non-mutation (if any).
+        if let Some(message) = messages.pop_front() {
+            assert!(!message.is_mutation());
+            self.process_message(message);
+        }
+
+        // If there are no more pending messages, we can go ahead and
+        // start checking for errors.  Otherwise, return, and we'll be
+        // called again.
+        if messages.is_empty() && self.needs_error_check {
+            self.check_for_errors_and_report();
+        }
+    }
+}
+
+impl QuerySystem {
+    pub fn check_for_errors_and_report(&mut self) {
+        self.needs_error_check = false;
         std::thread::spawn({
             let db = self.lark_db.snapshot();
             let send_channel = self.send_channel.clone_send_channel();
@@ -143,22 +189,9 @@ impl QuerySystem {
             }
         });
     }
-}
 
-impl Actor for QuerySystem {
-    type InMessage = QueryRequest;
-    type OutMessage = QueryResponse;
-
-    fn startup(&mut self, send_channel: &dyn SendChannel<QueryResponse>) {
-        self.send_channel = send_channel.clone_send_channel();
-    }
-
-    fn shutdown(&mut self) {}
-
-    fn receive_messages(&mut self, messages: &mut VecDeque<Self::InMessage>) {
-        let message = messages.pop_front().unwrap();
-
-        log::info!("receive_message(message={:#?})", message);
+    fn process_message(&mut self, message: QueryRequest) {
+        log::info!("process_message(message={:#?})", message);
 
         match message {
             QueryRequest::OpenFile(url, contents) => {
@@ -193,8 +226,6 @@ impl Actor for QuerySystem {
                         span: Span::from(file_span),
                     }),
                 );
-
-                self.check_for_errors_and_report();
             }
             QueryRequest::EditFile(url, changes) => {
                 // Process sets on the same thread -- this not only gives them priority,
@@ -269,8 +300,6 @@ impl Actor for QuerySystem {
                         span: Span::from(file_span),
                     }),
                 );
-
-                self.check_for_errors_and_report();
             }
             QueryRequest::TypeAtPosition(task_id, url, position) => {
                 std::thread::spawn({

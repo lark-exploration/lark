@@ -53,6 +53,17 @@ pub enum QueryRequest {
     TypeAtPosition(TaskId, Url, Position),
 }
 
+impl QueryRequest {
+    /// True if this query will cause us to mutate the state of the
+    /// program.
+    pub fn is_mutation(&self) -> bool {
+        match self {
+            QueryRequest::OpenFile(..) | QueryRequest::EditFile(..) => true,
+            QueryRequest::TypeAtPosition(..) => false,
+        }
+    }
+}
+
 /// Responses from the query system back to the
 /// manager
 pub enum QueryResponse {
