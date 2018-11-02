@@ -523,5 +523,6 @@ indices::index_type! {
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ErrorData {
     Misc,
+    Unimplemented,
     UnknownIdentifier { text: StringId },
 }

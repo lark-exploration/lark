@@ -184,9 +184,11 @@ where
         match expr {
             a::Expression::Block(block) => self.lower_block(block),
 
-            a::Expression::ConstructStruct(_) => unimplemented!("struct construction"),
-
-            a::Expression::Call(_) => unimplemented!("calls"),
+            a::Expression::Literal(..)
+            | a::Expression::Interpolation(..)
+            | a::Expression::Binary(..)
+            | a::Expression::Call(_)
+            | a::Expression::ConstructStruct(_) => self.unimplemented(expr.span()),
 
             a::Expression::Ref(_) => {
                 let place = self.lower_place(expr);
@@ -194,13 +196,12 @@ where
                 let perm = self.add(span, hir::PermData::Default);
                 self.add(span, hir::ExpressionData::Place { perm, place })
             }
-
-            a::Expression::Binary(..) => unimplemented!("binary operators"),
-
-            a::Expression::Interpolation(..) => unimplemented!("interpolation"),
-
-            a::Expression::Literal(..) => unimplemented!("literals"),
         }
+    }
+
+    fn unimplemented(&mut self, span: Span) -> hir::Expression {
+        let error = self.add(span, hir::ErrorData::Unimplemented);
+        self.add(span, hir::ExpressionData::Error { error })
     }
 
     fn lower_place(&mut self, expr: &a::Expression) -> hir::Place {
