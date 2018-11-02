@@ -179,7 +179,11 @@ where
                             }
                         }
 
-                        BaseKind::Placeholder(_placeholder) => unimplemented!(),
+                        BaseKind::Placeholder(_placeholder) => {
+                            // Cannot presently access fields from generic types.
+                            this.record_error(name);
+                            this.error_type()
+                        }
 
                         BaseKind::Error => this.error_type(),
                     }
@@ -245,7 +249,15 @@ where
                 signature.output
             }
 
-            BaseKind::Placeholder(_placeholder) => unimplemented!(),
+            BaseKind::Placeholder(_placeholder) => {
+                // Cannot presently invoke methods on generic types.
+                let hir = &self.hir.clone();
+                for argument_expr in arguments.iter(hir) {
+                    self.check_expression(argument_expr);
+                }
+                self.record_error(method_name);
+                self.error_type()
+            }
 
             BaseKind::Error => self.error_type(),
         }
