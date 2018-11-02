@@ -11,11 +11,11 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 use url::Url;
 
-mod ls_ops;
+pub mod ls_ops;
 use self::ls_ops::{Cancelled, LsDatabase};
 
 #[derive(Default)]
-struct LarkDatabase {
+pub struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
     code_map: Arc<RwLock<CodeMap>>,
     file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
@@ -23,6 +23,12 @@ struct LarkDatabase {
     item_id_tables: Arc<EntityTables>,
     declaration_tables: Arc<lark_ty::declaration::DeclarationTables>,
     base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
+}
+
+impl LarkDatabase {
+    pub fn code_map(&self) -> &RwLock<CodeMap> {
+        &self.code_map
+    }
 }
 
 impl Database for LarkDatabase {
@@ -52,7 +58,7 @@ impl LsDatabase for LarkDatabase {
 }
 
 salsa::database_storage! {
-    struct LarkDatabaseStorage for LarkDatabase {
+    pub struct LarkDatabaseStorage for LarkDatabase {
         impl ast::AstDatabase {
             fn input_files() for ast::InputFilesQuery;
             fn input_text() for ast::InputTextQuery;

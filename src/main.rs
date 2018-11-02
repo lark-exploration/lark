@@ -21,7 +21,7 @@ use lark_query_system::QuerySystem;
 use lark_task_manager::Actor;
 use std::{env, io};
 
-fn build(_filename: &str) {}
+mod build;
 
 fn run(_filename: &str) {}
 
@@ -51,7 +51,7 @@ fn main() {
     log::error!("Lark: executing");
 
     match (args.next(), args.next(), args.next()) {
-        (_, Some(ref cmd), Some(ref x)) if cmd == "build" => build(x),
+        (_, Some(ref cmd), Some(ref x)) if cmd == "build" => build::build(x),
         (_, Some(ref cmd), Some(ref x)) if cmd == "run" => run(x),
         (_, Some(ref cmd), None) if cmd == "repl" => repl(),
         (_, Some(ref cmd), None) if cmd == "ide" => ide(),

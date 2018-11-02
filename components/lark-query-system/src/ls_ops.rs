@@ -16,11 +16,11 @@ use parser::StringId;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-pub(crate) struct Cancelled;
+pub struct Cancelled;
 
-pub(crate) type Cancelable<T> = Result<T, Cancelled>;
+pub type Cancelable<T> = Result<T, Cancelled>;
 
-pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
+pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     fn file_maps(&self) -> &RwLock<FxIndexMap<String, Arc<FileMap>>>;
 
     fn check_for_cancellation(&self) -> Cancelable<()> {
