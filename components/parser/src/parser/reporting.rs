@@ -17,7 +17,7 @@ pub fn print_parse_error(e: ParseError, codemap: &CodeMap) -> ! {
 
     emit(
         &mut writer.lock(),
-        &codemap,
+        codemap,
         &error,
         &language_reporting::DefaultConfig,
     )
