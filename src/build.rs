@@ -1,6 +1,8 @@
 use ast::HasParserState;
-use codespan::{CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
+use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use flexi_logger::{opt_format, Logger};
+use language_reporting::{emit, Diagnostic, Label, Severity};
+use languageserver_types::Position;
 use lark_language_server::{lsp_serve, LspResponder};
 use lark_query_system::ls_ops::Cancelled;
 use lark_query_system::ls_ops::LsDatabase;
@@ -14,6 +16,7 @@ use std::fs::File;
 use std::io::Read;
 use std::sync::Arc;
 use std::{env, io};
+use termcolor::{ColorChoice, StandardStream};
 
 pub(crate) fn build(filename: &str) {
     let mut file = match File::open(filename) {
@@ -46,7 +49,7 @@ pub(crate) fn build(filename: &str) {
     let start_offset = file_map.span().start().to_usize() as u32;
     db.file_maps()
         .write()
-        .insert(filename.to_string(), file_map);
+        .insert(filename.to_string(), file_map.clone());
     db.query_mut(ast::InputTextQuery).set(
         interned_filename,
         Some(ast::InputText {
@@ -57,20 +60,47 @@ pub(crate) fn build(filename: &str) {
     );
     match db.errors_for_project() {
         Ok(errors) => {
-            for (filename, ranges) in errors {
+            let mut first = true;
+            for (_filename, ranges) in errors {
                 for range in ranges {
-                    eprintln!(
-                        "{}:{}:{}:{}:{}: error",
-                        filename,
-                        range.start.line,
-                        range.start.character,
-                        range.end.line,
-                        range.end.character,
+                    if !std::mem::replace(&mut first, false) {
+                        eprintln!("");
+                    }
+
+                    let error = Diagnostic::new(Severity::Error, "something is wrong here =)");
+
+                    let span = codespan::Span::new(
+                        file_map.byte_index_for_position(range.start),
+                        file_map.byte_index_for_position(range.end),
                     );
+
+                    let error = error.with_label(Label::new_primary(span));
+
+                    let writer = StandardStream::stderr(ColorChoice::Auto);
+
+                    emit(
+                        &mut writer.lock(),
+                        &db.code_map().read(),
+                        &error,
+                        &language_reporting::DefaultConfig,
+                    )
+                    .unwrap();
                 }
             }
         }
 
         Err(Cancelled) => unreachable!("cancellation?"),
+    }
+}
+
+trait FileMapExt {
+    fn byte_index_for_position(&self, position: Position) -> ByteIndex;
+}
+
+impl FileMapExt for FileMap {
+    fn byte_index_for_position(&self, position: Position) -> ByteIndex {
+        let line = LineIndex::from(position.line as u32);
+        let column = ColumnIndex::from(position.character as u32);
+        self.byte_index(line, column).unwrap()
     }
 }
