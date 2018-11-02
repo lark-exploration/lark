@@ -29,7 +29,7 @@ mod type_conversion;
 salsa::query_group! {
     pub trait HirDatabase: AstDatabase + AsRef<DeclarationTables> {
         /// Get the fn-body for a given def-id.
-        fn fn_body(key: Entity) -> Arc<FnBody> {
+        fn fn_body(key: Entity) -> WithError<Arc<FnBody>> {
             type FnBodyQuery;
             use fn fn_body::fn_body;
         }

@@ -19,7 +19,7 @@ crate fn base_type_check(
     db: &impl TypeCheckDatabase,
     fn_entity: Entity,
 ) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
-    let fn_body = db.fn_body(fn_entity);
+    let fn_body = db.fn_body(fn_entity).into_value();
     let interners = BaseOnlyTables::default();
     let mut base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
         db,

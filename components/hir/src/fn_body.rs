@@ -5,29 +5,36 @@ use crate as hir;
 use crate::HirDatabase;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
+use lark_error::WithError;
 use map::FxIndexMap;
 use parser::pos::{Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
 
-crate fn fn_body(db: &impl HirDatabase, item_id: Entity) -> Arc<crate::FnBody> {
-    let lower = HirLower::new(db);
-    Arc::new(lower.lower_ast_of_item(item_id))
+crate fn fn_body(db: &impl HirDatabase, item_id: Entity) -> WithError<Arc<crate::FnBody>> {
+    let mut errors = vec![];
+    let fn_body = HirLower::new(db, &mut errors).lower_ast_of_item(item_id);
+    WithError {
+        value: Arc::new(fn_body),
+        errors,
+    }
 }
 
-struct HirLower<'db, DB: HirDatabase> {
-    db: &'db DB,
+struct HirLower<'me, DB: HirDatabase> {
+    db: &'me DB,
     fn_body_tables: hir::FnBodyTables,
     variables: FxIndexMap<StringId, hir::Variable>,
+    errors: &'me mut Vec<Span>,
 }
 
-impl<'db, DB> HirLower<'db, DB>
+impl<'me, DB> HirLower<'me, DB>
 where
     DB: HirDatabase,
 {
-    fn new(db: &'db DB) -> Self {
+    fn new(db: &'me DB, errors: &'me mut Vec<Span>) -> Self {
         HirLower {
             db,
+            errors,
             fn_body_tables: Default::default(),
             variables: Default::default(),
         }
@@ -200,6 +207,7 @@ where
     }
 
     fn unimplemented(&mut self, span: Span) -> hir::Expression {
+        self.errors.push(span);
         let error = self.add(span, hir::ErrorData::Unimplemented);
         self.add(span, hir::ExpressionData::Error { error })
     }
@@ -247,7 +255,7 @@ where
     }
 }
 
-impl<'db, DB, I> std::ops::Index<I> for HirLower<'db, DB>
+impl<'me, DB, I> std::ops::Index<I> for HirLower<'me, DB>
 where
     DB: HirDatabase,
     I: hir::HirIndex,
