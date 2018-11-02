@@ -10,9 +10,8 @@ use debug::DebugWith;
 use indices::IndexVec;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
-use lark_error::ErrorSentinel;
+use lark_error::{ErrorSentinel, LabeledSpan};
 use lark_unify::InferVar;
-use parser::pos::Span;
 use parser::StringId;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
@@ -70,7 +69,7 @@ where
     DB: AsRef<F::InternTables>,
     F: TypeFamily,
 {
-    fn error_sentinel(db: &DB, _spans: &[Span]) -> Self {
+    fn error_sentinel(db: &DB, _spans: &[LabeledSpan]) -> Self {
         F::error_type(db)
     }
 }
