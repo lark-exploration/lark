@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 log = "0.4.5"
 parking_lot = "0.6.4"
-salsa = "0.7"
+salsa = "0.8"
 
 ast = { path = "../ast" }
 debug = { path = "../debug" }

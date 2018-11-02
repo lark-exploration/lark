@@ -38,7 +38,7 @@ fn ide() {
 }
 
 fn main() {
-    Logger::with_env_or_str("error")
+    Logger::with_env_or_str("error,lark_query_system=info")
         .log_to_file()
         .directory("log_files")
         .format(opt_format)

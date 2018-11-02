@@ -62,12 +62,12 @@ impl AsRef<EntityTables> for TestDatabaseImpl {
 
 #[test]
 fn parse_error() {
-    let db = TestDatabaseImpl::default();
+    let mut db = TestDatabaseImpl::default();
 
     let path1 = db.intern_string("path1");
-    db.query(InputFilesQuery).set((), Arc::new(vec![path1]));
+    db.query_mut(InputFilesQuery).set((), Arc::new(vec![path1]));
     let text1 = db.intern_string("XXX");
-    db.query(InputTextQuery).set(
+    db.query_mut(InputTextQuery).set(
         path1,
         Some(InputText {
             text: text1,
@@ -81,17 +81,17 @@ fn parse_error() {
 
 #[test]
 fn parse_ok() {
-    let db = TestDatabaseImpl::default();
+    let mut db = TestDatabaseImpl::default();
 
     let path1 = db.intern_string("path1");
-    db.query(InputFilesQuery).set((), Arc::new(vec![path1]));
+    db.query_mut(InputFilesQuery).set((), Arc::new(vec![path1]));
     let text1_str = "struct Diagnostic { msg: own String, level: String, }
 
 def new(msg: own String, level: String) -> Diagnostic {
   Diagnostic { mgs, level }
 }";
     let text1_interned = db.intern_string(text1_str);
-    db.query(InputTextQuery).set(
+    db.query_mut(InputTextQuery).set(
         path1,
         Some(InputText {
             text: text1_interned,
