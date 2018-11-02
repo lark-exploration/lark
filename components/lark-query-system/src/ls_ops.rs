@@ -9,20 +9,20 @@ use debug::DebugWith;
 use intern::{Intern, Untern};
 use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
-use lark_error::LabeledSpan;
+use lark_error::Diagnostic;
 use map::FxIndexMap;
 use parking_lot::RwLock;
 use parser::StringId;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-pub struct LabeledRange {
+pub struct RangedDiagnostic {
     pub label: String,
     pub range: Range,
 }
-impl LabeledRange {
-    pub fn new(label: String, range: Range) -> LabeledRange {
-        LabeledRange { label, range }
+impl RangedDiagnostic {
+    pub fn new(label: String, range: Range) -> RangedDiagnostic {
+        RangedDiagnostic { label, range }
     }
 }
 
@@ -41,7 +41,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         }
     }
 
-    fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<LabeledRange>>> {
+    fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<RangedDiagnostic>>> {
         let input_files = self.input_files(());
         let mut file_errors = HashMap::new();
 
@@ -76,7 +76,10 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     let right_position =
                         Position::new(right_line.to_usize() as u64, right_col.to_usize() as u64);
 
-                    LabeledRange::new(x.label.clone(), Range::new(left_position, right_position))
+                    RangedDiagnostic::new(
+                        x.label.clone(),
+                        Range::new(left_position, right_position),
+                    )
                 })
                 .collect();
 
@@ -89,7 +92,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     fn accumulate_errors_for_entity(
         &self,
         entity: Entity,
-        errors: &mut Vec<LabeledSpan>,
+        errors: &mut Vec<Diagnostic>,
     ) -> Cancelable<()> {
         self.check_for_cancellation()?;
 

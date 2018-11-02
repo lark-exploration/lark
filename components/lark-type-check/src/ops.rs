@@ -3,7 +3,7 @@ use crate::TypeChecker;
 use crate::UniverseBinder;
 use hir;
 use lark_entity::Entity;
-use lark_error::{ErrorReported, LabeledSpan};
+use lark_error::{Diagnostic, ErrorReported};
 use lark_ty::declaration::Declaration;
 use lark_ty::map_family::Map;
 use lark_ty::BaseData;
@@ -78,7 +78,7 @@ where
     /// Record that an error occurred at the given location.
     pub(super) fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>) {
         let span = self.hir.span(location.into());
-        self.errors.push(LabeledSpan::new(label, span));
+        self.errors.push(Diagnostic::new(label, span));
     }
 
     pub(super) fn substitute<M>(

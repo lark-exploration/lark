@@ -7,7 +7,7 @@ use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
 use lark_entity::{Entity, EntityTables};
-use lark_error::{LabeledSpan, WithError};
+use lark_error::{Diagnostic, WithError};
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
@@ -76,7 +76,7 @@ struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     universe_binders: IndexVec<Universe, UniverseBinder>,
 
     /// Errors that we encountered during the type-check.
-    errors: Vec<LabeledSpan>,
+    errors: Vec<Diagnostic>,
 }
 
 enum UniverseBinder {

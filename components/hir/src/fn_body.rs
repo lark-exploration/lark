@@ -4,8 +4,8 @@ use ast::ast as a;
 use crate as hir;
 use crate::HirDatabase;
 use lark_entity::Entity;
+use lark_error::Diagnostic;
 use lark_error::ErrorReported;
-use lark_error::LabeledSpan;
 use lark_error::WithError;
 use map::FxIndexMap;
 use parser::pos::{Span, Spanned};
@@ -25,14 +25,14 @@ struct HirLower<'me, DB: HirDatabase> {
     db: &'me DB,
     fn_body_tables: hir::FnBodyTables,
     variables: FxIndexMap<StringId, hir::Variable>,
-    errors: &'me mut Vec<LabeledSpan>,
+    errors: &'me mut Vec<Diagnostic>,
 }
 
 impl<'me, DB> HirLower<'me, DB>
 where
     DB: HirDatabase,
 {
-    fn new(db: &'me DB, errors: &'me mut Vec<LabeledSpan>) -> Self {
+    fn new(db: &'me DB, errors: &'me mut Vec<Diagnostic>) -> Self {
         HirLower {
             db,
             errors,
@@ -206,7 +206,7 @@ where
 
     fn unimplemented(&mut self, span: Span) -> hir::Expression {
         self.errors
-            .push(LabeledSpan::new("unimplemented".into(), span));
+            .push(Diagnostic::new("unimplemented".into(), span));
         let error = self.add(span, hir::ErrorData::Unimplemented);
         self.add(span, hir::ExpressionData::Error { error })
     }
