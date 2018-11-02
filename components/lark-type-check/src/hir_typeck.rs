@@ -73,11 +73,13 @@ where
             }
 
             hir::ExpressionData::Let {
-                variable: _,
+                variable,
                 initializer: None,
-                body: _,
+                body,
             } => {
-                unimplemented!() // FIXME
+                let ty = self.new_infer_ty();
+                self.results.record_ty(variable, ty);
+                self.check_expression(body)
             }
 
             hir::ExpressionData::Place { perm, place } => {
