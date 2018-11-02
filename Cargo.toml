@@ -8,6 +8,9 @@ authors = [
 ]
 edition = '2018'
 
+[profile.dev]
+opt-level = 1
+
 [workspace]
 
 [dependencies]
