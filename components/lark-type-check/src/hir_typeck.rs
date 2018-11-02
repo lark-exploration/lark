@@ -173,7 +173,7 @@ where
                                 }
 
                                 None => {
-                                    this.record_error(name);
+                                    this.record_error("field not found".into(), name);
                                     this.error_type()
                                 }
                             }
@@ -181,7 +181,10 @@ where
 
                         BaseKind::Placeholder(_placeholder) => {
                             // Cannot presently access fields from generic types.
-                            this.record_error(name);
+                            this.record_error(
+                                "cannot access fields from generic types(yet)".into(),
+                                name,
+                            );
                             this.error_type()
                         }
 
@@ -221,7 +224,7 @@ where
                 {
                     Some(def_id) => def_id,
                     None => {
-                        self.record_error(expression);
+                        self.record_error("method not found".into(), expression);
                         return self.error_type();
                     }
                 };
@@ -238,7 +241,7 @@ where
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
-                    self.record_error(method_name);
+                    self.record_error("mismatched argument count".into(), method_name);
                 }
                 let hir = &self.hir.clone();
                 for (&expected_ty, argument_expr) in
@@ -255,7 +258,10 @@ where
                 for argument_expr in arguments.iter(hir) {
                     self.check_expression(argument_expr);
                 }
-                self.record_error(method_name);
+                self.record_error(
+                    "cannot invoke methods on generic types(yet)".into(),
+                    method_name,
+                );
                 self.error_type()
             }
 
@@ -294,7 +300,7 @@ where
 
             // Something like `def foo() { .. } foo { .. }` is just not legal.
             _ => {
-                self.record_error(expression);
+                self.record_error("disallowed expression type".into(), expression);
                 return self.error_type();
             }
         };
@@ -324,7 +330,7 @@ where
                 }
 
                 None => {
-                    self.record_error(field_data.identifier);
+                    self.record_error("unknown field".into(), field_data.identifier);
                     self.error_type()
                 }
             };
@@ -338,7 +344,7 @@ where
 
         // If we are missing any members, that's an error.
         for _missing_member in missing_members {
-            self.record_error(expression);
+            self.record_error("missing member".into(), expression);
         }
 
         // The final type is the type of the entity with the given
@@ -423,7 +429,7 @@ where
                         EntityData::LangItem(LangItem::Uint) => uint_type,
                         EntityData::Error(_) => self.error_type(),
                         _ => {
-                            self.record_error(expression);
+                            self.record_error("unknown type for expression".into(), expression);
                             self.error_type()
                         }
                     }
@@ -432,7 +438,7 @@ where
                 (BaseKind::Error, _) | (_, BaseKind::Error) => self.error_type(),
 
                 (BaseKind::Named(_), _) | (BaseKind::Placeholder(_), _) => {
-                    self.record_error(expression);
+                    self.record_error("mismatched types".into(), expression);
                     self.error_type()
                 }
             },
@@ -441,7 +447,7 @@ where
                 // Unclear what rule will eventually be... for now, require
                 // that the two types are the same?
                 if left_base_data != right_base_data {
-                    self.record_error(expression);
+                    self.record_error("mismatched types".into(), expression);
                 }
 
                 // Either way, yields a boolean
@@ -483,7 +489,10 @@ where
                     EntityData::Error(_) => self.error_type(),
 
                     _ => {
-                        self.record_error(expression);
+                        self.record_error(
+                            "incompatible type for 'not' operator".into(),
+                            expression,
+                        );
                         self.error_type()
                     }
                 },
@@ -491,7 +500,7 @@ where
                 BaseKind::Error => self.error_type(),
 
                 BaseKind::Placeholder(_) => {
-                    self.record_error(expression);
+                    self.record_error("unknown expression for operator".into(), expression);
                     self.error_type()
                 }
             },
