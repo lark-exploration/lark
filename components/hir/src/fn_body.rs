@@ -118,22 +118,19 @@ where
             .unwrap_or_else(|| self.unit_expression(block.span()))
     }
 
-    fn lower_block_items(&mut self, block_items: &[a::BlockItem]) -> Option<hir::Expression> {
-        if block_items.is_empty() {
-            return None;
-        }
-
-        match &block_items[0] {
-            a::BlockItem::Item(_) => return self.lower_block_items(&block_items[1..]),
+    fn lower_block_items(&mut self, all_block_items: &[a::BlockItem]) -> Option<hir::Expression> {
+        let (first_block_item, remaining_block_items) = all_block_items.split_first()?;
+        match first_block_item {
+            a::BlockItem::Item(_) => return self.lower_block_items(remaining_block_items),
 
             a::BlockItem::Decl(decl) => match decl {
-                a::Declaration::Let(l) => Some(self.lower_let(l, block_items)),
+                a::Declaration::Let(l) => Some(self.lower_let(l, remaining_block_items)),
             },
 
             a::BlockItem::Expr(expr) => {
                 let first = self.lower_expression(expr);
 
-                match self.lower_block_items(&block_items[1..]) {
+                match self.lower_block_items(remaining_block_items) {
                     None => Some(first),
 
                     Some(second) => {
