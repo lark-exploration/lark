@@ -173,7 +173,7 @@ where
                                 }
 
                                 None => {
-                                    this.record_error(place);
+                                    this.record_error(name);
                                     this.error_type()
                                 }
                             }
@@ -234,7 +234,7 @@ where
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
                 if signature.inputs.len() != arguments.len() {
-                    self.record_error(expression);
+                    self.record_error(method_name);
                 }
                 let hir = &self.hir.clone();
                 for (&expected_ty, argument_expr) in
