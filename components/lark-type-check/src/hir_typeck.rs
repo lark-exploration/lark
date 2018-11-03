@@ -429,7 +429,13 @@ where
                         EntityData::LangItem(LangItem::Uint) => uint_type,
                         EntityData::Error(_) => self.error_type(),
                         _ => {
-                            self.record_error("unknown type for expression".into(), expression);
+                            self.record_error(
+                                format!(
+                                    "type {:?} does not support this operation",
+                                    self.error_type()
+                                ),
+                                expression,
+                            );
                             self.error_type()
                         }
                     }
