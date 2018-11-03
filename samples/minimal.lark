@@ -3,5 +3,4 @@ struct Diagnostic {
   level: bool,
 }
 
-def new(msg: own String, level: String) -> Diagnostic {
-}
+def foo(x: bool, y: bool) -> uint { x + y }

@@ -191,9 +191,26 @@ where
 
             a::Expression::Literal(..)
             | a::Expression::Interpolation(..)
-            | a::Expression::Binary(..)
             | a::Expression::Call(_)
             | a::Expression::ConstructStruct(_) => self.unimplemented(expr.span()),
+            a::Expression::Binary(spanned_op, lhs_expr, rhs_expr) => {
+                let left = self.lower_expression(lhs_expr);
+                let right = self.lower_expression(rhs_expr);
+                let operator = match **spanned_op {
+                    parser::parser::ast::Op::Add => hir::BinaryOperator::Add,
+                    parser::parser::ast::Op::Sub => hir::BinaryOperator::Subtract,
+                    parser::parser::ast::Op::Mul => hir::BinaryOperator::Multiply,
+                    parser::parser::ast::Op::Div => hir::BinaryOperator::Divide,
+                };
+                self.add(
+                    spanned_op.span(),
+                    hir::ExpressionData::Binary {
+                        operator,
+                        left,
+                        right,
+                    },
+                )
+            }
 
             a::Expression::Ref(_) => {
                 let place = self.lower_place(expr);
