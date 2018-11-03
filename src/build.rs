@@ -1,4 +1,3 @@
-use ast::HasParserState;
 use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use flexi_logger::{opt_format, Logger};
 use language_reporting::{emit, Diagnostic, Label, Severity};
@@ -10,6 +9,7 @@ use lark_query_system::LarkDatabase;
 use lark_query_system::QuerySystem;
 use lark_task_manager::Actor;
 use parser::pos::Span;
+use parser::HasParserState;
 use salsa::Database;
 use std::borrow::Cow;
 use std::fs::File;
@@ -52,7 +52,7 @@ pub(crate) fn build(filename: &str) {
         .insert(filename.to_string(), file_map.clone());
     db.query_mut(ast::InputTextQuery).set(
         interned_filename,
-        Some(ast::InputText {
+        Some(parser::InputText {
             text: interned_contents,
             start_offset,
             span: Span::from(file_span),

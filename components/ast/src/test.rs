@@ -5,10 +5,10 @@ use crate::HasParserState;
 use crate::InputFilesQuery;
 use crate::InputText;
 use crate::InputTextQuery;
-use crate::ParserState;
 use debug::DebugWith;
 use lark_entity::EntityTables;
 use parser::pos::Span;
+use parser::ParserState;
 use salsa::Database;
 use std::sync::Arc;
 

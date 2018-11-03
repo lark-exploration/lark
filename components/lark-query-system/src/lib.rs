@@ -1,10 +1,10 @@
-use ast::{HasParserState, InputText, ParserState};
 use codespan::{CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;
 use parser::pos::Span;
+use parser::{HasParserState, InputText, ParserState};
 use salsa::{Database, ParallelDatabase, Snapshot};
 use std::borrow::Cow;
 use std::collections::VecDeque;
@@ -61,7 +61,7 @@ salsa::database_storage! {
     pub struct LarkDatabaseStorage for LarkDatabase {
         impl ast::AstDatabase {
             fn input_files() for ast::InputFilesQuery;
-            fn input_text() for ast::InputTextQuery;
+            fn input_text() for ast::InputTextInputTextQueryQuery;
             fn ast_of_file() for ast::AstOfFileQuery;
             fn items_in_file() for ast::ItemsInFileQuery;
             fn ast_of_item() for ast::AstOfItemQuery;
