@@ -46,6 +46,7 @@ pub enum LangItem {
     Int,
     Uint,
     Tuple(usize),
+    String,
 }
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]

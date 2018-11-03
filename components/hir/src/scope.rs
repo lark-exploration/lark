@@ -27,12 +27,15 @@ crate fn resolve_name(db: &impl HirDatabase, scope: Entity, name: StringId) -> O
                     let bool_id = db.intern_string("bool");
                     let int_id = db.intern_string("int");
                     let uint_id = db.intern_string("uint");
+                    let string_id = db.intern_string("String");
                     if name == bool_id {
                         Some(EntityData::LangItem(LangItem::Boolean).intern(db))
                     } else if name == int_id {
                         Some(EntityData::LangItem(LangItem::Int).intern(db))
                     } else if name == uint_id {
                         Some(EntityData::LangItem(LangItem::Uint).intern(db))
+                    } else if name == string_id {
+                        Some(EntityData::LangItem(LangItem::String).intern(db))
                     } else {
                         None
                     }
