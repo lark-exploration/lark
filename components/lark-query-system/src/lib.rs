@@ -18,7 +18,7 @@ pub struct LarkDatabase {
     code_map: Arc<RwLock<CodeMap>>,
     file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
     parser_state: Arc<ParserState>,
-    reader_state: Arc<RwLock<ReaderState>>,
+    reader_state: ReaderState,
     item_id_tables: Arc<EntityTables>,
     declaration_tables: Arc<lark_ty::declaration::DeclarationTables>,
     base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
@@ -113,7 +113,7 @@ impl HasParserState for LarkDatabase {
 }
 
 impl HasReaderState for LarkDatabase {
-    fn reader_state(&self) -> &Arc<RwLock<ReaderState>> {
+    fn reader_state(&self) -> &ReaderState {
         &self.reader_state
     }
 }

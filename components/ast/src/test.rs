@@ -3,7 +3,6 @@
 use crate::AstDatabase;
 use debug::DebugWith;
 use lark_entity::EntityTables;
-use parking_lot::RwLock;
 use parser::{HasParserState, HasReaderState, ParserState, ReaderState};
 use salsa::Database;
 use std::sync::Arc;
@@ -12,7 +11,7 @@ use std::sync::Arc;
 struct TestDatabaseImpl {
     runtime: salsa::Runtime<TestDatabaseImpl>,
     parser_state: ParserState,
-    reader_state: Arc<RwLock<ReaderState>>,
+    reader_state: ReaderState,
     item_id_tables: EntityTables,
 }
 
@@ -54,7 +53,7 @@ impl parser::LookupStringId for TestDatabaseImpl {
 }
 
 impl parser::HasReaderState for TestDatabaseImpl {
-    fn reader_state(&self) -> &Arc<RwLock<ReaderState>> {
+    fn reader_state(&self) -> &ReaderState {
         &self.reader_state
     }
 }

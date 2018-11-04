@@ -28,7 +28,7 @@ salsa::query_group! {
 /// appropriately for doing higher-level operations like adding a new file
 /// into the system (or overwriting the text of an existing file with new text).
 pub trait HasReaderState {
-    fn reader_state(&self) -> &Arc<RwLock<ReaderState>>;
+    fn reader_state(&self) -> &ReaderState;
 
     fn initialize_reader(&mut self)
     where
@@ -44,29 +44,45 @@ pub trait HasReaderState {
     {
         let path_id = self.intern_string(path);
         let source = source.into();
+        let data = self.reader_state().data.clone();
 
         let mut paths = (*self.paths()).clone();
         paths.insert(path_id);
         self.query_mut(Paths).set((), Arc::new(paths));
 
-        let file = self.reader_state().write().insert(
-            &path_id,
-            codespan::FileName::Real(path.into()),
-            source,
-        );
+        let file = data
+            .write()
+            .insert(&path_id, codespan::FileName::Real(path.into()), source);
         self.query_mut(Source).set(path_id, file.clone());
 
         file
     }
 }
 
-#[derive(Debug, Default)]
+/// The internal state for the reader queries. For a new database,
+/// create fresh state using `ReaderState::default`; to fork off a
+/// thread, simple clone.
+#[derive(Clone, Debug, Default)]
 pub struct ReaderState {
+    data: Arc<RwLock<ReaderStateData>>,
+}
+
+/// The actual data for the `ReaderState`; this is private to this
+/// module. It is held behind a rw-lock to permit parallel access.
+///
+/// Note: this permits us to mutate which could subvert the
+/// incremental system. It is important that we only do not offer
+/// operations that "read" the present state -- e.g., do not offer a
+/// way to check *if* something is interned, only offer a way to
+/// intern something (which returns an equivalent result whether or
+/// not something was interned already).
+#[derive(Debug, Default)]
+struct ReaderStateData {
     codemap: CodeMap,
     files: HashMap<StringId, Arc<File>>,
 }
 
-impl ReaderState {
+impl ReaderStateData {
     fn insert(&mut self, path: &StringId, path_name: FileName, source: String) -> Arc<File> {
         let filemap = self.codemap.add_filemap(path_name, source);
         let file = Arc::new(File(filemap.clone()));
