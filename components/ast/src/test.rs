@@ -18,6 +18,7 @@ struct TestDatabaseImpl {
 salsa::database_storage! {
     pub struct TestDatabaseImplStorage for TestDatabaseImpl {
         impl parser::ReaderDatabase {
+            fn paths_trigger() for parser::PathsTrigger;
             fn paths() for parser::Paths;
             fn source() for parser::Source;
         }

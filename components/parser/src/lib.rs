@@ -38,7 +38,7 @@ pub use self::parser2::reader::{PairedDelimiter, Reader};
 pub use self::parser2::token_tree::{TokenPos, TokenSpan};
 pub use self::parser2::LexToken;
 pub use self::query::{
-    HasParserState, HasReaderState, InputText, ParserState, Paths, ReaderDatabase, ReaderState,
-    Source,
+    HasParserState, HasReaderState, InputText, ParserState, Paths, PathsTrigger, ReaderDatabase,
+    ReaderState, Source,
 };
 pub use self::reporting::print_parse_error;

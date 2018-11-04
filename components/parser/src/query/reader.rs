@@ -10,31 +10,28 @@ salsa::query_group! {
     pub trait ReaderDatabase: crate::HasParserState + HasReaderState + salsa::Database {
         fn paths() -> Arc<FxIndexSet<StringId>> {
             type Paths;
-
-            // This is marked volatile because it accesses state
-            // behind a rw-lock which is not versioned. Right now,
-            // this query isn't really used anywhere except the
-            // highest levels, so we don't have a real need to know
-            // whether it has changed or not. If we did, we could
-            // change this setup readily enough (e.g., by converting
-            // to an input query that we only `set` when a change
-            // occurs, or adding a memoized wrapper so we can detect
-            // when it has changed).
-            //
-            // See also <https://github.com/salsa-rs/salsa/issues/87>,
-            // which requests some way to add an initial value (we
-            // used to have one, but we removed it).
-            storage volatile;
         }
 
         fn source(key: StringId) -> File {
             type Source;
             storage input;
         }
+
+        fn paths_trigger() -> () {
+            type PathsTrigger;
+
+            // This "pseudo-input" is written to each time the set of
+            // paths changes. It's a hack to make the derived `paths`
+            // query below re-execute as needed.
+            storage input;
+        }
     }
 }
 
 fn paths(db: &impl ReaderDatabase) -> Arc<FxIndexSet<StringId>> {
+    // Register a read of the `paths_trigger` input:
+    db.paths_trigger();
+
     db.reader_state().data.read().paths.clone()
 }
 
@@ -59,6 +56,7 @@ pub trait HasReaderState {
         let path_id = self.intern_string(path);
         let source = source.into();
 
+        let mut trigger_path = false;
         let file = {
             // Acquire the write-lock on the reader state and create
             // the `file` in the codemap.
@@ -67,6 +65,7 @@ pub trait HasReaderState {
             // Update the full set of all paths if necessary.
             if !data.paths.contains(&path_id) {
                 Arc::make_mut(&mut data.paths).insert(path_id);
+                trigger_path = true;
             }
 
             // Insert new file into the codemap.
@@ -75,6 +74,9 @@ pub trait HasReaderState {
             File(filemap.clone())
         };
 
+        if trigger_path {
+            self.query_mut(PathsTrigger).set((), ());
+        }
         self.query_mut(Source).set(path_id, file.clone());
         file
     }
