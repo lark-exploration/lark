@@ -43,13 +43,14 @@ pub(crate) fn build(filename: &str) {
     match db.errors_for_project() {
         Ok(errors) => {
             let mut first = true;
-            for (_filename, ranges) in errors {
-                for range in ranges {
+            for (_filename, ranged_diagnostics) in errors {
+                for ranged_diagnostic in ranged_diagnostics {
                     if !std::mem::replace(&mut first, false) {
                         eprintln!("");
                     }
 
-                    let error = Diagnostic::new(Severity::Error, "something is wrong here =)");
+                    let range = ranged_diagnostic.range;
+                    let error = Diagnostic::new(Severity::Error, ranged_diagnostic.label);
 
                     let span = codespan::Span::new(
                         file.byte_index(range.start.line, range.start.character)

@@ -191,6 +191,9 @@ fn declaration_ty_from_ast_ty(
 ) -> WithError<Ty<Declaration>> {
     match db.resolve_name(scope_entity, *ast_ty.name) {
         Some(entity) => WithError::ok(declaration_ty_named(db, entity, Generics::empty())),
-        None => WithError::report_error(db, ast_ty.name.1),
+        None => {
+            let msg = format!("unknown type: {}", db.untern_string(ast_ty.name.0));
+            WithError::report_error(db, msg, ast_ty.name.1)
+        }
     }
 }

@@ -181,7 +181,7 @@ impl QuerySystem {
                         for (key, value) in errors {
                             let url = Url::parse(&key).unwrap();
                             let ranges_with_default =
-                                value.iter().map(|x| (*x, "Error".to_string())).collect();
+                                value.iter().map(|x| (x.range, x.label.clone())).collect();
                             send_channel.send(QueryResponse::Diagnostics(url, ranges_with_default));
                         }
                     }

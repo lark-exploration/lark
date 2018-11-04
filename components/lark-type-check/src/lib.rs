@@ -7,7 +7,7 @@ use generational_arena::Arena;
 use hir;
 use indices::IndexVec;
 use lark_entity::{Entity, EntityTables};
-use lark_error::WithError;
+use lark_error::{Diagnostic, WithError};
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
@@ -23,7 +23,6 @@ use lark_unify::InferVar;
 use lark_unify::Inferable;
 use lark_unify::UnificationTable;
 use map::FxIndexMap;
-use parser::pos::Span;
 use std::sync::Arc;
 
 mod base_only;
@@ -77,7 +76,7 @@ struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckFamily> {
     universe_binders: IndexVec<Universe, UniverseBinder>,
 
     /// Errors that we encountered during the type-check.
-    errors: Vec<Span>,
+    errors: Vec<Diagnostic>,
 }
 
 enum UniverseBinder {
@@ -182,7 +181,7 @@ trait TypeCheckerFields<F: TypeCheckFamily>:
     fn db(&self) -> &Self::DB;
     fn unify(&mut self) -> &mut UnificationTable<F::InternTables, hir::MetaIndex>;
     fn results(&mut self) -> &mut TypeCheckResults<F>;
-    fn record_error(&mut self, location: impl Into<hir::MetaIndex>);
+    fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>);
 }
 
 impl<'me, DB, F> TypeCheckerFields<F> for TypeChecker<'me, DB, F>
@@ -205,8 +204,8 @@ where
         &mut self.results
     }
 
-    fn record_error(&mut self, location: impl Into<hir::MetaIndex>) {
-        self.record_error(location);
+    fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>) {
+        self.record_error(label, location);
     }
 }
 

@@ -7,7 +7,7 @@ use lark_entity::EntityData;
 use lark_entity::ItemKind;
 use lark_entity::MemberKind;
 use lark_error::or_return_sentinel;
-use lark_error::{ErrorReported, WithError};
+use lark_error::{Diagnostic, ErrorReported, WithError};
 use parser::ast;
 use parser::pos::{HasSpan, Span};
 use parser::StringId;
@@ -22,10 +22,11 @@ crate fn ast_of_file(
     match db.parser_state().parse(input_text.source()) {
         Ok(module) => WithError::ok(Ok(Arc::new(module))),
         Err(parse_error) => {
-            log::error!("parse error for {}: {:?}", path.debug_with(db), parse_error);
+            let diagnostic = Diagnostic::new(parse_error.description, parse_error.span);
+            log::error!("parse error for {}: {:?}", path.debug_with(db), diagnostic);
             WithError {
-                value: Err(ErrorReported::at_span(parse_error.span)),
-                errors: vec![parse_error.span],
+                value: Err(ErrorReported::at_diagnostic(diagnostic.clone())),
+                errors: vec![diagnostic],
             }
         }
     }
@@ -114,7 +115,7 @@ crate fn ast_of_field(db: &impl AstDatabase, item_id: Entity) -> Result<ast::Fie
             ast => panic!("field of invalid entity {:?}", ast),
         },
 
-        EntityData::Error(span) => Err(ErrorReported::at_span(span)),
+        EntityData::Error(diagnostic) => Err(ErrorReported::at_diagnostic(diagnostic)),
 
         d => panic!("ast-of-item invoked with non-field {:?}", d),
     }
@@ -124,10 +125,10 @@ crate fn entity_span(db: &impl AstDatabase, entity: Entity) -> Option<Span> {
     match entity.untern(db) {
         EntityData::ItemName { .. } => match db.ast_of_item(entity) {
             Ok(ast) => Some(ast.span()),
-            Err(err) => Some(err.some_span()),
+            Err(err) => Some(err.some_diagnostic().span),
         },
 
-        EntityData::Error(span) => Some(span),
+        EntityData::Error(diagnostic) => Some(diagnostic.span),
 
         EntityData::LangItem(_) => None,
 
@@ -141,7 +142,7 @@ crate fn entity_span(db: &impl AstDatabase, entity: Entity) -> Option<Span> {
             ..
         } => match db.ast_of_field(entity) {
             Ok(field) => Some(field.span()),
-            Err(err) => Some(err.some_span()),
+            Err(err) => Some(err.some_diagnostic().span),
         },
 
         EntityData::MemberName {

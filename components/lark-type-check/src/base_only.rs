@@ -59,7 +59,7 @@ impl TypeCheckFamily for BaseOnly {
                 }
 
                 if data1.kind != data2.kind {
-                    this.record_error(cause);
+                    this.record_error("Mismatched types".into(), cause);
                     return;
                 }
 

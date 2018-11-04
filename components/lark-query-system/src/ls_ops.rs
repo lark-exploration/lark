@@ -9,9 +9,19 @@ use debug::DebugWith;
 use intern::{Intern, Untern};
 use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
-use parser::pos::Span;
+use lark_error::Diagnostic;
 use parser::StringId;
 use std::collections::HashMap;
+
+pub struct RangedDiagnostic {
+    pub label: String,
+    pub range: Range,
+}
+impl RangedDiagnostic {
+    pub fn new(label: String, range: Range) -> RangedDiagnostic {
+        RangedDiagnostic { label, range }
+    }
+}
 
 pub struct Cancelled;
 
@@ -26,7 +36,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         }
     }
 
-    fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<Range>>> {
+    fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<RangedDiagnostic>>> {
         let input_files = self.paths();
         let mut file_errors = HashMap::new();
 
@@ -57,15 +67,18 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             let error_ranges = errors
                 .iter()
                 .map(|x| {
-                    let left_side = x.start().unwrap();
+                    let left_side = x.span.start().unwrap();
                     let (left_line, left_col) = file_maps.location(left_side);
                     let left_position = Position::new(left_line, left_col);
 
-                    let right_side = x.end().unwrap();
+                    let right_side = x.span.end().unwrap();
                     let (right_line, right_col) = file_maps.location(right_side);
                     let right_position = Position::new(right_line, right_col);
 
-                    Range::new(left_position, right_position)
+                    RangedDiagnostic::new(
+                        x.label.clone(),
+                        Range::new(left_position, right_position),
+                    )
                 })
                 .collect();
 
@@ -78,7 +91,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     fn accumulate_errors_for_entity(
         &self,
         entity: Entity,
-        errors: &mut Vec<Span>,
+        errors: &mut Vec<Diagnostic>,
     ) -> Cancelable<()> {
         self.check_for_cancellation()?;
 

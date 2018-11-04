@@ -461,6 +461,7 @@ dependencies = [
  "intern 0.1.0",
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-entity 0.1.0",
+ "lark-error 0.1.0",
  "lark-task-manager 0.1.0",
  "lark-ty 0.1.0",
  "lark-type-check 0.1.0",
