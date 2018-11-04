@@ -18,6 +18,7 @@ salsa::query_group! {
 
         fn source(key: StringId) -> Arc<File> {
             type Source;
+            storage input;
         }
     }
 }
@@ -40,13 +41,8 @@ pub fn add_file(db: &mut impl ReaderDatabase, path: &str, source: impl Into<Stri
     db.query_mut(Paths).set((), Arc::new(paths));
 
     let mut files = files.write().unwrap();
-    files.insert(&path_id, codespan::FileName::Real(path.into()), source)
-}
+    let file = files.insert(&path_id, codespan::FileName::Real(path.into()), source);
+    db.query_mut(Source).set(path_id, file.clone());
 
-fn source(db: &impl ReaderDatabase, key: StringId) -> Arc<File> {
-    let files = db.files();
-    let files = files.read().unwrap();
-    files.find(&key).unwrap_or_else(|| {
-        panic!("no input text for path `{}`", db.untern_string(key));
-    })
+    file
 }
