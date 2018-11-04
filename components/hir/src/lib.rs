@@ -433,6 +433,9 @@ pub enum ExpressionData {
         value: Expression,
     },
 
+    /// A literal value
+    Literal { data: LiteralData },
+
     /// Construct a value of some aggregate type, such as a struct or
     /// tuple:
     ///
@@ -496,6 +499,11 @@ pub enum PlaceData {
     Variable(Variable),
     Temporary(Expression),
     Field { owner: Place, name: Identifier },
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum LiteralData {
+    String(StringId),
 }
 
 indices::index_type! {

@@ -189,8 +189,15 @@ where
         match expr {
             a::Expression::Block(block) => self.lower_block(block),
 
-            a::Expression::Literal(..)
-            | a::Expression::Interpolation(..)
+            a::Expression::Literal(lit) => match lit {
+                a::Literal::String(s) => self.add(
+                    s.span(),
+                    hir::ExpressionData::Literal {
+                        data: hir::LiteralData::String(**s),
+                    },
+                ),
+            },
+            a::Expression::Interpolation(..)
             | a::Expression::Call(_)
             | a::Expression::ConstructStruct(_) => self.unimplemented(expr.span()),
             a::Expression::Binary(spanned_op, lhs_expr, rhs_expr) => {

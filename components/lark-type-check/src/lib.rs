@@ -116,6 +116,9 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
     /// Returns the type for `()`.
     fn unit_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
 
+    /// Returns the type for strings.
+    fn string_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
+
     /// Generates the constraint that a value with type `value_ty` is
     /// assignable to a place with the type `place_ty`; `expression`
     /// is the location that is requiring this type to be assignable
