@@ -75,73 +75,23 @@ impl TypeCheckFamily for BaseOnly {
     }
 
     fn boolean_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
-        let entity = EntityData::LangItem(LangItem::Boolean).intern(this);
-        Ty {
-            perm: Erased,
-            base: BaseOnly::intern_base_data(
-                this,
-                BaseData {
-                    kind: BaseKind::Named(entity),
-                    generics: Generics::empty(),
-                },
-            ),
-        }
+        primitive_type(this, LangItem::Boolean)
     }
 
     fn int_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
-        let entity = EntityData::LangItem(LangItem::Int).intern(this);
-        Ty {
-            perm: Erased,
-            base: BaseOnly::intern_base_data(
-                this,
-                BaseData {
-                    kind: BaseKind::Named(entity),
-                    generics: Generics::empty(),
-                },
-            ),
-        }
+        primitive_type(this, LangItem::Int)
     }
 
     fn uint_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
-        let entity = EntityData::LangItem(LangItem::Uint).intern(this);
-        Ty {
-            perm: Erased,
-            base: BaseOnly::intern_base_data(
-                this,
-                BaseData {
-                    kind: BaseKind::Named(entity),
-                    generics: Generics::empty(),
-                },
-            ),
-        }
+        primitive_type(this, LangItem::Uint)
     }
 
     fn unit_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
-        let entity = EntityData::LangItem(LangItem::Tuple(0)).intern(this);
-        Ty {
-            perm: Erased,
-            base: BaseOnly::intern_base_data(
-                this,
-                BaseData {
-                    kind: BaseKind::Named(entity),
-                    generics: Generics::empty(),
-                },
-            ),
-        }
+        primitive_type(this, LangItem::Tuple(0))
     }
 
     fn string_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
-        let entity = EntityData::LangItem(LangItem::String).intern(this);
-        Ty {
-            perm: Erased,
-            base: BaseOnly::intern_base_data(
-                this,
-                BaseData {
-                    kind: BaseKind::Named(entity),
-                    generics: Generics::empty(),
-                },
-            ),
-        }
+        primitive_type(this, LangItem::String)
     }
 
     fn apply_user_perm(
@@ -219,5 +169,19 @@ where
 {
     fn as_ref(&self) -> &BaseOnlyTables {
         &self.f_tables
+    }
+}
+
+fn primitive_type(this: &impl TypeCheckerFields<BaseOnly>, item: LangItem) -> BaseTy {
+    let entity = EntityData::LangItem(item).intern(this);
+    Ty {
+        perm: Erased,
+        base: BaseOnly::intern_base_data(
+            this,
+            BaseData {
+                kind: BaseKind::Named(entity),
+                generics: Generics::empty(),
+            },
+        ),
     }
 }
