@@ -9,7 +9,7 @@ use lark_query_system::LarkDatabase;
 use lark_query_system::QuerySystem;
 use lark_task_manager::Actor;
 use parser::pos::Span;
-use parser::HasParserState;
+use parser::{HasParserState, ReaderDatabase};
 use salsa::Database;
 use std::borrow::Cow;
 use std::fs::File;
@@ -38,26 +38,22 @@ pub(crate) fn build(filename: &str) {
 
     let mut db = LarkDatabase::default();
     let interned_filename = db.intern_string(filename);
-    let interned_contents = db.intern_string(&contents[..]);
+    let codespan_filename = FileName::Virtual(Cow::Owned(filename.to_string()));
     db.query_mut(ast::InputFilesQuery)
         .set((), Arc::new(vec![interned_filename]));
-    let file_map = db.code_map().write().add_filemap(
-        FileName::Virtual(Cow::Owned(filename.to_string())),
-        contents.to_string(),
-    );
-    let file_span = file_map.span();
-    let start_offset = file_map.span().start().to_usize() as u32;
-    db.file_maps()
+    let file_map = db
+        .code_map()
         .write()
-        .insert(filename.to_string(), file_map.clone());
-    db.query_mut(ast::InputTextQuery).set(
-        interned_filename,
-        Some(parser::InputText {
-            text: interned_contents,
-            start_offset,
-            span: Span::from(file_span),
-        }),
+        .add_filemap(codespan_filename.clone(), contents.to_string());
+
+    db.files().write().unwrap().insert(
+        &interned_filename,
+        codespan_filename,
+        (*file_map).src().to_string(),
     );
+
+    parser::add_file(&mut db, filename, contents.to_string());
+
     match db.errors_for_project() {
         Ok(errors) => {
             let mut first = true;

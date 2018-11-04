@@ -1,14 +1,10 @@
 #![cfg(test)]
 
 use crate::AstDatabase;
-use crate::HasParserState;
 use crate::InputFilesQuery;
-use crate::InputText;
-use crate::InputTextQuery;
 use debug::DebugWith;
 use lark_entity::EntityTables;
-use parser::pos::Span;
-use parser::ParserState;
+use parser::{HasParserState, ParserState, ReaderDatabase};
 use salsa::Database;
 use std::sync::Arc;
 
@@ -21,9 +17,13 @@ struct TestDatabaseImpl {
 
 salsa::database_storage! {
     pub struct TestDatabaseImplStorage for TestDatabaseImpl {
+        impl parser::ReaderDatabase {
+            fn files() for parser::Files;
+            fn paths() for parser::Paths;
+            fn source() for parser::Source;
+        }
         impl AstDatabase {
             fn input_files() for crate::InputFilesQuery;
-            fn input_text() for crate::InputTextQuery;
             fn ast_of_file() for crate::AstOfFileQuery;
             fn items_in_file() for crate::ItemsInFileQuery;
             fn ast_of_item() for crate::AstOfItemQuery;
@@ -39,7 +39,7 @@ impl Database for TestDatabaseImpl {
     }
 }
 
-impl crate::HasParserState for TestDatabaseImpl {
+impl HasParserState for TestDatabaseImpl {
     fn parser_state(&self) -> &ParserState {
         &self.parser_state
     }
@@ -63,18 +63,18 @@ impl AsRef<EntityTables> for TestDatabaseImpl {
 #[test]
 fn parse_error() {
     let mut db = TestDatabaseImpl::default();
+    parser::initialize_reader(&mut db);
+    // db.query_mut(parser::Files)
+    //     .set((), Arc::new(RwLock::new(SourceFiles::default())));
 
     let path1 = db.intern_string("path1");
     db.query_mut(InputFilesQuery).set((), Arc::new(vec![path1]));
-    let text1 = db.intern_string("XXX");
-    db.query_mut(InputTextQuery).set(
-        path1,
-        Some(InputText {
-            text: text1,
-            start_offset: 0,
-            span: Span::Synthetic,
-        }),
-    );
+    let text1 = "XXX".to_string();
+    let files = db.files();
+    files
+        .write()
+        .unwrap()
+        .insert(&path1, codespan::FileName::Real("path1".into()), text1);
 
     assert!(!db.ast_of_file(path1).errors.is_empty());
 }
@@ -82,31 +82,31 @@ fn parse_error() {
 #[test]
 fn parse_ok() {
     let mut db = TestDatabaseImpl::default();
+    parser::initialize_reader(&mut db);
 
-    let path1 = db.intern_string("path1");
-    db.query_mut(InputFilesQuery).set((), Arc::new(vec![path1]));
+    let path1_str = "path1";
+    let path1_interned = db.intern_string(path1_str);
+    db.query_mut(InputFilesQuery)
+        .set((), Arc::new(vec![path1_interned]));
     let text1_str = "struct Diagnostic { msg: own String, level: String, }
 
 def new(msg: own String, level: String) -> Diagnostic {
   Diagnostic { mgs, level }
 }";
-    let text1_interned = db.intern_string(text1_str);
-    db.query_mut(InputTextQuery).set(
-        path1,
-        Some(InputText {
-            text: text1_interned,
-            start_offset: 0,
-            span: Span::for_str(0, text1_str),
-        }),
+    let files = db.files();
+    files.write().unwrap().insert(
+        &path1_interned,
+        codespan::FileName::Real(path1_str.into()),
+        text1_str.to_string(),
     );
 
     assert!(
-        db.ast_of_file(path1).errors.is_empty(),
+        db.ast_of_file(path1_interned).errors.is_empty(),
         "{:?}",
-        db.ast_of_file(path1).errors,
+        db.ast_of_file(path1_interned).errors,
     );
 
-    let items_in_file = db.items_in_file(path1);
+    let items_in_file = db.items_in_file(path1_interned);
     assert_eq!(
         format!("{:#?}", items_in_file.debug_with(&db)),
         r#"[

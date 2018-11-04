@@ -37,5 +37,8 @@ pub use self::parser2::quicklex::Tokenizer;
 pub use self::parser2::reader::{PairedDelimiter, Reader};
 pub use self::parser2::token_tree::{TokenPos, TokenSpan};
 pub use self::parser2::LexToken;
-pub use self::query::{HasParserState, InputText, ParserState};
+pub use self::query::{
+    add_file, initialize_reader, Files, HasParserState, InputText, ParserState, Paths,
+    ReaderDatabase, Source, SourceFiles,
+};
 pub use self::reporting::print_parse_error;

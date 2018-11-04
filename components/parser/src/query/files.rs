@@ -1,23 +1,25 @@
+use crate::prelude::*;
+
 use crate::StringId;
 
-use codespan::{CodeMap, FileMap, FileName};
+use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SourceFiles {
     codemap: CodeMap,
     files: HashMap<StringId, Arc<File>>,
 }
 
 impl SourceFiles {
-    pub fn set(&mut self, path: &StringId, path_name: FileName, source: String) {
+    pub fn insert(&mut self, path: &StringId, path_name: FileName, source: String) {
         let file = self.codemap.add_filemap(path_name, source);
         self.files.insert(*path, Arc::new(File(file.clone())));
     }
 
-    pub fn get(&self, path: &StringId) -> Option<Arc<File>> {
+    pub fn find(&self, path: &StringId) -> Option<Arc<File>> {
         self.files.get(path).clone().map(|p| p.clone())
     }
 
@@ -26,11 +28,35 @@ impl SourceFiles {
     }
 }
 
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct Path(FileName);
+
 #[derive(Debug)]
 pub struct File(Arc<FileMap>);
 
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Path(FileName);
+impl File {
+    pub fn source(&self) -> &str {
+        self.0.src()
+    }
+
+    pub fn span(&self) -> Span {
+        Span::Real(self.0.span())
+    }
+
+    // TODO: Take languageserver_types::Position?
+    pub fn byte_index(&self, line: u64, column: u64) -> Result<ByteIndex, codespan::LocationError> {
+        self.0
+            .byte_index(LineIndex(line as u32), ColumnIndex(column as u32))
+    }
+
+    // TODO: Return languageserver_types::Position?
+    pub fn location(&self, pos: ByteIndex) -> (u64, u64) {
+        self.0
+            .location(pos)
+            .map(|(line, col)| (line.to_usize() as u64, col.to_usize() as u64))
+            .unwrap()
+    }
+}
 
 impl PartialEq for File {
     fn eq(&self, other: &File) -> bool {

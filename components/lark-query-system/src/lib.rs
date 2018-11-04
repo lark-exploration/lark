@@ -1,10 +1,9 @@
-use codespan::{CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
+use codespan::{CodeMap, FileMap, FileName};
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;
-use parser::pos::Span;
-use parser::{HasParserState, InputText, ParserState};
+use parser::{HasParserState, ParserState, ReaderDatabase};
 use salsa::{Database, ParallelDatabase, Snapshot};
 use std::borrow::Cow;
 use std::collections::VecDeque;
@@ -51,17 +50,17 @@ impl ParallelDatabase for LarkDatabase {
     }
 }
 
-impl LsDatabase for LarkDatabase {
-    fn file_maps(&self) -> &RwLock<FxIndexMap<String, Arc<FileMap>>> {
-        &self.file_maps
-    }
-}
+impl LsDatabase for LarkDatabase {}
 
 salsa::database_storage! {
     pub struct LarkDatabaseStorage for LarkDatabase {
+        impl parser::ReaderDatabase {
+            fn files() for parser::Files;
+            fn paths() for parser::Paths;
+            fn source() for parser::Source;
+        }
         impl ast::AstDatabase {
             fn input_files() for ast::InputFilesQuery;
-            fn input_text() for ast::InputTextInputTextQueryQuery;
             fn ast_of_file() for ast::AstOfFileQuery;
             fn items_in_file() for ast::ItemsInFileQuery;
             fn ast_of_item() for ast::AstOfItemQuery;
@@ -204,7 +203,6 @@ impl QuerySystem {
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
                 let interned_path = self.lark_db.intern_string(url.as_str());
-                let interned_contents = self.lark_db.intern_string(contents.as_str());
                 self.lark_db
                     .query_mut(ast::InputFilesQuery)
                     .set((), Arc::new(vec![interned_path]));
@@ -215,8 +213,6 @@ impl QuerySystem {
                     FileName::Virtual(Cow::Owned(url.to_string())),
                     contents.to_string(),
                 );
-                let file_span = file_map.span();
-                let start_offset = file_map.span().start().to_usize() as u32;
 
                 // Record the filemap for later
                 self.lark_db
@@ -224,47 +220,43 @@ impl QuerySystem {
                     .write()
                     .insert(url.to_string(), file_map);
 
-                self.lark_db.query_mut(ast::InputTextQuery).set(
-                    interned_path,
-                    Some(InputText {
-                        text: interned_contents,
-                        start_offset,
-                        span: Span::from(file_span),
-                    }),
-                );
+                parser::add_file(&mut self.lark_db, url.as_str(), contents.as_str());
+                // self.lark_db.query_mut(ast::InputTextQuery).set(
+                //     interned_path,
+                //     Some(InputText {
+                //         text: interned_contents,
+                //         start_offset,
+                //         span: Span::from(file_span),
+                //     }),
+                // );
             }
             QueryRequest::EditFile(url, changes) => {
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
-                let interned_path = self.lark_db.intern_string(url.as_str());
+                let path_id = self.lark_db.intern_string(url.as_str());
+
                 let file_maps = self
                     .lark_db
-                    .file_maps()
+                    .files()
                     .read()
-                    .get(url.as_str())
+                    .unwrap()
+                    .find(&path_id)
                     .unwrap()
                     .clone();
 
-                let mut current_contents = file_maps.src().to_string();
+                let mut current_contents = file_maps.source().to_string();
 
-                let origin_byte_offset =
-                    file_maps.byte_index(LineIndex(0), ColumnIndex(0)).unwrap();
+                let origin_byte_offset = file_maps.byte_index(0, 0).unwrap();
 
                 for change in changes {
                     let start_position = change.0.start;
                     let start_byte_offset = file_maps
-                        .byte_index(
-                            LineIndex(start_position.line as u32),
-                            ColumnIndex((start_position.character) as u32),
-                        )
+                        .byte_index(start_position.line, start_position.character)
                         .unwrap();
 
                     let end_position = change.0.end;
                     let end_byte_offset = file_maps
-                        .byte_index(
-                            LineIndex(end_position.line as u32),
-                            ColumnIndex((end_position.character) as u32),
-                        )
+                        .byte_index(end_position.line, end_position.character)
                         .unwrap();
 
                     unsafe {
@@ -281,16 +273,12 @@ impl QuerySystem {
                     );
                 }
 
-                let interned_contents = self.lark_db.intern_string(current_contents.as_str());
-
                 // Uh, adding a "new" file on each change seems a bit ungreat. But good
                 // enough for now.
                 let file_map = self.lark_db.code_map.write().add_filemap(
                     FileName::Virtual(Cow::Owned(url.to_string())),
                     current_contents.to_string(),
                 );
-                let file_span = file_map.span();
-                let start_offset = file_map.span().start().to_usize() as u32;
 
                 // Record the filemap for later
                 self.lark_db
@@ -298,13 +286,10 @@ impl QuerySystem {
                     .write()
                     .insert(url.to_string(), file_map);
 
-                self.lark_db.query_mut(ast::InputTextQuery).set(
-                    interned_path,
-                    Some(InputText {
-                        text: interned_contents,
-                        start_offset,
-                        span: Span::from(file_span),
-                    }),
+                parser::add_file(
+                    &mut self.lark_db,
+                    url.as_str(),
+                    current_contents.to_string(),
                 );
             }
             QueryRequest::TypeAtPosition(task_id, url, position) => {

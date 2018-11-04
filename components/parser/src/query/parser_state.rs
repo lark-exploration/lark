@@ -27,18 +27,8 @@ pub struct ParserState {
 }
 
 impl ParserState {
-    pub fn parse(
-        &self,
-        _path: StringId,
-        input_text: &InputText,
-    ) -> Result<crate::ast::Module, ParseError> {
-        let mut module_table = self.module_table.write();
-        let string = module_table.lookup(&input_text.text).to_string();
-        crate::parse(
-            Cow::Borrowed(&*string),
-            &mut module_table,
-            input_text.start_offset,
-        )
+    pub fn parse(&self, input_text: &str) -> Result<crate::ast::Module, ParseError> {
+        crate::parse(Cow::Borrowed(input_text), &mut self.module_table.write(), 1)
     }
 
     pub fn untern_string(&self, string_id: StringId) -> Arc<String> {

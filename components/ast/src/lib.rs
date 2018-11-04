@@ -11,24 +11,19 @@ use lark_entity::EntityTables;
 use lark_error::{ErrorReported, WithError};
 pub use parser::ast;
 use parser::pos::Span;
-use parser::{HasParserState, InputText, StringId};
+use parser::{ReaderDatabase, StringId};
 use std::sync::Arc;
 
 mod query_definitions;
 mod test;
 
 salsa::query_group! {
-    pub trait AstDatabase: HasParserState + AsRef<EntityTables> + salsa::Database {
+    pub trait AstDatabase: ReaderDatabase + AsRef<EntityTables> + salsa::Database {
         // These queries don't properly belong here -- probably in
         // parser -- but I want to minimize merge conflicts.
 
         fn input_files(key: ()) -> Arc<Vec<StringId>> {
             type InputFilesQuery;
-            storage input;
-        }
-
-        fn input_text(path: StringId) -> Option<InputText> {
-            type InputTextQuery;
             storage input;
         }
 
