@@ -1,10 +1,9 @@
 #![cfg(test)]
 
 use crate::AstDatabase;
-use crate::InputFilesQuery;
 use debug::DebugWith;
 use lark_entity::EntityTables;
-use parser::{HasParserState, ParserState, ReaderDatabase};
+use parser::{HasParserState, ParserState};
 use salsa::Database;
 use std::sync::Arc;
 
@@ -23,7 +22,6 @@ salsa::database_storage! {
             fn source() for parser::Source;
         }
         impl AstDatabase {
-            fn input_files() for crate::InputFilesQuery;
             fn ast_of_file() for crate::AstOfFileQuery;
             fn items_in_file() for crate::ItemsInFileQuery;
             fn ast_of_item() for crate::AstOfItemQuery;
@@ -68,13 +66,7 @@ fn parse_error() {
     //     .set((), Arc::new(RwLock::new(SourceFiles::default())));
 
     let path1 = db.intern_string("path1");
-    db.query_mut(InputFilesQuery).set((), Arc::new(vec![path1]));
-    let text1 = "XXX".to_string();
-    let files = db.files();
-    files
-        .write()
-        .unwrap()
-        .insert(&path1, codespan::FileName::Real("path1".into()), text1);
+    parser::add_file(&mut db, "path1", "XXX");
 
     assert!(!db.ast_of_file(path1).errors.is_empty());
 }
@@ -85,20 +77,14 @@ fn parse_ok() {
     parser::initialize_reader(&mut db);
 
     let path1_str = "path1";
-    let path1_interned = db.intern_string(path1_str);
-    db.query_mut(InputFilesQuery)
-        .set((), Arc::new(vec![path1_interned]));
+    let path1_interned = db.intern_string("path1");
     let text1_str = "struct Diagnostic { msg: own String, level: String, }
 
 def new(msg: own String, level: String) -> Diagnostic {
   Diagnostic { mgs, level }
 }";
-    let files = db.files();
-    files.write().unwrap().insert(
-        &path1_interned,
-        codespan::FileName::Real(path1_str.into()),
-        text1_str.to_string(),
-    );
+
+    parser::add_file(&mut db, path1_str, text1_str);
 
     assert!(
         db.ast_of_file(path1_interned).errors.is_empty(),

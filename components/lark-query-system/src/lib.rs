@@ -1,11 +1,10 @@
-use codespan::{CodeMap, FileMap, FileName};
+use codespan::{CodeMap, FileMap};
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;
 use parser::{HasParserState, ParserState, ReaderDatabase};
 use salsa::{Database, ParallelDatabase, Snapshot};
-use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use url::Url;
@@ -60,7 +59,6 @@ salsa::database_storage! {
             fn source() for parser::Source;
         }
         impl ast::AstDatabase {
-            fn input_files() for ast::InputFilesQuery;
             fn ast_of_file() for ast::AstOfFileQuery;
             fn items_in_file() for ast::ItemsInFileQuery;
             fn ast_of_item() for ast::AstOfItemQuery;
@@ -202,34 +200,9 @@ impl QuerySystem {
             QueryRequest::OpenFile(url, contents) => {
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
-                let interned_path = self.lark_db.intern_string(url.as_str());
-                self.lark_db
-                    .query_mut(ast::InputFilesQuery)
-                    .set((), Arc::new(vec![interned_path]));
-
-                // Uh, adding a "new" file on each change seems a bit ungreat. But good
-                // enough for now.
-                let file_map = self.lark_db.code_map.write().add_filemap(
-                    FileName::Virtual(Cow::Owned(url.to_string())),
-                    contents.to_string(),
-                );
-
-                // Record the filemap for later
-                self.lark_db
-                    .file_maps
-                    .write()
-                    .insert(url.to_string(), file_map);
-
                 parser::add_file(&mut self.lark_db, url.as_str(), contents.as_str());
-                // self.lark_db.query_mut(ast::InputTextQuery).set(
-                //     interned_path,
-                //     Some(InputText {
-                //         text: interned_contents,
-                //         start_offset,
-                //         span: Span::from(file_span),
-                //     }),
-                // );
             }
+
             QueryRequest::EditFile(url, changes) => {
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
@@ -272,19 +245,6 @@ impl QuerySystem {
                         &change.1,
                     );
                 }
-
-                // Uh, adding a "new" file on each change seems a bit ungreat. But good
-                // enough for now.
-                let file_map = self.lark_db.code_map.write().add_filemap(
-                    FileName::Virtual(Cow::Owned(url.to_string())),
-                    current_contents.to_string(),
-                );
-
-                // Record the filemap for later
-                self.lark_db
-                    .file_maps
-                    .write()
-                    .insert(url.to_string(), file_map);
 
                 parser::add_file(
                     &mut self.lark_db,

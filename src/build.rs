@@ -37,22 +37,8 @@ pub(crate) fn build(filename: &str) {
     }
 
     let mut db = LarkDatabase::default();
-    let interned_filename = db.intern_string(filename);
-    let codespan_filename = FileName::Virtual(Cow::Owned(filename.to_string()));
-    db.query_mut(ast::InputFilesQuery)
-        .set((), Arc::new(vec![interned_filename]));
-    let file_map = db
-        .code_map()
-        .write()
-        .add_filemap(codespan_filename.clone(), contents.to_string());
 
-    db.files().write().unwrap().insert(
-        &interned_filename,
-        codespan_filename,
-        (*file_map).src().to_string(),
-    );
-
-    parser::add_file(&mut db, filename, contents.to_string());
+    let file = parser::add_file(&mut db, filename, contents.to_string());
 
     match db.errors_for_project() {
         Ok(errors) => {
@@ -66,8 +52,10 @@ pub(crate) fn build(filename: &str) {
                     let error = Diagnostic::new(Severity::Error, "something is wrong here =)");
 
                     let span = codespan::Span::new(
-                        file_map.byte_index_for_position(range.start),
-                        file_map.byte_index_for_position(range.end),
+                        file.byte_index(range.start.line, range.start.character)
+                            .unwrap(),
+                        file.byte_index(range.end.line, range.end.character)
+                            .unwrap(),
                     );
 
                     let error = error.with_label(Label::new_primary(span));

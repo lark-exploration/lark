@@ -27,7 +27,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     }
 
     fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<Range>>> {
-        let input_files = self.input_files(());
+        let input_files = self.paths();
         let mut file_errors = HashMap::new();
 
         for input_file in &*input_files {

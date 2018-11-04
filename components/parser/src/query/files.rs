@@ -14,9 +14,11 @@ pub struct SourceFiles {
 }
 
 impl SourceFiles {
-    pub fn insert(&mut self, path: &StringId, path_name: FileName, source: String) {
-        let file = self.codemap.add_filemap(path_name, source);
-        self.files.insert(*path, Arc::new(File(file.clone())));
+    pub fn insert(&mut self, path: &StringId, path_name: FileName, source: String) -> Arc<File> {
+        let filemap = self.codemap.add_filemap(path_name, source);
+        let file = Arc::new(File(filemap.clone()));
+        self.files.insert(*path, file.clone());
+        file
     }
 
     pub fn find(&self, path: &StringId) -> Option<Arc<File>> {

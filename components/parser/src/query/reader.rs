@@ -25,9 +25,11 @@ salsa::query_group! {
 pub fn initialize_reader(db: &mut impl ReaderDatabase) {
     db.query_mut(Files)
         .set((), Arc::new(RwLock::new(SourceFiles::default())));
+
+    db.query_mut(Paths).set((), Arc::new(FxIndexSet::default()))
 }
 
-pub fn add_file(db: &mut impl ReaderDatabase, path: &str, source: impl Into<String>) {
+pub fn add_file(db: &mut impl ReaderDatabase, path: &str, source: impl Into<String>) -> Arc<File> {
     let path_id = db.intern_string(path);
     let source = source.into();
 
@@ -37,10 +39,8 @@ pub fn add_file(db: &mut impl ReaderDatabase, path: &str, source: impl Into<Stri
     paths.insert(path_id);
     db.query_mut(Paths).set((), Arc::new(paths));
 
-    files
-        .write()
-        .unwrap()
-        .insert(&path_id, codespan::FileName::Real(path.into()), source);
+    let mut files = files.write().unwrap();
+    files.insert(&path_id, codespan::FileName::Real(path.into()), source)
 }
 
 fn source(db: &impl ReaderDatabase, key: StringId) -> Arc<File> {

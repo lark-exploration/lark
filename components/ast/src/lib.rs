@@ -22,11 +22,6 @@ salsa::query_group! {
         // These queries don't properly belong here -- probably in
         // parser -- but I want to minimize merge conflicts.
 
-        fn input_files(key: ()) -> Arc<Vec<StringId>> {
-            type InputFilesQuery;
-            storage input;
-        }
-
         fn ast_of_file(path: StringId) -> WithError<Result<Arc<ast::Module>, ErrorReported>> {
             type AstOfFileQuery;
             use fn query_definitions::ast_of_file;
