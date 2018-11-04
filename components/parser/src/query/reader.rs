@@ -32,19 +32,11 @@ pub struct SourceFiles {
 }
 
 impl SourceFiles {
-    pub fn insert(&mut self, path: &StringId, path_name: FileName, source: String) -> Arc<File> {
+    fn insert(&mut self, path: &StringId, path_name: FileName, source: String) -> Arc<File> {
         let filemap = self.codemap.add_filemap(path_name, source);
         let file = Arc::new(File(filemap.clone()));
         self.files.insert(*path, file.clone());
         file
-    }
-
-    pub fn find(&self, path: &StringId) -> Option<Arc<File>> {
-        self.files.get(path).clone().map(|p| p.clone())
-    }
-
-    pub fn paths(&self) -> Vec<StringId> {
-        self.files.keys().cloned().collect()
     }
 }
 

@@ -208,14 +208,7 @@ impl QuerySystem {
                 // it ensures an overall ordering to edits.
                 let path_id = self.lark_db.intern_string(url.as_str());
 
-                let file_maps = self
-                    .lark_db
-                    .files()
-                    .read()
-                    .unwrap()
-                    .find(&path_id)
-                    .unwrap()
-                    .clone();
+                let file_maps = self.lark_db.source(path_id);
 
                 let mut current_contents = file_maps.source().to_string();
 
