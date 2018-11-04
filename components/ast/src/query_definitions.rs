@@ -17,11 +17,9 @@ crate fn ast_of_file(
     db: &impl AstDatabase,
     path: StringId,
 ) -> WithError<Result<Arc<ast::Module>, ErrorReported>> {
-    let input_text = db.input_text(path).unwrap_or_else(|| {
-        panic!("no input text for path `{}`", db.untern_string(path));
-    });
+    let input_text = db.source(path);
 
-    match db.parser_state().parse(path, &input_text) {
+    match db.parser_state().parse(input_text.source()) {
         Ok(module) => WithError::ok(Ok(Arc::new(module))),
         Err(parse_error) => {
             let diagnostic = Diagnostic::new(parse_error.description, parse_error.span);
@@ -134,9 +132,9 @@ crate fn entity_span(db: &impl AstDatabase, entity: Entity) -> Option<Span> {
 
         EntityData::LangItem(_) => None,
 
-        EntityData::InputFile { file } => {
-            let input_text = db.input_text(file).unwrap();
-            Some(input_text.span)
+        EntityData::InputFile { file: filename } => {
+            let file = db.source(filename);
+            Some(file.span())
         }
 
         EntityData::MemberName {

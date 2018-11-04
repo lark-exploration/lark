@@ -20,6 +20,8 @@ termcolor = "1.0.4"
 bimap = "0.1.5"
 debug = { path = "../debug" }
 map = { path = "../map" }
+salsa = "0.8.0"
+parking_lot = "0.6.4"
 
 [dev-dependencies]
 unindent = "0.1.3"

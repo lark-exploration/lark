@@ -1,4 +1,3 @@
-use ast::HasParserState;
 use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use flexi_logger::{opt_format, Logger};
 use language_reporting::{emit, Diagnostic, Label, Severity};
@@ -10,6 +9,7 @@ use lark_query_system::LarkDatabase;
 use lark_query_system::QuerySystem;
 use lark_task_manager::Actor;
 use parser::pos::Span;
+use parser::{HasParserState, ReaderDatabase};
 use salsa::Database;
 use std::borrow::Cow;
 use std::fs::File;
@@ -37,27 +37,9 @@ pub(crate) fn build(filename: &str) {
     }
 
     let mut db = LarkDatabase::default();
-    let interned_filename = db.intern_string(filename);
-    let interned_contents = db.intern_string(&contents[..]);
-    db.query_mut(ast::InputFilesQuery)
-        .set((), Arc::new(vec![interned_filename]));
-    let file_map = db.code_map().write().add_filemap(
-        FileName::Virtual(Cow::Owned(filename.to_string())),
-        contents.to_string(),
-    );
-    let file_span = file_map.span();
-    let start_offset = file_map.span().start().to_usize() as u32;
-    db.file_maps()
-        .write()
-        .insert(filename.to_string(), file_map.clone());
-    db.query_mut(ast::InputTextQuery).set(
-        interned_filename,
-        Some(ast::InputText {
-            text: interned_contents,
-            start_offset,
-            span: Span::from(file_span),
-        }),
-    );
+
+    let file = parser::add_file(&mut db, filename, contents.to_string());
+
     match db.errors_for_project() {
         Ok(errors) => {
             let mut first = true;
@@ -67,11 +49,14 @@ pub(crate) fn build(filename: &str) {
                         eprintln!("");
                     }
 
+                    let range = ranged_diagnostic.range;
                     let error = Diagnostic::new(Severity::Error, ranged_diagnostic.label);
 
                     let span = codespan::Span::new(
-                        file_map.byte_index_for_position(ranged_diagnostic.range.start),
-                        file_map.byte_index_for_position(ranged_diagnostic.range.end),
+                        file.byte_index(range.start.line, range.start.character)
+                            .unwrap(),
+                        file.byte_index(range.end.line, range.end.character)
+                            .unwrap(),
                     );
 
                     let error = error.with_label(Label::new_primary(span));
