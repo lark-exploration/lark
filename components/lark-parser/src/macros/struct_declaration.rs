@@ -138,6 +138,7 @@ impl LazyParsedEntity for ParsedStructDeclaration {
                 let ty = crate::type_conversion::declaration_ty_named(
                     &db,
                     entity,
+                    ty::ReprKind::Direct,
                     ty::Generics::empty(),
                 );
                 WithError::ok(ty)

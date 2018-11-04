@@ -55,7 +55,7 @@ where
 {
     fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<T> {
         let Ty {
-            repr: Erased,
+            repr: _, // not yet used
             perm: Erased,
             base,
         } = ty;

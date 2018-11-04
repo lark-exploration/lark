@@ -2,12 +2,9 @@ use crate::parser::Parser;
 use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
-use intern::Intern;
 use intern::Untern;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
-use lark_entity::EntityData;
-use lark_entity::LangItem;
 use lark_error::{ErrorReported, ErrorSentinel, WithError};
 use lark_span::{FileName, Span, Spanned};
 use lark_string::GlobalIdentifier;
@@ -53,18 +50,7 @@ impl ParsedTypeReference {
         match self {
             ParsedTypeReference::Named(named) => named.parse_type(entity, db),
             ParsedTypeReference::Elided(_span) => {
-                let entity = EntityData::LangItem(LangItem::Tuple(0)).intern(&db);
-                WithError::ok(ty::Ty {
-                    perm: ty::Erased,
-                    repr: ty::Erased,
-                    base: Declaration::intern_base_data(
-                        &db,
-                        ty::BaseData {
-                            kind: ty::BaseKind::Named(entity),
-                            generics: ty::Generics::empty(),
-                        },
-                    ),
-                })
+                WithError::ok(crate::type_conversion::unit_ty(db))
             }
             ParsedTypeReference::Error => WithError::ok(Declaration::error_type(&db)),
         }
@@ -94,6 +80,7 @@ impl NamedTypeReference {
                 let ty = crate::type_conversion::declaration_ty_named(
                     &db,
                     entity,
+                    ty::ReprKind::Direct,
                     ty::Generics::empty(),
                 );
                 WithError::ok(ty)

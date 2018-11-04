@@ -6,6 +6,7 @@ use crate::BaseData;
 use crate::BoundVar;
 use crate::BoundVarOr;
 use crate::Erased;
+use crate::ReprKind;
 use crate::TypeFamily;
 use debug::{DebugWith, FmtWithSpecialized};
 use intern::Intern;
@@ -18,7 +19,7 @@ pub struct Declaration;
 
 impl TypeFamily for Declaration {
     type InternTables = DeclarationTables;
-    type Repr = Erased; // Not Yet Implemented
+    type Repr = ReprKind;
     type Perm = Erased; // Not Yet Implemented
     type Base = Base;
     type Placeholder = !;
@@ -27,8 +28,8 @@ impl TypeFamily for Declaration {
         Erased
     }
 
-    fn direct_repr(_tables: &dyn AsRef<DeclarationTables>) -> Erased {
-        Erased
+    fn direct_repr(_tables: &dyn AsRef<DeclarationTables>) -> ReprKind {
+        ReprKind::Direct
     }
 
     fn intern_base_data(

@@ -171,6 +171,15 @@ pub enum BoundVarOr<T> {
     Known(T),
 }
 
+impl<T> BoundVarOr<T> {
+    pub fn assert_known(self) -> T {
+        match self {
+            BoundVarOr::BoundVar(_) => panic!("`assert_known` invoked on bound var"),
+            BoundVarOr::Known(v) => v,
+        }
+    }
+}
+
 indices::index_type! {
     pub struct BoundVar { .. }
 }

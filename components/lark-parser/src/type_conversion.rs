@@ -1,5 +1,5 @@
+use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::ParserDatabase;
-
 use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, LangItem};
@@ -7,7 +7,7 @@ use lark_error::{ErrorReported, ErrorSentinel, WithError};
 use lark_ty::declaration::DeclarationTables;
 use lark_ty::{
     BaseData, BaseKind, BoundVar, Declaration, Erased, GenericDeclarations, GenericKind, Generics,
-    Signature, Ty, TypeFamily,
+    ReprKind, Signature, Ty, TypeFamily,
 };
 use std::sync::Arc;
 
@@ -55,9 +55,12 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaratio
         | EntityData::LangItem(LangItem::String)
         | EntityData::LangItem(LangItem::Int)
         | EntityData::LangItem(LangItem::Uint)
-        | EntityData::LangItem(LangItem::Debug) => {
-            WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
-        }
+        | EntityData::LangItem(LangItem::Debug) => WithError::ok(declaration_ty_named(
+            db,
+            entity,
+            ReprKind::Direct,
+            Generics::empty(),
+        )),
 
         EntityData::LangItem(LangItem::False) | EntityData::LangItem(LangItem::True) => {
             let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(db);
@@ -69,12 +72,12 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaratio
                 .map(|i| BoundVar::new(i))
                 .map(|bv| Ty {
                     base: Declaration::intern_bound_var(db, bv),
-                    repr: Erased,
+                    repr: ReprKind::Direct,
                     perm: Declaration::own_perm(db),
                 })
                 .map(|ty| GenericKind::Ty(ty))
                 .collect();
-            WithError::ok(declaration_ty_named(db, entity, generics))
+            WithError::ok(declaration_ty_named(db, entity, ReprKind::Direct, generics))
         }
 
         EntityData::ItemName { .. } | EntityData::MemberName { .. } => {
@@ -114,10 +117,11 @@ crate fn signature(
     }
 }
 
-fn unit_ty(db: &impl ParserDatabase) -> Ty<Declaration> {
+crate fn unit_ty(db: &dyn LazyParsedEntityDatabase) -> Ty<Declaration> {
     declaration_ty_named(
-        db,
-        EntityData::LangItem(LangItem::Tuple(0)).intern(db),
+        &db,
+        EntityData::LangItem(LangItem::Tuple(0)).intern(&db),
+        ReprKind::Direct,
         Generics::empty(),
     )
 }
@@ -125,13 +129,14 @@ fn unit_ty(db: &impl ParserDatabase) -> Ty<Declaration> {
 crate fn declaration_ty_named(
     db: &dyn AsRef<DeclarationTables>,
     entity: Entity,
+    repr: ReprKind,
     generics: Generics<Declaration>,
 ) -> Ty<Declaration> {
     let kind = BaseKind::Named(entity);
     let base = Declaration::intern_base_data(db, BaseData { kind, generics });
     Ty {
         perm: Erased,
-        repr: Erased,
+        repr,
         base,
     }
 }
