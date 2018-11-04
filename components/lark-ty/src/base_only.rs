@@ -4,6 +4,7 @@ use crate::BaseData;
 use crate::Erased;
 use crate::InferVarOr;
 use crate::Placeholder;
+use crate::ReprKind;
 use crate::TypeFamily;
 use debug::DebugWith;
 use intern::{Intern, Untern};
@@ -25,7 +26,7 @@ impl TypeFamily for BaseOnly {
         Erased
     }
 
-    fn direct_repr(_tables: &dyn AsRef<BaseOnlyTables>) -> Erased {
+    fn known_repr(_tables: &dyn AsRef<BaseOnlyTables>, _repr_kind: ReprKind) -> Self::Repr {
         Erased
     }
 

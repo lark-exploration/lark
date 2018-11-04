@@ -5,6 +5,7 @@
 use crate::BaseData;
 use crate::Erased;
 use crate::Placeholder;
+use crate::ReprKind;
 use crate::TypeFamily;
 use debug::{DebugWith, FmtWithSpecialized};
 use intern::{Intern, Untern};
@@ -25,7 +26,7 @@ impl TypeFamily for BaseInferred {
         Erased
     }
 
-    fn direct_repr(_tables: &dyn AsRef<BaseInferredTables>) -> Erased {
+    fn known_repr(_tables: &dyn AsRef<BaseInferredTables>, _repr_kind: ReprKind) -> Self::Repr {
         Erased
     }
 

@@ -28,8 +28,8 @@ impl TypeFamily for Declaration {
         Erased
     }
 
-    fn direct_repr(_tables: &dyn AsRef<DeclarationTables>) -> ReprKind {
-        ReprKind::Direct
+    fn known_repr(_tables: &dyn AsRef<DeclarationTables>, repr_kind: ReprKind) -> ReprKind {
+        repr_kind
     }
 
     fn intern_base_data(

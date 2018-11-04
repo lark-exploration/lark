@@ -44,7 +44,11 @@ pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
 
     fn own_perm(tables: &dyn AsRef<Self::InternTables>) -> Self::Perm;
 
-    fn direct_repr(tables: &dyn AsRef<Self::InternTables>) -> Self::Repr;
+    fn direct_repr(tables: &dyn AsRef<Self::InternTables>) -> Self::Repr {
+        Self::known_repr(tables, ReprKind::Direct)
+    }
+
+    fn known_repr(tables: &dyn AsRef<Self::InternTables>, repr_kind: ReprKind) -> Self::Repr;
 
     fn error_type(tables: &dyn AsRef<Self::InternTables>) -> Ty<Self> {
         Ty {
