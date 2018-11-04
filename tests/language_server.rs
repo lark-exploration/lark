@@ -94,7 +94,7 @@ mod tests {
     }
 
     #[test]
-    fn init() {
+    fn find_expected_error_message() {
         let mut child = Command::new("cargo")
             .arg("run")
             .arg("--")
@@ -117,6 +117,8 @@ mod tests {
         let result =
             receive::<JsonRPCNotification<PublishDiagnosticsParams>>(child_stdout).unwrap();
         assert_eq!(result.method, "textDocument/publishDiagnostics");
+        assert_eq!(result.params.diagnostics.len(), 1);
+        assert_eq!(result.params.diagnostics[0].message, "Mismatched types");
 
         let _ = child.kill();
 
