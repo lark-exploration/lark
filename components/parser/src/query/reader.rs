@@ -1,4 +1,4 @@
-use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
+use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, LineIndex};
 use crate::prelude::*;
 use crate::StringId;
 use map::FxIndexSet;
@@ -23,7 +23,7 @@ salsa::query_group! {
             storage volatile;
         }
 
-        fn source(key: StringId) -> Arc<File> {
+        fn source(key: StringId) -> File {
             type Source;
             storage input;
         }
@@ -44,11 +44,11 @@ pub trait HasReaderState {
     fn reader_state(&self) -> &ReaderState;
 
     /// Adds a new file (or overwrites an existing file) into our
-    /// reader database. Returns the `Arc<File>` you can use to talk
+    /// reader database. Returns the `File` you can use to talk
     /// about it, but that file is also available via
     /// `self.source(path_id)` (where `path_id` is the interned
     /// version of `path`).
-    fn add_file(&mut self, path: &str, source: impl Into<String>) -> Arc<File>
+    fn add_file(&mut self, path: &str, source: impl Into<String>) -> File
     where
         Self: ReaderDatabase,
     {
@@ -68,7 +68,7 @@ pub trait HasReaderState {
             // Insert new file into the codemap.
             let codemap_path_name = codespan::FileName::Real(path.into());
             let filemap = data.codemap.add_filemap(codemap_path_name, source);
-            Arc::new(File(filemap.clone()))
+            File(filemap.clone())
         };
 
         self.query_mut(Source).set(path_id, file.clone());
@@ -102,28 +102,37 @@ struct ReaderStateData {
     paths: Arc<FxIndexSet<StringId>>,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Path(FileName);
-
-#[derive(Debug)]
+/// Represents (one version of) a file that has been added into the
+/// reader database. You can obtain one of these via the `source` query.
+#[derive(Clone, Debug)]
 pub struct File(Arc<FileMap>);
 
 impl File {
+    /// Get access to the full text of the file.
     pub fn source(&self) -> &str {
         self.0.src()
     }
 
+    /// Returns the full span of the file.
     pub fn span(&self) -> Span {
         Span::Real(self.0.span())
     }
 
-    // TODO: Take languageserver_types::Position?
+    /// Given a line and column, returns the codespan
+    /// `ByteIndex`. This is useful for bridging to the language
+    /// server.
+    ///
+    /// TODO: Perhaps we want to just take languageserver_types::Position?
     pub fn byte_index(&self, line: u64, column: u64) -> Result<ByteIndex, codespan::LocationError> {
         self.0
             .byte_index(LineIndex(line as u32), ColumnIndex(column as u32))
     }
 
-    // TODO: Return languageserver_types::Position?
+    /// Given a byte-index, convert back to a line and column
+    /// number. This is useful for bridging to the language server.
+    ///
+    /// TODO: Perhaps we want to just return
+    /// `languageserver_types::Position`?
     pub fn location(&self, pos: ByteIndex) -> (u64, u64) {
         self.0
             .location(pos)
@@ -139,22 +148,6 @@ impl PartialEq for File {
 }
 
 impl Eq for File {}
-
-impl Hash for Path {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match &self.0 {
-            FileName::Real(path) => {
-                0.hash(state);
-                path.hash(state);
-            }
-
-            FileName::Virtual(name) => {
-                1.hash(state);
-                name.hash(state);
-            }
-        }
-    }
-}
 
 impl Hash for File {
     fn hash<H: Hasher>(&self, state: &mut H) {
