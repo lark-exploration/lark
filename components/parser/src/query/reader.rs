@@ -2,9 +2,10 @@ use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use crate::prelude::*;
 use crate::StringId;
 use map::FxIndexSet;
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 salsa::query_group! {
     pub trait ReaderDatabase: crate::HasParserState + salsa::Database {
@@ -117,7 +118,7 @@ pub fn add_file(db: &mut impl ReaderDatabase, path: &str, source: impl Into<Stri
     paths.insert(path_id);
     db.query_mut(Paths).set((), Arc::new(paths));
 
-    let mut files = files.write().unwrap();
+    let mut files = files.write();
     let file = files.insert(&path_id, codespan::FileName::Real(path.into()), source);
     db.query_mut(Source).set(path_id, file.clone());
 
