@@ -3,6 +3,4 @@ pub mod parser_state;
 pub mod reader;
 
 pub use self::parser_state::{HasParserState, InputText, ParserState};
-pub use self::reader::{
-    add_file, initialize_reader, Files, Paths, ReaderDatabase, Source, SourceFiles,
-};
+pub use self::reader::{HasReaderState, Paths, ReaderDatabase, ReaderState, Source};

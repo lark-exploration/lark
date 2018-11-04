@@ -9,11 +9,6 @@ use std::sync::Arc;
 
 salsa::query_group! {
     pub trait ReaderDatabase: crate::HasParserState + salsa::Database {
-        fn files() -> Arc<RwLock<SourceFiles>> {
-            type Files;
-            storage input;
-        }
-
         fn paths() -> Arc<FxIndexSet<StringId>> {
             type Paths;
             storage input;
@@ -26,13 +21,52 @@ salsa::query_group! {
     }
 }
 
+/// Trait that the `ReaderDatabase` relies on; exposes the internal
+/// storage we use to track files and create spans, which is currently
+/// a `CodeMap`. Also exposes some helper functions that will mutate
+/// that storage and set the `paths` and `source` inputs
+/// appropriately for doing higher-level operations like adding a new file
+/// into the system (or overwriting the text of an existing file with new text).
+pub trait HasReaderState {
+    fn reader_state(&self) -> &Arc<RwLock<ReaderState>>;
+
+    fn initialize_reader(&mut self)
+    where
+        Self: ReaderDatabase,
+    {
+        self.query_mut(Paths)
+            .set((), Arc::new(FxIndexSet::default()))
+    }
+
+    fn add_file(&mut self, path: &str, source: impl Into<String>) -> Arc<File>
+    where
+        Self: ReaderDatabase,
+    {
+        let path_id = self.intern_string(path);
+        let source = source.into();
+
+        let mut paths = (*self.paths()).clone();
+        paths.insert(path_id);
+        self.query_mut(Paths).set((), Arc::new(paths));
+
+        let file = self.reader_state().write().insert(
+            &path_id,
+            codespan::FileName::Real(path.into()),
+            source,
+        );
+        self.query_mut(Source).set(path_id, file.clone());
+
+        file
+    }
+}
+
 #[derive(Debug, Default)]
-pub struct SourceFiles {
+pub struct ReaderState {
     codemap: CodeMap,
     files: HashMap<StringId, Arc<File>>,
 }
 
-impl SourceFiles {
+impl ReaderState {
     fn insert(&mut self, path: &StringId, path_name: FileName, source: String) -> Arc<File> {
         let filemap = self.codemap.add_filemap(path_name, source);
         let file = Arc::new(File(filemap.clone()));
@@ -99,28 +133,4 @@ impl Hash for File {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.0.src().hash(state)
     }
-}
-
-pub fn initialize_reader(db: &mut impl ReaderDatabase) {
-    db.query_mut(Files)
-        .set((), Arc::new(RwLock::new(SourceFiles::default())));
-
-    db.query_mut(Paths).set((), Arc::new(FxIndexSet::default()))
-}
-
-pub fn add_file(db: &mut impl ReaderDatabase, path: &str, source: impl Into<String>) -> Arc<File> {
-    let path_id = db.intern_string(path);
-    let source = source.into();
-
-    let files = db.files();
-
-    let mut paths = (*db.paths()).clone();
-    paths.insert(path_id);
-    db.query_mut(Paths).set((), Arc::new(paths));
-
-    let mut files = files.write();
-    let file = files.insert(&path_id, codespan::FileName::Real(path.into()), source);
-    db.query_mut(Source).set(path_id, file.clone());
-
-    file
 }

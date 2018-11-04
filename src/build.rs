@@ -9,7 +9,7 @@ use lark_query_system::LarkDatabase;
 use lark_query_system::QuerySystem;
 use lark_task_manager::Actor;
 use parser::pos::Span;
-use parser::{HasParserState, ReaderDatabase};
+use parser::{HasParserState, HasReaderState, ReaderDatabase};
 use salsa::Database;
 use std::borrow::Cow;
 use std::fs::File;
@@ -37,8 +37,7 @@ pub(crate) fn build(filename: &str) {
     }
 
     let mut db = LarkDatabase::default();
-
-    let file = parser::add_file(&mut db, filename, contents.to_string());
+    let file = db.add_file(filename, contents.to_string());
 
     match db.errors_for_project() {
         Ok(errors) => {
