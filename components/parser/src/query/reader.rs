@@ -20,6 +20,10 @@ salsa::query_group! {
             // to an input query that we only `set` when a change
             // occurs, or adding a memoized wrapper so we can detect
             // when it has changed).
+            //
+            // See also <https://github.com/salsa-rs/salsa/issues/87>,
+            // which requests some way to add an initial value (we
+            // used to have one, but we removed it).
             storage volatile;
         }
 
