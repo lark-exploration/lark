@@ -11,7 +11,7 @@ use std::sync::mpsc::Sender;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method")]
 #[allow(non_camel_case_types)]
-enum LSPCommand {
+pub enum LSPCommand {
     initialize {
         id: usize,
         params: languageserver_types::InitializeParams,
@@ -49,10 +49,10 @@ enum LSPCommand {
 /// A wrapper for responses back to the IDE from the LSP service. These must follow
 /// the JSON 2.0 RPC spec
 #[derive(Debug, Serialize, Deserialize)]
-struct JsonRPCResponse<T> {
+pub struct JsonRPCResponse<T> {
     jsonrpc: String,
-    id: usize,
-    result: T,
+    pub id: usize,
+    pub result: T,
 }
 impl<T> JsonRPCResponse<T> {
     pub fn new(id: usize, result: T) -> Self {
@@ -67,10 +67,10 @@ impl<T> JsonRPCResponse<T> {
 /// A wrapper for proactive notifications to the IDE (eg. diagnostics). These must
 /// follow the JSON 2.0 RPC spec
 #[derive(Debug, Serialize, Deserialize)]
-struct JsonRPCNotification<T> {
+pub struct JsonRPCNotification<T> {
     jsonrpc: String,
-    method: String,
-    params: T,
+    pub method: String,
+    pub params: T,
 }
 impl<T> JsonRPCNotification<T> {
     pub fn new(method: String, params: T) -> Self {
@@ -232,10 +232,10 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                                 .send(MsgToManager::LspRequest(LspRequest::Initialize(id)));
                         }
                         Ok(LSPCommand::initialized) => {
-                            eprintln!("Initialized received");
+                            //eprintln!("Initialized received");
                         }
                         Ok(LSPCommand::didOpen { params }) => {
-                            eprintln!("didOpen: {:#?}", params);
+                            //eprintln!("didOpen: {:#?}", params);
 
                             let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
                                 LspRequest::OpenFile(
@@ -245,7 +245,7 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                             ));
                         }
                         Ok(LSPCommand::didChange { params }) => {
-                            eprintln!("didChange: {:#?}", params);
+                            //eprintln!("didChange: {:#?}", params);
 
                             let changes = params
                                 .content_changes
@@ -258,7 +258,7 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                             ));
                         }
                         Ok(LSPCommand::hover { id, params }) => {
-                            eprintln!("hover: id={} {:#?}", id, params);
+                            //eprintln!("hover: id={} {:#?}", id, params);
 
                             let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
                                 LspRequest::TypeForPos(
@@ -268,19 +268,19 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                                 ),
                             ));
                         }
-                        Ok(LSPCommand::completion { id, params }) => {
-                            eprintln!("completion: id={} {:#?}", id, params);
+                        Ok(LSPCommand::completion { .. }) => {
+                            //eprintln!("completion: id={} {:#?}", id, params);
                         }
-                        Ok(LSPCommand::completionItemResolve { id, params }) => {
+                        Ok(LSPCommand::completionItemResolve { .. }) => {
                             //Note: this is here in case we need it, though it looks like it's only used
                             //for more expensive computations on a completion (like fetching the docs)
-                            eprintln!("resolve completion item: id={} {:#?}", id, params);
+                            //eprintln!("resolve completion item: id={} {:#?}", id, params);
                         }
                         Ok(LSPCommand::cancelRequest {
                             params: languageserver_types::CancelParams { id },
                         }) => match id {
                             languageserver_types::NumberOrString::Number(num) => {
-                                eprintln!("cancelling item: id={}", num);
+                                //eprintln!("cancelling item: id={}", num);
                                 let _ = send_to_manager_channel
                                     .send(MsgToManager::Cancel(num as usize));
                             }

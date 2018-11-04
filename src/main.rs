@@ -47,9 +47,6 @@ fn main() {
 
     let mut args = std::env::args();
 
-    eprintln!("Lark: executing");
-    log::error!("Lark: executing");
-
     match (args.next(), args.next(), args.next()) {
         (_, Some(ref cmd), Some(ref x)) if cmd == "build" => build::build(x),
         (_, Some(ref cmd), Some(ref x)) if cmd == "run" => run(x),
