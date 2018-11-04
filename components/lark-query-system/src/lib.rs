@@ -3,7 +3,7 @@ use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;
-use parser::{HasParserState, ParserState, ReaderDatabase};
+use parser::{HasParserState, HasReaderState, ParserState, ReaderDatabase, ReaderState};
 use salsa::{Database, ParallelDatabase, Snapshot};
 use std::collections::VecDeque;
 use std::sync::Arc;
@@ -18,6 +18,7 @@ pub struct LarkDatabase {
     code_map: Arc<RwLock<CodeMap>>,
     file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
     parser_state: Arc<ParserState>,
+    reader_state: ReaderState,
     item_id_tables: Arc<EntityTables>,
     declaration_tables: Arc<lark_ty::declaration::DeclarationTables>,
     base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
@@ -42,6 +43,7 @@ impl ParallelDatabase for LarkDatabase {
             file_maps: self.file_maps.clone(),
             runtime: self.runtime.snapshot(self),
             parser_state: self.parser_state.clone(),
+            reader_state: self.reader_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
             declaration_tables: self.declaration_tables.clone(),
             base_inferred_tables: self.base_inferred_tables.clone(),
@@ -54,8 +56,8 @@ impl LsDatabase for LarkDatabase {}
 salsa::database_storage! {
     pub struct LarkDatabaseStorage for LarkDatabase {
         impl parser::ReaderDatabase {
-            fn files() for parser::Files;
             fn paths() for parser::Paths;
+            fn paths_trigger() for parser::PathsTrigger;
             fn source() for parser::Source;
         }
         impl ast::AstDatabase {
@@ -108,6 +110,12 @@ impl AsRef<lark_ty::base_inferred::BaseInferredTables> for LarkDatabase {
 impl HasParserState for LarkDatabase {
     fn parser_state(&self) -> &ParserState {
         &self.parser_state
+    }
+}
+
+impl HasReaderState for LarkDatabase {
+    fn reader_state(&self) -> &ReaderState {
+        &self.reader_state
     }
 }
 
@@ -200,7 +208,7 @@ impl QuerySystem {
             QueryRequest::OpenFile(url, contents) => {
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
-                parser::add_file(&mut self.lark_db, url.as_str(), contents.as_str());
+                self.lark_db.add_file(url.as_str(), contents.as_str());
             }
 
             QueryRequest::EditFile(url, changes) => {
@@ -208,14 +216,7 @@ impl QuerySystem {
                 // it ensures an overall ordering to edits.
                 let path_id = self.lark_db.intern_string(url.as_str());
 
-                let file_maps = self
-                    .lark_db
-                    .files()
-                    .read()
-                    .unwrap()
-                    .find(&path_id)
-                    .unwrap()
-                    .clone();
+                let file_maps = self.lark_db.source(path_id);
 
                 let mut current_contents = file_maps.source().to_string();
 
@@ -246,11 +247,8 @@ impl QuerySystem {
                     );
                 }
 
-                parser::add_file(
-                    &mut self.lark_db,
-                    url.as_str(),
-                    current_contents.to_string(),
-                );
+                self.lark_db
+                    .add_file(url.as_str(), current_contents.to_string());
             }
             QueryRequest::TypeAtPosition(task_id, url, position) => {
                 std::thread::spawn({
