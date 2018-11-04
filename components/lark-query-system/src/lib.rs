@@ -126,12 +126,9 @@ pub struct QuerySystem {
 
 impl QuerySystem {
     pub fn new() -> QuerySystem {
-        let mut lark_db = LarkDatabase::default();
-        lark_db.initialize_reader();
-
         QuerySystem {
             send_channel: Box::new(NoopSendChannel),
-            lark_db: lark_db,
+            lark_db: LarkDatabase::default(),
             needs_error_check: false,
         }
     }

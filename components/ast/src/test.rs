@@ -67,7 +67,6 @@ impl AsRef<EntityTables> for TestDatabaseImpl {
 #[test]
 fn parse_error() {
     let mut db = TestDatabaseImpl::default();
-    db.initialize_reader();
     // db.query_mut(parser::Files)
     //     .set((), Arc::new(RwLock::new(SourceFiles::default())));
 
@@ -80,7 +79,6 @@ fn parse_error() {
 #[test]
 fn parse_ok() {
     let mut db = TestDatabaseImpl::default();
-    db.initialize_reader();
 
     let path1_str = "path1";
     let path1_interned = db.intern_string("path1");

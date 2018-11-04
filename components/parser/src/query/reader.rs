@@ -3,15 +3,24 @@ use crate::prelude::*;
 use crate::StringId;
 use map::FxIndexSet;
 use parking_lot::RwLock;
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 salsa::query_group! {
-    pub trait ReaderDatabase: crate::HasParserState + salsa::Database {
+    pub trait ReaderDatabase: crate::HasParserState + HasReaderState + salsa::Database {
         fn paths() -> Arc<FxIndexSet<StringId>> {
             type Paths;
-            storage input;
+
+            // This is marked volatile because it accesses state
+            // behind a rw-lock which is not versioned. Right now,
+            // this query isn't really used anywhere except the
+            // highest levels, so we don't have a real need to know
+            // whether it has changed or not. If we did, we could
+            // change this setup readily enough (e.g., by converting
+            // to an input query that we only `set` when a change
+            // occurs, or adding a memoized wrapper so we can detect
+            // when it has changed).
+            storage volatile;
         }
 
         fn source(key: StringId) -> Arc<File> {
@@ -19,6 +28,10 @@ salsa::query_group! {
             storage input;
         }
     }
+}
+
+fn paths(db: &impl ReaderDatabase) -> Arc<FxIndexSet<StringId>> {
+    db.reader_state().data.read().paths.clone()
 }
 
 /// Trait that the `ReaderDatabase` relies on; exposes the internal
@@ -30,31 +43,35 @@ salsa::query_group! {
 pub trait HasReaderState {
     fn reader_state(&self) -> &ReaderState;
 
-    fn initialize_reader(&mut self)
-    where
-        Self: ReaderDatabase,
-    {
-        self.query_mut(Paths)
-            .set((), Arc::new(FxIndexSet::default()))
-    }
-
+    /// Adds a new file (or overwrites an existing file) into our
+    /// reader database. Returns the `Arc<File>` you can use to talk
+    /// about it, but that file is also available via
+    /// `self.source(path_id)` (where `path_id` is the interned
+    /// version of `path`).
     fn add_file(&mut self, path: &str, source: impl Into<String>) -> Arc<File>
     where
         Self: ReaderDatabase,
     {
         let path_id = self.intern_string(path);
         let source = source.into();
-        let data = self.reader_state().data.clone();
 
-        let mut paths = (*self.paths()).clone();
-        paths.insert(path_id);
-        self.query_mut(Paths).set((), Arc::new(paths));
+        let file = {
+            // Acquire the write-lock on the reader state and create
+            // the `file` in the codemap.
+            let mut data = self.reader_state().data.write();
 
-        let file = data
-            .write()
-            .insert(&path_id, codespan::FileName::Real(path.into()), source);
+            // Update the full set of all paths if necessary.
+            if !data.paths.contains(&path_id) {
+                Arc::make_mut(&mut data.paths).insert(path_id);
+            }
+
+            // Insert new file into the codemap.
+            let codemap_path_name = codespan::FileName::Real(path.into());
+            let filemap = data.codemap.add_filemap(codemap_path_name, source);
+            Arc::new(File(filemap.clone()))
+        };
+
         self.query_mut(Source).set(path_id, file.clone());
-
         file
     }
 }
@@ -78,17 +95,11 @@ pub struct ReaderState {
 /// not something was interned already).
 #[derive(Debug, Default)]
 struct ReaderStateData {
+    /// The codemap that we use to store all of our inputs.
     codemap: CodeMap,
-    files: HashMap<StringId, Arc<File>>,
-}
 
-impl ReaderStateData {
-    fn insert(&mut self, path: &StringId, path_name: FileName, source: String) -> Arc<File> {
-        let filemap = self.codemap.add_filemap(path_name, source);
-        let file = Arc::new(File(filemap.clone()));
-        self.files.insert(*path, file.clone());
-        file
-    }
+    /// The full set of paths.
+    paths: Arc<FxIndexSet<StringId>>,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
