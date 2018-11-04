@@ -16,8 +16,8 @@ pub mod parser;
 crate mod parser2;
 pub mod pos;
 pub mod prelude;
-pub mod query;
-pub mod reporting;
+crate mod query;
+crate mod reporting;
 
 #[cfg(test)]
 mod test_helpers;
@@ -37,8 +37,8 @@ pub use self::parser2::quicklex::Tokenizer;
 pub use self::parser2::reader::{PairedDelimiter, Reader};
 pub use self::parser2::token_tree::{TokenPos, TokenSpan};
 pub use self::parser2::LexToken;
-pub use self::query::{
-    add_file, initialize_reader, Files, HasParserState, InputText, ParserState, Paths,
-    ReaderDatabase, Source, SourceFiles,
+pub use self::query::parser_state::{HasParserState, ParserState};
+pub use self::query::reader::{
+    File, HasReaderState, Paths, PathsTrigger, ReaderDatabase, ReaderState, Source,
 };
 pub use self::reporting::print_parse_error;
