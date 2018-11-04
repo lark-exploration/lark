@@ -1,8 +1,5 @@
 use crate::prelude::*;
-
 use crate::{LookupStringId, ModuleTable, Seahash, StringId};
-
-use lark_debug_derive::DebugWith;
 use parking_lot::RwLock;
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -52,11 +49,4 @@ impl LookupStringId for ParserState {
     fn lookup(&self, id: StringId) -> Arc<String> {
         self.untern_string(id)
     }
-}
-
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
-pub struct InputText {
-    pub text: StringId,
-    pub start_offset: u32,
-    pub span: Span,
 }
