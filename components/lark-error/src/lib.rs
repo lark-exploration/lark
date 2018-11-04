@@ -35,28 +35,42 @@ use std::sync::Arc;
 /// Unit type used in `Result` to indicate a value derived from other
 /// value where an error was already reported.
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ErrorReported(pub Vec<Span>);
+pub struct ErrorReported(pub Vec<Diagnostic>);
 
 impl ErrorReported {
-    pub fn at_span(s: Span) -> Self {
+    pub fn at_diagnostic(s: Diagnostic) -> Self {
         ErrorReported(vec![s])
     }
 
-    pub fn at_spans(s: Vec<Span>) -> Self {
+    pub fn at_diagnostics(s: Vec<Diagnostic>) -> Self {
         ErrorReported(s)
     }
 
-    pub fn some_span(&self) -> Span {
+    pub fn some_diagnostic(&self) -> Diagnostic {
         // Pick the first error arbitrarily
-        self.spans()[0]
+        self.diagnostics()[0].clone()
     }
 
-    pub fn spans(&self) -> &[Span] {
+    pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.0
     }
 
-    pub fn into_spans(self) -> Vec<Span> {
+    pub fn into_diagnostics(self) -> Vec<Diagnostic> {
         self.0
+    }
+}
+
+/// A span with an associated label.
+/// TODO: We may want to merge this with what's available in error
+/// reporting
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Diagnostic {
+    pub span: Span,
+    pub label: String,
+}
+impl Diagnostic {
+    pub fn new(label: String, span: Span) -> Diagnostic {
+        Diagnostic { label, span }
     }
 }
 
@@ -71,7 +85,7 @@ impl ErrorReported {
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct WithError<T> {
     pub value: T,
-    pub errors: Vec<Span>,
+    pub errors: Vec<Diagnostic>,
 }
 
 impl<T> WithError<T> {
@@ -87,18 +101,19 @@ impl<T> WithError<T> {
     /// Convenience function: generates a `WithError` indicating that
     /// this query found an error that was not yet reported. The value
     /// is the error-sentinel for this type.
-    pub fn report_error<Cx>(cx: Cx, span: Span) -> WithError<T>
+    pub fn report_error<Cx>(cx: Cx, label: String, span: Span) -> WithError<T>
     where
         T: ErrorSentinel<Cx>,
     {
+        let diagnostic = Diagnostic::new(label, span);
         WithError {
-            value: T::error_sentinel(cx, &[span]),
-            errors: vec![span],
+            value: T::error_sentinel(cx, &[diagnostic.clone()]),
+            errors: vec![diagnostic],
         }
     }
 
     /// Append any errors into `vec` and return our wrapped value.
-    pub fn accumulate_errors_into(self, vec: &mut Vec<Span>) -> T {
+    pub fn accumulate_errors_into(self, vec: &mut Vec<Diagnostic>) -> T {
         vec.extend(self.errors);
         self.value
     }
@@ -130,11 +145,11 @@ pub macro or_return_sentinel($cx:expr, $v:expr) {
 }
 
 pub trait ErrorSentinel<Cx> {
-    fn error_sentinel(cx: Cx, error_spans: &[Span]) -> Self;
+    fn error_sentinel(cx: Cx, error_spans: &[Diagnostic]) -> Self;
 }
 
 impl<T, Cx> ErrorSentinel<Cx> for Result<T, ErrorReported> {
-    fn error_sentinel(_cx: Cx, spans: &[Span]) -> Self {
+    fn error_sentinel(_cx: Cx, spans: &[Diagnostic]) -> Self {
         Err(ErrorReported(spans.to_owned()))
     }
 }
@@ -143,7 +158,7 @@ impl<T, Cx> ErrorSentinel<Cx> for Arc<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Span]) -> Self {
+    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> Self {
         Arc::new(T::error_sentinel(cx, spans))
     }
 }
@@ -152,7 +167,7 @@ impl<T, Cx> ErrorSentinel<Cx> for Vec<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Span]) -> Self {
+    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> Self {
         vec![T::error_sentinel(cx, spans)]
     }
 }
@@ -161,7 +176,7 @@ impl<T, Cx> ErrorSentinel<Cx> for WithError<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Span]) -> WithError<T>
+    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> WithError<T>
     where
         T: ErrorSentinel<Cx>,
     {

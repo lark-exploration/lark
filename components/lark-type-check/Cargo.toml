@@ -18,4 +18,4 @@ lark-unify = { path = "../lark-unify" }
 log = "0.4.5"
 map = { path = "../map" }
 parser = { path = "../parser" }
-salsa = "0.7"
+salsa = "0.8"

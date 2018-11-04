@@ -4,30 +4,38 @@ use ast::ast as a;
 use crate as hir;
 use crate::HirDatabase;
 use lark_entity::Entity;
+use lark_error::Diagnostic;
 use lark_error::ErrorReported;
+use lark_error::WithError;
 use map::FxIndexMap;
 use parser::pos::{Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
 
-crate fn fn_body(db: &impl HirDatabase, item_id: Entity) -> Arc<crate::FnBody> {
-    let lower = HirLower::new(db);
-    Arc::new(lower.lower_ast_of_item(item_id))
+crate fn fn_body(db: &impl HirDatabase, item_id: Entity) -> WithError<Arc<crate::FnBody>> {
+    let mut errors = vec![];
+    let fn_body = HirLower::new(db, &mut errors).lower_ast_of_item(item_id);
+    WithError {
+        value: Arc::new(fn_body),
+        errors,
+    }
 }
 
-struct HirLower<'db, DB: HirDatabase> {
-    db: &'db DB,
+struct HirLower<'me, DB: HirDatabase> {
+    db: &'me DB,
     fn_body_tables: hir::FnBodyTables,
     variables: FxIndexMap<StringId, hir::Variable>,
+    errors: &'me mut Vec<Diagnostic>,
 }
 
-impl<'db, DB> HirLower<'db, DB>
+impl<'me, DB> HirLower<'me, DB>
 where
     DB: HirDatabase,
 {
-    fn new(db: &'db DB) -> Self {
+    fn new(db: &'me DB, errors: &'me mut Vec<Diagnostic>) -> Self {
         HirLower {
             db,
+            errors,
             fn_body_tables: Default::default(),
             variables: Default::default(),
         }
@@ -80,7 +88,7 @@ where
 
             Err(ErrorReported(ref spans)) => {
                 let root_expression =
-                    self.error_expression(*spans.first().unwrap(), hir::ErrorData::Misc);
+                    self.error_expression(spans.first().unwrap().span, hir::ErrorData::Misc);
 
                 hir::FnBody {
                     arguments: hir::List::default(),
@@ -111,22 +119,19 @@ where
             .unwrap_or_else(|| self.unit_expression(block.span()))
     }
 
-    fn lower_block_items(&mut self, block_items: &[a::BlockItem]) -> Option<hir::Expression> {
-        if block_items.is_empty() {
-            return None;
-        }
-
-        match &block_items[0] {
-            a::BlockItem::Item(_) => return self.lower_block_items(&block_items[1..]),
+    fn lower_block_items(&mut self, all_block_items: &[a::BlockItem]) -> Option<hir::Expression> {
+        let (first_block_item, remaining_block_items) = all_block_items.split_first()?;
+        match first_block_item {
+            a::BlockItem::Item(_) => return self.lower_block_items(remaining_block_items),
 
             a::BlockItem::Decl(decl) => match decl {
-                a::Declaration::Let(l) => Some(self.lower_let(l, block_items)),
+                a::Declaration::Let(l) => Some(self.lower_let(l, remaining_block_items)),
             },
 
             a::BlockItem::Expr(expr) => {
                 let first = self.lower_expression(expr);
 
-                match self.lower_block_items(&block_items[1..]) {
+                match self.lower_block_items(remaining_block_items) {
                     None => Some(first),
 
                     Some(second) => {
@@ -184,9 +189,28 @@ where
         match expr {
             a::Expression::Block(block) => self.lower_block(block),
 
-            a::Expression::ConstructStruct(_) => unimplemented!("struct construction"),
-
-            a::Expression::Call(_) => unimplemented!("calls"),
+            a::Expression::Literal(..)
+            | a::Expression::Interpolation(..)
+            | a::Expression::Call(_)
+            | a::Expression::ConstructStruct(_) => self.unimplemented(expr.span()),
+            a::Expression::Binary(spanned_op, lhs_expr, rhs_expr) => {
+                let left = self.lower_expression(lhs_expr);
+                let right = self.lower_expression(rhs_expr);
+                let operator = match **spanned_op {
+                    parser::parser::ast::Op::Add => hir::BinaryOperator::Add,
+                    parser::parser::ast::Op::Sub => hir::BinaryOperator::Subtract,
+                    parser::parser::ast::Op::Mul => hir::BinaryOperator::Multiply,
+                    parser::parser::ast::Op::Div => hir::BinaryOperator::Divide,
+                };
+                self.add(
+                    spanned_op.span(),
+                    hir::ExpressionData::Binary {
+                        operator,
+                        left,
+                        right,
+                    },
+                )
+            }
 
             a::Expression::Ref(_) => {
                 let place = self.lower_place(expr);
@@ -194,13 +218,14 @@ where
                 let perm = self.add(span, hir::PermData::Default);
                 self.add(span, hir::ExpressionData::Place { perm, place })
             }
-
-            a::Expression::Binary(..) => unimplemented!("binary operators"),
-
-            a::Expression::Interpolation(..) => unimplemented!("interpolation"),
-
-            a::Expression::Literal(..) => unimplemented!("literals"),
         }
+    }
+
+    fn unimplemented(&mut self, span: Span) -> hir::Expression {
+        self.errors
+            .push(Diagnostic::new("unimplemented".into(), span));
+        let error = self.add(span, hir::ErrorData::Unimplemented);
+        self.add(span, hir::ExpressionData::Error { error })
     }
 
     fn lower_place(&mut self, expr: &a::Expression) -> hir::Place {
@@ -246,7 +271,7 @@ where
     }
 }
 
-impl<'db, DB, I> std::ops::Index<I> for HirLower<'db, DB>
+impl<'me, DB, I> std::ops::Index<I> for HirLower<'me, DB>
 where
     DB: HirDatabase,
     I: hir::HirIndex,

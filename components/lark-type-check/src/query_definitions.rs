@@ -6,7 +6,7 @@ use crate::UniverseBinder;
 use generational_arena::Arena;
 use indices::IndexVec;
 use lark_entity::Entity;
-use lark_error::WithError;
+use lark_error::{Diagnostic, WithError};
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_only::{BaseOnly, BaseOnlyTables};
 use lark_ty::map_family::Map;
@@ -19,7 +19,7 @@ crate fn base_type_check(
     db: &impl TypeCheckDatabase,
     fn_entity: Entity,
 ) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
-    let fn_body = db.fn_body(fn_entity);
+    let fn_body = db.fn_body(fn_entity).into_value();
     let interners = BaseOnlyTables::default();
     let mut base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
         db,
@@ -69,7 +69,10 @@ crate fn base_type_check(
     for _ in unresolved_variables {
         // FIXME: Decent diagnostics for unresolved inference
         // variables.
-        errors.push(fn_body.span(fn_body.root_expression));
+        errors.push(Diagnostic::new(
+            "Unresolved variable".into(),
+            fn_body.span(fn_body.root_expression),
+        ));
     }
 
     WithError {

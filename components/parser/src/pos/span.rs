@@ -8,6 +8,8 @@ use std::hash::{Hash, Hasher};
 pub enum Span {
     Real(ByteSpan),
     EOF,
+
+    // TODO: This is silly
     Synthetic,
 }
 impl From<ByteSpan> for Span {

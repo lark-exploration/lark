@@ -1,20 +1,19 @@
-use ast::{HasParserState, InputText, ParserState};
-use codespan::{CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
+use codespan::{CodeMap, FileMap};
 use lark_entity::EntityTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;
-use parser::pos::Span;
-use salsa::{Database, ParallelDatabase};
-use std::borrow::Cow;
+use parser::{HasParserState, ParserState, ReaderDatabase};
+use salsa::{Database, ParallelDatabase, Snapshot};
+use std::collections::VecDeque;
 use std::sync::Arc;
 use url::Url;
 
-mod ls_ops;
+pub mod ls_ops;
 use self::ls_ops::{Cancelled, LsDatabase};
 
 #[derive(Default)]
-struct LarkDatabase {
+pub struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
     code_map: Arc<RwLock<CodeMap>>,
     file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
@@ -24,6 +23,12 @@ struct LarkDatabase {
     base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
 }
 
+impl LarkDatabase {
+    pub fn code_map(&self) -> &RwLock<CodeMap> {
+        &self.code_map
+    }
+}
+
 impl Database for LarkDatabase {
     fn salsa_runtime(&self) -> &salsa::Runtime<LarkDatabase> {
         &self.runtime
@@ -31,30 +36,29 @@ impl Database for LarkDatabase {
 }
 
 impl ParallelDatabase for LarkDatabase {
-    fn fork(&self) -> Self {
-        LarkDatabase {
+    fn snapshot(&self) -> Snapshot<Self> {
+        Snapshot::new(LarkDatabase {
             code_map: self.code_map.clone(),
             file_maps: self.file_maps.clone(),
-            runtime: self.runtime.fork(),
+            runtime: self.runtime.snapshot(self),
             parser_state: self.parser_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
             declaration_tables: self.declaration_tables.clone(),
             base_inferred_tables: self.base_inferred_tables.clone(),
-        }
+        })
     }
 }
 
-impl LsDatabase for LarkDatabase {
-    fn file_maps(&self) -> &RwLock<FxIndexMap<String, Arc<FileMap>>> {
-        &self.file_maps
-    }
-}
+impl LsDatabase for LarkDatabase {}
 
 salsa::database_storage! {
-    struct LarkDatabaseStorage for LarkDatabase {
+    pub struct LarkDatabaseStorage for LarkDatabase {
+        impl parser::ReaderDatabase {
+            fn files() for parser::Files;
+            fn paths() for parser::Paths;
+            fn source() for parser::Source;
+        }
         impl ast::AstDatabase {
-            fn input_files() for ast::InputFilesQuery;
-            fn input_text() for ast::InputTextQuery;
             fn ast_of_file() for ast::AstOfFileQuery;
             fn items_in_file() for ast::ItemsInFileQuery;
             fn ast_of_item() for ast::AstOfItemQuery;
@@ -110,6 +114,7 @@ impl HasParserState for LarkDatabase {
 pub struct QuerySystem {
     send_channel: Box<dyn SendChannel<QueryResponse>>,
     lark_db: LarkDatabase,
+    needs_error_check: bool,
 }
 
 impl QuerySystem {
@@ -117,34 +122,8 @@ impl QuerySystem {
         QuerySystem {
             send_channel: Box::new(NoopSendChannel),
             lark_db: LarkDatabase::default(),
+            needs_error_check: false,
         }
-    }
-
-    pub fn check_for_errors_and_report(&self) {
-        std::thread::spawn({
-            let db = self.lark_db.fork();
-            let send_channel = self.send_channel.clone_send_channel();
-            let lock = db.salsa_runtime().lock_revision();
-
-            move || {
-                let _ = lock; // this moves the `lock` into the closure
-
-                match db.errors_for_project() {
-                    Ok(errors) => {
-                        // loop over hashmap and send messages
-                        for (key, value) in errors {
-                            let url = Url::parse(&key).unwrap();
-                            let ranges_with_default =
-                                value.iter().map(|x| (*x, "Error".to_string())).collect();
-                            send_channel.send(QueryResponse::Diagnostics(url, ranges_with_default));
-                        }
-                    }
-                    Err(Cancelled) => {
-                        // Ignore
-                    }
-                }
-            }
-        });
     }
 }
 
@@ -158,75 +137,99 @@ impl Actor for QuerySystem {
 
     fn shutdown(&mut self) {}
 
-    fn receive_message(&mut self, message: Self::InMessage) {
+    fn receive_messages(&mut self, messages: &mut VecDeque<Self::InMessage>) {
+        log::info!("receive_messages({} messages pending)", messages.len());
+
+        // Find the last mutation in our list. Up until that point, we need to process *only*
+        // mutations.
+        if let Some(last_mutation) = messages.iter().rposition(|message| message.is_mutation()) {
+            for message in messages.drain(0..=last_mutation) {
+                if message.is_mutation() {
+                    self.process_message(message);
+                }
+            }
+
+            // After each mutation, we need to perform an error-check at some point.
+            self.needs_error_check = true;
+        }
+
+        // OK, all mutations are processed. Now we can process the next non-mutation (if any).
+        if let Some(message) = messages.pop_front() {
+            assert!(!message.is_mutation());
+            self.process_message(message);
+        }
+
+        // If there are no more pending messages, we can go ahead and
+        // start checking for errors.  Otherwise, return, and we'll be
+        // called again.
+        if messages.is_empty() && self.needs_error_check {
+            self.check_for_errors_and_report();
+        }
+    }
+}
+
+impl QuerySystem {
+    pub fn check_for_errors_and_report(&mut self) {
+        self.needs_error_check = false;
+        std::thread::spawn({
+            let db = self.lark_db.snapshot();
+            let send_channel = self.send_channel.clone_send_channel();
+            move || {
+                match db.errors_for_project() {
+                    Ok(errors) => {
+                        // loop over hashmap and send messages
+                        for (key, value) in errors {
+                            let url = Url::parse(&key).unwrap();
+                            let ranges_with_default =
+                                value.iter().map(|x| (x.range, x.label.clone())).collect();
+                            send_channel.send(QueryResponse::Diagnostics(url, ranges_with_default));
+                        }
+                    }
+                    Err(Cancelled) => {
+                        // Ignore
+                    }
+                }
+            }
+        });
+    }
+
+    fn process_message(&mut self, message: QueryRequest) {
+        log::info!("process_message(message={:#?})", message);
+
         match message {
             QueryRequest::OpenFile(url, contents) => {
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
-                let interned_path = self.lark_db.intern_string(url.as_str());
-                let interned_contents = self.lark_db.intern_string(contents.as_str());
-                self.lark_db
-                    .query(ast::InputFilesQuery)
-                    .set((), Arc::new(vec![interned_path]));
-
-                // Uh, adding a "new" file on each change seems a bit ungreat. But good
-                // enough for now.
-                let file_map = self.lark_db.code_map.write().add_filemap(
-                    FileName::Virtual(Cow::Owned(url.to_string())),
-                    contents.to_string(),
-                );
-                let file_span = file_map.span();
-                let start_offset = file_map.span().start().to_usize() as u32;
-
-                // Record the filemap for later
-                self.lark_db
-                    .file_maps
-                    .write()
-                    .insert(url.to_string(), file_map);
-
-                self.lark_db.query(ast::InputTextQuery).set(
-                    interned_path,
-                    Some(InputText {
-                        text: interned_contents,
-                        start_offset,
-                        span: Span::from(file_span),
-                    }),
-                );
-
-                self.check_for_errors_and_report();
+                parser::add_file(&mut self.lark_db, url.as_str(), contents.as_str());
             }
+
             QueryRequest::EditFile(url, changes) => {
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
-                let interned_path = self.lark_db.intern_string(url.as_str());
+                let path_id = self.lark_db.intern_string(url.as_str());
+
                 let file_maps = self
                     .lark_db
-                    .file_maps()
+                    .files()
                     .read()
-                    .get(url.as_str())
+                    .unwrap()
+                    .find(&path_id)
                     .unwrap()
                     .clone();
 
-                let mut current_contents = file_maps.src().to_string();
+                let mut current_contents = file_maps.source().to_string();
 
-                let origin_byte_offset =
-                    file_maps.byte_index(LineIndex(0), ColumnIndex(0)).unwrap();
+                let origin_byte_offset = file_maps.byte_index(0, 0).unwrap();
 
                 for change in changes {
                     let start_position = change.0.start;
                     let start_byte_offset = file_maps
-                        .byte_index(
-                            LineIndex(start_position.line as u32),
-                            ColumnIndex((start_position.character) as u32),
-                        )
+                        .byte_index(start_position.line, start_position.character)
                         .unwrap();
 
                     let end_position = change.0.end;
                     let end_byte_offset = file_maps
-                        .byte_index(
-                            LineIndex(end_position.line as u32),
-                            ColumnIndex((end_position.character) as u32),
-                        )
+                        .byte_index(end_position.line, end_position.character)
                         .unwrap();
 
                     unsafe {
@@ -243,42 +246,17 @@ impl Actor for QuerySystem {
                     );
                 }
 
-                let interned_contents = self.lark_db.intern_string(current_contents.as_str());
-
-                // Uh, adding a "new" file on each change seems a bit ungreat. But good
-                // enough for now.
-                let file_map = self.lark_db.code_map.write().add_filemap(
-                    FileName::Virtual(Cow::Owned(url.to_string())),
+                parser::add_file(
+                    &mut self.lark_db,
+                    url.as_str(),
                     current_contents.to_string(),
                 );
-                let file_span = file_map.span();
-                let start_offset = file_map.span().start().to_usize() as u32;
-
-                // Record the filemap for later
-                self.lark_db
-                    .file_maps
-                    .write()
-                    .insert(url.to_string(), file_map);
-
-                self.lark_db.query(ast::InputTextQuery).set(
-                    interned_path,
-                    Some(InputText {
-                        text: interned_contents,
-                        start_offset,
-                        span: Span::from(file_span),
-                    }),
-                );
-
-                self.check_for_errors_and_report();
             }
             QueryRequest::TypeAtPosition(task_id, url, position) => {
                 std::thread::spawn({
-                    let db = self.lark_db.fork();
+                    let db = self.lark_db.snapshot();
                     let send_channel = self.send_channel.clone_send_channel();
-                    let lock = db.salsa_runtime().lock_revision();
                     move || {
-                        let _ = lock; // this moves the `lock` into the closure
-
                         match db.hover_text_at_position(url.as_str(), position) {
                             Ok(Some(v)) => {
                                 send_channel.send(QueryResponse::Type(task_id, v.to_string()));
@@ -297,6 +275,8 @@ impl Actor for QuerySystem {
                 });
             }
         }
+
+        log::info!("receive_message: awaiting next message");
     }
 }
 

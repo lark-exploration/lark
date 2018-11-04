@@ -4,25 +4,30 @@
 //! (e.g. `&uri`) that wouldn't be possible otherwise, which is
 //! convenient.
 
-use codespan::{ByteIndex, ColumnIndex, FileMap, LineIndex};
+use codespan::ByteIndex;
 use debug::DebugWith;
 use intern::{Intern, Untern};
 use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
-use map::FxIndexMap;
-use parking_lot::RwLock;
-use parser::pos::Span;
+use lark_error::Diagnostic;
 use parser::StringId;
 use std::collections::HashMap;
-use std::sync::Arc;
 
-pub(crate) struct Cancelled;
+pub struct RangedDiagnostic {
+    pub label: String,
+    pub range: Range,
+}
+impl RangedDiagnostic {
+    pub fn new(label: String, range: Range) -> RangedDiagnostic {
+        RangedDiagnostic { label, range }
+    }
+}
 
-pub(crate) type Cancelable<T> = Result<T, Cancelled>;
+pub struct Cancelled;
 
-pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
-    fn file_maps(&self) -> &RwLock<FxIndexMap<String, Arc<FileMap>>>;
+pub type Cancelable<T> = Result<T, Cancelled>;
 
+pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     fn check_for_cancellation(&self) -> Cancelable<()> {
         if self.salsa_runtime().is_current_revision_canceled() {
             Err(Cancelled)
@@ -31,8 +36,8 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
         }
     }
 
-    fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<Range>>> {
-        let input_files = self.input_files(());
+    fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<RangedDiagnostic>>> {
+        let input_files = self.paths();
         let mut file_errors = HashMap::new();
 
         for input_file in &*input_files {
@@ -51,22 +56,29 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
             }
 
             let filename = self.untern_string(*input_file).to_string();
-            let file_maps = self.file_maps().read().get(&filename).unwrap().clone();
+            let file_maps = self
+                .files()
+                .read()
+                .unwrap()
+                .find(&input_file)
+                .unwrap()
+                .clone();
 
             let error_ranges = errors
                 .iter()
                 .map(|x| {
-                    let left_side = x.start().unwrap();
-                    let (left_line, left_col) = file_maps.location(left_side).unwrap();
-                    let left_position =
-                        Position::new(left_line.to_usize() as u64, left_col.to_usize() as u64);
+                    let left_side = x.span.start().unwrap();
+                    let (left_line, left_col) = file_maps.location(left_side);
+                    let left_position = Position::new(left_line, left_col);
 
-                    let right_side = x.end().unwrap();
-                    let (right_line, right_col) = file_maps.location(right_side).unwrap();
-                    let right_position =
-                        Position::new(right_line.to_usize() as u64, right_col.to_usize() as u64);
+                    let right_side = x.span.end().unwrap();
+                    let (right_line, right_col) = file_maps.location(right_side);
+                    let right_position = Position::new(right_line, right_col);
 
-                    Range::new(left_position, right_position)
+                    RangedDiagnostic::new(
+                        x.label.clone(),
+                        Range::new(left_position, right_position),
+                    )
                 })
                 .collect();
 
@@ -79,7 +91,7 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
     fn accumulate_errors_for_entity(
         &self,
         entity: Entity,
-        errors: &mut Vec<Span>,
+        errors: &mut Vec<Diagnostic>,
     ) -> Cancelable<()> {
         self.check_for_cancellation()?;
 
@@ -114,7 +126,8 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     .accumulate_errors_into(errors);
                 let _ = self.ty(entity).accumulate_errors_into(errors);
                 let _ = self.signature(entity).accumulate_errors_into(errors);
-                //let _ = self.base_type_check(entity).accumulate_errors_into(errors);
+                let _ = self.fn_body(entity).accumulate_errors_into(errors);
+                let _ = self.base_type_check(entity).accumulate_errors_into(errors);
             }
             EntityData::MemberName {
                 kind: MemberKind::Method,
@@ -125,7 +138,8 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     .accumulate_errors_into(errors);
                 let _ = self.ty(entity).accumulate_errors_into(errors);
                 let _ = self.signature(entity).accumulate_errors_into(errors);
-                //let _ = self.base_type_check(entity).accumulate_errors_into(errors);
+                let _ = self.fn_body(entity).accumulate_errors_into(errors);
+                let _ = self.base_type_check(entity).accumulate_errors_into(errors);
             }
         }
 
@@ -175,12 +189,14 @@ pub(crate) trait LsDatabase: lark_type_check::TypeCheckDatabase {
     }
 
     fn position_to_byte_index(&self, url: &str, position: Position) -> ByteIndex {
-        let file_maps = self.file_maps().read();
-        file_maps[url]
-            .byte_index(
-                LineIndex(position.line as u32),
-                ColumnIndex(position.character as u32),
-            )
+        let files = self.files();
+        let files = files.read().unwrap();
+        let url_id = self.intern_string(url);
+
+        files
+            .find(&url_id)
+            .unwrap()
+            .byte_index(position.line, position.character)
             .unwrap()
     }
 

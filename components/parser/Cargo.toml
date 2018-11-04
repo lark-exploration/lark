@@ -5,7 +5,7 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-codespan = "0.1.3"
+codespan = "0.2.0"
 derive-new = "0.5.5"
 lalrpop-util = "0.16.0"
 lazy_static = "1.1.0"
@@ -15,11 +15,13 @@ lark-debug-derive = { path = "../lark-debug-derive" }
 seahash = "3.0.5"
 smart-default = "0.2.0"
 unicode-xid = "0.1.0"
-language-reporting = { git = "https://github.com/wycats/language-reporting.git" }
+language-reporting = "0.2.0"
 termcolor = "1.0.4"
 bimap = "0.1.5"
 debug = { path = "../debug" }
 map = { path = "../map" }
+salsa = "0.8.0"
+parking_lot = "0.6.4"
 
 [dev-dependencies]
 unindent = "0.1.3"
