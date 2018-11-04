@@ -31,6 +31,7 @@ pub use self::declaration::Declaration;
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
     type InternTables: AsRef<Self::InternTables>;
 
+    type Repr: Copy + Clone + Debug + DebugWith + Eq + Hash;
     type Perm: Copy + Clone + Debug + DebugWith + Eq + Hash;
     type Base: Copy + Clone + Debug + DebugWith + Eq + Hash;
 
@@ -43,8 +44,11 @@ pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
 
     fn own_perm(tables: &dyn AsRef<Self::InternTables>) -> Self::Perm;
 
+    fn direct_repr(tables: &dyn AsRef<Self::InternTables>) -> Self::Repr;
+
     fn error_type(tables: &dyn AsRef<Self::InternTables>) -> Ty<Self> {
         Ty {
+            repr: Self::direct_repr(tables),
             perm: Self::own_perm(tables),
             base: Self::error_base_data(tables),
         }
@@ -64,6 +68,7 @@ pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
 /// A type is the combination of a *permission* and a *base type*.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Ty<F: TypeFamily> {
+    pub repr: F::Repr,
     pub perm: F::Perm,
     pub base: F::Base,
 }
@@ -335,4 +340,12 @@ impl GenericDeclarations {
 pub struct GenericTyDeclaration {
     pub def_id: Entity,
     pub name: GlobalIdentifier,
+}
+
+/// The two distinct kinds of representations you can have: direct
+/// (store the fields in place) and indirect (store a pointer).
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum ReprKind {
+    Direct,
+    Indirect,
 }

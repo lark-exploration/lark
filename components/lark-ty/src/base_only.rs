@@ -16,11 +16,16 @@ pub struct BaseOnly;
 
 impl TypeFamily for BaseOnly {
     type InternTables = BaseOnlyTables;
+    type Repr = Erased;
     type Perm = Erased;
     type Base = Base;
     type Placeholder = Placeholder;
 
     fn own_perm(_tables: &dyn AsRef<BaseOnlyTables>) -> Erased {
+        Erased
+    }
+
+    fn direct_repr(_tables: &dyn AsRef<BaseOnlyTables>) -> Erased {
         Erased
     }
 

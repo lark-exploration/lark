@@ -56,6 +56,7 @@ impl ParsedTypeReference {
                 let entity = EntityData::LangItem(LangItem::Tuple(0)).intern(&db);
                 WithError::ok(ty::Ty {
                     perm: ty::Erased,
+                    repr: ty::Erased,
                     base: Declaration::intern_base_data(
                         &db,
                         ty::BaseData {

@@ -50,11 +50,15 @@ where
 
 impl<T, V> FamilyMapper<Declaration, T> for Substitution<'me, T, V>
 where
-    T: TypeFamily<Perm = Erased>,
+    T: TypeFamily<Repr = Erased, Perm = Erased>,
     V: std::ops::Index<BoundVar, Output = Generic<T>>,
 {
     fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<T> {
-        let Ty { perm: Erased, base } = ty;
+        let Ty {
+            repr: Erased,
+            perm: Erased,
+            base,
+        } = ty;
 
         match base.untern(self) {
             BoundVarOr::BoundVar(var) => self.values[var].assert_ty(),
@@ -62,6 +66,7 @@ where
             BoundVarOr::Known(base_data) => {
                 let base_data1 = base_data.map(self);
                 Ty {
+                    repr: Erased,
                     perm: Erased,
                     base: T::intern_base_data(self.output_tables, base_data1),
                 }

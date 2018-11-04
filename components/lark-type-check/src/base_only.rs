@@ -22,6 +22,7 @@ impl TypeCheckFamily for BaseOnly {
 
     fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self> {
         Ty {
+            repr: Erased,
             perm: Erased,
             base: this.unify().new_inferable(),
         }
@@ -34,10 +35,12 @@ impl TypeCheckFamily for BaseOnly {
         ty2: Ty<BaseOnly>,
     ) {
         let Ty {
+            repr: Erased,
             perm: Erased,
             base: base1,
         } = ty1;
         let Ty {
+            repr: Erased,
             perm: Erased,
             base: base2,
         } = ty2;
@@ -175,6 +178,7 @@ where
 fn primitive_type(this: &impl TypeCheckerFields<BaseOnly>, item: LangItem) -> BaseTy {
     let entity = EntityData::LangItem(item).intern(this);
     Ty {
+        repr: Erased,
         perm: Erased,
         base: BaseOnly::intern_base_data(
             this,

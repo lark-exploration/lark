@@ -124,6 +124,10 @@ where
         F::own_perm(self)
     }
 
+    pub(super) fn direct_repr(&mut self) -> F::Repr {
+        F::direct_repr(self)
+    }
+
     pub(super) fn least_upper_bound(
         &mut self,
         if_expression: hir::Expression,
@@ -159,6 +163,7 @@ where
                     })
                     .map(|p| {
                         GenericKind::Ty(Ty {
+                            repr: self.direct_repr(),
                             perm: self.own_perm(),
                             base: F::intern_base_data(self, BaseData::from_placeholder(p)),
                         })

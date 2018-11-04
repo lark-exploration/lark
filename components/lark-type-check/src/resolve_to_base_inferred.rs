@@ -22,14 +22,22 @@ crate struct ResolveToBaseInferred<'me> {
 
 impl FamilyMapper<BaseOnly, BaseInferred> for ResolveToBaseInferred<'me> {
     fn map_ty(&mut self, ty: Ty<BaseOnly>) -> Ty<BaseInferred> {
-        let Ty { perm: Erased, base } = ty;
+        let Ty {
+            repr: Erased,
+            perm: Erased,
+            base,
+        } = ty;
 
         match self.unify.shallow_resolve_data(base) {
             Ok(BaseData { kind, generics }) => {
                 let kind = kind.map(self);
                 let generics = generics.map(self);
                 let base = BaseData { kind, generics }.intern(self.output_tables);
-                Ty { perm: Erased, base }
+                Ty {
+                    repr: Erased,
+                    perm: Erased,
+                    base,
+                }
             }
 
             Err(infer_var) => {

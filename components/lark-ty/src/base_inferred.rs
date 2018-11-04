@@ -1,4 +1,6 @@
-//! A type family where we just erase all permissions and we support inference.
+//! A type family where we have fully inferred all the "base types" --
+//! but all permissions are erased. This is the output of the
+//! `base_type_check` query.
 
 use crate::BaseData;
 use crate::Erased;
@@ -14,11 +16,16 @@ pub struct BaseInferred;
 
 impl TypeFamily for BaseInferred {
     type InternTables = BaseInferredTables;
+    type Repr = Erased;
     type Perm = Erased;
     type Base = Base;
     type Placeholder = Placeholder;
 
     fn own_perm(_tables: &dyn AsRef<BaseInferredTables>) -> Erased {
+        Erased
+    }
+
+    fn direct_repr(_tables: &dyn AsRef<BaseInferredTables>) -> Erased {
         Erased
     }
 

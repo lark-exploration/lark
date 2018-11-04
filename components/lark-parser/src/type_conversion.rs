@@ -69,6 +69,7 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaratio
                 .map(|i| BoundVar::new(i))
                 .map(|bv| Ty {
                     base: Declaration::intern_bound_var(db, bv),
+                    repr: Erased,
                     perm: Declaration::own_perm(db),
                 })
                 .map(|ty| GenericKind::Ty(ty))
@@ -128,7 +129,11 @@ crate fn declaration_ty_named(
 ) -> Ty<Declaration> {
     let kind = BaseKind::Named(entity);
     let base = Declaration::intern_base_data(db, BaseData { kind, generics });
-    Ty { perm: Erased, base }
+    Ty {
+        perm: Erased,
+        repr: Erased,
+        base,
+    }
 }
 
 //fn declaration_ty_from_ast_ty(

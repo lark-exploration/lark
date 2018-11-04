@@ -18,11 +18,16 @@ pub struct Declaration;
 
 impl TypeFamily for Declaration {
     type InternTables = DeclarationTables;
+    type Repr = Erased; // Not Yet Implemented
     type Perm = Erased; // Not Yet Implemented
     type Base = Base;
     type Placeholder = !;
 
     fn own_perm(_tables: &dyn AsRef<DeclarationTables>) -> Erased {
+        Erased
+    }
+
+    fn direct_repr(_tables: &dyn AsRef<DeclarationTables>) -> Erased {
         Erased
     }
 
