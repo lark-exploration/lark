@@ -26,7 +26,7 @@ use lark_unify::UnificationTable;
 use map::FxIndexMap;
 use std::sync::Arc;
 
-mod base_only;
+mod base_inference;
 mod hir_typeck;
 mod ops;
 mod query_definitions;

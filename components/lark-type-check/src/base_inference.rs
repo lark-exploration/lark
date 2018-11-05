@@ -7,7 +7,7 @@ use intern::Intern;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
 use lark_hir as hir;
-use lark_ty::base_only::{Base, BaseOnly, BaseOnlyTables, BaseTy};
+use lark_ty::base_inference::{Base, BaseOnly, BaseOnlyTables, BaseTy};
 use lark_ty::declaration::Declaration;
 use lark_ty::identity::Identity;
 use lark_ty::map_family::Map;

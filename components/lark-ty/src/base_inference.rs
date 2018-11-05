@@ -84,7 +84,7 @@ where
 intern::intern_tables! {
     pub struct BaseOnlyTables {
         struct BaseOnlyTablesData {
-            base_only_base: map(Base, InferVarOr<BaseData<BaseOnly>>),
+            base_inference_base: map(Base, InferVarOr<BaseData<BaseOnly>>),
         }
     }
 }
