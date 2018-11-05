@@ -7,7 +7,7 @@ use intern::Intern;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
 use lark_hir as hir;
-use lark_ty::base_inference::{Base, BaseOnly, BaseOnlyTables, BaseTy};
+use lark_ty::base_inference::{Base, BaseInference, BaseInferenceTables, BaseTy};
 use lark_ty::declaration::Declaration;
 use lark_ty::identity::Identity;
 use lark_ty::map_family::Map;
@@ -17,7 +17,7 @@ use lark_ty::TypeFamily;
 use lark_ty::{BaseData, BaseKind};
 use lark_ty::{GenericKind, Generics};
 
-impl TypeCheckFamily for BaseOnly {
+impl TypeCheckFamily for BaseInference {
     type TcBase = Base;
 
     fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self> {
@@ -31,8 +31,8 @@ impl TypeCheckFamily for BaseOnly {
     fn equate_types(
         this: &mut impl TypeCheckerFields<Self>,
         cause: hir::MetaIndex,
-        ty1: Ty<BaseOnly>,
-        ty2: Ty<BaseOnly>,
+        ty1: Ty<BaseInference>,
+        ty2: Ty<BaseInference>,
     ) {
         let Ty {
             repr: Erased,
@@ -100,8 +100,8 @@ impl TypeCheckFamily for BaseOnly {
     fn apply_user_perm(
         _this: &mut impl TypeCheckerFields<Self>,
         _perm: hir::Perm,
-        place_ty: Ty<BaseOnly>,
-    ) -> Ty<BaseOnly> {
+        place_ty: Ty<BaseInference>,
+    ) -> Ty<BaseInference> {
         // In the "erased type check", we don't care about permissions.
         place_ty
     }
@@ -109,8 +109,8 @@ impl TypeCheckFamily for BaseOnly {
     fn require_assignable(
         this: &mut impl TypeCheckerFields<Self>,
         expression: hir::Expression,
-        value_ty: Ty<BaseOnly>,
-        place_ty: Ty<BaseOnly>,
+        value_ty: Ty<BaseInference>,
+        place_ty: Ty<BaseInference>,
     ) {
         Self::equate_types(this, expression.into(), value_ty, place_ty)
     }
@@ -118,9 +118,9 @@ impl TypeCheckFamily for BaseOnly {
     fn least_upper_bound(
         this: &mut impl TypeCheckerFields<Self>,
         if_expression: hir::Expression,
-        true_ty: Ty<BaseOnly>,
-        false_ty: Ty<BaseOnly>,
-    ) -> Ty<BaseOnly> {
+        true_ty: Ty<BaseInference>,
+        false_ty: Ty<BaseInference>,
+    ) -> Ty<BaseInference> {
         Self::equate_types(this, if_expression.into(), true_ty, false_ty);
         true_ty
     }
@@ -166,21 +166,21 @@ fn propagate_error<F: TypeCheckFamily>(
     }
 }
 
-impl<DB> AsRef<BaseOnlyTables> for TypeChecker<'_, DB, BaseOnly>
+impl<DB> AsRef<BaseInferenceTables> for TypeChecker<'_, DB, BaseInference>
 where
     DB: TypeCheckDatabase,
 {
-    fn as_ref(&self) -> &BaseOnlyTables {
+    fn as_ref(&self) -> &BaseInferenceTables {
         &self.f_tables
     }
 }
 
-fn primitive_type(this: &impl TypeCheckerFields<BaseOnly>, item: LangItem) -> BaseTy {
+fn primitive_type(this: &impl TypeCheckerFields<BaseInference>, item: LangItem) -> BaseTy {
     let entity = EntityData::LangItem(item).intern(this);
     Ty {
         repr: Erased,
         perm: Erased,
-        base: BaseOnly::intern_base_data(
+        base: BaseInference::intern_base_data(
             this,
             BaseData {
                 kind: BaseKind::Named(entity),

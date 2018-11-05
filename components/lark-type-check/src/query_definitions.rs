@@ -7,7 +7,7 @@ use generational_arena::Arena;
 use indices::IndexVec;
 use lark_entity::Entity;
 use lark_error::{Diagnostic, WithError};
-use lark_ty::base_inference::{BaseOnly, BaseOnlyTables};
+use lark_ty::base_inference::{BaseInference, BaseInferenceTables};
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::map_family::Map;
 use lark_unify::InferVar;
@@ -20,8 +20,8 @@ crate fn base_type_check(
     fn_entity: Entity,
 ) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
     let fn_body = db.fn_body(fn_entity).into_value();
-    let interners = BaseOnlyTables::default();
-    let mut base_type_checker: TypeChecker<'_, _, BaseOnly> = TypeChecker {
+    let interners = BaseInferenceTables::default();
+    let mut base_type_checker: TypeChecker<'_, _, BaseInference> = TypeChecker {
         db,
         fn_entity,
         f_tables: interners.clone(),
