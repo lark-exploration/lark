@@ -407,6 +407,12 @@ pub enum ExpressionData {
         arguments: List<Expression>,
     },
 
+    /// `function(<args>)`
+    Call {
+        function: Place,
+        arguments: List<Expression>,
+    },
+
     /// E1; E2
     Sequence {
         first: Expression,

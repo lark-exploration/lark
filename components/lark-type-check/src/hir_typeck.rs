@@ -103,6 +103,14 @@ where
                 self.compute_method_call_ty(expression, owner_ty, method, arguments)
             }
 
+            hir::ExpressionData::Call {
+                function,
+                arguments,
+            } => {
+                let function_ty = self.check_place(function);
+                self.compute_fn_call_ty(expression, function_ty, arguments)
+            }
+
             hir::ExpressionData::Aggregate { entity, fields } => {
                 self.check_aggregate(expression, entity, fields)
             }
@@ -196,6 +204,72 @@ where
                     }
                 })
             }
+        }
+    }
+
+    /// Helper for `check_expression`: Compute the type from a method call.
+    fn compute_fn_call_ty(
+        &mut self,
+        expression: hir::Expression,
+        function_ty: Ty<F>,
+        arguments: hir::List<hir::Expression>,
+    ) -> Ty<F> {
+        self.with_base_data(
+            expression,
+            function_ty.base.into(),
+            move |this, base_data| {
+                this.check_fn_call(expression, function_ty, arguments, base_data)
+            },
+        )
+    }
+
+    fn check_fn_call(
+        &mut self,
+        expression: hir::Expression,
+        _function_ty: Ty<F>,
+        arguments: hir::List<hir::Expression>,
+        base_data: BaseData<F>,
+    ) -> Ty<F> {
+        let BaseData { kind, generics } = base_data;
+        match kind {
+            BaseKind::Named(entity) => {
+                match entity.untern(self) {
+                    EntityData::ItemName {
+                        kind: ItemKind::Function,
+                        ..
+                    } => {
+                        // You can call this
+                    }
+
+                    _ => {
+                        self.record_error("cannot call value of this type".into(), expression);
+                        return self.check_arguments_in_case_of_error(arguments);
+                    }
+                }
+
+                let signature_decl = match self.db().signature(entity).into_value() {
+                    Ok(s) => s,
+                    Err(ErrorReported(_)) => {
+                        <Signature<Declaration>>::error_sentinel(self, arguments.len())
+                    }
+                };
+                let signature = self.substitute(expression, &generics, signature_decl);
+
+                self.check_arguments_against_signature(
+                    expression,
+                    &signature.inputs[..],
+                    signature.output,
+                    arguments,
+                )
+            }
+
+            BaseKind::Placeholder(_placeholder) => {
+                // Cannot presently invoke generic types.
+                self.record_error("cannot call a generic type (yet)".into(), expression);
+                return self.check_arguments_in_case_of_error(arguments);
+            }
+
+            BaseKind::Error => self.error_type(),
         }
     }
 
