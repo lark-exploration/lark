@@ -130,6 +130,20 @@ impl TypeCheckFamily for BaseOnly {
         }
     }
 
+    fn string_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+        let entity = EntityData::LangItem(LangItem::String).intern(this);
+        Ty {
+            perm: Erased,
+            base: BaseOnly::intern_base_data(
+                this,
+                BaseData {
+                    kind: BaseKind::Named(entity),
+                    generics: Generics::empty(),
+                },
+            ),
+        }
+    }
+
     fn apply_user_perm(
         _this: &mut impl TypeCheckerFields<Self>,
         _perm: hir::Perm,

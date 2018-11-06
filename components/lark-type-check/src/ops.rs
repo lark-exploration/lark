@@ -57,14 +57,16 @@ where
         F::boolean_type(self)
     }
 
-    #[allow(dead_code)]
     pub(super) fn int_type(&self) -> Ty<F> {
         F::int_type(self)
     }
 
-    #[allow(dead_code)]
     pub(super) fn uint_type(&self) -> Ty<F> {
         F::uint_type(self)
+    }
+
+    pub(super) fn string_type(&self) -> Ty<F> {
+        F::string_type(self)
     }
 
     pub(super) fn unit_type(&self) -> Ty<F> {

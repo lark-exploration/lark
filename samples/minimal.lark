@@ -3,4 +3,4 @@ struct Diagnostic {
   level: bool,
 }
 
-def foo(x: bool, y: bool) -> uint { x + y }
+def foo(x: bool, y: uint) -> bool { y }

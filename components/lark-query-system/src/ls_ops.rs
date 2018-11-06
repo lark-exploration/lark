@@ -40,29 +40,23 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         let input_files = self.paths();
         let mut file_errors = HashMap::new();
 
-        for input_file in &*input_files {
+        for &input_file in &*input_files {
             self.check_for_cancellation()?;
 
             // Check file for syntax errors
             let mut errors = vec![];
             let _ = self
-                .ast_of_file(*input_file)
+                .ast_of_file(input_file)
                 .accumulate_errors_into(&mut errors);
 
             // Next, check entities in file for type-safety
-            let file_entity = EntityData::InputFile { file: *input_file }.intern(self);
+            let file_entity = EntityData::InputFile { file: input_file }.intern(self);
             for &entity in self.subentities(file_entity).iter() {
                 self.accumulate_errors_for_entity(entity, &mut errors)?;
             }
 
-            let filename = self.untern_string(*input_file).to_string();
-            let file_maps = self
-                .files()
-                .read()
-                .unwrap()
-                .find(&input_file)
-                .unwrap()
-                .clone();
+            let filename = self.untern_string(input_file).to_string();
+            let file_maps = self.source(input_file);
 
             let error_ranges = errors
                 .iter()
@@ -189,13 +183,8 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     }
 
     fn position_to_byte_index(&self, url: &str, position: Position) -> ByteIndex {
-        let files = self.files();
-        let files = files.read().unwrap();
         let url_id = self.intern_string(url);
-
-        files
-            .find(&url_id)
-            .unwrap()
+        self.source(url_id)
             .byte_index(position.line, position.character)
             .unwrap()
     }

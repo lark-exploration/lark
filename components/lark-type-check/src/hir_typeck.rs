@@ -124,6 +124,10 @@ where
                 self.least_upper_bound(expression, true_ty, false_ty)
             }
 
+            hir::ExpressionData::Literal { data } => match data {
+                hir::LiteralData::String(_) => self.string_type(),
+            },
+
             hir::ExpressionData::Unit {} => self.unit_type(),
 
             hir::ExpressionData::Error { error: _ } => self.error_type(),

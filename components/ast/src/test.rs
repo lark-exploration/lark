@@ -3,7 +3,7 @@
 use crate::AstDatabase;
 use debug::DebugWith;
 use lark_entity::EntityTables;
-use parser::{HasParserState, ParserState};
+use parser::{HasParserState, HasReaderState, ParserState, ReaderState};
 use salsa::Database;
 use std::sync::Arc;
 
@@ -11,13 +11,14 @@ use std::sync::Arc;
 struct TestDatabaseImpl {
     runtime: salsa::Runtime<TestDatabaseImpl>,
     parser_state: ParserState,
+    reader_state: ReaderState,
     item_id_tables: EntityTables,
 }
 
 salsa::database_storage! {
     pub struct TestDatabaseImplStorage for TestDatabaseImpl {
         impl parser::ReaderDatabase {
-            fn files() for parser::Files;
+            fn paths_trigger() for parser::PathsTrigger;
             fn paths() for parser::Paths;
             fn source() for parser::Source;
         }
@@ -52,6 +53,12 @@ impl parser::LookupStringId for TestDatabaseImpl {
     }
 }
 
+impl parser::HasReaderState for TestDatabaseImpl {
+    fn reader_state(&self) -> &ReaderState {
+        &self.reader_state
+    }
+}
+
 impl AsRef<EntityTables> for TestDatabaseImpl {
     fn as_ref(&self) -> &EntityTables {
         &self.item_id_tables
@@ -61,12 +68,11 @@ impl AsRef<EntityTables> for TestDatabaseImpl {
 #[test]
 fn parse_error() {
     let mut db = TestDatabaseImpl::default();
-    parser::initialize_reader(&mut db);
     // db.query_mut(parser::Files)
     //     .set((), Arc::new(RwLock::new(SourceFiles::default())));
 
     let path1 = db.intern_string("path1");
-    parser::add_file(&mut db, "path1", "XXX");
+    db.add_file("path1", "XXX");
 
     assert!(!db.ast_of_file(path1).errors.is_empty());
 }
@@ -74,7 +80,6 @@ fn parse_error() {
 #[test]
 fn parse_ok() {
     let mut db = TestDatabaseImpl::default();
-    parser::initialize_reader(&mut db);
 
     let path1_str = "path1";
     let path1_interned = db.intern_string("path1");
@@ -84,7 +89,7 @@ def new(msg: own String, level: String) -> Diagnostic {
   Diagnostic { mgs, level }
 }";
 
-    parser::add_file(&mut db, path1_str, text1_str);
+    db.add_file(path1_str, text1_str);
 
     assert!(
         db.ast_of_file(path1_interned).errors.is_empty(),
