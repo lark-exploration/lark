@@ -4,10 +4,10 @@
 #![feature(in_band_lifetimes)]
 
 use generational_arena::Arena;
-use hir;
 use indices::IndexVec;
 use lark_entity::{Entity, EntityTables};
 use lark_error::{Diagnostic, WithError};
+use lark_hir as hir;
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;

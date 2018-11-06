@@ -8,11 +8,11 @@ edition = "2018"
 derive-new = "0.5.5"
 ast = { path = "../ast" }
 generational-arena = "0.1.0"
-hir = { path = "../hir" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
+lark-hir = { path = "../lark-hir" }
 lark-ty = { path = "../lark-ty" }
 lark-unify = { path = "../lark-unify" }
 log = "0.4.5"
