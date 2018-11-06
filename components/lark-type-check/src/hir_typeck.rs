@@ -215,7 +215,7 @@ where
     fn check_method_call(
         &mut self,
         expression: hir::Expression,
-        _owner_ty: Ty<F>,
+        owner_ty: Ty<F>,
         method_name: hir::Identifier,
         arguments: hir::List<hir::Expression>,
         base_data: BaseData<F>,
@@ -233,8 +233,6 @@ where
                     }
                 };
 
-                // FIXME -- what role does `owner_ty` place here??
-
                 self.results.record_entity(method_name, method_entity);
 
                 let signature_decl = match self.db().signature(method_entity).into_value() {
@@ -244,33 +242,57 @@ where
                     }
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
-                if signature.inputs.len() != arguments.len() {
-                    self.record_error("mismatched argument count".into(), method_name);
-                }
-                let hir = &self.hir.clone();
-                for (&expected_ty, argument_expr) in
-                    signature.inputs.iter().zip(arguments.iter(hir))
-                {
-                    self.check_expression_has_type(expected_ty, argument_expr);
-                }
-                signature.output
+
+                // The 0th item in the signature is the self type, so check that
+                self.require_assignable(expression, owner_ty, signature.inputs[0]);
+
+                self.check_arguments_against_signature(
+                    method_name,
+                    &signature.inputs[..],
+                    signature.output,
+                    arguments,
+                )
             }
 
             BaseKind::Placeholder(_placeholder) => {
                 // Cannot presently invoke methods on generic types.
-                let hir = &self.hir.clone();
-                for argument_expr in arguments.iter(hir) {
-                    self.check_expression(argument_expr);
-                }
                 self.record_error(
                     "cannot invoke methods on generic types(yet)".into(),
                     method_name,
                 );
-                self.error_type()
+                return self.check_arguments_in_case_of_error(arguments);
             }
 
             BaseKind::Error => self.error_type(),
         }
+    }
+
+    fn check_arguments_against_signature(
+        &mut self,
+        error_location: impl Into<hir::MetaIndex>,
+        inputs: &[Ty<F>],
+        output: Ty<F>,
+        arguments: hir::List<hir::Expression>,
+    ) -> Ty<F> {
+        if inputs.len() != arguments.len() {
+            self.record_error("mismatched argument count".into(), error_location);
+            return self.check_arguments_in_case_of_error(arguments);
+        }
+
+        let hir = &self.hir.clone();
+        for (&expected_ty, argument_expr) in inputs.iter().zip(arguments.iter(hir)) {
+            self.check_expression_has_type(expected_ty, argument_expr);
+        }
+
+        output
+    }
+
+    fn check_arguments_in_case_of_error(&mut self, arguments: hir::List<hir::Expression>) -> Ty<F> {
+        let hir = &self.hir.clone();
+        for argument_expr in arguments.iter(hir) {
+            self.check_expression(argument_expr);
+        }
+        self.error_type()
     }
 
     fn check_aggregate(

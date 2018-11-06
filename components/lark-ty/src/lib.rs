@@ -301,6 +301,8 @@ impl<T> GenericKind<T> {
 /// Signature from a function or method: `(T1, T2) -> T3`.  `inputs`
 /// are the list of the types of the arguments, and `output` is the
 /// return type.
+///
+/// Note: the signature of a method *includes* the `self` type.
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Signature<F: TypeFamily> {
     pub inputs: Arc<Vec<Ty<F>>>,
