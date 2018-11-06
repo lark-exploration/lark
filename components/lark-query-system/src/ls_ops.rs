@@ -61,12 +61,24 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             let error_ranges = errors
                 .iter()
                 .map(|x| {
+                    let origin_byte_offset = file_maps.byte_index(0, 0).unwrap();
+
                     let left_side = x.span.start().unwrap();
-                    let (left_line, left_col) = file_maps.location(left_side);
+                    let (left_line, left_col) = file_maps.location(
+                        left_side
+                            + codespan::ByteOffset::from(
+                                origin_byte_offset.0 as codespan::RawOffset - 1,
+                            ),
+                    );
                     let left_position = Position::new(left_line, left_col);
 
                     let right_side = x.span.end().unwrap();
-                    let (right_line, right_col) = file_maps.location(right_side);
+                    let (right_line, right_col) = file_maps.location(
+                        right_side
+                            + codespan::ByteOffset::from(
+                                origin_byte_offset.0 as codespan::RawOffset - 1,
+                            ),
+                    );
                     let right_position = Position::new(right_line, right_col);
 
                     RangedDiagnostic::new(
