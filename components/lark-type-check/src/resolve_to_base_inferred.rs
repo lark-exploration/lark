@@ -1,5 +1,6 @@
 use derive_new::new;
 use intern::Intern;
+use lark_hir as hir;
 use lark_ty::base_inferred::{BaseInferred, BaseInferredTables};
 use lark_ty::base_only::{BaseOnly, BaseOnlyTables};
 use lark_ty::map_family::FamilyMapper;

@@ -1,5 +1,6 @@
 use codespan::{CodeMap, FileMap};
 use lark_entity::EntityTables;
+use lark_hir as hir;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;

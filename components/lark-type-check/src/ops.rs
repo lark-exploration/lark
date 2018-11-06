@@ -1,9 +1,9 @@
 use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::UniverseBinder;
-use hir;
 use lark_entity::Entity;
 use lark_error::{Diagnostic, ErrorReported};
+use lark_hir as hir;
 use lark_ty::declaration::Declaration;
 use lark_ty::map_family::Map;
 use lark_ty::BaseData;

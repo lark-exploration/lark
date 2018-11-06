@@ -9,10 +9,10 @@ ast = { path = "../ast" }
 codespan = "0.2.0"
 debug = { path = "../debug" }
 intern = { path = "../intern" }
-hir = { path = "../hir" }
 languageserver-types = "0.51.0"
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
+lark-hir = { path = "../lark-hir" }
 lark-task-manager = { path = "../lark-task-manager" }
 log = "0.4.5"
 map = { path = "../map" }
