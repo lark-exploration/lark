@@ -8,7 +8,6 @@ def new(msg: own String, level: String) -> Diagnostic {
 }
 
 def main() {
-  let var_name = "variable"
-  let s = "variable is unused {{var_name}}"
-  new(s, "warning")
+  let msg = "variable is unused"
+  new(msg, "warning")
 }
