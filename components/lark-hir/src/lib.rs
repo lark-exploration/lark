@@ -503,6 +503,7 @@ indices::index_type! {
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum PlaceData {
     Variable(Variable),
+    Entity(Entity),
     Temporary(Expression),
     Field { owner: Place, name: Identifier },
 }

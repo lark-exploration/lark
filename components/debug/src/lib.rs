@@ -151,6 +151,17 @@ impl DebugWith for ! {
     }
 }
 
+impl<T> DebugWith for [T]
+where
+    T: DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_list()
+            .entries(self.iter().map(|elem| elem.debug_with(cx)))
+            .finish()
+    }
+}
+
 /// Generates a `DebugWith` impl that accepts any `Cx` and uses the
 /// built-in `Debug` trait. You can specialize this to particular
 /// contexts by implementing `FmtWithSpecialized<Cx>` to yield a

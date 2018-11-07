@@ -350,6 +350,7 @@ dependencies = [
  "lark-query-system 0.1.0",
  "lark-string 0.1.0",
  "lark-task-manager 0.1.0",
+ "lark-test 0.1.0",
  "lark-ty 0.1.0",
  "lark-type-check 0.1.0",
  "lark-unify 0.1.0",
@@ -498,6 +499,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "lark-test"
+version = "0.1.0"
+dependencies = [
+ "ast 0.1.0",
+ "env_logger 0.5.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lark-error 0.1.0",
+ "lark-hir 0.1.0",
+ "lark-query-system 0.1.0",
+ "parser 0.1.0",
+]
+
+[[package]]
 name = "lark-ty"
 version = "0.1.0"
 dependencies = [
@@ -520,6 +533,7 @@ name = "lark-type-check"
 version = "0.1.0"
 dependencies = [
  "ast 0.1.0",
+ "debug 0.1.0",
  "derive-new 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "generational-arena 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "indices 0.1.0",

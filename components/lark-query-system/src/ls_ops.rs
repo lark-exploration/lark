@@ -13,10 +13,12 @@ use lark_error::Diagnostic;
 use parser::StringId;
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct RangedDiagnostic {
     pub label: String,
     pub range: Range,
 }
+
 impl RangedDiagnostic {
     pub fn new(label: String, range: Range) -> RangedDiagnostic {
         RangedDiagnostic { label, range }

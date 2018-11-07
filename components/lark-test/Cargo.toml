@@ -1,0 +1,13 @@
+[package]
+name = "lark-test"
+version = "0.1.0"
+authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+edition = "2018"
+
+[dependencies]
+ast = { path = "../ast" }
+env_logger = "0.5.13"
+lark-error = { path = "../lark-error" }
+lark-hir = { path = "../lark-hir" }
+lark-query-system = { path = "../lark-query-system" }
+parser = { path = "../parser" }

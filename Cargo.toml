@@ -60,3 +60,4 @@ lark-unify = { path = "components/lark-unify" }
 
 [dev-dependencies]
 unindent = "0.1.3"
+lark-test = { path = "components/lark-test" }
