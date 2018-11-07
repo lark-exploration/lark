@@ -70,12 +70,13 @@
 		"compile:client": "tsc -p ./client/tsconfig.json",
 		"watch:client": "tsc -w -p ./client/tsconfig.json",
 		"compile": "npm run compile:client",
-		"postinstall": "cd client && npm install && npm install && cd ..",
-		"buildall": "npm install && cd client && npm run update-vscode && cd .. && npm run compile"
+		"postinstall": "node ./scripts/postinstall.js",
+		"buildall": "node ./scripts/buildall.js"
 	},
 	"devDependencies": {
 		"@types/mocha": "^5.2.0",
 		"@types/node": "^8.0.0",
-		"typescript": "2.8.3"
+		"typescript": "2.8.3",
+		"shelljs": "^0.8.2"
 	}
 }
