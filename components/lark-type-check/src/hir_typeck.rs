@@ -2,6 +2,7 @@ use crate::TypeCheckDatabase;
 use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::TypeCheckerFields;
+use debug::DebugWith;
 use intern::Untern;
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_error::or_return_sentinel;
@@ -359,6 +360,12 @@ where
         output: Ty<F>,
         arguments: hir::List<hir::Expression>,
     ) -> Ty<F> {
+        log::debug!(
+            "check_arguments_against_signature(inputs={:?}, output={:?}, arguments={:?})",
+            inputs.debug_with(self),
+            output.debug_with(self),
+            arguments.debug_with(self),
+        );
         if inputs.len() != arguments.len() {
             self.record_error("mismatched argument count".into(), error_location);
             return self.check_arguments_in_case_of_error(arguments);
