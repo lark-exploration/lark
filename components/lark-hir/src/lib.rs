@@ -24,6 +24,7 @@ use std::sync::Arc;
 mod fn_body;
 mod query_definitions;
 mod scope;
+mod test;
 mod type_conversion;
 
 salsa::query_group! {
