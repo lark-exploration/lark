@@ -87,8 +87,10 @@ where
             },
 
             Err(ErrorReported(ref spans)) => {
-                let root_expression =
-                    self.error_expression(spans.first().unwrap().span, hir::ErrorData::Misc);
+                let root_expression = self.already_reported_error_expression(
+                    spans.first().unwrap().span,
+                    hir::ErrorData::Misc,
+                );
 
                 hir::FnBody {
                     arguments: hir::List::default(),
@@ -262,7 +264,7 @@ where
             Some(&variable) => self.add(identifier.span(), hir::PlaceData::Variable(variable)),
 
             None => {
-                let error_expression = self.error_expression(
+                let error_expression = self.report_error_expression(
                     identifier.span(),
                     hir::ErrorData::UnknownIdentifier {
                         text: *identifier.node(),
@@ -294,7 +296,25 @@ where
         }
     }
 
-    fn error_expression(&mut self, span: Span, data: hir::ErrorData) -> hir::Expression {
+    fn report_error_expression(&mut self, span: Span, data: hir::ErrorData) -> hir::Expression {
+        let message = match data {
+            hir::ErrorData::Misc => "error".to_string(),
+            hir::ErrorData::Unimplemented => "unimplemented".to_string(),
+            hir::ErrorData::UnknownIdentifier { text } => {
+                format!("unknown identifier `{}`", self.db.untern_string(text))
+            }
+        };
+
+        self.errors.push(Diagnostic::new(message, span));
+
+        self.already_reported_error_expression(span, data)
+    }
+
+    fn already_reported_error_expression(
+        &mut self,
+        span: Span,
+        data: hir::ErrorData,
+    ) -> hir::Expression {
         let error = self.add(span, data);
         self.add(span, hir::ExpressionData::Error { error })
     }
