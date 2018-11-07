@@ -166,6 +166,17 @@ where
         match place_data {
             hir::PlaceData::Variable(var) => self.results.ty(var),
 
+            hir::PlaceData::Entity(entity) => {
+                if !entity.untern(self).is_value() {
+                    self.record_error("cannot access as a value".into(), place);
+                    return self.error_type();
+                }
+
+                let entity_ty = self.db.ty(entity).into_value();
+                let generics = self.inference_variables_for(entity);
+                self.substitute(place, &generics, entity_ty)
+            }
+
             hir::PlaceData::Temporary(expr) => self.check_expression(expr),
 
             hir::PlaceData::Field { owner, name } => {

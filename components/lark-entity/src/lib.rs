@@ -36,6 +36,40 @@ pub enum EntityData {
     },
 }
 
+impl EntityData {
+    /// True if this entity represents a value that the user could
+    /// store into a variable (or might, in the case of error
+    /// entities).
+    pub fn is_value(&self) -> bool {
+        match self {
+            EntityData::InputFile { .. }
+            | EntityData::ItemName {
+                kind: ItemKind::Struct,
+                ..
+            }
+            | EntityData::LangItem(LangItem::Int)
+            | EntityData::LangItem(LangItem::Tuple(_))
+            | EntityData::LangItem(LangItem::String)
+            | EntityData::LangItem(LangItem::Uint)
+            | EntityData::LangItem(LangItem::Boolean) => false,
+
+            EntityData::ItemName {
+                kind: ItemKind::Function,
+                ..
+            }
+            | EntityData::MemberName {
+                kind: MemberKind::Method,
+                ..
+            }
+            | EntityData::MemberName {
+                kind: MemberKind::Field,
+                ..
+            }
+            | EntityData::Error(_) => true,
+        }
+    }
+}
+
 /// Struct definitions that are built-in to Lark.
 ///
 /// Eventually, I would like these to be structs declared in some kind

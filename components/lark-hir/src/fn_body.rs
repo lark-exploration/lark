@@ -12,9 +12,9 @@ use parser::pos::{Span, Spanned};
 use parser::StringId;
 use std::sync::Arc;
 
-crate fn fn_body(db: &impl HirDatabase, item_id: Entity) -> WithError<Arc<crate::FnBody>> {
+crate fn fn_body(db: &impl HirDatabase, item_entity: Entity) -> WithError<Arc<crate::FnBody>> {
     let mut errors = vec![];
-    let fn_body = HirLower::new(db, &mut errors).lower_ast_of_item(item_id);
+    let fn_body = HirLower::new(db, item_entity, &mut errors).lower_ast_of_item();
     WithError {
         value: Arc::new(fn_body),
         errors,
@@ -23,6 +23,7 @@ crate fn fn_body(db: &impl HirDatabase, item_id: Entity) -> WithError<Arc<crate:
 
 struct HirLower<'me, DB: HirDatabase> {
     db: &'me DB,
+    item_entity: Entity,
     fn_body_tables: hir::FnBodyTables,
     variables: FxIndexMap<StringId, hir::Variable>,
     errors: &'me mut Vec<Diagnostic>,
@@ -32,10 +33,11 @@ impl<'me, DB> HirLower<'me, DB>
 where
     DB: HirDatabase,
 {
-    fn new(db: &'me DB, errors: &'me mut Vec<Diagnostic>) -> Self {
+    fn new(db: &'me DB, item_entity: Entity, errors: &'me mut Vec<Diagnostic>) -> Self {
         HirLower {
             db,
             errors,
+            item_entity,
             fn_body_tables: Default::default(),
             variables: Default::default(),
         }
@@ -63,10 +65,10 @@ where
         self.variables.insert(self[name].text, variable);
     }
 
-    fn lower_ast_of_item(mut self, item_id: Entity) -> hir::FnBody {
-        match self.db.ast_of_item(item_id) {
+    fn lower_ast_of_item(mut self) -> hir::FnBody {
+        match self.db.ast_of_item(self.item_entity) {
             Ok(ast) => match &*ast {
-                a::Item::Struct(_) => panic!("asked for fn-body of struct {:?}", item_id),
+                a::Item::Struct(_) => panic!("asked for fn-body of struct {:?}", self.item_entity),
                 a::Item::Def(def) => {
                     let arguments = self.lower_parameters(&def.parameters);
 
@@ -260,23 +262,25 @@ where
     }
 
     fn lower_identifier_place(&mut self, identifier: &a::Identifier) -> hir::Place {
-        match self.variables.get(identifier.node()) {
-            Some(&variable) => self.add(identifier.span(), hir::PlaceData::Variable(variable)),
-
-            None => {
-                let error_expression = self.report_error_expression(
-                    identifier.span(),
-                    hir::ErrorData::UnknownIdentifier {
-                        text: *identifier.node(),
-                    },
-                );
-
-                self.add(
-                    identifier.span(),
-                    hir::PlaceData::Temporary(error_expression),
-                )
-            }
+        if let Some(&variable) = self.variables.get(identifier.node()) {
+            return self.add(identifier.span(), hir::PlaceData::Variable(variable));
         }
+
+        if let Some(entity) = self.db.resolve_name(self.item_entity, *identifier.node()) {
+            return self.add(identifier.span(), hir::PlaceData::Entity(entity));
+        }
+
+        let error_expression = self.report_error_expression(
+            identifier.span(),
+            hir::ErrorData::UnknownIdentifier {
+                text: *identifier.node(),
+            },
+        );
+
+        self.add(
+            identifier.span(),
+            hir::PlaceData::Temporary(error_expression),
+        )
     }
 
     fn lower_place(&mut self, expr: &a::Expression) -> hir::Place {
