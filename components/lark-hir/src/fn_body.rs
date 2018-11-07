@@ -197,9 +197,31 @@ where
                     },
                 ),
             },
-            a::Expression::Interpolation(..)
-            | a::Expression::Call(_)
-            | a::Expression::ConstructStruct(_) => self.unimplemented(expr.span()),
+            a::Expression::Call(call) => {
+                let a::Callee::Identifier(ref identifier) = call.callee;
+
+                let function = self.lower_identifier_place(identifier);
+
+                let mut args = vec![];
+
+                for call_argument in call.arguments.iter() {
+                    args.push(self.lower_expression(&call_argument));
+                }
+
+                let arguments = hir::List::from_iterator(&mut self.fn_body_tables, args);
+
+                self.add(
+                    call.span(),
+                    hir::ExpressionData::Call {
+                        function,
+                        arguments,
+                    },
+                )
+            }
+            a::Expression::Interpolation(..) | a::Expression::ConstructStruct(_) => {
+                self.unimplemented(expr.span())
+            }
+
             a::Expression::Binary(spanned_op, lhs_expr, rhs_expr) => {
                 let left = self.lower_expression(lhs_expr);
                 let right = self.lower_expression(rhs_expr);
@@ -235,25 +257,29 @@ where
         self.add(span, hir::ExpressionData::Error { error })
     }
 
+    fn lower_identifier_place(&mut self, identifier: &a::Identifier) -> hir::Place {
+        match self.variables.get(identifier.node()) {
+            Some(&variable) => self.add(identifier.span(), hir::PlaceData::Variable(variable)),
+
+            None => {
+                let error_expression = self.error_expression(
+                    identifier.span(),
+                    hir::ErrorData::UnknownIdentifier {
+                        text: *identifier.node(),
+                    },
+                );
+
+                self.add(
+                    identifier.span(),
+                    hir::PlaceData::Temporary(error_expression),
+                )
+            }
+        }
+    }
+
     fn lower_place(&mut self, expr: &a::Expression) -> hir::Place {
         match expr {
-            a::Expression::Ref(identifier) => match self.variables.get(identifier.node()) {
-                Some(&variable) => self.add(identifier.span(), hir::PlaceData::Variable(variable)),
-
-                None => {
-                    let error_expression = self.error_expression(
-                        identifier.span(),
-                        hir::ErrorData::UnknownIdentifier {
-                            text: *identifier.node(),
-                        },
-                    );
-
-                    self.add(
-                        identifier.span(),
-                        hir::PlaceData::Temporary(error_expression),
-                    )
-                }
-            },
+            a::Expression::Ref(identifier) => self.lower_identifier_place(identifier),
 
             a::Expression::Block(_)
             | a::Expression::ConstructStruct(_)
