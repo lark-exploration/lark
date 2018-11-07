@@ -299,10 +299,9 @@ impl HasSpan for ConstructStruct {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
-
 pub struct Call {
-    callee: Callee,
-    arguments: Vec<Expression>,
+    pub callee: Callee,
+    pub arguments: Vec<Expression>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]

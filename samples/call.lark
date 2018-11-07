@@ -1,0 +1,10 @@
+def new(msg: own String, level: bool) -> bool {
+  false
+}
+
+def main() {
+  let msg = "variable is unused"
+  new(msg, "warning", false)
+  new(msg, "warning")
+  new(msg)
+}
