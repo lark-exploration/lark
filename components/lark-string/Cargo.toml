@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 debug = { path = "../debug" }
+lark-debug-derive = { path = "../lark-debug-derive" }
 intern = { path = "../intern" }
 indices = { path = "../indices" }
 parking_lot = "0.6.4"
