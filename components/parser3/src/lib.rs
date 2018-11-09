@@ -6,6 +6,8 @@
 #![feature(specialization)]
 #![allow(dead_code)]
 
+use crate::span::CurrentFile;
+use crate::span::Span;
 use lark_debug_derive::DebugWith;
 use lark_error::Diagnostic;
 use lark_string::global::GlobalIdentifier;
@@ -15,9 +17,10 @@ use std::sync::Arc;
 
 pub mod current_file;
 mod lexer;
+mod macros;
+mod parsed_entity;
+mod parser;
 pub mod span;
-use self::span::CurrentFile;
-use self::span::Span;
 
 salsa::query_group! {
     pub trait ParserDatabase: AsRef<GlobalIdentifierTables> + salsa::Database {
@@ -40,5 +43,5 @@ pub struct FileName {
 
 fn diagnostic(message: String, span: Span<CurrentFile>) -> Diagnostic {
     drop(span); // FIXME -- Diagostic uses the old codemap spans
-    Diagnostic::new(message, parser::pos::Span::Synthetic)
+    Diagnostic::new(message, ::parser::pos::Span::Synthetic)
 }

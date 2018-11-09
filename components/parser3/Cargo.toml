@@ -8,9 +8,11 @@ edition = "2018"
 debug = { path = "../debug" }
 derive-new = "0.5.5"
 indices = { path = "../indices" }
+intern = { path = "../intern" }
 itertools = "0.7.8"
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
+lark-entity = { path = "../lark-entity" }
 lark-string = { path = "../lark-string" }
 log = "0.4.5"
 map = { path = "../map" }

@@ -4,7 +4,6 @@ use crate::lexer::definition::LexerState;
 use crate::lexer::tools::Tokenizer;
 use crate::span::CurrentFile;
 use crate::span::Span;
-use lark_error::Diagnostic;
 
 use unindent::unindent;
 
@@ -18,7 +17,7 @@ use unindent::unindent;
 /// The `TokenN` things are the names of token kinds. The spans are digits
 /// like `0011222`, which will indicate the spans of each token. So e.g.
 /// `Token0` would be the first two character (the ones covered by `00`).
-fn process(specification: &str) -> Result<(), Diagnostic> {
+fn process(specification: &str) -> Result<(), Span<CurrentFile>> {
     let mut lines = specification.lines();
 
     while let Some(source_line) = lines.next() {
@@ -57,7 +56,7 @@ fn process(specification: &str) -> Result<(), Diagnostic> {
 }
 
 #[test]
-fn test_quicklex() -> Result<(), Diagnostic> {
+fn test_quicklex() -> Result<(), Span<CurrentFile>> {
     let source = unindent(
         r##"
             struct Diagnostic {

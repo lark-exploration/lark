@@ -4,11 +4,12 @@ use crate::lexer::tools::consume_n;
 use crate::lexer::tools::reconsume;
 use crate::lexer::tools::LexerDelegateTrait;
 use crate::lexer::tools::LexerNext;
-use lark_error::Diagnostic;
+use crate::span::CurrentFile;
+use crate::span::Span;
 use unicode_xid::UnicodeXID;
 
 #[derive(Debug, Copy, Clone)]
-pub enum LexerState {
+crate enum LexerState {
     Top,
     Whitespace,
     StartIdent,
@@ -29,7 +30,7 @@ impl LexerDelegateTrait for LexerState {
         &self,
         c: Option<char>,
         rest: &'input str,
-    ) -> Result<LexerNext<Self>, Diagnostic> {
+    ) -> Result<LexerNext<Self>, Span<CurrentFile>> {
         use self::LexerState::*;
 
         let out = match self {

@@ -3,7 +3,6 @@ use crate::span::Span;
 use crate::span::Spanned;
 use debug::DebugWith;
 use derive_new::new;
-use lark_error::Diagnostic;
 use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
@@ -222,7 +221,11 @@ pub fn eof<Delegate: LexerDelegateTrait>() -> LexerNext<Delegate> {
 pub trait LexerDelegateTrait: fmt::Debug + Clone + Copy + Sized {
     type Token: fmt::Debug + Copy;
 
-    fn next(&self, c: Option<char>, rest: &'input str) -> Result<LexerNext<Self>, Diagnostic>;
+    fn next(
+        &self,
+        c: Option<char>,
+        rest: &'input str,
+    ) -> Result<LexerNext<Self>, Span<CurrentFile>>;
 
     fn top() -> Self;
 }
@@ -257,7 +260,7 @@ pub struct Tokenizer<'table, Delegate: LexerDelegateTrait> {
     token: PhantomData<Delegate::Token>,
 }
 
-pub type TokenizerItem<Token> = Result<Spanned<Token>, Diagnostic>;
+pub type TokenizerItem<Token> = Result<Spanned<Token>, Span<CurrentFile>>;
 
 impl<Delegate: LexerDelegateTrait + Debug> Iterator for Tokenizer<'table, Delegate> {
     type Item = TokenizerItem<Delegate::Token>;
@@ -307,29 +310,19 @@ enum LoopCompletion<T> {
 }
 
 impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
-    pub fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, Diagnostic> {
+    pub fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, Span<CurrentFile>> {
         self.collect()
     }
 
-    fn error(&mut self, c: Option<char>) -> Diagnostic {
-        let state = self.state.clone();
+    fn error(&mut self, _: Option<char>) -> Span<CurrentFile> {
         // let token = &self.token_start[..self.token_size() as usize];
         // let (start_pos, end_pos) = self.consume_token(1);
 
-        let message = format!(
-            "Unexpected char `{}` in state {:?}",
-            c.map(|item| item.to_string())
-                .unwrap_or_else(|| "EOF".to_string()),
-            state
-        );
-
         let span = Span::new(CurrentFile, self.start_pos, self.start_pos + self.token_len);
 
-        let error = crate::diagnostic(message, span);
+        log::debug!("lark::tokenize::error {:?}", span);
 
-        log::debug!("lark::tokenize::error {:?}", error);
-
-        error
+        span
     }
 
     fn trace(&self, prefix: &str) {
