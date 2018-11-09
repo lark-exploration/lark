@@ -1,5 +1,6 @@
 use derive_new::new;
 use lark_debug_derive::DebugWith;
+use lark_string::text::Text;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, new)]
 pub struct Location<File> {
@@ -72,5 +73,14 @@ impl<T> std::ops::Deref for Spanned<T> {
 
     fn deref(&self) -> &T {
         &self.value
+    }
+}
+
+impl std::ops::Index<Span<CurrentFile>> for Text {
+    type Output = str;
+
+    fn index(&self, span: Span<CurrentFile>) -> &str {
+        let s: &str = self;
+        &s[span.start..span.end]
     }
 }
