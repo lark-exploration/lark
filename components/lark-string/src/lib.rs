@@ -11,17 +11,18 @@ use intern::Untern;
 use std::sync::Arc;
 
 indices::index_type! {
-    pub struct StringId { .. }
+    /// A "global ident" is an identifier that is valid across files and contexts.
+    pub struct GlobalIdentifier { .. }
 }
 
-debug::debug_fallback_impl!(StringId);
+debug::debug_fallback_impl!(GlobalIdentifier);
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct StringData {
+pub struct GlobalIdentifierData {
     data: Arc<String>,
 }
 
-impl std::ops::Deref for StringData {
+impl std::ops::Deref for GlobalIdentifierData {
     type Target = str;
 
     fn deref(&self) -> &str {
@@ -29,57 +30,57 @@ impl std::ops::Deref for StringData {
     }
 }
 
-impl AsRef<str> for StringData {
+impl AsRef<str> for GlobalIdentifierData {
     fn as_ref(&self) -> &str {
         &self.data
     }
 }
 
-impl std::borrow::Borrow<str> for StringData {
+impl std::borrow::Borrow<str> for GlobalIdentifierData {
     fn borrow(&self) -> &str {
         &self.data
     }
 }
 
 intern::intern_tables! {
-    pub struct StringTables {
-        struct StringTablesData {
-            strings: map(StringId, StringData),
+    pub struct GlobalIdentifierTables {
+        struct GlobalIdentifierTablesData {
+            strings: map(GlobalIdentifier, GlobalIdentifierData),
         }
     }
 }
 
-impl Intern<StringTables> for &str {
-    type Key = StringId;
+impl Intern<GlobalIdentifierTables> for &str {
+    type Key = GlobalIdentifier;
 
-    fn intern(self, interner: &dyn AsRef<StringTables>) -> Self::Key {
+    fn intern(self, interner: &dyn AsRef<GlobalIdentifierTables>) -> Self::Key {
         intern::intern_impl(
             self,
             interner,
             |d| &d[..],
-            |d| StringData {
+            |d| GlobalIdentifierData {
                 data: Arc::new(d.to_string()),
             },
         )
     }
 }
 
-impl Intern<StringTables> for String {
-    type Key = StringId;
+impl Intern<GlobalIdentifierTables> for String {
+    type Key = GlobalIdentifier;
 
-    fn intern(self, interner: &dyn AsRef<StringTables>) -> Self::Key {
+    fn intern(self, interner: &dyn AsRef<GlobalIdentifierTables>) -> Self::Key {
         intern::intern_impl(
             self,
             interner,
             |d| &d[..],
-            |d| StringData { data: Arc::new(d) },
+            |d| GlobalIdentifierData { data: Arc::new(d) },
         )
     }
 }
 
-impl<Cx> FmtWithSpecialized<Cx> for StringId
+impl<Cx> FmtWithSpecialized<Cx> for GlobalIdentifier
 where
-    Cx: AsRef<StringTables>,
+    Cx: AsRef<GlobalIdentifierTables>,
 {
     fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = self.untern(cx);
