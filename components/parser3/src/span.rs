@@ -22,7 +22,7 @@ pub struct CurrentFile;
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CurrentEntity;
 
-impl<File> Span<File> {
+impl<File: Copy> Span<File> {
     pub fn new(file: File, start: usize, end: usize) -> Self {
         assert!(end >= start);
         Span { file, start, end }
@@ -41,8 +41,23 @@ impl<File> Span<File> {
         self.end
     }
 
-    pub fn in_file<NewFile>(self, file: NewFile) -> Span<NewFile> {
+    pub fn in_file<NewFile: Copy>(self, file: NewFile) -> Span<NewFile> {
         Span::new(file, self.start, self.end)
+    }
+
+    pub fn contains(self, span: Span<File>) -> bool {
+        self.start >= span.start && self.end < span.end
+    }
+
+    pub fn len(&self) -> usize {
+        self.end - self.start
+    }
+
+    pub fn relative_to_entity(self, entity_span: Span<File>) -> Span<CurrentEntity> {
+        assert!(entity_span.contains(self));
+        let len = self.len();
+        let start = self.start - entity_span.start;
+        Span::new(CurrentEntity, start, start + len)
     }
 }
 
