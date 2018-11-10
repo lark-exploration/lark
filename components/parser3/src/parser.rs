@@ -58,6 +58,8 @@ impl Parser<'me> {
         }
     }
 
+    /// Parse all the entities we can and return a vector
+    /// (accumulating errors as we go).
     crate fn parse_all_entities(mut self, parent_entity: Entity) -> WithError<Vec<ParsedEntity>> {
         let mut entities = vec![];
         while let Some(entity) = self.parse_entity(parent_entity) {
@@ -70,8 +72,8 @@ impl Parser<'me> {
         }
     }
 
-    /// Consume the current token and load the next one.
-    /// Return the old token.
+    /// Consume the current token and load the next one.  Return the
+    /// old token.
     crate fn shift(&mut self) -> Spanned<LexToken> {
         self.last_span = self.token.span;
         std::mem::replace(
@@ -104,6 +106,9 @@ impl Parser<'me> {
         }
     }
 
+    /// If the next token is an identifier, convert it to a "global
+    /// identifier" and then consume it. Return the result from the
+    /// conversion.
     crate fn eat_global_identifier(&self) -> Option<Spanned<GlobalIdentifier>> {
         if self.is(LexToken::Identifier) {
             Some(self.peek_str().map(|value| value.intern(self)))
@@ -112,6 +117,7 @@ impl Parser<'me> {
         }
     }
 
+    /// Test if the current token is of the given kind.
     crate fn is(&self, kind: LexToken) -> bool {
         kind == self.token.value
     }
@@ -127,6 +133,8 @@ impl Parser<'me> {
         count > 0
     }
 
+    /// If the current token is a sigil with the given text, consume
+    /// it and return it.
     crate fn eat_sigil(&mut self, text: &str) -> Option<Spanned<LexToken>> {
         if self.is_sigil(text) {
             Some(self.shift())
@@ -135,6 +143,7 @@ impl Parser<'me> {
         }
     }
 
+    /// Test if the current token is a sigil with the given text.
     crate fn is_sigil(&self, text: &str) -> bool {
         if let LexToken::Sigil = self.token.value {
             &self.input[self.token.span] == text
@@ -143,11 +152,18 @@ impl Parser<'me> {
         }
     }
 
+    /// Parses a type, if one is present, and returns its parsed
+    /// representation. Otherwise, returns `None`.
     crate fn parse_type(&mut self) -> Option<ParsedTypeReference> {
         self.eat_global_identifier()
             .map(|identifier| ParsedTypeReference::Named(NamedTypeReference { identifier }))
     }
 
+    /// Parses an entity, if one is present, and returns its parsed
+    /// representation. Otherwise, returns `None`.
+    ///
+    /// Entities always begin with a macro invocation and then proceed
+    /// as the macro demands.
     crate fn parse_entity(&mut self, parent_entity: Entity) -> Option<ParsedEntity> {
         let macro_name = self.eat_global_identifier()?;
         let macro_definition = match self.entity_macro_definitions.get(&macro_name.value) {
@@ -161,10 +177,12 @@ impl Parser<'me> {
         Some(macro_definition.parse(self, parent_entity, macro_name))
     }
 
+    /// Report an error with the given message at the given span.
     crate fn report_error(&mut self, message: impl Into<String>, span: Span<CurrentFile>) {
         report_error(&mut self.errors, message, span);
     }
 
+    /// Report the given error and then return an error entity.
     crate fn error_entity(
         &mut self,
         message: impl Into<String>,
