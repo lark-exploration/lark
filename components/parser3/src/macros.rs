@@ -1,7 +1,6 @@
 use crate::parsed_entity::ParsedEntity;
 use crate::parser::Parser;
-use crate::span::CurrentFile;
-use crate::span::Location;
+use crate::span::Spanned;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_string::global::GlobalIdentifier;
@@ -25,11 +24,23 @@ crate mod struct_declaration;
 crate mod type_reference;
 
 crate trait EntityMacroDefinition {
+    /// Invoked when the macro name has been recognized and
+    /// consumed. Has the job of parsing the rest of the entity (using
+    /// the helper methods on `parser` to do so) and ultimately
+    /// returning the entity structure.
     fn parse(
         &self,
+        // The parser we can use to extract next token and so forth.
         parser: &mut Parser<'_>,
+
+        // The base entity that this is a subentity of. Needed to
+        // create a `lark_entity::Entity`.
         base: Entity,
-        start: Location<CurrentFile>,
+
+        // The macro name we were invoked with (and the span). Note
+        // that the "start" of this span will also be the start of
+        // our entity's span.
+        macro_name: Spanned<GlobalIdentifier>,
     ) -> ParsedEntity;
 }
 

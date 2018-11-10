@@ -7,7 +7,6 @@ use crate::macros::EntityMacroDefinition;
 use crate::parsed_entity::ErrorParsedEntity;
 use crate::parsed_entity::ParsedEntity;
 use crate::span::CurrentFile;
-use crate::span::Location;
 use crate::span::Span;
 use crate::span::Spanned;
 use intern::Intern;
@@ -105,11 +104,6 @@ impl Parser<'me> {
         }
     }
 
-    /// Creates a span starting at `start` and ending at the end of the current token.
-    crate fn span_starting_at(&self, start: Location<CurrentFile>) -> Span<CurrentFile> {
-        start.until_end_of(self.token.span)
-    }
-
     crate fn eat_global_identifier(&self) -> Option<Spanned<GlobalIdentifier>> {
         if self.is(LexToken::Identifier) {
             Some(self.peek_str().map(|value| value.intern(self)))
@@ -155,43 +149,16 @@ impl Parser<'me> {
     }
 
     crate fn parse_entity(&mut self, parent_entity: Entity) -> Option<ParsedEntity> {
-        loop {
-            match self.tokenizer.next()? {
-                Ok(token) => match token.value {
-                    LexToken::Identifier => {
-                        let global_id = self.input[token.span].intern(self);
+        let macro_name = self.eat_global_identifier()?;
+        let macro_definition = match self.entity_macro_definitions.get(&macro_name.value) {
+            Some(m) => m.clone(),
+            None => {
+                // FIXME -- scan end-to-end
 
-                        let macro_definition = match self.entity_macro_definitions.get(&global_id) {
-                            Some(m) => m.clone(),
-                            None => {
-                                // FIXME -- scan end-to-end
-
-                                return Some(self.error_entity(
-                                    format!("no macro named `{}`", &self.input[token.span]),
-                                    token.span,
-                                ));
-                            }
-                        };
-
-                        let start_location = token.span.start_location();
-
-                        return Some(macro_definition.parse(self, parent_entity, start_location));
-                    }
-
-                    // Skip whitespace, newlines and comments.
-                    LexToken::Whitespace | LexToken::Newline | LexToken::Comment => continue,
-
-                    // Things that can't start entities.
-                    LexToken::EOF | LexToken::String | LexToken::Sigil => {
-                        return Some(self.error_entity(format!("unexpeced token"), token.span));
-                    }
-                },
-
-                Err(span) => {
-                    return Some(self.error_entity(format!("unexpected token"), span));
-                }
+                return Some(self.error_entity("no macro with this name", macro_name.span));
             }
-        }
+        };
+        Some(macro_definition.parse(self, parent_entity, macro_name))
     }
 
     crate fn report_error(&mut self, message: impl Into<String>, span: Span<CurrentFile>) {
@@ -208,7 +175,7 @@ impl Parser<'me> {
 
         let diagnostic = crate::diagnostic(message, span);
         let entity = EntityData::Error(diagnostic.clone()).intern(self.entity_tables);
-        ParsedEntity::new(entity, span, Arc::new(ErrorParsedEntity))
+        ParsedEntity::new(entity, span, span, Arc::new(ErrorParsedEntity))
     }
 }
 

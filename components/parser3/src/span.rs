@@ -6,22 +6,6 @@ use std::fmt::Debug;
 pub trait SpanFile: Copy + Debug + Eq {}
 impl<T: Copy + Debug + Eq> SpanFile for T {}
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, new)]
-pub struct Location<File: SpanFile> {
-    file: File,
-    start: usize,
-}
-
-impl<File: SpanFile> Location<File> {
-    /// Returns a span beginning at this location until the end of
-    /// `span`, which must be within the same file.
-    crate fn until_end_of(self, span: Span<File>) -> Span<File> {
-        assert_eq!(self.file, span.file);
-        assert!(self.start <= span.end);
-        Span::new(self.file, self.start, span.end)
-    }
-}
-
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span<File: SpanFile> {
     file: File,
@@ -55,23 +39,13 @@ impl<File: SpanFile> Span<File> {
         Span::new(file, len, len)
     }
 
-    pub fn at(location: Location<File>) -> Self {
-        let end = location.start + 1;
-        Self::new(location.file, location.start, end)
-    }
-
-    pub fn start_location(self) -> Location<File> {
-        Location {
-            file: self.file,
-            start: self.start,
-        }
-    }
-
-    pub fn end_location(self) -> Location<File> {
-        Location {
-            file: self.file,
-            start: self.end,
-        }
+    /// Returns a span beginning at the start of this span but ending
+    /// at the end of `other_span` (which must be within the same
+    /// file).
+    pub fn extended_until_end_of(self, other_span: Span<File>) -> Span<File> {
+        assert_eq!(self.file, other_span.file);
+        assert!(self.start <= other_span.end);
+        Span::new(self.file, self.start, other_span.end)
     }
 
     pub fn start(&self) -> usize {

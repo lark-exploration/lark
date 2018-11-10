@@ -3,8 +3,6 @@ use crate::macros::EntityMacroDefinition;
 use crate::parsed_entity::LazyParsedEntity;
 use crate::parsed_entity::ParsedEntity;
 use crate::parser::Parser;
-use crate::span::CurrentFile;
-use crate::span::Location;
 use crate::span::Spanned;
 use intern::Intern;
 use lark_entity::Entity;
@@ -13,6 +11,11 @@ use lark_entity::ItemKind;
 use lark_string::global::GlobalIdentifier;
 use std::sync::Arc;
 
+/// ```ignore
+/// struct <id> {
+///   <id>: <ty> // separated by `,` or newline
+/// }
+/// ```
 #[derive(Default)]
 pub struct StructDeclaration;
 
@@ -21,7 +24,7 @@ impl EntityMacroDefinition for StructDeclaration {
         &self,
         parser: &mut Parser<'_>,
         base: Entity,
-        start: Location<CurrentFile>,
+        macro_name: Spanned<GlobalIdentifier>,
     ) -> ParsedEntity {
         let struct_name = or_error_entity!(
             parser.eat_global_identifier(),
@@ -63,9 +66,15 @@ impl EntityMacroDefinition for StructDeclaration {
         }
         .intern(parser);
 
-        let span = start.until_end_of(parser.last_span());
+        let full_span = macro_name.span.extended_until_end_of(parser.last_span());
+        let characteristic_span = struct_name.span;
 
-        ParsedEntity::new(entity, span, Arc::new(ParsedStructDeclaration { fields }))
+        ParsedEntity::new(
+            entity,
+            full_span,
+            characteristic_span,
+            Arc::new(ParsedStructDeclaration { fields }),
+        )
     }
 }
 
