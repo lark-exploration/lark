@@ -10,10 +10,10 @@ crate struct ParsedEntity {
 }
 
 impl ParsedEntity {
-    crate fn new(
+    crate fn new<T: 'static + LazyParsedEntity>(
         entity: Entity,
         span: Span<CurrentFile>,
-        thunk: Arc<dyn LazyParsedEntity>,
+        thunk: Arc<T>,
     ) -> Self {
         Self {
             entity,
