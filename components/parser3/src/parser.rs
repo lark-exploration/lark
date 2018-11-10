@@ -1,6 +1,7 @@
 use crate::lexer::definition::LexerState;
 use crate::lexer::token::LexToken;
 use crate::lexer::tools::Tokenizer;
+use crate::macros::type_reference::NamedTypeReference;
 use crate::macros::type_reference::ParsedTypeReference;
 use crate::macros::EntityMacroDefinition;
 use crate::parsed_entity::ErrorParsedEntity;
@@ -150,7 +151,7 @@ impl Parser<'me> {
 
     crate fn parse_type(&mut self) -> Option<ParsedTypeReference> {
         self.eat_global_identifier()
-            .map(|identifier| ParsedTypeReference { identifier })
+            .map(|identifier| ParsedTypeReference::Named(NamedTypeReference { identifier }))
     }
 
     crate fn parse_entity(&mut self, parent_entity: Entity) -> Option<ParsedEntity> {
