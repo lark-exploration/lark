@@ -7,9 +7,9 @@ use lark_entity::Entity;
 use lark_error::Diagnostic;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_string::global::GlobalIdentifier;
 use map::FxIndexMap;
 use parser::pos::{Span, Spanned};
-use parser::StringId;
 use std::sync::Arc;
 
 crate fn fn_body(db: &impl HirDatabase, item_entity: Entity) -> WithError<Arc<crate::FnBody>> {
@@ -25,7 +25,7 @@ struct HirLower<'me, DB: HirDatabase> {
     db: &'me DB,
     item_entity: Entity,
     fn_body_tables: hir::FnBodyTables,
-    variables: FxIndexMap<StringId, hir::Variable>,
+    variables: FxIndexMap<GlobalIdentifier, hir::Variable>,
     errors: &'me mut Vec<Diagnostic>,
 }
 
@@ -51,11 +51,11 @@ where
         index.span_from(&self.fn_body_tables)
     }
 
-    fn save_scope(&self) -> FxIndexMap<StringId, hir::Variable> {
+    fn save_scope(&self) -> FxIndexMap<GlobalIdentifier, hir::Variable> {
         self.variables.clone()
     }
 
-    fn restore_scope(&mut self, scope: FxIndexMap<StringId, hir::Variable>) {
+    fn restore_scope(&mut self, scope: FxIndexMap<GlobalIdentifier, hir::Variable>) {
         self.variables = scope;
     }
 

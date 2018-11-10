@@ -1,4 +1,4 @@
-use lark_debug_derive::DebugWith;
+use debug::DebugWith;
 use std::ops::Range;
 use std::sync::Arc;
 
@@ -7,7 +7,7 @@ use std::sync::Arc;
 /// an `&Text` into a `&str` for interoperability.
 ///
 /// Used to represent the value of an input file.
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Text {
     text: Arc<String>,
     start: usize,
@@ -47,10 +47,98 @@ impl From<Arc<String>> for Text {
     }
 }
 
+impl AsRef<str> for Text {
+    fn as_ref(&self) -> &str {
+        &self.text
+    }
+}
+
+impl From<String> for Text {
+    fn from(text: String) -> Self {
+        let end = text.len();
+        Self {
+            text: Arc::new(text),
+            start: 0,
+            end,
+        }
+    }
+}
+
+impl From<&str> for Text {
+    fn from(text: &str) -> Self {
+        let end = text.len();
+        Self {
+            text: Arc::new(text.to_string()),
+            start: 0,
+            end,
+        }
+    }
+}
+
+impl std::borrow::Borrow<str> for Text {
+    fn borrow(&self) -> &str {
+        &self.text
+    }
+}
+
 impl std::ops::Deref for Text {
     type Target = str;
 
     fn deref(&self) -> &str {
-        &self.text[self.start..self.end]
+        &self.text
+    }
+}
+
+impl std::fmt::Display for Text {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <str as std::fmt::Display>::fmt(self, fmt)
+    }
+}
+
+impl std::fmt::Debug for Text {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <str as std::fmt::Debug>::fmt(self, fmt)
+    }
+}
+
+impl DebugWith for Text {
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <str as DebugWith>::fmt_with(self, cx, fmt)
+    }
+}
+
+impl PartialEq<str> for Text {
+    fn eq(&self, other: &str) -> bool {
+        let this: &str = self;
+        this == other
+    }
+}
+
+impl PartialEq<String> for Text {
+    fn eq(&self, other: &String) -> bool {
+        let this: &str = self;
+        let other: &str = other;
+        this == other
+    }
+}
+
+impl PartialEq<Text> for str {
+    fn eq(&self, other: &Text) -> bool {
+        other == self
+    }
+}
+
+impl PartialEq<Text> for String {
+    fn eq(&self, other: &Text) -> bool {
+        other == self
+    }
+}
+
+impl<T: ?Sized> PartialEq<&T> for Text
+where
+    Text: PartialEq<T>,
+{
+    fn eq(&self, other: &&T) -> bool {
+        self == *other
     }
 }

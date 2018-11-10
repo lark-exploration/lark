@@ -11,8 +11,8 @@ use indices::IndexVec;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::{Diagnostic, ErrorSentinel};
+use lark_string::global::GlobalIdentifier;
 use lark_unify::InferVar;
-use parser::StringId;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
 use std::iter::IntoIterator;
@@ -331,5 +331,5 @@ pub struct GenericDeclarations {
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct GenericTyDeclaration {
     pub def_id: Entity,
-    pub name: StringId,
+    pub name: GlobalIdentifier,
 }

@@ -27,15 +27,15 @@ pub struct BindingId {
 pub struct Scope {
     id: ScopeId,
     parent: Option<ScopeId>,
-    bindings: BiMap<StringId, BindingId>,
+    bindings: BiMap<GlobalIdentifier, BindingId>,
 }
 
 impl Scope {
-    fn has(&self, name: &StringId) -> bool {
+    fn has(&self, name: &GlobalIdentifier) -> bool {
         self.bindings.contains_left(&name)
     }
 
-    fn bind(&mut self, name: &StringId, binding: BindingId) {
+    fn bind(&mut self, name: &GlobalIdentifier, binding: BindingId) {
         self.bindings.insert(*name, binding);
     }
 }
@@ -77,19 +77,19 @@ impl Scopes {
     }
 
     #[allow(unused)]
-    fn has(&self, scope: &ScopeId, name: &StringId) -> bool {
+    fn has(&self, scope: &ScopeId, name: &GlobalIdentifier) -> bool {
         let scope = self.get(scope);
 
         scope.has(name)
     }
 
-    fn bind(&mut self, scope: &ScopeId, name: &StringId, binding: BindingId) {
+    fn bind(&mut self, scope: &ScopeId, name: &GlobalIdentifier, binding: BindingId) {
         let scope = self.get_mut(scope);
 
         scope.bind(name, binding);
     }
 
-    fn get_binding_name(&self, scope: &ScopeId, name: &BindingId) -> StringId {
+    fn get_binding_name(&self, scope: &ScopeId, name: &BindingId) -> GlobalIdentifier {
         let scope = self.get(scope);
 
         *scope
@@ -126,12 +126,21 @@ struct AnnotatedToken {
 
 #[derive(Debug, Copy, Clone)]
 pub enum Token {
-    Binding { scope: ScopeId, name: StringId },
-    Reference { scope: ScopeId, name: StringId },
-    Export { scope: ScopeId, name: StringId },
-    Label(StringId),
-    Sigil(StringId),
-    String(StringId),
+    Binding {
+        scope: ScopeId,
+        name: GlobalIdentifier,
+    },
+    Reference {
+        scope: ScopeId,
+        name: GlobalIdentifier,
+    },
+    Export {
+        scope: ScopeId,
+        name: GlobalIdentifier,
+    },
+    Label(GlobalIdentifier),
+    Sigil(GlobalIdentifier),
+    String(GlobalIdentifier),
     NonSemantic(NonSemantic),
     EOF,
 }
@@ -158,7 +167,7 @@ impl DebugModuleTable for Token {
 }
 
 impl Token {
-    fn as_id(&self) -> Option<StringId> {
+    fn as_id(&self) -> Option<GlobalIdentifier> {
         match self {
             Token::Binding { name, .. } => Some(*name),
             Token::Reference { name, .. } => Some(*name),
@@ -181,8 +190,8 @@ impl Token {
 
 #[derive(Debug, Copy, Clone)]
 pub enum NonSemantic {
-    Comment(StringId),
-    Whitespace(StringId),
+    Comment(GlobalIdentifier),
+    Whitespace(GlobalIdentifier),
     Newline,
 }
 
@@ -244,15 +253,15 @@ pub enum IdPolicy {
 #[derive(Debug, Copy, Clone)]
 pub enum Expected {
     AnyIdentifier,
-    Identifier(StringId),
-    Sigil(StringId),
+    Identifier(GlobalIdentifier),
+    Sigil(GlobalIdentifier),
 }
 
 impl Expected {
     fn translate(
         &self,
         lex_token: Spanned<LexToken>,
-        id: impl Fn(StringId) -> Token,
+        id: impl Fn(GlobalIdentifier) -> Token,
     ) -> Spanned<Token> {
         let token = match self {
             Expected::AnyIdentifier | Expected::Identifier(_) => id(lex_token.data()),
@@ -274,7 +283,7 @@ impl Expected {
 #[derive(Debug, Copy, Clone)]
 pub enum ExpectedId {
     AnyIdentifier,
-    Identifier(StringId),
+    Identifier(GlobalIdentifier),
 }
 
 impl ExpectedId {
@@ -285,7 +294,11 @@ impl ExpectedId {
         }
     }
 
-    fn translate(&self, lex_token: Spanned<LexToken>, id: fn(StringId) -> Token) -> Spanned<Token> {
+    fn translate(
+        &self,
+        lex_token: Spanned<LexToken>,
+        id: fn(GlobalIdentifier) -> Token,
+    ) -> Spanned<Token> {
         let token = id(lex_token.data());
 
         Spanned::wrap_span(token, lex_token.span())
@@ -360,7 +373,7 @@ impl LiteParser<'codemap> {
         self.scopes.root()
     }
 
-    fn get_macro(&mut self, id: Spanned<StringId>) -> Result<Arc<MacroRead>, ParseError> {
+    fn get_macro(&mut self, id: Spanned<GlobalIdentifier>) -> Result<Arc<MacroRead>, ParseError> {
         self.macros.get(*id).ok_or_else(|| {
             ParseError::new(
                 format!("No macro in scope {:?}", Debuggable::from(&id, &self.table)),
@@ -396,7 +409,7 @@ impl LiteParser<'codemap> {
         &mut self,
         allow: AllowPolicy,
         expected: ExpectedId,
-        token: impl Fn(StringId) -> Token,
+        token: impl Fn(GlobalIdentifier) -> Token,
         terminator: Expected,
     ) -> Result<MaybeTerminator, ParseError> {
         let next = self.consume_next_token(allow)?;
@@ -428,11 +441,7 @@ impl LiteParser<'codemap> {
     }
 
     pub fn sigil(&self, sigil: &str) -> Expected {
-        let id = self.table.get(&sigil).expect(&format!(
-            "Expected sigil {}, but none was registered",
-            sigil
-        ));
-
+        let id = self.table.intern(sigil);
         Expected::Sigil(id)
     }
 
@@ -454,7 +463,7 @@ impl LiteParser<'codemap> {
         sigil: &str,
         allow: AllowPolicy,
     ) -> Result<(bool, Spanned<LexToken>), ParseError> {
-        let id = self.table.get(&sigil);
+        let id = Some(self.table.intern(sigil));
 
         match id {
             None => unimplemented!(),
@@ -493,7 +502,7 @@ impl LiteParser<'codemap> {
         // expr.expect()
     }
 
-    pub fn get_binding_name(&self, scope: &ScopeId, name: &BindingId) -> StringId {
+    pub fn get_binding_name(&self, scope: &ScopeId, name: &BindingId) -> GlobalIdentifier {
         self.scopes.get_binding_name(scope, name)
     }
 
@@ -533,7 +542,7 @@ impl LiteParser<'codemap> {
         }
     }
 
-    pub fn start_entity(&mut self, name: StringId, kind: EntityKind) {
+    pub fn start_entity(&mut self, name: GlobalIdentifier, kind: EntityKind) {
         self.entity_tree.push(&name, TokenPos(self.pos), kind);
     }
 

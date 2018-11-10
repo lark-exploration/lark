@@ -1,9 +1,9 @@
 //! Global string interning.
 
+use crate::text::Text;
 use debug::FmtWithSpecialized;
 use intern::Intern;
 use intern::Untern;
-use std::sync::Arc;
 
 indices::index_type! {
     /// A "global ident" is an identifier that is valid across files
@@ -14,35 +14,10 @@ indices::index_type! {
 
 debug::debug_fallback_impl!(GlobalIdentifier);
 
-#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct GlobalIdentifierData {
-    data: Arc<String>,
-}
-
-impl std::ops::Deref for GlobalIdentifierData {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.data
-    }
-}
-
-impl AsRef<str> for GlobalIdentifierData {
-    fn as_ref(&self) -> &str {
-        &self.data
-    }
-}
-
-impl std::borrow::Borrow<str> for GlobalIdentifierData {
-    fn borrow(&self) -> &str {
-        &self.data
-    }
-}
-
 intern::intern_tables! {
     pub struct GlobalIdentifierTables {
         struct GlobalIdentifierTablesData {
-            strings: map(GlobalIdentifier, GlobalIdentifierData),
+            strings: map(GlobalIdentifier, Text),
         }
     }
 }
@@ -51,14 +26,7 @@ impl Intern<GlobalIdentifierTables> for &str {
     type Key = GlobalIdentifier;
 
     fn intern(self, interner: &dyn AsRef<GlobalIdentifierTables>) -> Self::Key {
-        intern::intern_impl(
-            self,
-            interner,
-            |d| &d[..],
-            |d| GlobalIdentifierData {
-                data: Arc::new(d.to_string()),
-            },
-        )
+        intern::intern_impl(self, interner, |d| &d[..], |d| Text::from(d))
     }
 }
 
@@ -66,12 +34,7 @@ impl Intern<GlobalIdentifierTables> for String {
     type Key = GlobalIdentifier;
 
     fn intern(self, interner: &dyn AsRef<GlobalIdentifierTables>) -> Self::Key {
-        intern::intern_impl(
-            self,
-            interner,
-            |d| &d[..],
-            |d| GlobalIdentifierData { data: Arc::new(d) },
-        )
+        intern::intern_impl(self, interner, |d| &d[..], |d| Text::from(d))
     }
 }
 

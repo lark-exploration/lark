@@ -7,7 +7,7 @@ use debug::{DebugWith, FmtWithSpecialized};
 use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
 use lark_error::{Diagnostic, ErrorSentinel};
-use parser::StringId;
+use lark_string::global::GlobalIdentifier;
 
 indices::index_type! {
     pub struct Entity { .. }
@@ -22,17 +22,17 @@ pub enum EntityData {
     LangItem(LangItem),
 
     InputFile {
-        file: StringId,
+        file: GlobalIdentifier,
     },
     ItemName {
         base: Entity,
         kind: ItemKind,
-        id: StringId,
+        id: GlobalIdentifier,
     },
     MemberName {
         base: Entity,
         kind: MemberKind,
-        id: StringId,
+        id: GlobalIdentifier,
     },
 }
 
@@ -117,7 +117,7 @@ where
 
 impl Entity {
     /// The input file in which an entity appears (if any).
-    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<StringId> {
+    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<GlobalIdentifier> {
         match self.untern(db) {
             EntityData::LangItem(_) => None,
             EntityData::InputFile { file } => Some(file),

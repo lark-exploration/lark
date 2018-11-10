@@ -20,7 +20,7 @@ pub enum EntityKind {
 #[derive(Debug, Eq, PartialEq)]
 pub struct EntityTree {
     entity: Entity,
-    children: FxIndexMap<StringId, EntityTree>,
+    children: FxIndexMap<GlobalIdentifier, EntityTree>,
 }
 
 impl EntityTree {
@@ -61,7 +61,7 @@ pub struct EntityTreeBuilder {
     entity: Option<Entity>,
 
     #[new(value = "FxIndexMap::default()")]
-    children: FxIndexMap<StringId, EntityTree>,
+    children: FxIndexMap<GlobalIdentifier, EntityTree>,
 
     #[new(value = "Some(vec![])")]
     terms: Option<Vec<Box<dyn Term>>>,
@@ -70,7 +70,7 @@ pub struct EntityTreeBuilder {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Entity {
     span: TokenSpan,
-    name: StringId,
+    name: GlobalIdentifier,
     kind: EntityKind,
     term: TermId,
 }
@@ -114,7 +114,12 @@ pub struct DebugEntity<'terms> {
 }
 
 impl EntityTreeBuilder {
-    pub fn push(mut self, name: &StringId, start: TokenPos, kind: EntityKind) -> EntityTreeBuilder {
+    pub fn push(
+        mut self,
+        name: &GlobalIdentifier,
+        start: TokenPos,
+        kind: EntityKind,
+    ) -> EntityTreeBuilder {
         let terms = self.terms.take();
 
         EntityTreeBuilder {
@@ -157,7 +162,7 @@ impl EntityTreeBuilder {
         *parent
     }
 
-    pub fn finalize(self) -> (FxIndexMap<StringId, EntityTree>, Vec<Box<dyn Term>>) {
+    pub fn finalize(self) -> (FxIndexMap<GlobalIdentifier, EntityTree>, Vec<Box<dyn Term>>) {
         assert!(self.parent.is_none(), "Can only finalize the root node");
 
         (
@@ -185,7 +190,7 @@ impl fmt::Debug for EntitiesBuilder {
 }
 
 impl EntitiesBuilder {
-    pub fn push(&mut self, name: &StringId, start: TokenPos, kind: EntityKind) {
+    pub fn push(&mut self, name: &GlobalIdentifier, start: TokenPos, kind: EntityKind) {
         self.update(|tree| tree.push(name, start, kind));
     }
 
@@ -210,7 +215,7 @@ pub struct TermId(isize);
 
 #[derive(Debug)]
 pub struct Entities {
-    tree: FxIndexMap<StringId, EntityTree>,
+    tree: FxIndexMap<GlobalIdentifier, EntityTree>,
     terms: Vec<Box<dyn Term>>,
 }
 
@@ -227,7 +232,7 @@ impl Entities {
         self.tree.len()
     }
 
-    pub fn str_keys(&self, table: &'table ModuleTable) -> Vec<&'table str> {
+    pub fn str_keys(&self, table: &'table ModuleTable) -> Vec<Text> {
         self.tree.keys().map(|id| table.lookup(id)).collect()
     }
 
@@ -237,15 +242,12 @@ impl Entities {
         &*self.terms[term.0 as usize]
     }
 
-    pub fn get_entity(&self, name: &StringId) -> Option<&Entity> {
+    pub fn get_entity(&self, name: &GlobalIdentifier) -> Option<&Entity> {
         self.tree.get(name).map(|i| &i.entity)
     }
 
     pub fn get_entity_by(&self, table: &ModuleTable, name: &str) -> Entity {
-        let id = table
-            .get(&name)
-            .expect(&format!("Entity {} didn't exist", name));
-
+        let id = table.intern(name);
         *self
             .get_entity(&id)
             .expect(&format!("Entity {} didn't exist", name))
@@ -253,7 +255,7 @@ impl Entities {
 }
 
 fn debug_tree(
-    tree: &FxIndexMap<StringId, EntityTree>,
+    tree: &FxIndexMap<GlobalIdentifier, EntityTree>,
     table: &ModuleTable,
     tokens: &[Spanned<LexToken>],
     entities: &'terms Entities,

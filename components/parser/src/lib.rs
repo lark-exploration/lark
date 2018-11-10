@@ -26,7 +26,7 @@ mod test_helpers;
 crate use self::test_helpers::init_logger;
 
 pub use self::errors::ParseError;
-pub use self::intern::{LookupStringId, ModuleTable, Seahash, StringId};
+pub use self::intern::{LookupStringId, ModuleTable, Seahash};
 pub use self::parser::ast;
 pub use self::parser::parse;
 pub use self::parser::token::Token;

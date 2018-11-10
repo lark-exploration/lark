@@ -22,7 +22,7 @@ pub enum LexerNext<Delegate: LexerDelegateTrait> {
 }
 
 trait EmitToken<Delegate: LexerDelegateTrait> {
-    fn token_for(self, s: StringId) -> Delegate::Token;
+    fn token_for(self, s: GlobalIdentifier) -> Delegate::Token;
 }
 
 impl<Delegate: LexerDelegateTrait> LexerNext<Delegate> {
@@ -39,7 +39,7 @@ impl<Delegate: LexerDelegateTrait> LexerNext<Delegate> {
         })
     }
 
-    pub fn emit_dynamic(token: fn(StringId) -> Delegate::Token, state: Delegate) -> Self {
+    pub fn emit_dynamic(token: fn(GlobalIdentifier) -> Delegate::Token, state: Delegate) -> Self {
         LexerNext::Transition(
             LexerAccumulate::Emit {
                 before: None,
@@ -115,7 +115,9 @@ impl<Delegate: LexerDelegateTrait> From<LexerAction> for LexerNext<Delegate> {
 }
 
 impl<Delegate: LexerDelegateTrait> LexerAccumulate<Delegate> {
-    pub fn emit_dynamic(token: fn(StringId) -> Delegate::Token) -> LexerAccumulate<Delegate> {
+    pub fn emit_dynamic(
+        token: fn(GlobalIdentifier) -> Delegate::Token,
+    ) -> LexerAccumulate<Delegate> {
         LexerAccumulate::Emit {
             before: None,
             after: None,
@@ -166,12 +168,12 @@ impl<Delegate: LexerDelegateTrait> LexerAccumulate<Delegate> {
 
 #[derive(Debug)]
 pub enum LexerToken<Token: Copy> {
-    Dynamic(fn(StringId) -> Token),
+    Dynamic(fn(GlobalIdentifier) -> Token),
     Fixed(Token),
 }
 
 impl<Token: Copy> LexerToken<Token> {
-    fn string(&self, id: StringId) -> Token {
+    fn string(&self, id: GlobalIdentifier) -> Token {
         match self {
             LexerToken::Dynamic(f) => f(id),
             LexerToken::Fixed(tok) => *tok,
@@ -226,7 +228,7 @@ impl LexerAction {
 
     pub fn and_emit_dynamic<Delegate: LexerDelegateTrait>(
         self,
-        token: fn(StringId) -> Delegate::Token,
+        token: fn(GlobalIdentifier) -> Delegate::Token,
     ) -> LexerAccumulate<Delegate> {
         LexerAccumulate::Emit {
             before: Some(self),
@@ -264,9 +266,9 @@ pub trait LexerDelegateTrait: fmt::Debug + Clone + Copy + Sized {
     fn top() -> Self;
 }
 
-#[derive(Debug, new)]
+#[derive(new)]
 pub struct Tokenizer<'table, Delegate: LexerDelegateTrait> {
-    table: &'table mut ModuleTable,
+    table: &'table ModuleTable,
     input: &'table str,
     codespan_start: u32,
 
@@ -346,8 +348,8 @@ enum LoopCompletion<T> {
 }
 
 impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
-    fn intern(&mut self, source: &str) -> StringId {
-        self.table.intern(&source)
+    fn intern(&mut self, source: &str) -> GlobalIdentifier {
+        self.table.intern(source)
     }
 
     pub fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, ParseError> {

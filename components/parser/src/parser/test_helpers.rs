@@ -25,9 +25,9 @@ pub enum LexerState {
 #[derive(Debug, Copy, Clone)]
 pub enum Token {
     Underline,
-    Sigil(StringId),
-    Name(StringId),
-    String(StringId),
+    Sigil(GlobalIdentifier),
+    Name(GlobalIdentifier),
+    String(GlobalIdentifier),
     Whitespace,
     WsKeyword,
 }
@@ -40,7 +40,7 @@ impl DebugModuleTable for Token {
 
 pub type LineTokenizer<'source> = Tokenizer<'source, LexerState>;
 
-fn tk_underline(_: StringId) -> Token {
+fn tk_underline(_: GlobalIdentifier) -> Token {
     Token::Underline
 }
 

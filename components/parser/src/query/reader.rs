@@ -1,6 +1,5 @@
 use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, LineIndex};
 use crate::prelude::*;
-use crate::StringId;
 use map::FxIndexSet;
 use parking_lot::RwLock;
 use std::hash::{Hash, Hasher};
@@ -8,11 +7,11 @@ use std::sync::Arc;
 
 salsa::query_group! {
     pub trait ReaderDatabase: crate::HasParserState + HasReaderState + salsa::Database {
-        fn paths() -> Arc<FxIndexSet<StringId>> {
+        fn paths() -> Arc<FxIndexSet<GlobalIdentifier>> {
             type Paths;
         }
 
-        fn source(key: StringId) -> File {
+        fn source(key: GlobalIdentifier) -> File {
             type Source;
             storage input;
         }
@@ -28,7 +27,7 @@ salsa::query_group! {
     }
 }
 
-fn paths(db: &impl ReaderDatabase) -> Arc<FxIndexSet<StringId>> {
+fn paths(db: &impl ReaderDatabase) -> Arc<FxIndexSet<GlobalIdentifier>> {
     // Register a read of the `paths_trigger` input:
     db.paths_trigger();
 
@@ -105,7 +104,7 @@ struct ReaderStateData {
     codemap: CodeMap,
 
     /// The full set of paths.
-    paths: Arc<FxIndexSet<StringId>>,
+    paths: Arc<FxIndexSet<GlobalIdentifier>>,
 }
 
 /// Represents (one version of) a file that has been added into the

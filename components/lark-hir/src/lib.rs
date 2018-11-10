@@ -15,10 +15,10 @@ use lark_entity::Entity;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_string::global::GlobalIdentifier;
 use lark_ty as ty;
 use lark_ty::declaration::{Declaration, DeclarationTables};
 use parser::pos::{HasSpan, Span, Spanned};
-use parser::StringId;
 use std::sync::Arc;
 
 mod fn_body;
@@ -41,7 +41,7 @@ salsa::query_group! {
         }
 
         /// Gets the def-id for a field of a given class.
-        fn member_entity(entity: Entity, kind: MemberKind, id: StringId) -> Option<Entity> {
+        fn member_entity(entity: Entity, kind: MemberKind, id: GlobalIdentifier) -> Option<Entity> {
             type MemberEntityQuery;
             use fn query_definitions::member_entity;
         }
@@ -70,7 +70,7 @@ salsa::query_group! {
         }
 
         /// Resolve a type name that appears in the given entity.
-        fn resolve_name(scope: Entity, name: StringId) -> Option<Entity> {
+        fn resolve_name(scope: Entity, name: GlobalIdentifier) -> Option<Entity> {
             type ResolveNameQuery;
             use fn scope::resolve_name;
         }
@@ -79,7 +79,7 @@ salsa::query_group! {
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Member {
-    pub name: StringId,
+    pub name: GlobalIdentifier,
     pub kind: MemberKind,
     pub entity: Entity,
 }
@@ -510,7 +510,7 @@ pub enum PlaceData {
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum LiteralData {
-    String(StringId),
+    String(GlobalIdentifier),
 }
 
 indices::index_type! {
@@ -528,7 +528,7 @@ indices::index_type! {
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct IdentifierData {
-    pub text: StringId,
+    pub text: GlobalIdentifier,
 }
 
 indices::index_type! {
@@ -539,5 +539,5 @@ indices::index_type! {
 pub enum ErrorData {
     Misc,
     Unimplemented,
-    UnknownIdentifier { text: StringId },
+    UnknownIdentifier { text: GlobalIdentifier },
 }

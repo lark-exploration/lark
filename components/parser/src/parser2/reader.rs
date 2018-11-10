@@ -24,20 +24,20 @@ pub enum PairedDelimiter {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ShapeStart {
-    Identifier(Spanned<StringId>),
-    Macro(Spanned<StringId>),
+    Identifier(Spanned<GlobalIdentifier>),
+    Macro(Spanned<GlobalIdentifier>),
     PairedDelimiter(PairedDelimiter),
     String,
-    Prefix(StringId),
+    Prefix(GlobalIdentifier),
     EOF,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub enum ShapeContinue {
-    Identifier(Spanned<StringId>),
-    Macro(Spanned<StringId>),
-    Sigil(Spanned<StringId>),
-    Operator(Spanned<StringId>),
+    Identifier(Spanned<GlobalIdentifier>),
+    Macro(Spanned<GlobalIdentifier>),
+    Sigil(Spanned<GlobalIdentifier>),
+    Operator(Spanned<GlobalIdentifier>),
     PairedDelimiter(Spanned<PairedDelimiter>),
     Newline,
     EOF,
@@ -111,7 +111,7 @@ impl Expected {
 #[derive(Debug, Copy, Clone)]
 pub enum ExpectedId {
     AnyIdentifier,
-    Identifier(StringId),
+    Identifier(GlobalIdentifier),
 }
 
 impl ExpectedId {
@@ -126,7 +126,7 @@ impl ExpectedId {
 #[derive(Debug, Copy, Clone)]
 pub enum ExpectedSigil {
     AnySigil,
-    Sigil(StringId),
+    Sigil(GlobalIdentifier),
 }
 
 pub trait IntoExpectedSigil: DebugModuleTable {
@@ -135,14 +135,12 @@ pub trait IntoExpectedSigil: DebugModuleTable {
 
 impl IntoExpectedSigil for &str {
     fn into_expected_sigil(&self, table: &ModuleTable) -> ExpectedSigil {
-        let id = table
-            .get(self)
-            .expect(&format!("Unexpected missing sigil {:?}", self));
+        let id = table.intern(*self);
         ExpectedSigil::Sigil(id)
     }
 }
 
-impl IntoExpectedSigil for StringId {
+impl IntoExpectedSigil for GlobalIdentifier {
     fn into_expected_sigil(&self, _table: &ModuleTable) -> ExpectedSigil {
         ExpectedSigil::Sigil(*self)
     }
@@ -230,11 +228,11 @@ impl Reader<'codemap> {
         &mut self.tree
     }
 
-    fn has_macro(&self, id: &StringId) -> bool {
+    fn has_macro(&self, id: &GlobalIdentifier) -> bool {
         self.macros.has(&id)
     }
 
-    fn get_macro(&mut self, id: Spanned<StringId>) -> Result<Arc<MacroRead>, ParseError> {
+    fn get_macro(&mut self, id: Spanned<GlobalIdentifier>) -> Result<Arc<MacroRead>, ParseError> {
         self.macros.get(*id).ok_or_else(|| {
             ParseError::new(
                 format!("No macro in scope {:?}", Debuggable::from(&id, &self.table)),
@@ -318,11 +316,7 @@ impl Reader<'codemap> {
     }
 
     pub fn sigil(&self, sigil: &str) -> ExpectedSigil {
-        let id = self.table.get(&sigil).expect(&format!(
-            "Expected sigil {}, but none was registered",
-            sigil
-        ));
-
+        let id = self.table.intern(sigil);
         ExpectedSigil::Sigil(id)
     }
 
@@ -487,7 +481,10 @@ impl Reader<'codemap> {
         }
     }
 
-    pub fn expect_id(&mut self, allow: AllowPolicy) -> Result<Spanned<StringId>, ParseError> {
+    pub fn expect_id(
+        &mut self,
+        allow: AllowPolicy,
+    ) -> Result<Spanned<GlobalIdentifier>, ParseError> {
         trace!(target: "lark::reader", "# expect_id");
         let id_token = self.consume_next_id(allow)?;
 
@@ -550,7 +547,7 @@ impl Reader<'codemap> {
         ExprParser.extent(self)
     }
 
-    pub fn start_entity(&mut self, name: &StringId, kind: EntityKind) {
+    pub fn start_entity(&mut self, name: &GlobalIdentifier, kind: EntityKind) {
         self.entity_tree
             .push(name, TokenPos(self.tree.last_non_ws()), kind);
     }

@@ -62,7 +62,7 @@ struct Field {
 
 #[derive(Debug)]
 struct StructDefTerm {
-    name: Spanned<StringId>,
+    name: Spanned<GlobalIdentifier>,
     fields: Vec<Field>,
 }
 
