@@ -37,7 +37,7 @@ where
 ///
 /// Example of something we might parse:
 ///
-/// ```
+/// ```ignore
 /// Foo {
 ///      ^ cursor is here when we are called, on the newline (say)
 ///   a: int, b: uint
