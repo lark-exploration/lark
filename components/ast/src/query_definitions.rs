@@ -25,7 +25,7 @@ crate fn ast_of_file(
             let diagnostic = Diagnostic::new(parse_error.description, parse_error.span);
             log::error!("parse error for {}: {:?}", path.debug_with(db), diagnostic);
             WithError {
-                value: Err(ErrorReported::at_diagnostic(diagnostic.clone())),
+                value: Err(ErrorReported::at_diagnostic(&diagnostic)),
                 errors: vec![diagnostic],
             }
         }
@@ -115,7 +115,7 @@ crate fn ast_of_field(db: &impl AstDatabase, item_id: Entity) -> Result<ast::Fie
             ast => panic!("field of invalid entity {:?}", ast),
         },
 
-        EntityData::Error(diagnostic) => Err(ErrorReported::at_diagnostic(diagnostic)),
+        EntityData::Error(report) => Err(report),
 
         d => panic!("ast-of-item invoked with non-field {:?}", d),
     }
@@ -125,10 +125,10 @@ crate fn entity_span(db: &impl AstDatabase, entity: Entity) -> Option<Span> {
     match entity.untern(db) {
         EntityData::ItemName { .. } => match db.ast_of_item(entity) {
             Ok(ast) => Some(ast.span()),
-            Err(err) => Some(err.some_diagnostic().span),
+            Err(err) => Some(err.span()),
         },
 
-        EntityData::Error(diagnostic) => Some(diagnostic.span),
+        EntityData::Error(report) => Some(report.span()),
 
         EntityData::LangItem(_) => None,
 
@@ -142,7 +142,7 @@ crate fn entity_span(db: &impl AstDatabase, entity: Entity) -> Option<Span> {
             ..
         } => match db.ast_of_field(entity) {
             Ok(field) => Some(field.span()),
-            Err(err) => Some(err.some_diagnostic().span),
+            Err(err) => Some(err.span()),
         },
 
         EntityData::MemberName {

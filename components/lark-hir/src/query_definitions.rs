@@ -44,8 +44,8 @@ crate fn member_entity(
     kind: MemberKind,
     name: GlobalIdentifier,
 ) -> Option<Entity> {
-    match &db.members(owner) {
-        Err(ErrorReported(spans)) => Some(Entity::error_sentinel(db, spans)),
+    match db.members(owner) {
+        Err(report) => Some(Entity::error_sentinel(db, report)),
 
         Ok(members) => members
             .iter()

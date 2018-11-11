@@ -36,7 +36,7 @@ crate fn generic_declarations(
     };
 
     match entity.untern(db) {
-        EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
+        EntityData::Error(report) => WithError::error_sentinel(db, report),
 
         EntityData::LangItem(LangItem::Boolean)
         | EntityData::LangItem(LangItem::String)
@@ -81,7 +81,7 @@ crate fn generic_declarations(
 
 crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<Ty<Declaration>> {
     match entity.untern(db) {
-        EntityData::Error(span) => WithError::error_sentinel(db, &[span]),
+        EntityData::Error(report) => WithError::error_sentinel(db, report),
 
         EntityData::LangItem(LangItem::Boolean)
         | EntityData::LangItem(LangItem::String)

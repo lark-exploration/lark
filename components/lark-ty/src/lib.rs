@@ -10,7 +10,8 @@ use debug::DebugWith;
 use indices::IndexVec;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
-use lark_error::{Diagnostic, ErrorSentinel};
+use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_string::global::GlobalIdentifier;
 use lark_unify::InferVar;
 use std::fmt::{self, Debug};
@@ -69,7 +70,7 @@ where
     DB: AsRef<F::InternTables>,
     F: TypeFamily,
 {
-    fn error_sentinel(db: &DB, _spans: &[Diagnostic]) -> Self {
+    fn error_sentinel(db: &DB, _report: ErrorReported) -> Self {
         F::error_type(db)
     }
 }

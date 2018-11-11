@@ -88,11 +88,9 @@ where
                 }
             },
 
-            Err(ErrorReported(ref spans)) => {
-                let root_expression = self.already_reported_error_expression(
-                    spans.first().unwrap().span,
-                    hir::ErrorData::Misc,
-                );
+            Err(ErrorReported(span)) => {
+                let root_expression =
+                    self.already_reported_error_expression(span, hir::ErrorData::Misc);
 
                 hir::FnBody {
                     arguments: hir::List::default(),
