@@ -7,6 +7,7 @@ use crate::parsed_entity::ParsedEntity;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::span::Spanned;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
 use intern::Intern;
 use lark_entity::Entity;
@@ -82,6 +83,11 @@ impl Parser<'me> {
         )
     }
 
+    /// Extract the complete input
+    crate fn input(&self) -> &'me Text {
+        self.input
+    }
+
     /// Peek at the current lookahead token.
     crate fn peek(&self) -> Spanned<LexToken> {
         self.token
@@ -100,21 +106,6 @@ impl Parser<'me> {
     /// Peek at the string reprsentation of the current token.
     crate fn peek_str(&self) -> &'me str {
         &self.input[self.token.span]
-    }
-
-    /// If the next token is an identifier, convert it to a "global
-    /// identifier" and then consume it. Return the result from the
-    /// conversion.
-    crate fn eat_global_identifier(&mut self) -> Option<Spanned<GlobalIdentifier>> {
-        if self.is(LexToken::Identifier) {
-            let Spanned { span, value: _ } = self.shift();
-            Some(Spanned {
-                value: self.input[span].intern(self),
-                span: span,
-            })
-        } else {
-            None
-        }
     }
 
     /// Test if the current token is of the given kind.
@@ -183,7 +174,7 @@ impl Parser<'me> {
     /// Entities always begin with a macro invocation and then proceed
     /// as the macro demands.
     crate fn parse_entity(&mut self, parent_entity: Entity) -> Option<ParsedEntity> {
-        let macro_name = self.eat_global_identifier()?;
+        let macro_name = self.eat(SpannedGlobalIdentifier)?;
         let macro_definition = match self.entity_macro_definitions.get(&macro_name.value) {
             Some(m) => m.clone(),
             None => {

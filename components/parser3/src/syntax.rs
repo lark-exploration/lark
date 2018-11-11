@@ -3,6 +3,7 @@
 use crate::parser::Parser;
 
 pub mod field;
+pub mod identifier;
 pub mod list;
 pub mod sigil;
 pub mod type_reference;

@@ -7,6 +7,7 @@ use crate::span::Span;
 use crate::span::Spanned;
 use crate::syntax::field::Field;
 use crate::syntax::field::ParsedField;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::sigil::CloseCurly;
 use crate::syntax::sigil::OpenCurly;
@@ -33,7 +34,7 @@ impl EntityMacroDefinition for StructDeclaration {
         macro_name: Spanned<GlobalIdentifier>,
     ) -> ParsedEntity {
         let struct_name = or_error_entity!(
-            parser.eat_global_identifier(),
+            parser.eat(SpannedGlobalIdentifier),
             parser,
             "expected struct name"
         );

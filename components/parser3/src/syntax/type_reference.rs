@@ -1,5 +1,6 @@
 use crate::parser::Parser;
 use crate::span::Spanned;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
 use lark_error::Diagnostic;
 use lark_error::ErrorSentinel;
@@ -22,7 +23,7 @@ impl Syntax for TypeReference {
     type Data = ParsedTypeReference;
 
     fn parse(&self, parser: &mut Parser<'_>) -> Option<ParsedTypeReference> {
-        let identifier = parser.eat_global_identifier()?;
+        let identifier = parser.eat(SpannedGlobalIdentifier)?;
         Some(ParsedTypeReference::Named(NamedTypeReference {
             identifier,
         }))

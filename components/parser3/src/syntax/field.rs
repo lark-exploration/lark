@@ -1,5 +1,6 @@
 use crate::parser::Parser;
 use crate::span::Spanned;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::sigil::Colon;
 use crate::syntax::type_reference::ParsedTypeReference;
 use crate::syntax::type_reference::TypeReference;
@@ -18,7 +19,7 @@ impl Syntax for Field {
     type Data = ParsedField;
 
     fn parse(&self, parser: &mut Parser<'_>) -> Option<ParsedField> {
-        let name = parser.eat_global_identifier()?;
+        let name = parser.eat(SpannedGlobalIdentifier)?;
 
         parser.expect(Colon);
 
