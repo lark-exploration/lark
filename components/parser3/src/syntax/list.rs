@@ -1,33 +1,37 @@
 use crate::parser::Parser;
-use crate::syntax::InfallibleSyntax;
+use crate::syntax::sigil::Comma;
 use crate::syntax::Syntax;
 
-pub struct CommaList<T> {
-    data: Vec<T>,
+pub struct CommaList<T>(pub T);
+
+impl<T> CommaList<T> {
+    fn element(&self) -> &T {
+        &self.0
+    }
 }
 
-impl<T> InfallibleSyntax for CommaList<T>
+impl<T> Syntax for CommaList<T>
 where
     T: Syntax,
 {
     type Data = Vec<T::Data>;
 
-    fn singular_name() -> String {
-        T::plural_name()
+    fn singular_name(&self) -> String {
+        SeparatedList(self.element(), Comma).singular_name()
     }
 
-    fn plural_name() -> String {
-        T::plural_name()
+    fn plural_name(&self) -> String {
+        SeparatedList(self.element(), Comma).plural_name()
     }
 
-    fn parse_infallible(parser: &mut Parser<'_>) -> Vec<T::Data> {
-        parse_list::<T>(parser, ",")
+    fn parse(&self, parser: &mut Parser<'_>) -> Option<Vec<T::Data>> {
+        SeparatedList(self.element(), Comma).parse(parser)
     }
 }
 
 /// Parses a "list" of things. In general, lists in Lark can be
-/// separated either by some given sigil *or* by a newline (or
-/// both). Expects to be called immediately after the "opening
+/// separated either by some given sigil (the `S`) *or* by a newline
+/// (or both). Expects to be called immediately after the "opening
 /// sigil" of the list (typically a `(` or `{`). Invokes
 /// `parse_element_fn` to parse each element of the list.
 ///
@@ -43,27 +47,55 @@ where
 /// }
 /// ^ cursor will be here when we return
 /// ```
-fn parse_list<T>(parser: &mut Parser<'_>, separator_sigil: &str) -> Vec<T::Data>
+pub struct SeparatedList<T, S>(pub T, pub S);
+
+impl<T, S> SeparatedList<T, S> {
+    fn element(&self) -> &T {
+        &self.0
+    }
+
+    fn separator(&self) -> &S {
+        &self.1
+    }
+}
+
+impl<T, S> Syntax for SeparatedList<T, S>
 where
     T: Syntax,
+    S: Syntax,
 {
-    let mut result = vec![];
-    parser.eat_newlines();
-    loop {
-        if let Some(element) = parser.eat_syntax::<T>() {
-            result.push(element);
+    type Data = Vec<T::Data>;
 
-            if let Some(_) = parser.eat_sigil(separator_sigil) {
-                parser.eat_newlines();
-                continue;
-            } else if parser.eat_newlines() {
-                continue;
+    fn parse(&self, parser: &mut Parser<'_>) -> Option<Vec<T::Data>> {
+        let SeparatedList(element, delimiter) = self;
+
+        let mut result = vec![];
+        parser.eat_newlines();
+        loop {
+            if let Some(element) = parser.eat(element) {
+                result.push(element);
+
+                if let Some(_) = parser.eat(delimiter) {
+                    parser.eat_newlines();
+                    continue;
+                } else if parser.eat_newlines() {
+                    continue;
+                } else {
+                    break;
+                }
             } else {
                 break;
             }
-        } else {
-            break;
         }
+
+        Some(result)
     }
-    result
+
+    fn singular_name(&self) -> String {
+        self.element().plural_name()
+    }
+
+    fn plural_name(&self) -> String {
+        self.element().plural_name()
+    }
 }

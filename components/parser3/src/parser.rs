@@ -7,7 +7,6 @@ use crate::parsed_entity::ParsedEntity;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::span::Spanned;
-use crate::syntax::InfallibleSyntax;
 use crate::syntax::Syntax;
 use intern::Intern;
 use lark_entity::Entity;
@@ -99,20 +98,20 @@ impl Parser<'me> {
     }
 
     /// Peek at the string reprsentation of the current token.
-    crate fn peek_str(&self) -> Spanned<&'me str> {
-        let text = &self.input[self.token.span];
-        Spanned {
-            value: text,
-            span: self.token.span,
-        }
+    crate fn peek_str(&self) -> &'me str {
+        &self.input[self.token.span]
     }
 
     /// If the next token is an identifier, convert it to a "global
     /// identifier" and then consume it. Return the result from the
     /// conversion.
-    crate fn eat_global_identifier(&self) -> Option<Spanned<GlobalIdentifier>> {
+    crate fn eat_global_identifier(&mut self) -> Option<Spanned<GlobalIdentifier>> {
         if self.is(LexToken::Identifier) {
-            Some(self.peek_str().map(|value| value.intern(self)))
+            let Spanned { span, value: _ } = self.shift();
+            Some(Spanned {
+                value: self.input[span].intern(self),
+                span: span,
+            })
         } else {
             None
         }
@@ -134,53 +133,46 @@ impl Parser<'me> {
         count > 0
     }
 
-    /// If the current token is a sigil with the given text, consume
-    /// it and return it.
-    crate fn eat_sigil(&mut self, text: &str) -> Option<Spanned<LexToken>> {
-        if self.is_sigil(text) {
-            Some(self.shift())
-        } else {
-            None
-        }
-    }
-
-    /// Test if the current token is a sigil with the given text.
-    crate fn is_sigil(&self, text: &str) -> bool {
-        if let LexToken::Sigil = self.token.value {
-            &self.input[self.token.span] == text
-        } else {
-            false
-        }
-    }
-
-    /// Parse a piece of syntax (if it is present)
-    crate fn eat_syntax<T>(&mut self) -> Option<T::Data>
+    /// Parses a `T` if we can and returns true if so; otherwise,
+    /// reports an error and returns false.
+    crate fn expect<T>(&'s mut self, syntax: T) -> bool
     where
         T: Syntax,
     {
-        T::parse(self)
+        if let Some(_) = self.eat(&syntax) {
+            return true;
+        }
+
+        self.report_error(
+            format!("expected {}", syntax.singular_name()),
+            self.token.span,
+        );
+
+        false
     }
 
     /// Parse a piece of syntax (if it is present)
-    crate fn eat_infallible_syntax<T>(&mut self) -> T::Data
+    crate fn eat<T>(&mut self, syntax: T) -> Option<T::Data>
     where
-        T: InfallibleSyntax,
+        T: Syntax,
     {
-        T::parse_infallible(self)
+        syntax.parse(self)
     }
 
     /// Parse a piece of syntax which *must* be present, and error otherwise.
-    crate fn eat_required_syntax<T>(&'s mut self) -> T::Data
+    crate fn eat_required<T>(&'s mut self, syntax: T) -> T::Data
     where
         T: Syntax,
         T::Data: ErrorSentinel<&'s Self>,
     {
-        if let Some(v) = self.eat_syntax::<T>() {
+        if let Some(v) = self.eat(&syntax) {
             return v;
         }
 
-        let diagnostic =
-            self.report_error(format!("expected {}", T::singular_name()), self.token.span);
+        let diagnostic = self.report_error(
+            format!("expected {}", syntax.singular_name()),
+            self.token.span,
+        );
 
         <T::Data>::error_sentinel(&*self, &[diagnostic])
     }

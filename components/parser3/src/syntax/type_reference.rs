@@ -5,8 +5,10 @@ use lark_error::Diagnostic;
 use lark_error::ErrorSentinel;
 use lark_string::global::GlobalIdentifier;
 
+pub struct TypeReference;
+
 /// Parsed form of a type.
-pub enum TypeReference {
+pub enum ParsedTypeReference {
     Named(NamedTypeReference),
     Error,
 }
@@ -17,24 +19,26 @@ pub struct NamedTypeReference {
 }
 
 impl Syntax for TypeReference {
-    type Data = Self;
+    type Data = ParsedTypeReference;
 
-    fn parse(parser: &mut Parser<'_>) -> Option<TypeReference> {
+    fn parse(&self, parser: &mut Parser<'_>) -> Option<ParsedTypeReference> {
         let identifier = parser.eat_global_identifier()?;
-        Some(TypeReference::Named(NamedTypeReference { identifier }))
+        Some(ParsedTypeReference::Named(NamedTypeReference {
+            identifier,
+        }))
     }
 
-    fn singular_name() -> String {
+    fn singular_name(&self) -> String {
         "type".to_string()
     }
 
-    fn plural_name() -> String {
+    fn plural_name(&self) -> String {
         "types".to_string()
     }
 }
 
-impl<Cx> ErrorSentinel<Cx> for TypeReference {
+impl<Cx> ErrorSentinel<Cx> for ParsedTypeReference {
     fn error_sentinel(_cx: Cx, _error_spans: &[Diagnostic]) -> Self {
-        TypeReference::Error
+        ParsedTypeReference::Error
     }
 }

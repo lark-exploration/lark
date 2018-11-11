@@ -1,11 +1,15 @@
-use crate::macros::type_reference::ParsedTypeReference;
 use crate::macros::EntityMacroDefinition;
 use crate::parsed_entity::LazyParsedEntity;
 use crate::parsed_entity::ParsedEntity;
 use crate::parser::Parser;
 use crate::span::CurrentFile;
-use crate::span::Location;
+use crate::span::Span;
 use crate::span::Spanned;
+use crate::syntax::field::Field;
+use crate::syntax::field::ParsedField;
+use crate::syntax::list::CommaList;
+use crate::syntax::sigil::CloseCurly;
+use crate::syntax::sigil::OpenCurly;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
@@ -17,9 +21,9 @@ use std::sync::Arc;
 /// `def` <id> `(` <id> `:` <ty> `)` [ `->` <ty> ] <block>
 /// ```
 #[derive(Default)]
-pub struct FunctionDeclaration;
+pub struct FunctionDeclarationMacro;
 
-impl EntityMacroDefinition for FunctionDeclaration {
+impl EntityMacroDefinition for FunctionDeclarationMacro {
     fn parse(
         &self,
         parser: &mut Parser<'_>,

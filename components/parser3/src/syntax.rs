@@ -4,6 +4,7 @@ use crate::parser::Parser;
 
 pub mod field;
 pub mod list;
+pub mod sigil;
 pub mod type_reference;
 
 pub trait Syntax {
@@ -12,39 +13,32 @@ pub trait Syntax {
     type Data;
 
     /// Routine to do the parsing.
-    fn parse(parser: &mut Parser<'_>) -> Option<Self::Data>;
+    fn parse(&self, parser: &mut Parser<'_>) -> Option<Self::Data>;
 
     /// For error messages, human readable name describing what is to
     /// be parsed in the singular, e.g., "type" or "expression".
-    fn singular_name() -> String;
+    fn singular_name(&self) -> String;
 
     /// For error messages, human readable name describing what is to
     /// be parsed in the plural, e.g., "types" or "expressions".
-    fn plural_name() -> String;
+    fn plural_name(&self) -> String;
 }
 
-pub trait InfallibleSyntax {
-    type Data;
+impl<T> Syntax for &T
+where
+    T: Syntax,
+{
+    type Data = T::Data;
 
-    fn parse_infallible(parser: &mut Parser<'_>) -> Self::Data;
-
-    fn singular_name() -> String;
-
-    fn plural_name() -> String;
-}
-
-impl<T: InfallibleSyntax> Syntax for T {
-    type Data = <T as InfallibleSyntax>::Data;
-
-    fn parse(parser: &mut Parser<'_>) -> Option<Self::Data> {
-        Some(<T as InfallibleSyntax>::parse_infallible(parser))
+    fn parse(&self, parser: &mut Parser<'_>) -> Option<Self::Data> {
+        T::parse(self, parser)
     }
 
-    fn singular_name() -> String {
-        <T as InfallibleSyntax>::singular_name()
+    fn singular_name(&self) -> String {
+        T::singular_name(self)
     }
 
-    fn plural_name() -> String {
-        <T as InfallibleSyntax>::plural_name()
+    fn plural_name(&self) -> String {
+        T::plural_name(self)
     }
 }

@@ -6,7 +6,10 @@ use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::span::Spanned;
 use crate::syntax::field::Field;
+use crate::syntax::field::ParsedField;
 use crate::syntax::list::CommaList;
+use crate::syntax::sigil::CloseCurly;
+use crate::syntax::sigil::OpenCurly;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
@@ -20,9 +23,9 @@ use std::sync::Arc;
 /// }
 /// ```
 #[derive(Default)]
-pub struct StructDeclarationMacro;
+pub struct StructDeclaration;
 
-impl EntityMacroDefinition for StructDeclarationMacro {
+impl EntityMacroDefinition for StructDeclaration {
     fn parse(
         &self,
         parser: &mut Parser<'_>,
@@ -43,17 +46,13 @@ impl EntityMacroDefinition for StructDeclarationMacro {
         let mut error = None;
         let mut fields = vec![];
 
-        if let Some(_) = parser.eat_sigil("{") {
-            fields = parser.eat_infallible_syntax::<CommaList<Field>>();
+        if parser.expect(OpenCurly) {
+            fields = parser.eat(CommaList(Field)).unwrap_or(vec![]);
 
             parser.eat_newlines();
 
-            if let None = parser.eat_sigil("}") {
-                parser.report_error("expected `}`", parser.peek_span());
-                error = Some(parser.peek_span());
-            }
+            parser.expect(CloseCurly);
         } else {
-            parser.report_error("expected `}`", parser.peek_span());
             error = Some(parser.peek_span());
         }
 
@@ -72,17 +71,17 @@ impl EntityMacroDefinition for StructDeclarationMacro {
             entity,
             full_span,
             characteristic_span,
-            Arc::new(StructDeclaration { fields, error }),
+            Arc::new(ParsedStructDeclaration { fields, error }),
         )
     }
 }
 
-struct StructDeclaration {
-    fields: Arc<Vec<Field>>,
+struct ParsedStructDeclaration {
+    fields: Arc<Vec<ParsedField>>,
     error: Option<Span<CurrentFile>>,
 }
 
-impl LazyParsedEntity for StructDeclaration {
+impl LazyParsedEntity for ParsedStructDeclaration {
     fn parse_children(&self) -> Vec<ParsedEntity> {
         unimplemented!()
     }
