@@ -6,7 +6,7 @@
 use debug::{DebugWith, FmtWithSpecialized};
 use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
-use lark_error::{Diagnostic, ErrorSentinel};
+use lark_error::{ErrorReported, ErrorSentinel};
 use lark_string::global::GlobalIdentifier;
 
 indices::index_type! {
@@ -17,7 +17,7 @@ indices::index_type! {
 pub enum EntityData {
     /// Indicates that fetching the entity somehow failed with an
     /// error (which has been separately reported).
-    Error(Diagnostic),
+    Error(ErrorReported),
 
     LangItem(LangItem),
 
@@ -135,8 +135,7 @@ impl<DB> ErrorSentinel<&DB> for Entity
 where
     DB: AsRef<EntityTables>,
 {
-    fn error_sentinel(db: &DB, spans: &[Diagnostic]) -> Self {
-        // Pick the first error arbitrarily
-        EntityData::Error(spans[0].clone()).intern(db)
+    fn error_sentinel(db: &DB, report: ErrorReported) -> Self {
+        EntityData::Error(report).intern(db)
     }
 }

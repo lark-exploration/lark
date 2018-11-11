@@ -1,5 +1,5 @@
 use lark_debug_derive::DebugWith;
-use lark_error::Diagnostic;
+use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 
 /// The different kinds of token our lexer can distinguish. Note that
@@ -17,7 +17,7 @@ pub enum LexToken {
 }
 
 impl<Cx> ErrorSentinel<Cx> for LexToken {
-    fn error_sentinel(_cx: Cx, _error_spans: &[Diagnostic]) -> Self {
+    fn error_sentinel(_cx: Cx, _report: ErrorReported) -> Self {
         LexToken::Error
     }
 }

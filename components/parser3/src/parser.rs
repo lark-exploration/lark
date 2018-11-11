@@ -14,6 +14,7 @@ use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
+use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_error::WithError;
 use lark_string::global::GlobalIdentifier;
@@ -160,12 +161,12 @@ impl Parser<'me> {
             return v;
         }
 
-        let diagnostic = self.report_error(
+        let report = self.report_error(
             format!("expected {}", syntax.singular_name()),
             self.token.span,
         );
 
-        <T::Data>::error_sentinel(&*self, &[diagnostic])
+        <T::Data>::error_sentinel(&*self, report)
     }
 
     /// Parses an entity, if one is present, and returns its parsed
@@ -191,7 +192,7 @@ impl Parser<'me> {
         &mut self,
         message: impl Into<String>,
         span: Span<CurrentFile>,
-    ) -> Diagnostic {
+    ) -> ErrorReported {
         report_error(&mut self.errors, message, span)
     }
 
@@ -201,8 +202,8 @@ impl Parser<'me> {
         message: impl Into<String>,
         span: Span<CurrentFile>,
     ) -> ParsedEntity {
-        let diagnostic = self.report_error(message, span);
-        let entity = EntityData::Error(diagnostic).intern(self.entity_tables);
+        let reported = self.report_error(message, span);
+        let entity = EntityData::Error(reported).intern(self.entity_tables);
         ParsedEntity::new(entity, span, span, Arc::new(ErrorParsedEntity))
     }
 }
@@ -257,9 +258,9 @@ fn report_error(
     errors: &mut Vec<Diagnostic>,
     message: impl Into<String>,
     span: Span<CurrentFile>,
-) -> Diagnostic {
+) -> ErrorReported {
     let message: String = message.into();
     let diagnostic = crate::diagnostic(message, span);
-    errors.push(diagnostic.clone());
-    diagnostic
+    errors.push(diagnostic);
+    ErrorReported::at_diagnostic(errors.last().unwrap())
 }

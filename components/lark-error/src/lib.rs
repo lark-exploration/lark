@@ -104,7 +104,7 @@ impl<T> WithError<T> {
     {
         let diagnostic = Diagnostic::new(label, span);
         WithError {
-            value: T::error_sentinel(cx, &[diagnostic.clone()]),
+            value: T::error_sentinel(cx, ErrorReported::at_diagnostic(&diagnostic)),
             errors: vec![diagnostic],
         }
     }
@@ -134,20 +134,20 @@ impl<T> WithError<T> {
 pub macro or_return_sentinel($cx:expr, $v:expr) {
     match $v {
         Ok(v) => v,
-        Err(ErrorReported(spans)) => {
+        Err(ErrorReported(report)) => {
             log::debug!("or_return_sentinel: returning error sentinel");
-            return ErrorSentinel::error_sentinel($cx, &spans);
+            return ErrorSentinel::error_sentinel($cx, &report);
         }
     }
 }
 
 pub trait ErrorSentinel<Cx> {
-    fn error_sentinel(cx: Cx, error_spans: &[Diagnostic]) -> Self;
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> Self;
 }
 
 impl<T, Cx> ErrorSentinel<Cx> for Result<T, ErrorReported> {
-    fn error_sentinel(_cx: Cx, spans: &[Diagnostic]) -> Self {
-        Err(ErrorReported::at_diagnostics(spans))
+    fn error_sentinel(_cx: Cx, report: ErrorReported) -> Self {
+        Err(report)
     }
 }
 
@@ -155,8 +155,8 @@ impl<T, Cx> ErrorSentinel<Cx> for Arc<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> Self {
-        Arc::new(T::error_sentinel(cx, spans))
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> Self {
+        Arc::new(T::error_sentinel(cx, report))
     }
 }
 
@@ -164,8 +164,8 @@ impl<T, Cx> ErrorSentinel<Cx> for Vec<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> Self {
-        vec![T::error_sentinel(cx, spans)]
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> Self {
+        vec![T::error_sentinel(cx, report)]
     }
 }
 
@@ -173,10 +173,10 @@ impl<T, Cx> ErrorSentinel<Cx> for WithError<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> WithError<T>
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> WithError<T>
     where
         T: ErrorSentinel<Cx>,
     {
-        WithError::ok(T::error_sentinel(cx, spans))
+        WithError::ok(T::error_sentinel(cx, report))
     }
 }

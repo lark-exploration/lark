@@ -2,7 +2,7 @@ use crate::parser::Parser;
 use crate::span::Spanned;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
-use lark_error::Diagnostic;
+use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_string::global::GlobalIdentifier;
 
@@ -39,7 +39,7 @@ impl Syntax for TypeReference {
 }
 
 impl<Cx> ErrorSentinel<Cx> for ParsedTypeReference {
-    fn error_sentinel(_cx: Cx, _error_spans: &[Diagnostic]) -> Self {
+    fn error_sentinel(_cx: Cx, _report: ErrorReported) -> Self {
         ParsedTypeReference::Error
     }
 }
