@@ -1,6 +1,7 @@
 use crate::lexer::token::LexToken;
 use crate::parser::Parser;
 use crate::span::Spanned;
+use crate::syntax::Delimiter;
 use crate::syntax::Syntax;
 use lark_error::ErrorReported;
 
@@ -45,4 +46,19 @@ sigil_type! {
     pub struct CloseSquare = (LexToken::Sigil, "]");
     pub struct Colon = (LexToken::Sigil, ":");
     pub struct Comma = (LexToken::Sigil, ",");
+}
+
+pub struct Curlies;
+
+impl Delimiter for Curlies {
+    type Open = OpenCurly;
+    type Close = CloseCurly;
+
+    fn open_syntax(&self) -> Self::Open {
+        OpenCurly
+    }
+
+    fn close_syntax(&self) -> Self::Close {
+        CloseCurly
+    }
 }

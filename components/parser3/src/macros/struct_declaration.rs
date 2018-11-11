@@ -1,14 +1,14 @@
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
 use crate::span::Spanned;
+use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::field::Field;
 use crate::syntax::field::ParsedField;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
-use crate::syntax::sigil::CloseCurly;
-use crate::syntax::sigil::OpenCurly;
+use crate::syntax::sigil::Curlies;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
@@ -33,9 +33,9 @@ impl EntityMacroDefinition for StructDeclaration {
         macro_name: Spanned<GlobalIdentifier>,
     ) -> Result<ParsedEntity, ErrorReported> {
         let struct_name = parser.expect(SpannedGlobalIdentifier)?;
-        let _ = parser.expect(OpenCurly)?;
-        let fields = parser.expect(CommaList(Field)).unwrap_or(vec![]);
-        parser.expect(CloseCurly)?;
+        let fields = parser
+            .expect(Delimited(Curlies, CommaList(Field)))
+            .unwrap_or_else(|ErrorReported(_)| vec![]);
 
         let entity = EntityData::ItemName {
             base,

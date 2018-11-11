@@ -3,6 +3,7 @@
 use crate::parser::Parser;
 use lark_error::ErrorReported;
 
+pub mod delimited;
 pub mod entity;
 pub mod field;
 pub mod identifier;
