@@ -65,7 +65,7 @@ crate fn default_entity_macros(
     declare_macro!(
         db(db),
         macros(
-            "struct" => struct_declaration::StructDeclaration,
+            "struct" => struct_declaration::StructDeclarationMacro,
         ),
     )
 }

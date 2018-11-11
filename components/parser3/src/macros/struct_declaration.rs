@@ -5,7 +5,7 @@ use crate::parser::Parser;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::span::Spanned;
-use crate::syntax::field::ParsedField;
+use crate::syntax::field::Field;
 use crate::syntax::list::CommaList;
 use intern::Intern;
 use lark_entity::Entity;
@@ -20,9 +20,9 @@ use std::sync::Arc;
 /// }
 /// ```
 #[derive(Default)]
-pub struct StructDeclaration;
+pub struct StructDeclarationMacro;
 
-impl EntityMacroDefinition for StructDeclaration {
+impl EntityMacroDefinition for StructDeclarationMacro {
     fn parse(
         &self,
         parser: &mut Parser<'_>,
@@ -44,7 +44,7 @@ impl EntityMacroDefinition for StructDeclaration {
         let mut fields = vec![];
 
         if let Some(_) = parser.eat_sigil("{") {
-            fields = parser.eat_infallible_syntax::<CommaList<ParsedField>>();
+            fields = parser.eat_infallible_syntax::<CommaList<Field>>();
 
             parser.eat_newlines();
 
@@ -72,17 +72,17 @@ impl EntityMacroDefinition for StructDeclaration {
             entity,
             full_span,
             characteristic_span,
-            Arc::new(ParsedStructDeclaration { fields, error }),
+            Arc::new(StructDeclaration { fields, error }),
         )
     }
 }
 
-struct ParsedStructDeclaration {
-    fields: Arc<Vec<ParsedField>>,
+struct StructDeclaration {
+    fields: Arc<Vec<Field>>,
     error: Option<Span<CurrentFile>>,
 }
 
-impl LazyParsedEntity for ParsedStructDeclaration {
+impl LazyParsedEntity for StructDeclaration {
     fn parse_children(&self) -> Vec<ParsedEntity> {
         unimplemented!()
     }

@@ -6,7 +6,7 @@ use lark_error::ErrorSentinel;
 use lark_string::global::GlobalIdentifier;
 
 /// Parsed form of a type.
-pub enum ParsedTypeReference {
+pub enum TypeReference {
     Named(NamedTypeReference),
     Error,
 }
@@ -16,14 +16,12 @@ pub struct NamedTypeReference {
     pub identifier: Spanned<GlobalIdentifier>,
 }
 
-impl Syntax for ParsedTypeReference {
+impl Syntax for TypeReference {
     type Data = Self;
 
-    fn parse(parser: &mut Parser<'_>) -> Option<ParsedTypeReference> {
+    fn parse(parser: &mut Parser<'_>) -> Option<TypeReference> {
         let identifier = parser.eat_global_identifier()?;
-        Some(ParsedTypeReference::Named(NamedTypeReference {
-            identifier,
-        }))
+        Some(TypeReference::Named(NamedTypeReference { identifier }))
     }
 
     fn singular_name() -> String {
@@ -35,8 +33,8 @@ impl Syntax for ParsedTypeReference {
     }
 }
 
-impl<Cx> ErrorSentinel<Cx> for ParsedTypeReference {
+impl<Cx> ErrorSentinel<Cx> for TypeReference {
     fn error_sentinel(_cx: Cx, _error_spans: &[Diagnostic]) -> Self {
-        ParsedTypeReference::Error
+        TypeReference::Error
     }
 }
