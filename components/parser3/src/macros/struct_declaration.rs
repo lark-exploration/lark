@@ -1,9 +1,12 @@
-use crate::macros::type_reference::ParsedTypeReference;
 use crate::macros::EntityMacroDefinition;
 use crate::parsed_entity::LazyParsedEntity;
 use crate::parsed_entity::ParsedEntity;
 use crate::parser::Parser;
+use crate::span::CurrentFile;
+use crate::span::Span;
 use crate::span::Spanned;
+use crate::syntax::field::ParsedField;
+use crate::syntax::list::CommaList;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
@@ -32,31 +35,26 @@ impl EntityMacroDefinition for StructDeclaration {
             "expected struct name"
         );
 
-        or_error_entity!(parser.eat_sigil("{"), parser, "expected `{`");
-        parser.eat_newlines();
-
+        // We always produce a field list, but sometimes we also set
+        // the error flag to `Some`, indicating that the field list is
+        // wonky (i.e., there may be additional fields we do not know
+        // about). Is this trying too hard to recover? Maybe we should
+        // just use a `Result<Vec<>, ErrorReported>`?
+        let mut error = None;
         let mut fields = vec![];
-        loop {
-            if let Some(name) = parser.eat_global_identifier() {
-                if let Some(ty) = parser.parse_type() {
-                    fields.push(ParsedField { name, ty });
 
-                    // If there is a `,` or a newline, then there may
-                    // be more fields, so go back around the loop.
-                    if let Some(_) = parser.eat_sigil(",") {
-                        parser.eat_newlines();
-                        continue;
-                    } else if parser.eat_newlines() {
-                        continue;
-                    }
-                }
+        if let Some(_) = parser.eat_sigil("{") {
+            fields = parser.eat_infallible_syntax::<CommaList<ParsedField>>();
+
+            parser.eat_newlines();
+
+            if let None = parser.eat_sigil("}") {
+                parser.report_error("expected `}`", parser.peek_span());
+                error = Some(parser.peek_span());
             }
-
-            break;
-        }
-
-        if let None = parser.eat_sigil("}") {
+        } else {
             parser.report_error("expected `}`", parser.peek_span());
+            error = Some(parser.peek_span());
         }
 
         let entity = EntityData::ItemName {
@@ -68,23 +66,20 @@ impl EntityMacroDefinition for StructDeclaration {
 
         let full_span = macro_name.span.extended_until_end_of(parser.last_span());
         let characteristic_span = struct_name.span;
+        let fields = Arc::new(fields);
 
         ParsedEntity::new(
             entity,
             full_span,
             characteristic_span,
-            Arc::new(ParsedStructDeclaration { fields }),
+            Arc::new(ParsedStructDeclaration { fields, error }),
         )
     }
 }
 
 struct ParsedStructDeclaration {
-    fields: Vec<ParsedField>,
-}
-
-struct ParsedField {
-    name: Spanned<GlobalIdentifier>,
-    ty: ParsedTypeReference,
+    fields: Arc<Vec<ParsedField>>,
+    error: Option<Span<CurrentFile>>,
 }
 
 impl LazyParsedEntity for ParsedStructDeclaration {

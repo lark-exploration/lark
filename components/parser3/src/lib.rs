@@ -21,6 +21,7 @@ mod macros;
 mod parsed_entity;
 mod parser;
 pub mod span;
+pub mod syntax;
 
 salsa::query_group! {
     pub trait ParserDatabase: AsRef<GlobalIdentifierTables> + salsa::Database {

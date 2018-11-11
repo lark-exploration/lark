@@ -21,7 +21,6 @@ macro_rules! or_error_entity {
 }
 
 crate mod struct_declaration;
-crate mod type_reference;
 
 crate trait EntityMacroDefinition {
     /// Invoked when the macro name has been recognized and
