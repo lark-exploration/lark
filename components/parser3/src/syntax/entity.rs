@@ -1,9 +1,42 @@
+use crate::parser::Parser;
 use crate::span::CurrentFile;
 use crate::span::Span;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
+use crate::syntax::Syntax;
 use lark_entity::Entity;
+use lark_error::ErrorReported;
 use std::sync::Arc;
 
-crate struct ParsedEntity {
+pub struct EntitySyntax {
+    parent_entity: Entity,
+}
+
+impl EntitySyntax {
+    pub fn new(parent_entity: Entity) -> Self {
+        EntitySyntax { parent_entity }
+    }
+}
+
+impl Syntax for EntitySyntax {
+    type Data = ParsedEntity;
+
+    fn test(&self, parser: &Parser<'_>) -> bool {
+        parser.test(SpannedGlobalIdentifier)
+    }
+
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+        let macro_name = parser.expect(SpannedGlobalIdentifier)?;
+
+        let macro_definition = match parser.entity_macro_definitions().get(&macro_name.value) {
+            Some(m) => m.clone(),
+            None => Err(parser.report_error("no macro with this name", macro_name.span))?,
+        };
+
+        Ok(macro_definition.parse(parser, self.parent_entity, macro_name)?)
+    }
+}
+
+pub struct ParsedEntity {
     /// The `Entity` identifier by which we are known.
     entity: Entity,
 

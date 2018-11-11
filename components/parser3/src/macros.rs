@@ -1,6 +1,6 @@
-use crate::parsed_entity::ParsedEntity;
 use crate::parser::Parser;
 use crate::span::Spanned;
+use crate::syntax::entity::ParsedEntity;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_error::ErrorReported;

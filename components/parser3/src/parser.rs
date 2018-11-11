@@ -2,11 +2,11 @@ use crate::lexer::definition::LexerState;
 use crate::lexer::token::LexToken;
 use crate::lexer::tools::Tokenizer;
 use crate::macros::EntityMacroDefinition;
-use crate::parsed_entity::ParsedEntity;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::span::Spanned;
-use crate::syntax::identifier::SpannedGlobalIdentifier;
+use crate::syntax::entity::EntitySyntax;
+use crate::syntax::entity::ParsedEntity;
 use crate::syntax::Syntax;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
@@ -60,10 +60,10 @@ impl Parser<'me> {
     /// (accumulating errors as we go).
     crate fn parse_all_entities(mut self, parent_entity: Entity) -> WithError<Vec<ParsedEntity>> {
         let mut entities = vec![];
-        while let Some(entity) = self.eat_entity(parent_entity) {
+        while let Some(entity) = self.eat(EntitySyntax::new(parent_entity)) {
             match entity {
                 Ok(entity) => entities.push(entity),
-                Err(ErrorReported(_)) => { }
+                Err(ErrorReported(_)) => {}
             }
         }
 
@@ -86,6 +86,13 @@ impl Parser<'me> {
     /// Extract the complete input
     crate fn input(&self) -> &'me Text {
         self.input
+    }
+
+    /// Extract the complete input
+    crate fn entity_macro_definitions(
+        &self,
+    ) -> &'me FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> {
+        self.entity_macro_definitions
     }
 
     /// Peek at the current lookahead token.
@@ -147,31 +154,6 @@ impl Parser<'me> {
         } else {
             None
         }
-    }
-
-    /// Parses an entity, if one is present, and returns its parsed
-    /// representation. Otherwise, returns `None`.
-    ///
-    /// Entities always begin with a macro invocation and then proceed
-    /// as the macro demands.
-    crate fn eat_entity(
-        &mut self,
-        parent_entity: Entity,
-    ) -> Option<Result<ParsedEntity, ErrorReported>> {
-        if self.test(SpannedGlobalIdentifier) {
-            return None;
-        }
-
-        Some(try {
-            let macro_name = self.expect(SpannedGlobalIdentifier)?;
-
-            let macro_definition = match self.entity_macro_definitions.get(&macro_name.value) {
-                Some(m) => m.clone(),
-                None => Err(self.report_error("no macro with this name", macro_name.span))?,
-            };
-
-            macro_definition.parse(self, parent_entity, macro_name)?
-        })
     }
 
     /// Report an error with the given message at the given span.

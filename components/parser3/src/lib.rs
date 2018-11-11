@@ -19,7 +19,6 @@ use std::sync::Arc;
 pub mod current_file;
 mod lexer;
 mod macros;
-mod parsed_entity;
 mod parser;
 pub mod span;
 pub mod syntax;

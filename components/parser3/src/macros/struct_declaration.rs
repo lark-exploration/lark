@@ -1,8 +1,8 @@
 use crate::macros::EntityMacroDefinition;
-use crate::parsed_entity::LazyParsedEntity;
-use crate::parsed_entity::ParsedEntity;
 use crate::parser::Parser;
 use crate::span::Spanned;
+use crate::syntax::entity::LazyParsedEntity;
+use crate::syntax::entity::ParsedEntity;
 use crate::syntax::field::Field;
 use crate::syntax::field::ParsedField;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
