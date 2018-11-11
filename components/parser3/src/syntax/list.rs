@@ -1,6 +1,7 @@
 use crate::parser::Parser;
 use crate::syntax::sigil::Comma;
 use crate::syntax::Syntax;
+use lark_error::ErrorReported;
 
 pub struct CommaList<T>(pub T);
 
@@ -16,15 +17,11 @@ where
 {
     type Data = Vec<T::Data>;
 
-    fn singular_name(&self) -> String {
-        SeparatedList(self.element(), Comma).singular_name()
+    fn test(&self, parser: &Parser<'_>) -> bool {
+        SeparatedList(self.element(), Comma).test(parser)
     }
 
-    fn plural_name(&self) -> String {
-        SeparatedList(self.element(), Comma).plural_name()
-    }
-
-    fn parse(&self, parser: &mut Parser<'_>) -> Option<Vec<T::Data>> {
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<Vec<T::Data>, ErrorReported> {
         SeparatedList(self.element(), Comma).parse(parser)
     }
 }
@@ -66,14 +63,18 @@ where
 {
     type Data = Vec<T::Data>;
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Option<Vec<T::Data>> {
+    fn test(&self, _parser: &Parser<'_>) -> bool {
+        true // we never produce an error
+    }
+
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<Vec<T::Data>, ErrorReported> {
         let SeparatedList(element, delimiter) = self;
 
         let mut result = vec![];
         parser.eat_newlines();
         loop {
             if let Some(element) = parser.eat(element) {
-                result.push(element);
+                result.push(element?);
 
                 if let Some(_) = parser.eat(delimiter) {
                     parser.eat_newlines();
@@ -88,14 +89,6 @@ where
             }
         }
 
-        Some(result)
-    }
-
-    fn singular_name(&self) -> String {
-        self.element().plural_name()
-    }
-
-    fn plural_name(&self) -> String {
-        self.element().plural_name()
+        Ok(result)
     }
 }

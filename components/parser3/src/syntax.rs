@@ -1,6 +1,7 @@
 //! Built-in syntax that can be used by macros.
 
 use crate::parser::Parser;
+use lark_error::ErrorReported;
 
 pub mod field;
 pub mod identifier;
@@ -13,16 +14,12 @@ pub trait Syntax {
     /// parsing routine.
     type Data;
 
-    /// Routine to do the parsing.
-    fn parse(&self, parser: &mut Parser<'_>) -> Option<Self::Data>;
+    /// Routine to check if this syntax applies.
+    fn test(&self, parser: &Parser<'_>) -> bool;
 
-    /// For error messages, human readable name describing what is to
-    /// be parsed in the singular, e.g., "type" or "expression".
-    fn singular_name(&self) -> String;
-
-    /// For error messages, human readable name describing what is to
-    /// be parsed in the plural, e.g., "types" or "expressions".
-    fn plural_name(&self) -> String;
+    /// Routine to do the parsing itself. If `test` is not true, this
+    /// will produce a parse error.
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported>;
 }
 
 pub trait Delimiter {
@@ -38,15 +35,11 @@ where
 {
     type Data = T::Data;
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Option<Self::Data> {
+    fn test(&self, parser: &Parser<'_>) -> bool {
+        T::test(self, parser)
+    }
+
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         T::parse(self, parser)
-    }
-
-    fn singular_name(&self) -> String {
-        T::singular_name(self)
-    }
-
-    fn plural_name(&self) -> String {
-        T::plural_name(self)
     }
 }

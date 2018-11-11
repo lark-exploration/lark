@@ -2,6 +2,7 @@ use crate::lexer::token::LexToken;
 use crate::parser::Parser;
 use crate::span::Spanned;
 use crate::syntax::Syntax;
+use lark_error::ErrorReported;
 
 macro_rules! sigil_type {
     ($($v:vis struct $name:ident = ($kind:path, $token:expr);)*) => {
@@ -16,20 +17,19 @@ macro_rules! sigil_type {
             impl Syntax for $name {
                 type Data = Spanned<LexToken>;
 
-                fn parse(&self, parser: &mut Parser<'_>) -> Option<Self::Data> {
-                    if parser.is($kind) && parser.peek_str() == $name::TEXT {
-                        Some(parser.shift())
+                fn test(&self, parser: &Parser<'_>) -> bool {
+                    parser.is($kind) && parser.peek_str() == $name::TEXT
+                }
+
+                fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+                    if self.test(parser) {
+                        Ok(parser.shift())
                     } else {
-                        None
+                        Err(parser.report_error(
+                            format!("expected `{}`", $name::TEXT),
+                            parser.peek_span(),
+                        ))
                     }
-                }
-
-                fn singular_name(&self) -> String {
-                    format!("`{}`", $name::TEXT)
-                }
-
-                fn plural_name(&self) -> String {
-                    self.singular_name()
                 }
             }
         )*

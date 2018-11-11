@@ -34,8 +34,7 @@ impl EntityMacroDefinition for StructDeclaration {
     ) -> Result<ParsedEntity, ErrorReported> {
         let struct_name = parser.expect(SpannedGlobalIdentifier)?;
         let _ = parser.expect(OpenCurly)?;
-        let fields = parser.eat(CommaList(Field)).unwrap_or(vec![]);
-        parser.eat_newlines();
+        let fields = parser.expect(CommaList(Field)).unwrap_or(vec![]);
         parser.expect(CloseCurly)?;
 
         let entity = EntityData::ItemName {

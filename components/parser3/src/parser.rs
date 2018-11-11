@@ -2,16 +2,13 @@ use crate::lexer::definition::LexerState;
 use crate::lexer::token::LexToken;
 use crate::lexer::tools::Tokenizer;
 use crate::macros::EntityMacroDefinition;
-use crate::parsed_entity::ErrorParsedEntity;
 use crate::parsed_entity::ParsedEntity;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::span::Spanned;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
-use intern::Intern;
 use lark_entity::Entity;
-use lark_entity::EntityData;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::ErrorReported;
@@ -63,8 +60,11 @@ impl Parser<'me> {
     /// (accumulating errors as we go).
     crate fn parse_all_entities(mut self, parent_entity: Entity) -> WithError<Vec<ParsedEntity>> {
         let mut entities = vec![];
-        while let Some(entity) = self.parse_entity(parent_entity) {
-            entities.push(entity);
+        while let Some(entity) = self.eat_entity(parent_entity) {
+            match entity {
+                Ok(entity) => entities.push(entity),
+                Err(ErrorReported(_)) => { }
+            }
         }
 
         WithError {
@@ -113,6 +113,10 @@ impl Parser<'me> {
         kind == self.token.value
     }
 
+    crate fn test(&self, syntax: impl Syntax) -> bool {
+        syntax.test(self)
+    }
+
     /// Consumes all subsequent newline characters, returning true if
     /// at least one newline was found.
     crate fn eat_newlines(&mut self) -> bool {
@@ -130,22 +134,19 @@ impl Parser<'me> {
     where
         T: Syntax,
     {
-        if let Some(v) = self.eat(&syntax) {
-            return Ok(v);
-        }
-
-        Err(self.report_error(
-            format!("expected {}", syntax.singular_name()),
-            self.token.span,
-        ))
+        syntax.parse(self)
     }
 
     /// Parse a piece of syntax (if it is present)
-    crate fn eat<T>(&mut self, syntax: T) -> Option<T::Data>
+    crate fn eat<T>(&mut self, syntax: T) -> Option<Result<T::Data, ErrorReported>>
     where
         T: Syntax,
     {
-        syntax.parse(self)
+        if self.test(&syntax) {
+            Some(self.expect(syntax))
+        } else {
+            None
+        }
     }
 
     /// Parses an entity, if one is present, and returns its parsed
@@ -153,32 +154,24 @@ impl Parser<'me> {
     ///
     /// Entities always begin with a macro invocation and then proceed
     /// as the macro demands.
-    crate fn parse_entity(&mut self, parent_entity: Entity) -> Option<ParsedEntity> {
-        let macro_name = self.eat(SpannedGlobalIdentifier)?;
+    crate fn eat_entity(
+        &mut self,
+        parent_entity: Entity,
+    ) -> Option<Result<ParsedEntity, ErrorReported>> {
+        if self.test(SpannedGlobalIdentifier) {
+            return None;
+        }
 
-        let result = try {
+        Some(try {
+            let macro_name = self.expect(SpannedGlobalIdentifier)?;
+
             let macro_definition = match self.entity_macro_definitions.get(&macro_name.value) {
                 Some(m) => m.clone(),
                 None => Err(self.report_error("no macro with this name", macro_name.span))?,
             };
 
             macro_definition.parse(self, parent_entity, macro_name)?
-        };
-
-        match result {
-            Ok(v) => Some(v),
-
-            Err(report) => {
-                let entity = EntityData::Error(report).intern(self);
-                let full_span = macro_name.span.extended_until_end_of(self.last_span());
-                Some(ParsedEntity::new(
-                    entity,
-                    full_span,
-                    full_span,
-                    Arc::new(ErrorParsedEntity),
-                ))
-            }
-        }
+        })
     }
 
     /// Report an error with the given message at the given span.

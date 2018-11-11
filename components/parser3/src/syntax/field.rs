@@ -20,8 +20,12 @@ pub struct ParsedField {
 impl Syntax for Field {
     type Data = ParsedField;
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Option<ParsedField> {
-        let name = parser.eat(SpannedGlobalIdentifier)?;
+    fn test(&self, parser: &Parser<'_>) -> bool {
+        parser.test(SpannedGlobalIdentifier)
+    }
+
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<ParsedField, ErrorReported> {
+        let name = parser.expect(SpannedGlobalIdentifier)?;
 
         let ty_result: Result<_, ErrorReported> = try {
             parser.expect(Colon)?;
@@ -30,14 +34,6 @@ impl Syntax for Field {
 
         let ty = ty_result.unwrap_or_error_sentinel(&*parser);
 
-        return Some(ParsedField { name, ty });
-    }
-
-    fn singular_name(&self) -> String {
-        "field".to_string()
-    }
-
-    fn plural_name(&self) -> String {
-        "fields".to_string()
+        return Ok(ParsedField { name, ty });
     }
 }

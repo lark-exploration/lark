@@ -22,19 +22,15 @@ pub struct NamedTypeReference {
 impl Syntax for TypeReference {
     type Data = ParsedTypeReference;
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Option<ParsedTypeReference> {
-        let identifier = parser.eat(SpannedGlobalIdentifier)?;
-        Some(ParsedTypeReference::Named(NamedTypeReference {
+    fn test(&self, parser: &Parser<'_>) -> bool {
+        parser.test(SpannedGlobalIdentifier)
+    }
+
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<ParsedTypeReference, ErrorReported> {
+        let identifier = parser.expect(SpannedGlobalIdentifier)?;
+        Ok(ParsedTypeReference::Named(NamedTypeReference {
             identifier,
         }))
-    }
-
-    fn singular_name(&self) -> String {
-        "type".to_string()
-    }
-
-    fn plural_name(&self) -> String {
-        "types".to_string()
     }
 }
 
