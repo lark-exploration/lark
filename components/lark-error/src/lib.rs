@@ -33,29 +33,26 @@ use parser::pos::Span;
 use std::sync::Arc;
 
 /// Unit type used in `Result` to indicate a value derived from other
-/// value where an error was already reported.
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ErrorReported(pub Vec<Diagnostic>);
+/// value where an error was already reported. The span is "some span"
+/// from one of the errors.
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ErrorReported(pub Span);
 
 impl ErrorReported {
-    pub fn at_diagnostic(s: Diagnostic) -> Self {
-        ErrorReported(vec![s])
-    }
-
-    pub fn at_diagnostics(s: Vec<Diagnostic>) -> Self {
+    pub fn at_span(s: Span) -> Self {
         ErrorReported(s)
     }
 
-    pub fn some_diagnostic(&self) -> Diagnostic {
-        // Pick the first error arbitrarily
-        self.diagnostics()[0].clone()
+    pub fn at_diagnostic(s: &Diagnostic) -> Self {
+        ErrorReported(s.span)
     }
 
-    pub fn diagnostics(&self) -> &[Diagnostic] {
-        &self.0
+    pub fn at_diagnostics(s: &[Diagnostic]) -> Self {
+        assert!(!s.is_empty());
+        Self::at_diagnostic(&s[0])
     }
 
-    pub fn into_diagnostics(self) -> Vec<Diagnostic> {
+    pub fn span(&self) -> Span {
         self.0
     }
 }
@@ -124,7 +121,7 @@ impl<T> WithError<T> {
 
     pub fn into_result(self) -> Result<T, ErrorReported> {
         if !self.errors.is_empty() {
-            Err(ErrorReported(self.errors.clone()))
+            Err(ErrorReported::at_diagnostics(&self.errors))
         } else {
             Ok(self.value)
         }
@@ -150,7 +147,7 @@ pub trait ErrorSentinel<Cx> {
 
 impl<T, Cx> ErrorSentinel<Cx> for Result<T, ErrorReported> {
     fn error_sentinel(_cx: Cx, spans: &[Diagnostic]) -> Self {
-        Err(ErrorReported(spans.to_owned()))
+        Err(ErrorReported::at_diagnostics(spans))
     }
 }
 
