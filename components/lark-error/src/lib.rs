@@ -141,6 +141,22 @@ pub macro or_return_sentinel($cx:expr, $v:expr) {
     }
 }
 
+pub trait ResultExt<Ok, Cx> {
+    fn unwrap_or_error_sentinel(self, cx: Cx) -> Ok;
+}
+
+impl<Ok, Cx> ResultExt<Ok, Cx> for Result<Ok, ErrorReported>
+where
+    Ok: ErrorSentinel<Cx>,
+{
+    fn unwrap_or_error_sentinel(self, cx: Cx) -> Ok {
+        match self {
+            Ok(v) => v,
+            Err(report) => Ok::error_sentinel(cx, report),
+        }
+    }
+}
+
 pub trait ErrorSentinel<Cx> {
     fn error_sentinel(cx: Cx, report: ErrorReported) -> Self;
 }

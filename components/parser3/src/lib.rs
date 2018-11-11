@@ -4,6 +4,7 @@
 #![feature(macro_at_most_once_rep)]
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
+#![feature(try_blocks)]
 #![allow(dead_code)]
 
 use crate::span::CurrentFile;

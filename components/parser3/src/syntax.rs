@@ -25,6 +25,13 @@ pub trait Syntax {
     fn plural_name(&self) -> String;
 }
 
+pub trait Delimiter {
+    type Open: Syntax;
+    type Close: Syntax;
+    fn open_syntax(&self) -> Self::Open;
+    fn close_syntax(&self) -> Self::Close;
+}
+
 impl<T> Syntax for &T
 where
     T: Syntax,

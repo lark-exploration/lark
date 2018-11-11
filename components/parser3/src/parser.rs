@@ -15,7 +15,6 @@ use lark_entity::EntityData;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::ErrorReported;
-use lark_error::ErrorSentinel;
 use lark_error::WithError;
 use lark_string::global::GlobalIdentifier;
 use lark_string::global::GlobalIdentifierTables;
@@ -127,20 +126,18 @@ impl Parser<'me> {
 
     /// Parses a `T` if we can and returns true if so; otherwise,
     /// reports an error and returns false.
-    crate fn expect<T>(&'s mut self, syntax: T) -> bool
+    crate fn expect<T>(&'s mut self, syntax: T) -> Result<T::Data, ErrorReported>
     where
         T: Syntax,
     {
-        if let Some(_) = self.eat(&syntax) {
-            return true;
+        if let Some(v) = self.eat(&syntax) {
+            return Ok(v);
         }
 
-        self.report_error(
+        Err(self.report_error(
             format!("expected {}", syntax.singular_name()),
             self.token.span,
-        );
-
-        false
+        ))
     }
 
     /// Parse a piece of syntax (if it is present)
@@ -151,24 +148,6 @@ impl Parser<'me> {
         syntax.parse(self)
     }
 
-    /// Parse a piece of syntax which *must* be present, and error otherwise.
-    crate fn eat_required<T>(&'s mut self, syntax: T) -> T::Data
-    where
-        T: Syntax,
-        T::Data: ErrorSentinel<&'s Self>,
-    {
-        if let Some(v) = self.eat(&syntax) {
-            return v;
-        }
-
-        let report = self.report_error(
-            format!("expected {}", syntax.singular_name()),
-            self.token.span,
-        );
-
-        <T::Data>::error_sentinel(&*self, report)
-    }
-
     /// Parses an entity, if one is present, and returns its parsed
     /// representation. Otherwise, returns `None`.
     ///
@@ -176,15 +155,30 @@ impl Parser<'me> {
     /// as the macro demands.
     crate fn parse_entity(&mut self, parent_entity: Entity) -> Option<ParsedEntity> {
         let macro_name = self.eat(SpannedGlobalIdentifier)?;
-        let macro_definition = match self.entity_macro_definitions.get(&macro_name.value) {
-            Some(m) => m.clone(),
-            None => {
-                // FIXME -- scan end-to-end
 
-                return Some(self.error_entity("no macro with this name", macro_name.span));
-            }
+        let result = try {
+            let macro_definition = match self.entity_macro_definitions.get(&macro_name.value) {
+                Some(m) => m.clone(),
+                None => Err(self.report_error("no macro with this name", macro_name.span))?,
+            };
+
+            macro_definition.parse(self, parent_entity, macro_name)?
         };
-        Some(macro_definition.parse(self, parent_entity, macro_name))
+
+        match result {
+            Ok(v) => Some(v),
+
+            Err(report) => {
+                let entity = EntityData::Error(report).intern(self);
+                let full_span = macro_name.span.extended_until_end_of(self.last_span());
+                Some(ParsedEntity::new(
+                    entity,
+                    full_span,
+                    full_span,
+                    Arc::new(ErrorParsedEntity),
+                ))
+            }
+        }
     }
 
     /// Report an error with the given message at the given span.
@@ -194,17 +188,6 @@ impl Parser<'me> {
         span: Span<CurrentFile>,
     ) -> ErrorReported {
         report_error(&mut self.errors, message, span)
-    }
-
-    /// Report the given error and then return an error entity.
-    crate fn error_entity(
-        &mut self,
-        message: impl Into<String>,
-        span: Span<CurrentFile>,
-    ) -> ParsedEntity {
-        let reported = self.report_error(message, span);
-        let entity = EntityData::Error(reported).intern(self.entity_tables);
-        ParsedEntity::new(entity, span, span, Arc::new(ErrorParsedEntity))
     }
 }
 

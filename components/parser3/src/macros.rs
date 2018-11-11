@@ -3,22 +3,11 @@ use crate::parser::Parser;
 use crate::span::Spanned;
 use intern::Intern;
 use lark_entity::Entity;
+use lark_error::ErrorReported;
 use lark_string::global::GlobalIdentifier;
 use lark_string::global::GlobalIdentifierTables;
 use map::FxIndexMap;
 use std::sync::Arc;
-
-macro_rules! or_error_entity {
-    ($v:expr, $parser:expr, $message:expr) => {
-        match $v {
-            Some(v) => v,
-            None => {
-                let current_token_span = $parser.peek_span();
-                return $parser.error_entity($message, current_token_span);
-            }
-        }
-    };
-}
 
 crate mod struct_declaration;
 
@@ -40,7 +29,7 @@ crate trait EntityMacroDefinition {
         // that the "start" of this span will also be the start of
         // our entity's span.
         macro_name: Spanned<GlobalIdentifier>,
-    ) -> ParsedEntity;
+    ) -> Result<ParsedEntity, ErrorReported>;
 }
 
 macro_rules! declare_macro {
