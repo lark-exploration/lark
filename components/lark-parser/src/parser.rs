@@ -160,7 +160,7 @@ impl Parser<'me> {
     where
         T: Syntax,
     {
-        log::trace("expect({})", syntax.debug_with(self));
+        log::trace!("expect({})", syntax.debug_with(self));
 
         syntax.parse(self)
     }
