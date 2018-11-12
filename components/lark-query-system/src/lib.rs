@@ -57,6 +57,11 @@ impl LsDatabase for LarkDatabase {}
 
 salsa::database_storage! {
     pub struct LarkDatabaseStorage for LarkDatabase {
+        impl lark_parser::ParserDatabase {
+            fn file_names() for lark_parser::FileNamesQuery;
+            fn file_text() for lark_parser::FileTextQuery;
+            fn parsed_entities() for lark_parser::ParsedEntitiesQuery;
+        }
         impl parser::ReaderDatabase {
             fn paths() for parser::Paths;
             fn paths_trigger() for parser::PathsTrigger;

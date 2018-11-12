@@ -43,7 +43,7 @@ salsa::query_group! {
         }
 
         fn parsed_entities(id: FileName) -> WithError<Arc<Vec<ParsedEntity>>> {
-            type ParsedEntities;
+            type ParsedEntitiesQuery;
             use fn query_definitions::parsed_entities;
         }
     }
