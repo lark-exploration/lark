@@ -15,10 +15,10 @@ use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::WithError;
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
 use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;
-use std::sync::Arc;
 
 pub mod current_file;
 mod lexer;
@@ -33,7 +33,7 @@ salsa::query_group! {
         + AsRef<EntityTables>
         + salsa::Database
     {
-        fn file_names() -> Arc<Vec<FileName>> {
+        fn file_names() -> Seq<FileName> {
             type FileNamesQuery;
             storage input;
         }
@@ -43,7 +43,7 @@ salsa::query_group! {
             storage input;
         }
 
-        fn child_parsed_entities(entity: Entity) -> WithError<Arc<Vec<ParsedEntity>>> {
+        fn child_parsed_entities(entity: Entity) -> WithError<Seq<ParsedEntity>> {
             type ChildParsedEntitiesQuery;
             use fn query_definitions::child_parsed_entities;
         }
@@ -53,7 +53,7 @@ salsa::query_group! {
             use fn query_definitions::parsed_entity;
         }
 
-        fn child_entities(entity: Entity) -> Arc<Vec<Entity>> {
+        fn child_entities(entity: Entity) -> Seq<Entity> {
             type ChildEntitiesQuery;
             use fn query_definitions::child_entities;
         }

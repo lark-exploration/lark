@@ -8,6 +8,7 @@ use lark_entity::ItemKind;
 use lark_entity::MemberKind;
 use lark_error::or_return_sentinel;
 use lark_error::{Diagnostic, ErrorReported, WithError};
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
 use parser::ast;
 use parser::pos::{HasSpan, Span};
@@ -32,7 +33,7 @@ crate fn ast_of_file(
     }
 }
 
-crate fn items_in_file(db: &impl AstDatabase, input_file: GlobalIdentifier) -> Arc<Vec<Entity>> {
+crate fn items_in_file(db: &impl AstDatabase, input_file: GlobalIdentifier) -> Seq<Entity> {
     log::debug!("items_in_file(input_file={})", input_file.debug_with(db));
 
     let ast_of_file = or_return_sentinel!(db, db.ast_of_file(input_file).into_value());
@@ -46,7 +47,7 @@ crate fn items_in_file(db: &impl AstDatabase, input_file: GlobalIdentifier) -> A
         input_file_id.debug_with(db)
     );
 
-    let items: Vec<_> = ast_of_file
+    ast_of_file
         .items
         .iter()
         .map(|item| {
@@ -61,9 +62,7 @@ crate fn items_in_file(db: &impl AstDatabase, input_file: GlobalIdentifier) -> A
             }
             .intern(db)
         })
-        .collect();
-
-    Arc::new(items)
+        .collect()
 }
 
 crate fn ast_of_item(

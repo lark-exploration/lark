@@ -7,4 +7,5 @@ edition = "2018"
 [dependencies]
 debug = { path = "../debug" }
 lark-debug-derive = { path = "../lark-debug-derive" }
+lark-seq = { path = "../lark-seq" }
 parser = { path = "../parser" }

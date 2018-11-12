@@ -1,5 +1,7 @@
 use debug::DebugWith;
 use std::fmt::Debug;
+use std::hash::Hash;
+use std::hash::Hasher;
 use std::iter::once;
 use std::iter::FromIterator;
 use std::ops::Deref;
@@ -195,4 +197,21 @@ impl<T> FromIterator<T> for Seq<T> {
         let vec: Vec<T> = iter.into_iter().collect();
         Seq::from(vec)
     }
+}
+
+impl<T: Hash> Hash for Seq<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        <[T] as Hash>::hash(self, state)
+    }
+}
+
+#[macro_export]
+macro_rules! seq {
+    () => {
+        $crate::Seq::default()
+    };
+
+    ($($v:expr),* $(,)*) => {
+        $crate::Seq::from(vec![$($v),*])
+    };
 }

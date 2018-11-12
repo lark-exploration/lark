@@ -11,6 +11,7 @@ use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_error::WithError;
+use lark_seq::Seq;
 use lark_ty::declaration::Declaration;
 use lark_ty::BaseData;
 use lark_ty::BaseKind;
@@ -142,7 +143,7 @@ crate fn signature(
         a::Item::Struct(_) => panic!("asked for signature of a struct"),
 
         a::Item::Def(d) => {
-            let inputs: Vec<_> = d
+            let inputs: Seq<_> = d
                 .parameters
                 .iter()
                 .map(|p| {
@@ -158,10 +159,7 @@ crate fn signature(
             };
 
             WithError {
-                value: Ok(Signature {
-                    inputs: Arc::new(inputs),
-                    output,
-                }),
+                value: Ok(Signature { inputs, output }),
                 errors,
             }
         }

@@ -9,30 +9,29 @@ use lark_entity::ItemKind;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
-use std::sync::Arc;
 
-crate fn members(db: &impl HirDatabase, owner: Entity) -> Result<Arc<Vec<Member>>, ErrorReported> {
+crate fn members(db: &impl HirDatabase, owner: Entity) -> Result<Seq<Member>, ErrorReported> {
     match &*db.ast_of_item(owner)? {
-        a::Item::Struct(s) => Ok(Arc::new(
-            s.fields
-                .iter()
-                .map(|f| {
-                    let field_entity = EntityData::MemberName {
-                        base: owner,
-                        kind: MemberKind::Field,
-                        id: *f.name,
-                    }
-                    .intern(db);
+        a::Item::Struct(s) => Ok(s
+            .fields
+            .iter()
+            .map(|f| {
+                let field_entity = EntityData::MemberName {
+                    base: owner,
+                    kind: MemberKind::Field,
+                    id: *f.name,
+                }
+                .intern(db);
 
-                    Member {
-                        name: *f.name,
-                        kind: MemberKind::Field,
-                        entity: field_entity,
-                    }
-                })
-                .collect(),
-        )),
+                Member {
+                    name: *f.name,
+                    kind: MemberKind::Field,
+                    entity: field_entity,
+                }
+            })
+            .collect()),
 
         a::Item::Def(_) => panic!("asked for members of a function"),
     }
@@ -60,7 +59,7 @@ crate fn member_entity(
     }
 }
 
-crate fn subentities(db: &impl HirDatabase, root: Entity) -> Arc<Vec<Entity>> {
+crate fn subentities(db: &impl HirDatabase, root: Entity) -> Seq<Entity> {
     let mut entities = vec![root];
 
     // Go over each thing added to entities and add any nested
@@ -93,5 +92,5 @@ crate fn subentities(db: &impl HirDatabase, root: Entity) -> Arc<Vec<Entity>> {
         }
     }
 
-    Arc::new(entities)
+    Seq::from(entities)
 }

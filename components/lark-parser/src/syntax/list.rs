@@ -3,6 +3,7 @@ use crate::syntax::sigil::Comma;
 use crate::syntax::Syntax;
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
+use lark_seq::Seq;
 
 #[derive(DebugWith)]
 pub struct CommaList<T>(pub T);
@@ -17,13 +18,13 @@ impl<T> Syntax for CommaList<T>
 where
     T: Syntax,
 {
-    type Data = Vec<T::Data>;
+    type Data = Seq<T::Data>;
 
     fn test(&self, parser: &Parser<'_>) -> bool {
         SeparatedList(self.element(), Comma).test(parser)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Vec<T::Data>, ErrorReported> {
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
         SeparatedList(self.element(), Comma).parse(parser)
     }
 }
@@ -64,13 +65,13 @@ where
     T: Syntax,
     S: Syntax,
 {
-    type Data = Vec<T::Data>;
+    type Data = Seq<T::Data>;
 
     fn test(&self, _parser: &Parser<'_>) -> bool {
         true // we never produce an error
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Vec<T::Data>, ErrorReported> {
+    fn parse(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
         let SeparatedList(element, delimiter) = self;
 
         let mut result = vec![];
@@ -92,6 +93,6 @@ where
             }
         }
 
-        Ok(result)
+        Ok(Seq::from(result))
     }
 }

@@ -14,6 +14,7 @@ use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
 use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;
@@ -59,10 +60,7 @@ impl Parser<'me> {
 
     /// Parse all the entities we can and return a vector
     /// (accumulating errors as we go).
-    crate fn parse_all_entities(
-        mut self,
-        parent_entity: Entity,
-    ) -> WithError<Arc<Vec<ParsedEntity>>> {
+    crate fn parse_all_entities(mut self, parent_entity: Entity) -> WithError<Seq<ParsedEntity>> {
         let mut entities = vec![];
         while let Some(entity) = self.eat(EntitySyntax::new(parent_entity)) {
             match entity {
@@ -72,7 +70,7 @@ impl Parser<'me> {
         }
 
         WithError {
-            value: Arc::new(entities),
+            value: Seq::from(entities),
             errors: self.errors,
         }
     }

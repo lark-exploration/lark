@@ -9,6 +9,7 @@
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::{ErrorReported, WithError};
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
 pub use parser::ast;
 use parser::pos::Span;
@@ -28,7 +29,7 @@ salsa::query_group! {
             use fn query_definitions::ast_of_file;
         }
 
-        fn items_in_file(path: GlobalIdentifier) -> Arc<Vec<Entity>> {
+        fn items_in_file(path: GlobalIdentifier) -> Seq<Entity> {
             type ItemsInFileQuery;
             use fn query_definitions::items_in_file;
         }

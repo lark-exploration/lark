@@ -9,12 +9,12 @@ use intern::Untern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_error::WithError;
-use std::sync::Arc;
+use lark_seq::Seq;
 
 crate fn child_parsed_entities(
     db: &impl ParserDatabase,
     entity: Entity,
-) -> WithError<Arc<Vec<ParsedEntity>>> {
+) -> WithError<Seq<ParsedEntity>> {
     log::debug!("child_parsed_entities({})", entity.debug_with(db));
 
     match entity.untern(db) {
@@ -31,10 +31,10 @@ crate fn child_parsed_entities(
             .parsed_entity(entity)
             .thunk
             .parse_children(entity, db)
-            .map(Arc::new),
+            .map(Seq::from),
 
         EntityData::Error { .. } | EntityData::MemberName { .. } | EntityData::LangItem(_) => {
-            WithError::ok(Arc::new(vec![]))
+            WithError::ok(Seq::default())
         }
     }
 }
@@ -68,12 +68,10 @@ crate fn parsed_entity(db: &impl ParserDatabase, entity: Entity) -> ParsedEntity
     }
 }
 
-crate fn child_entities(db: &impl ParserDatabase, entity: Entity) -> Arc<Vec<Entity>> {
-    Arc::new(
-        db.child_parsed_entities(entity)
-            .into_value()
-            .iter()
-            .map(|parsed_entity| parsed_entity.entity)
-            .collect(),
-    )
+crate fn child_entities(db: &impl ParserDatabase, entity: Entity) -> Seq<Entity> {
+    db.child_parsed_entities(entity)
+        .into_value()
+        .iter()
+        .map(|parsed_entity| parsed_entity.entity)
+        .collect()
 }
