@@ -4,6 +4,7 @@ use crate::span::Spanned;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::ParsedEntity;
+use crate::syntax::entity::ParsedEntityThunk;
 use crate::syntax::field::Field;
 use crate::syntax::field::ParsedField;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
@@ -52,7 +53,7 @@ impl EntityMacroDefinition for StructDeclaration {
             entity,
             full_span,
             characteristic_span,
-            Arc::new(ParsedStructDeclaration { fields }),
+            ParsedEntityThunk::new(ParsedStructDeclaration { fields }),
         ))
     }
 }

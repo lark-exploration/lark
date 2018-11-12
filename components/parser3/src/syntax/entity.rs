@@ -3,6 +3,7 @@ use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
+use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
 use std::sync::Arc;
@@ -36,6 +37,7 @@ impl Syntax for EntitySyntax {
     }
 }
 
+#[derive(Debug, DebugWith, PartialEq, Eq)]
 pub struct ParsedEntity {
     /// The `Entity` identifier by which we are known.
     entity: Entity,
@@ -49,21 +51,16 @@ pub struct ParsedEntity {
     /// messages, which are kind of a pain.
     characteristic_span: Span<CurrentFile>,
 
-    /// The "thunk" contains methods that will recursively parse the
-    /// contents of this entity in response to salsa queries (or, if
-    /// the contents are already parsed, return pre-parsed bits and
-    /// pieces). These routines are meant to be "purely functional",
-    /// but the salsa runtime will memoize and ensure they are not
-    /// reinvoked.
-    thunk: Arc<dyn LazyParsedEntity>,
+    /// Thunk to extract contents
+    thunk: ParsedEntityThunk,
 }
 
 impl ParsedEntity {
-    crate fn new<T: 'static + LazyParsedEntity>(
+    crate fn new(
         entity: Entity,
         full_span: Span<CurrentFile>,
         characteristic_span: Span<CurrentFile>,
-        thunk: Arc<T>,
+        thunk: ParsedEntityThunk,
     ) -> Self {
         Self {
             entity,
@@ -74,7 +71,41 @@ impl ParsedEntity {
     }
 }
 
-crate trait LazyParsedEntity {
+/// The "parsed entity thunk" contains methods that will recursively
+/// parse the contents of this entity in response to salsa queries
+/// (or, if the contents are already parsed, return pre-parsed bits
+/// and pieces). These routines are meant to be "purely functional",
+/// but the salsa runtime will memoize and ensure they are not
+/// reinvoked.
+pub struct ParsedEntityThunk {
+    object: Arc<dyn LazyParsedEntity + Send + Sync>,
+}
+
+impl ParsedEntityThunk {
+    pub fn new<T: 'static + LazyParsedEntity + Send + Sync>(object: T) -> Self {
+        Self {
+            object: Arc::new(object),
+        }
+    }
+}
+
+impl std::fmt::Debug for ParsedEntityThunk {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_struct("LazyParsedEntity").finish()
+    }
+}
+
+impl std::cmp::PartialEq for ParsedEntityThunk {
+    fn eq(&self, other: &Self) -> bool {
+        std::sync::Arc::ptr_eq(&self.object, &other.object)
+    }
+}
+
+impl std::cmp::Eq for ParsedEntityThunk {}
+
+debug::debug_fallback_impl!(ParsedEntityThunk);
+
+pub trait LazyParsedEntity {
     fn parse_children(&self) -> Vec<ParsedEntity>;
 }
 
