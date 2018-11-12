@@ -7,7 +7,7 @@ use std::sync::Arc;
 /// an `&Text` into a `&str` for interoperability.
 ///
 /// Used to represent the value of an input file.
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Hash)]
 pub struct Text {
     text: Arc<String>,
     start: usize,
@@ -106,6 +106,16 @@ impl DebugWith for Text {
         <str as DebugWith>::fmt_with(self, cx, fmt)
     }
 }
+
+impl PartialEq<Text> for Text {
+    fn eq(&self, other: &Text) -> bool {
+        let this: &str = self;
+        let other: &str = other;
+        this == other
+    }
+}
+
+impl Eq for Text {}
 
 impl PartialEq<str> for Text {
     fn eq(&self, other: &str) -> bool {
