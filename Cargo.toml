@@ -12,7 +12,7 @@ edition = '2018'
 opt-level = 1
 
 [workspace]
-members = ["components/parser3"]
+members = ["components/lark-parser"]
 
 [dependencies]
 codespan = "0.2.0"

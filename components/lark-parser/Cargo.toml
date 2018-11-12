@@ -1,5 +1,5 @@
 [package]
-name = "parser3"
+name = "lark-parser"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
