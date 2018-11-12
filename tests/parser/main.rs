@@ -1,4 +1,5 @@
 use intern::Intern;
+use intern::Untern;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
@@ -8,7 +9,7 @@ use lark_test::*;
 
 #[derive(Debug, DebugWith)]
 struct EntityTree {
-    entity: Entity,
+    name: String,
     children: Vec<EntityTree>,
 }
 
@@ -20,7 +21,7 @@ impl EntityTree {
 
     fn from_entity(db: &impl ParserDatabase, entity: Entity) -> Self {
         EntityTree {
-            entity,
+            name: entity.untern(db).relative_name(db),
             children: db
                 .child_entities(entity)
                 .iter()
@@ -31,9 +32,7 @@ impl EntityTree {
 }
 
 #[test]
-fn basic() {
-    env_logger::init();
-
+fn empty_struct() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
         struct Foo {
@@ -46,19 +45,158 @@ fn basic() {
         &db,
         &unindent::unindent(
             r#"EntityTree {
-                entity: InputFile {
-                    file: "path1"
-                },
+                name: "InputFile(path1)",
                 children: [
                     EntityTree {
-                        entity: ItemName {
-                            base: InputFile {
-                                file: "path1"
-                            },
-                            kind: Struct,
-                            id: "Foo"
-                        },
+                        name: "ItemName(Foo)",
                         children: []
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
+}
+
+#[test]
+fn one_field() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+        struct Foo {
+            x: uint
+        }
+        ",
+    ));
+
+    let tree = EntityTree::from_file(&db, file_name);
+    compare_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                name: "InputFile(path1)",
+                children: [
+                    EntityTree {
+                        name: "ItemName(Foo)",
+                        children: [
+                            EntityTree {
+                                name: "MemberName(x)",
+                                children: []
+                            }
+                        ]
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
+}
+
+#[test]
+fn two_fields() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+        struct Foo {
+            x: uint,
+            y: uint
+        }
+        ",
+    ));
+
+    let tree = EntityTree::from_file(&db, file_name);
+    compare_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                name: "InputFile(path1)",
+                children: [
+                    EntityTree {
+                        name: "ItemName(Foo)",
+                        children: [
+                            EntityTree {
+                                name: "MemberName(x)",
+                                children: []
+                            },
+                            EntityTree {
+                                name: "MemberName(y)",
+                                children: []
+                            }
+                        ]
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
+}
+
+#[test]
+fn two_fields_trailing() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+        struct Foo {
+            x: uint,
+            y: uint,
+        }
+        ",
+    ));
+
+    let tree = EntityTree::from_file(&db, file_name);
+    compare_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                name: "InputFile(path1)",
+                children: [
+                    EntityTree {
+                        name: "ItemName(Foo)",
+                        children: [
+                            EntityTree {
+                                name: "MemberName(x)",
+                                children: []
+                            },
+                            EntityTree {
+                                name: "MemberName(y)",
+                                children: []
+                            }
+                        ]
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
+}
+
+#[test]
+fn two_fields_no_comma() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+        struct Foo {
+            x: uint
+            y: uint
+        }
+        ",
+    ));
+
+    let tree = EntityTree::from_file(&db, file_name);
+    compare_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                name: "InputFile(path1)",
+                children: [
+                    EntityTree {
+                        name: "ItemName(Foo)",
+                        children: [
+                            EntityTree {
+                                name: "MemberName(x)",
+                                children: []
+                            },
+                            EntityTree {
+                                name: "MemberName(y)",
+                                children: []
+                            }
+                        ]
                     }
                 ]
             }"#,

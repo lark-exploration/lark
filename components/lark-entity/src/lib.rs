@@ -8,6 +8,7 @@ use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
 use lark_error::{ErrorReported, ErrorSentinel};
 use lark_string::global::GlobalIdentifier;
+use lark_string::global::GlobalIdentifierTables;
 
 indices::index_type! {
     pub struct Entity { .. }
@@ -37,6 +38,18 @@ pub enum EntityData {
 }
 
 impl EntityData {
+    /// Gives a little information about the name/kind of this entity,
+    /// without dumping the whole tree. Meant for debugging.
+    pub fn relative_name(self, db: &impl AsRef<GlobalIdentifierTables>) -> String {
+        match self {
+            EntityData::Error(_) => String::from("<error>"),
+            EntityData::LangItem(li) => format!("{:?}", li),
+            EntityData::InputFile { file } => format!("InputFile({})", file.untern(db)),
+            EntityData::ItemName { id, .. } => format!("ItemName({})", id.untern(db)),
+            EntityData::MemberName { id, .. } => format!("MemberName({})", id.untern(db)),
+        }
+    }
+
     /// True if this entity represents a value that the user could
     /// store into a variable (or might, in the case of error
     /// entities).
