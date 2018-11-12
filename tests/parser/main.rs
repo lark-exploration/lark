@@ -42,5 +42,27 @@ fn basic() {
     ));
 
     let tree = EntityTree::from_file(&db, file_name);
-    compare_debug(&db, "", &tree);
+    compare_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                entity: InputFile {
+                    file: "path1"
+                },
+                children: [
+                    EntityTree {
+                        entity: ItemName {
+                            base: InputFile {
+                                file: "path1"
+                            },
+                            kind: Struct,
+                            id: "Foo"
+                        },
+                        children: []
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
 }

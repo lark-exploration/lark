@@ -3,11 +3,14 @@ use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
+use crate::ParserDatabase;
 use debug::DebugWith;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
+use lark_entity::EntityTables;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_string::global::GlobalIdentifierTables;
 use std::sync::Arc;
 
 #[derive(DebugWith)]
@@ -97,8 +100,12 @@ impl ParsedEntityThunk {
         }
     }
 
-    crate fn parse_children(&self) -> WithError<Vec<ParsedEntity>> {
-        self.object.parse_children()
+    crate fn parse_children(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Vec<ParsedEntity>> {
+        self.object.parse_children(entity, db)
     }
 }
 
@@ -119,13 +126,33 @@ impl std::cmp::Eq for ParsedEntityThunk {}
 debug::debug_fallback_impl!(ParsedEntityThunk);
 
 pub trait LazyParsedEntity {
-    fn parse_children(&self) -> WithError<Vec<ParsedEntity>>;
+    /// Parse the children of this entity.
+    ///
+    /// # Parameters
+    ///
+    /// - `entity`: the entity id of self
+    /// - `db`: the necessary bits/pieces of the parser database
+    fn parse_children(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Vec<ParsedEntity>>;
 }
 
 crate struct ErrorParsedEntity;
 
 impl LazyParsedEntity for ErrorParsedEntity {
-    fn parse_children(&self) -> WithError<Vec<ParsedEntity>> {
+    fn parse_children(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Vec<ParsedEntity>> {
         WithError::ok(vec![])
     }
 }
+
+/// The trait given to the [`LazyParsedEntity`] methods. It is a "dyn
+/// capable" variant of `ParserDatabase`.
+pub trait LazyParsedEntityDatabase: AsRef<GlobalIdentifierTables> + AsRef<EntityTables> {}
+
+impl<T: ParserDatabase> LazyParsedEntityDatabase for T {}

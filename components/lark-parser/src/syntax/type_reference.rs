@@ -11,12 +11,14 @@ use lark_string::global::GlobalIdentifier;
 pub struct TypeReference;
 
 /// Parsed form of a type.
+#[derive(Copy, Clone, DebugWith)]
 pub enum ParsedTypeReference {
     Named(NamedTypeReference),
     Error,
 }
 
 /// Named type like `String` or (eventually) `Vec<u32>`
+#[derive(Copy, Clone, DebugWith)]
 pub struct NamedTypeReference {
     pub identifier: Spanned<GlobalIdentifier>,
 }

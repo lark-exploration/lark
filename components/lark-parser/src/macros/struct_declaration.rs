@@ -3,6 +3,7 @@ use crate::parser::Parser;
 use crate::span::Spanned;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::LazyParsedEntity;
+use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::entity::ParsedEntityThunk;
 use crate::syntax::field::Field;
@@ -15,6 +16,7 @@ use intern::Intern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::ItemKind;
+use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::WithError;
 use lark_string::global::GlobalIdentifier;
@@ -71,11 +73,34 @@ impl EntityMacroDefinition for StructDeclaration {
 }
 
 struct ParsedStructDeclaration {
-    fields: Arc<Vec<ParsedField>>,
+    fields: Arc<Vec<Spanned<ParsedField>>>,
 }
 
 impl LazyParsedEntity for ParsedStructDeclaration {
-    fn parse_children(&self) -> WithError<Vec<ParsedEntity>> {
-        unimplemented!()
+    fn parse_children(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Vec<ParsedEntity>> {
+        WithError::ok(
+            self.fields
+                .iter()
+                .map(|Spanned { value: field, span }| {
+                    let field_entity = EntityData::MemberName {
+                        base: entity,
+                        kind: MemberKind::Field,
+                        id: field.name.value,
+                    }
+                    .intern(db);
+
+                    ParsedEntity::new(
+                        field_entity,
+                        *span,
+                        field.name.span,
+                        ParsedEntityThunk::new(field.clone()),
+                    )
+                })
+                .collect(),
+        )
     }
 }

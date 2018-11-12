@@ -108,18 +108,23 @@ pub fn lark_parser_db(text: impl AsRef<str>) -> (FileName, LarkDatabase) {
     (path1, db)
 }
 
-pub fn compare_debug<Cx, E, A>(cx: &Cx, expected_value: &E, actual_value: &A)
+pub fn compare_debug<Cx, A>(cx: &Cx, expected_text: &str, actual_value: &A)
 where
-    E: ?Sized + DebugWith,
     A: ?Sized + DebugWith,
 {
-    let expected_text = format!("{:#?}", expected_value.debug_with(cx));
     let actual_text = format!("{:#?}", actual_value.debug_with(cx));
 
     if expected_text == actual_text {
         return;
     }
 
+    println!("# expected_text");
+    println!("{}", expected_text);
+
+    println!("# actual_text");
+    println!("{}", actual_text);
+
+    println!("# diff");
     for diff in diff::lines(&expected_text, &actual_text) {
         match diff {
             diff::Result::Left(l) => println!("-{}", l),

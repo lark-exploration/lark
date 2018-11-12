@@ -30,7 +30,7 @@ crate fn child_parsed_entities(
         EntityData::ItemName { .. } => db
             .parsed_entity(entity)
             .thunk
-            .parse_children()
+            .parse_children(entity, db)
             .map(Arc::new),
 
         EntityData::Error { .. } | EntityData::MemberName { .. } | EntityData::LangItem(_) => {
