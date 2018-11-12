@@ -121,12 +121,12 @@ fn extract(s: &str, codemap: CodeMap, mut codespan_start: u32) -> (String, Annot
 }
 
 fn ident(
-    id: StringId,
+    id: GlobalIdentifier,
     anns: &[Annotation],
     spans: &[Span],
     table: &'table ModuleTable,
     source: &'source str,
-) -> (&'table str, &'source str, Span) {
+) -> (Text, &'source str, Span) {
     let pos = anns.len();
     let span = spans[pos];
 

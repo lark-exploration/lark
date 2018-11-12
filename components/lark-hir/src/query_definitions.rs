@@ -9,7 +9,7 @@ use lark_entity::ItemKind;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
-use parser::StringId;
+use lark_string::global::GlobalIdentifier;
 use std::sync::Arc;
 
 crate fn members(db: &impl HirDatabase, owner: Entity) -> Result<Arc<Vec<Member>>, ErrorReported> {
@@ -42,10 +42,10 @@ crate fn member_entity(
     db: &impl HirDatabase,
     owner: Entity,
     kind: MemberKind,
-    name: StringId,
+    name: GlobalIdentifier,
 ) -> Option<Entity> {
-    match &db.members(owner) {
-        Err(ErrorReported(spans)) => Some(Entity::error_sentinel(db, spans)),
+    match db.members(owner) {
+        Err(report) => Some(Entity::error_sentinel(db, report)),
 
         Ok(members) => members
             .iter()

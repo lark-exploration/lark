@@ -33,29 +33,26 @@ use parser::pos::Span;
 use std::sync::Arc;
 
 /// Unit type used in `Result` to indicate a value derived from other
-/// value where an error was already reported.
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ErrorReported(pub Vec<Diagnostic>);
+/// value where an error was already reported. The span is "some span"
+/// from one of the errors.
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ErrorReported(pub Span);
 
 impl ErrorReported {
-    pub fn at_diagnostic(s: Diagnostic) -> Self {
-        ErrorReported(vec![s])
-    }
-
-    pub fn at_diagnostics(s: Vec<Diagnostic>) -> Self {
+    pub fn at_span(s: Span) -> Self {
         ErrorReported(s)
     }
 
-    pub fn some_diagnostic(&self) -> Diagnostic {
-        // Pick the first error arbitrarily
-        self.diagnostics()[0].clone()
+    pub fn at_diagnostic(s: &Diagnostic) -> Self {
+        ErrorReported(s.span)
     }
 
-    pub fn diagnostics(&self) -> &[Diagnostic] {
-        &self.0
+    pub fn at_diagnostics(s: &[Diagnostic]) -> Self {
+        assert!(!s.is_empty());
+        Self::at_diagnostic(&s[0])
     }
 
-    pub fn into_diagnostics(self) -> Vec<Diagnostic> {
+    pub fn span(&self) -> Span {
         self.0
     }
 }
@@ -107,7 +104,7 @@ impl<T> WithError<T> {
     {
         let diagnostic = Diagnostic::new(label, span);
         WithError {
-            value: T::error_sentinel(cx, &[diagnostic.clone()]),
+            value: T::error_sentinel(cx, ErrorReported::at_diagnostic(&diagnostic)),
             errors: vec![diagnostic],
         }
     }
@@ -124,9 +121,16 @@ impl<T> WithError<T> {
 
     pub fn into_result(self) -> Result<T, ErrorReported> {
         if !self.errors.is_empty() {
-            Err(ErrorReported(self.errors.clone()))
+            Err(ErrorReported::at_diagnostics(&self.errors))
         } else {
             Ok(self.value)
+        }
+    }
+
+    pub fn map<U>(self, op: impl FnOnce(T) -> U) -> WithError<U> {
+        WithError {
+            value: op(self.value),
+            errors: self.errors,
         }
     }
 }
@@ -137,20 +141,36 @@ impl<T> WithError<T> {
 pub macro or_return_sentinel($cx:expr, $v:expr) {
     match $v {
         Ok(v) => v,
-        Err(ErrorReported(spans)) => {
+        Err(report) => {
             log::debug!("or_return_sentinel: returning error sentinel");
-            return ErrorSentinel::error_sentinel($cx, &spans);
+            return ErrorSentinel::error_sentinel($cx, report);
+        }
+    }
+}
+
+pub trait ResultExt<Ok, Cx> {
+    fn unwrap_or_error_sentinel(self, cx: Cx) -> Ok;
+}
+
+impl<Ok, Cx> ResultExt<Ok, Cx> for Result<Ok, ErrorReported>
+where
+    Ok: ErrorSentinel<Cx>,
+{
+    fn unwrap_or_error_sentinel(self, cx: Cx) -> Ok {
+        match self {
+            Ok(v) => v,
+            Err(report) => Ok::error_sentinel(cx, report),
         }
     }
 }
 
 pub trait ErrorSentinel<Cx> {
-    fn error_sentinel(cx: Cx, error_spans: &[Diagnostic]) -> Self;
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> Self;
 }
 
 impl<T, Cx> ErrorSentinel<Cx> for Result<T, ErrorReported> {
-    fn error_sentinel(_cx: Cx, spans: &[Diagnostic]) -> Self {
-        Err(ErrorReported(spans.to_owned()))
+    fn error_sentinel(_cx: Cx, report: ErrorReported) -> Self {
+        Err(report)
     }
 }
 
@@ -158,8 +178,8 @@ impl<T, Cx> ErrorSentinel<Cx> for Arc<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> Self {
-        Arc::new(T::error_sentinel(cx, spans))
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> Self {
+        Arc::new(T::error_sentinel(cx, report))
     }
 }
 
@@ -167,8 +187,8 @@ impl<T, Cx> ErrorSentinel<Cx> for Vec<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> Self {
-        vec![T::error_sentinel(cx, spans)]
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> Self {
+        vec![T::error_sentinel(cx, report)]
     }
 }
 
@@ -176,10 +196,10 @@ impl<T, Cx> ErrorSentinel<Cx> for WithError<T>
 where
     T: ErrorSentinel<Cx>,
 {
-    fn error_sentinel(cx: Cx, spans: &[Diagnostic]) -> WithError<T>
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> WithError<T>
     where
         T: ErrorSentinel<Cx>,
     {
-        WithError::ok(T::error_sentinel(cx, spans))
+        WithError::ok(T::error_sentinel(cx, report))
     }
 }

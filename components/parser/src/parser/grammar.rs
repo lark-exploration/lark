@@ -1,9 +1,9 @@
 // auto-generated: "lalrpop 0.16.0"
 // sha256: 5f255964afa0bedf9835d9b5db9e9235f592093ce5922dcb4af8bc9f1c742b
+use codespan::ByteIndex;
+use crate::parser::ast::*;
 use crate::prelude::*;
 use crate::Token;
-use crate::parser::ast::*;
-use codespan::{ByteIndex};
 use std::sync::Arc;
 #[allow(unused_extern_crates)]
 extern crate lalrpop_util as __lalrpop_util;
@@ -24,7 +24,7 @@ mod __parse__Program {
     pub enum __Symbol<>
      {
         Variant0(Token),
-        Variant1(StringId),
+        Variant1(GlobalIdentifier),
         Variant2(Spanned<Type>),
         Variant3(::std::option::Option<Spanned<Type>>),
         Variant4(Expression),
@@ -36,8 +36,8 @@ mod __parse__Program {
         Variant10(::std::vec::Vec<Expression>),
         Variant11(Field),
         Variant12(::std::vec::Vec<Field>),
-        Variant13(Spanned<StringId>),
-        Variant14(::std::vec::Vec<Spanned<StringId>>),
+        Variant13(Spanned<GlobalIdentifier>),
+        Variant14(::std::vec::Vec<Spanned<GlobalIdentifier>>),
         Variant15(Arc<Item>),
         Variant16(::std::vec::Vec<Arc<Item>>),
         Variant17(ByteIndex),
@@ -52,7 +52,7 @@ mod __parse__Program {
         Variant26(Def),
         Variant27(Vec<ConstructField>),
         Variant28(Vec<Field>),
-        Variant29(Vec<Spanned<StringId>>),
+        Variant29(Vec<Spanned<GlobalIdentifier>>),
         Variant30((Vec<Field>, Option<Spanned<Type>>)),
         Variant31(Let),
         Variant32(()),
@@ -1883,7 +1883,7 @@ mod __parse__Program {
     fn __pop_Variant13<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, Spanned<StringId>, ByteIndex)
+    ) -> (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex)
      {
         match __symbols.pop().unwrap() {
             (__l, __Symbol::Variant13(__v), __r) => (__l, __v, __r),
@@ -1903,7 +1903,7 @@ mod __parse__Program {
     fn __pop_Variant1<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, StringId, ByteIndex)
+    ) -> (ByteIndex, GlobalIdentifier, ByteIndex)
      {
         match __symbols.pop().unwrap() {
             (__l, __Symbol::Variant1(__v), __r) => (__l, __v, __r),
@@ -1963,7 +1963,7 @@ mod __parse__Program {
     fn __pop_Variant29<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, Vec<Spanned<StringId>>, ByteIndex)
+    ) -> (ByteIndex, Vec<Spanned<GlobalIdentifier>>, ByteIndex)
      {
         match __symbols.pop().unwrap() {
             (__l, __Symbol::Variant29(__v), __r) => (__l, __v, __r),
@@ -2053,7 +2053,7 @@ mod __parse__Program {
     fn __pop_Variant14<
     >(
         __symbols: &mut ::std::vec::Vec<(ByteIndex,__Symbol<>,ByteIndex)>
-    ) -> (ByteIndex, ::std::vec::Vec<Spanned<StringId>>, ByteIndex)
+    ) -> (ByteIndex, ::std::vec::Vec<Spanned<GlobalIdentifier>>, ByteIndex)
      {
         match __symbols.pop().unwrap() {
             (__l, __Symbol::Variant14(__v), __r) => (__l, __v, __r),
@@ -4489,32 +4489,24 @@ mod __parse__Program {
 }
 pub use self::__parse__Program::ProgramParser;
 
-fn __action0<
->(
-    (_, __0, _): (ByteIndex, Module, ByteIndex),
-) -> Module
-{
+fn __action0((_, __0, _): (ByteIndex, Module, ByteIndex)) -> Module {
     (__0)
 }
 
-fn __action1<
->(
+fn __action1(
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
     (_, __0, _): (ByteIndex, Arc<Item>, ByteIndex),
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-) -> Module
-{
+) -> Module {
     Module::new(vec![__0])
 }
 
-fn __action2<
->(
+fn __action2(
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
     (_, a, _): (ByteIndex, ::std::vec::Vec<Arc<Item>>, ByteIndex),
     (_, b, _): (ByteIndex, Arc<Item>, ByteIndex),
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-) -> Module
-{
+) -> Module {
     {
         let mut v = vec![];
         v.extend(a);
@@ -4523,190 +4515,146 @@ fn __action2<
     }
 }
 
-fn __action3<
->(
-    (_, __0, _): (ByteIndex, Struct, ByteIndex),
-) -> Arc<Item>
-{
+fn __action3((_, __0, _): (ByteIndex, Struct, ByteIndex)) -> Arc<Item> {
     Arc::new(Item::Struct(__0))
 }
 
-fn __action4<
->(
-    (_, __0, _): (ByteIndex, Def, ByteIndex),
-) -> Arc<Item>
-{
+fn __action4((_, __0, _): (ByteIndex, Def, ByteIndex)) -> Arc<Item> {
     Arc::new(Item::Def(__0))
 }
 
-fn __action5<
->(
+fn __action5(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
-    (_, name, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, name, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
     (_, fields, _): (ByteIndex, Vec<Field>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Struct
-{
+) -> Struct {
     Struct::new(name, fields, Span::from_indices(l, r))
 }
 
-fn __action6<
->(
-    (_, fields, _): (ByteIndex, Vec<Field>, ByteIndex),
-) -> Vec<Field>
-{
+fn __action6((_, fields, _): (ByteIndex, Vec<Field>, ByteIndex)) -> Vec<Field> {
     fields
 }
 
-fn __action7<
->(
+fn __action7(
     (_, __0, _): (ByteIndex, Token, ByteIndex),
     (_, __1, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-) -> (Token, ::std::option::Option<()>)
-{
+) -> (Token, ::std::option::Option<()>) {
     (__0, __1)
 }
 
-fn __action8<
->(
-    (_, __0, _): (ByteIndex, Token, ByteIndex),
-) -> Token
-{
+fn __action8((_, __0, _): (ByteIndex, Token, ByteIndex)) -> Token {
     (__0)
 }
 
-fn __action9<
->(
+fn __action9(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
-    (_, id, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, id, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, ty, _): (ByteIndex, Spanned<Type>, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Field
-{
+) -> Field {
     Field::new(id, ty, Span::from_indices(l, r))
 }
 
-fn __action10<
->(
+fn __action10(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
-    (_, name, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, name, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, decl, _): (ByteIndex, (Vec<Field>, Option<Spanned<Type>>), ByteIndex),
     (_, block, _): (ByteIndex, Spanned<Block>, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Def
-{
+) -> Def {
     Def::new(name, decl.0, decl.1, block, Span::from_indices(l, r))
 }
 
-fn __action11<
->(
+fn __action11(
     (_, params, _): (ByteIndex, Vec<Field>, ByteIndex),
     (_, ty, _): (ByteIndex, ::std::option::Option<Spanned<Type>>, ByteIndex),
-) -> (Vec<Field>, Option<Spanned<Type>>)
-{
+) -> (Vec<Field>, Option<Spanned<Type>>) {
     (params, ty)
 }
 
-fn __action12<
->(
+fn __action12(
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, __0, _): (ByteIndex, Vec<Field>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
-) -> Vec<Field>
-{
+) -> Vec<Field> {
     (__0)
 }
 
-fn __action13<
->(
+fn __action13(
     (_, __0, _): (ByteIndex, Token, ByteIndex),
     (_, __1, _): (ByteIndex, Token, ByteIndex),
-) -> Vec<Field>
-{
+) -> Vec<Field> {
     vec![]
 }
 
-fn __action14<
->(
+fn __action14(
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, __0, _): (ByteIndex, Spanned<Type>, ByteIndex),
-) -> Spanned<Type>
-{
+) -> Spanned<Type> {
     (__0)
 }
 
-fn __action15<
->(
+fn __action15(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
-    (_, id, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, id, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Type>
-{
+) -> Spanned<Type> {
     Spanned::from(Type::new(None, id), l, r)
 }
 
-fn __action16<
->(
+fn __action16(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, mode, _): (ByteIndex, Spanned<Mode>, ByteIndex),
-    (_, id, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, id, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Type>
-{
+) -> Spanned<Type> {
     Spanned::from(Type::new(Some(mode), id), l, r)
 }
 
-fn __action17<
->(
+fn __action17(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Mode>
-{
+) -> Spanned<Mode> {
     Spanned::from(Mode::Owned, l, r)
 }
 
-fn __action18<
->(
+fn __action18(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Mode>
-{
+) -> Spanned<Mode> {
     Spanned::from(Mode::Borrowed, l, r)
 }
 
-fn __action19<
->(
+fn __action19(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
     (_, blocks, _): (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     {
         Block::spanned(blocks, Span::from_indices(l, r))
     }
 }
 
-fn __action20<
->(
+fn __action20(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, blocks, _): (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     (_, trailing, _): (ByteIndex, BlockItem, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     {
         let mut v = blocks;
         v.push(trailing);
@@ -4715,208 +4663,144 @@ fn __action20<
     }
 }
 
-fn __action21<
->(
-    (_, __0, _): (ByteIndex, Declaration, ByteIndex),
-) -> BlockItem
-{
+fn __action21((_, __0, _): (ByteIndex, Declaration, ByteIndex)) -> BlockItem {
     BlockItem::Decl(__0)
 }
 
-fn __action22<
->(
-    (_, __0, _): (ByteIndex, Expression, ByteIndex),
-) -> BlockItem
-{
+fn __action22((_, __0, _): (ByteIndex, Expression, ByteIndex)) -> BlockItem {
     BlockItem::Expr(__0)
 }
 
-fn __action23<
->(
+fn __action23(
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, p, _): (ByteIndex, Spanned<Pattern>, ByteIndex),
     (_, ty, _): (ByteIndex, Option<Spanned<Type>>, ByteIndex),
     (_, init, _): (ByteIndex, Option<Expression>, ByteIndex),
-) -> Let
-{
+) -> Let {
     Let::new(p, ty, init)
 }
 
-fn __action24<
->(
+fn __action24(
     (_, ty, _): (ByteIndex, ::std::option::Option<Spanned<Type>>, ByteIndex),
-) -> Option<Spanned<Type>>
-{
+) -> Option<Spanned<Type>> {
     ty
 }
 
-fn __action25<
->(
+fn __action25(
     (_, expr, _): (ByteIndex, ::std::option::Option<Expression>, ByteIndex),
-) -> Option<Expression>
-{
+) -> Option<Expression> {
     expr
 }
 
-fn __action26<
->(
+fn __action26(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Pattern>
-{
+) -> Spanned<Pattern> {
     Spanned::from(Pattern::Underscore, l, r)
 }
 
-fn __action27<
->(
+fn __action27(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
-    (_, id, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, id, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Pattern>
-{
+) -> Spanned<Pattern> {
     Spanned::from(Pattern::Identifier(id, None), l, r)
 }
 
-fn __action28<
->(
+fn __action28(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, mode, _): (ByteIndex, Spanned<Mode>, ByteIndex),
-    (_, id, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, id, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Pattern>
-{
+) -> Spanned<Pattern> {
     Spanned::from(Pattern::Identifier(id, Some(mode)), l, r)
 }
 
-fn __action29<
->(
-    (_, l, _): (ByteIndex, Let, ByteIndex),
-) -> Declaration
-{
+fn __action29((_, l, _): (ByteIndex, Let, ByteIndex)) -> Declaration {
     Declaration::Let(l)
 }
 
-fn __action30<
->(
-    (_, __0, _): (ByteIndex, Expression, ByteIndex),
-) -> Expression
-{
+fn __action30((_, __0, _): (ByteIndex, Expression, ByteIndex)) -> Expression {
     (__0)
 }
 
-fn __action31<
->(
-    (_, __0, _): (ByteIndex, Spanned<Block>, ByteIndex),
-) -> Expression
-{
+fn __action31((_, __0, _): (ByteIndex, Spanned<Block>, ByteIndex)) -> Expression {
     unimplemented!("Expr::Block")
 }
 
-fn __action32<
->(
-    (_, __0, _): (ByteIndex, ConstructStruct, ByteIndex),
-) -> Expression
-{
+fn __action32((_, __0, _): (ByteIndex, ConstructStruct, ByteIndex)) -> Expression {
     Expression::ConstructStruct(__0)
 }
 
-fn __action33<
->(
-    (_, __0, _): (ByteIndex, Spanned<Call>, ByteIndex),
-) -> Expression
-{
+fn __action33((_, __0, _): (ByteIndex, Spanned<Call>, ByteIndex)) -> Expression {
     Expression::Call(__0)
 }
 
-fn __action34<
->(
-    (_, __0, _): (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> Expression
-{
+fn __action34((_, __0, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex)) -> Expression {
     Expression::Ref(__0)
 }
 
-fn __action35<
->(
-    (_, __0, _): (ByteIndex, Expression, ByteIndex),
-) -> Expression
-{
+fn __action35((_, __0, _): (ByteIndex, Expression, ByteIndex)) -> Expression {
     (__0)
 }
 
-fn __action36<
->(
-    (_, __0, _): (ByteIndex, Expression, ByteIndex),
-) -> Expression
-{
+fn __action36((_, __0, _): (ByteIndex, Expression, ByteIndex)) -> Expression {
     (__0)
 }
 
-fn __action37<
->(
+fn __action37(
     (_, left, _): (ByteIndex, Expression, ByteIndex),
     (_, op, _): (ByteIndex, Spanned<Op>, ByteIndex),
     (_, right, _): (ByteIndex, Expression, ByteIndex),
-) -> Expression
-{
+) -> Expression {
     Expression::Binary(op, box left, box right)
 }
 
-fn __action38<
->(
+fn __action38(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Op>
-{
+) -> Spanned<Op> {
     Spanned::from(Op::Add, l, r)
 }
 
-fn __action39<
->(
+fn __action39(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
-    (_, name, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, name, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, fields, _): (ByteIndex, Vec<ConstructField>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> ConstructStruct
-{
+) -> ConstructStruct {
     ConstructStruct::new(name, fields, Span::from_indices(l, r))
 }
 
-fn __action40<
->(
+fn __action40(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
     (_, callee, _): (ByteIndex, Callee, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, args, _): (ByteIndex, Vec<Expression>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Call>
-{
+) -> Spanned<Call> {
     Spanned::from(Call::new(callee, args), l, r)
 }
 
-fn __action41<
->(
+fn __action41(
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
     (_, __0, _): (ByteIndex, Expression, ByteIndex),
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     vec![__0]
 }
 
-fn __action42<
->(
+fn __action42(
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
     (_, a, _): (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     (_, b, _): (ByteIndex, Expression, ByteIndex),
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     {
         let mut v = vec![];
         v.extend(a);
@@ -4925,151 +4809,80 @@ fn __action42<
     }
 }
 
-fn __action43<
->(
-    (_, __0, _): (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> Callee
-{
+fn __action43((_, __0, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex)) -> Callee {
     Callee::Identifier(__0)
 }
 
-fn __action44<
->(
-    (_, __0, _): (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> ConstructField
-{
+fn __action44((_, __0, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex)) -> ConstructField {
     ConstructField::Shorthand(__0)
 }
 
-fn __action45<
->(
+fn __action45(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
-    (_, name, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+    (_, name, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
     (_, ty, _): (ByteIndex, Spanned<Type>, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> ConstructField
-{
+) -> ConstructField {
     ConstructField::Longhand(Field::new(name, ty, Span::from_indices(l, r)))
 }
 
-fn __action46<
->(
-    (_, __0, _): (ByteIndex, (), ByteIndex),
-) -> Expression
-{
+fn __action46((_, __0, _): (ByteIndex, (), ByteIndex)) -> Expression {
     unimplemented!("ExprAtom::Lit")
 }
 
-fn __action47<
->(
-    (_, __0, _): (ByteIndex, Path, ByteIndex),
-) -> Expression
-{
+fn __action47((_, __0, _): (ByteIndex, Path, ByteIndex)) -> Expression {
     unimplemented!("ExprAtom::PathExpr")
 }
 
-fn __action48<
->(
-    (_, __0, _): (ByteIndex, Token, ByteIndex),
-) -> Expression
-{
+fn __action48((_, __0, _): (ByteIndex, Token, ByteIndex)) -> Expression {
     unimplemented!("ExprAtom::Self")
 }
 
-fn __action49<
->(
+fn __action49(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
-    (_, s, _): (ByteIndex, StringId, ByteIndex),
+    (_, s, _): (ByteIndex, GlobalIdentifier, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Expression
-{
+) -> Expression {
     Expression::string(Spanned::from(s, l, r))
 }
 
-fn __action50<
->(
-    (_, __0, _): (ByteIndex, Token, ByteIndex),
-) -> ()
-{
+fn __action50((_, __0, _): (ByteIndex, Token, ByteIndex)) -> () {
     unimplemented!("Lit")
 }
 
-fn __action51<
->(
-    (_, __0, _): (ByteIndex, Vec<Spanned<StringId>>, ByteIndex),
-) -> Path
-{
+fn __action51((_, __0, _): (ByteIndex, Vec<Spanned<GlobalIdentifier>>, ByteIndex)) -> Path {
     unimplemented!("PathExpr::Dot")
 }
 
-fn __action52<
->(
+fn __action52(
     (_, l, _): (ByteIndex, ByteIndex, ByteIndex),
-    (_, id, _): (ByteIndex, StringId, ByteIndex),
+    (_, id, _): (ByteIndex, GlobalIdentifier, ByteIndex),
     (_, r, _): (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<StringId>
-{
+) -> Spanned<GlobalIdentifier> {
     Spanned::from(id, l, r)
 }
 
-fn __action53<
->(
-    (_, __0, _): (ByteIndex, Token, ByteIndex),
-) -> ()
-{
+fn __action53((_, __0, _): (ByteIndex, Token, ByteIndex)) -> () {
     ()
 }
 
-fn __action54<
->(
-    (_, __0, _): (ByteIndex, Token, ByteIndex),
-) -> ()
-{
+fn __action54((_, __0, _): (ByteIndex, Token, ByteIndex)) -> () {
     ()
 }
 
-fn __action55<
->(
-    (_, __0, _): (ByteIndex, ::std::vec::Vec<Token>, ByteIndex),
-) -> ()
-{
+fn __action55((_, __0, _): (ByteIndex, ::std::vec::Vec<Token>, ByteIndex)) -> () {
     ()
 }
 
-fn __action56<
->(
-    (_, __0, _): (ByteIndex, Token, ByteIndex),
-) -> ::std::vec::Vec<Token>
-{
+fn __action56((_, __0, _): (ByteIndex, Token, ByteIndex)) -> ::std::vec::Vec<Token> {
     vec![__0]
 }
 
-fn __action57<
->(
+fn __action57(
     (_, v, _): (ByteIndex, ::std::vec::Vec<Token>, ByteIndex),
     (_, e, _): (ByteIndex, Token, ByteIndex),
-) -> ::std::vec::Vec<Token>
-{
-    { let mut v = v; v.push(e); v }
-}
-
-fn __action58<
->(
-    (_, v, _): (ByteIndex, ::std::vec::Vec<Spanned<StringId>>, ByteIndex),
-) -> Vec<Spanned<StringId>>
-{
-    {
-        v
-    }
-}
-
-fn __action59<
->(
-    (_, v, _): (ByteIndex, ::std::vec::Vec<Spanned<StringId>>, ByteIndex),
-    (_, e, _): (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> Vec<Spanned<StringId>>
-{
+) -> ::std::vec::Vec<Token> {
     {
         let mut v = v;
         v.push(e);
@@ -5077,50 +4890,41 @@ fn __action59<
     }
 }
 
-fn __action60<
->(
-    (_, __0, _): (ByteIndex, Expression, ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+fn __action58(
+    (_, v, _): (
+        ByteIndex,
+        ::std::vec::Vec<Spanned<GlobalIdentifier>>,
+        ByteIndex,
+    ),
+) -> Vec<Spanned<GlobalIdentifier>> {
+    {
+        v
+    }
+}
+
+fn __action59(
+    (_, v, _): (
+        ByteIndex,
+        ::std::vec::Vec<Spanned<GlobalIdentifier>>,
+        ByteIndex,
+    ),
+    (_, e, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
+) -> Vec<Spanned<GlobalIdentifier>> {
+    {
+        let mut v = v;
+        v.push(e);
+        v
+    }
+}
+
+fn __action60((_, __0, _): (ByteIndex, Expression, ByteIndex)) -> ::std::vec::Vec<Expression> {
     vec![__0]
 }
 
-fn __action61<
->(
+fn __action61(
     (_, v, _): (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     (_, e, _): (ByteIndex, Expression, ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
-    { let mut v = v; v.push(e); v }
-}
-
-fn __action62<
->(
-    (_, __0, _): (ByteIndex, Expression, ByteIndex),
-    (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-    (_, _, _): (ByteIndex, Token, ByteIndex),
-    (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-) -> Expression
-{
-    (__0)
-}
-
-fn __action63<
->(
-    (_, v, _): (ByteIndex, ::std::vec::Vec<ConstructField>, ByteIndex),
-) -> Vec<ConstructField>
-{
-    {
-        v
-    }
-}
-
-fn __action64<
->(
-    (_, v, _): (ByteIndex, ::std::vec::Vec<ConstructField>, ByteIndex),
-    (_, e, _): (ByteIndex, ConstructField, ByteIndex),
-) -> Vec<ConstructField>
-{
+) -> ::std::vec::Vec<Expression> {
     {
         let mut v = v;
         v.push(e);
@@ -5128,118 +4932,115 @@ fn __action64<
     }
 }
 
-fn __action65<
->(
+fn __action62(
     (_, __0, _): (ByteIndex, Expression, ByteIndex),
-) -> ::std::option::Option<Expression>
-{
-    Some(__0)
-}
-
-fn __action66<
->(
-    __lookbehind: &ByteIndex,
-    __lookahead: &ByteIndex,
-) -> ::std::option::Option<Expression>
-{
-    None
-}
-
-fn __action67<
->(
+    (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
-    (_, __0, _): (ByteIndex, Expression, ByteIndex),
-) -> Expression
-{
+    (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
+) -> Expression {
     (__0)
 }
 
-fn __action68<
->(
-    (_, __0, _): (ByteIndex, Spanned<Type>, ByteIndex),
-) -> ::std::option::Option<Spanned<Type>>
-{
+fn __action63(
+    (_, v, _): (ByteIndex, ::std::vec::Vec<ConstructField>, ByteIndex),
+) -> Vec<ConstructField> {
+    {
+        v
+    }
+}
+
+fn __action64(
+    (_, v, _): (ByteIndex, ::std::vec::Vec<ConstructField>, ByteIndex),
+    (_, e, _): (ByteIndex, ConstructField, ByteIndex),
+) -> Vec<ConstructField> {
+    {
+        let mut v = v;
+        v.push(e);
+        v
+    }
+}
+
+fn __action65(
+    (_, __0, _): (ByteIndex, Expression, ByteIndex),
+) -> ::std::option::Option<Expression> {
     Some(__0)
 }
 
-fn __action69<
->(
+fn __action66(
     __lookbehind: &ByteIndex,
     __lookahead: &ByteIndex,
-) -> ::std::option::Option<Spanned<Type>>
-{
+) -> ::std::option::Option<Expression> {
     None
 }
 
-fn __action70<
->(
+fn __action67(
     (_, _, _): (ByteIndex, Token, ByteIndex),
-    (_, __0, _): (ByteIndex, Spanned<Type>, ByteIndex),
-) -> Spanned<Type>
-{
+    (_, __0, _): (ByteIndex, Expression, ByteIndex),
+) -> Expression {
     (__0)
 }
 
-fn __action71<
->(
+fn __action68(
+    (_, __0, _): (ByteIndex, Spanned<Type>, ByteIndex),
+) -> ::std::option::Option<Spanned<Type>> {
+    Some(__0)
+}
+
+fn __action69(
     __lookbehind: &ByteIndex,
     __lookahead: &ByteIndex,
-) -> ::std::vec::Vec<BlockItem>
-{
+) -> ::std::option::Option<Spanned<Type>> {
+    None
+}
+
+fn __action70(
+    (_, _, _): (ByteIndex, Token, ByteIndex),
+    (_, __0, _): (ByteIndex, Spanned<Type>, ByteIndex),
+) -> Spanned<Type> {
+    (__0)
+}
+
+fn __action71(__lookbehind: &ByteIndex, __lookahead: &ByteIndex) -> ::std::vec::Vec<BlockItem> {
     vec![]
 }
 
-fn __action72<
->(
+fn __action72(
     (_, v, _): (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
-) -> ::std::vec::Vec<BlockItem>
-{
+) -> ::std::vec::Vec<BlockItem> {
     v
 }
 
-fn __action73<
->(
+fn __action73(
     (_, __0, _): (ByteIndex, BlockItem, ByteIndex),
     (_, _, _): (ByteIndex, (), ByteIndex),
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-) -> BlockItem
-{
+) -> BlockItem {
     (__0)
 }
 
-fn __action74<
->(
+fn __action74(
     (_, __0, _): (ByteIndex, Spanned<Type>, ByteIndex),
-) -> ::std::option::Option<Spanned<Type>>
-{
+) -> ::std::option::Option<Spanned<Type>> {
     Some(__0)
 }
 
-fn __action75<
->(
+fn __action75(
     __lookbehind: &ByteIndex,
     __lookahead: &ByteIndex,
-) -> ::std::option::Option<Spanned<Type>>
-{
+) -> ::std::option::Option<Spanned<Type>> {
     None
 }
 
-fn __action76<
->(
-    (_, v, _): (ByteIndex, ::std::vec::Vec<Field>, ByteIndex),
-) -> Vec<Field>
-{
+fn __action76((_, v, _): (ByteIndex, ::std::vec::Vec<Field>, ByteIndex)) -> Vec<Field> {
     {
         v
     }
 }
 
-fn __action77<
->(
+fn __action77(
     (_, v, _): (ByteIndex, ::std::vec::Vec<Field>, ByteIndex),
     (_, e, _): (ByteIndex, Field, ByteIndex),
-) -> Vec<Field>
-{
+) -> Vec<Field> {
     {
         let mut v = v;
         v.push(e);
@@ -5247,2834 +5048,1618 @@ fn __action77<
     }
 }
 
-fn __action78<
->(
-    __lookbehind: &ByteIndex,
-    __lookahead: &ByteIndex,
-) -> ByteIndex
-{
+fn __action78(__lookbehind: &ByteIndex, __lookahead: &ByteIndex) -> ByteIndex {
     __lookbehind.clone()
 }
 
-fn __action79<
->(
-    __lookbehind: &ByteIndex,
-    __lookahead: &ByteIndex,
-) -> ByteIndex
-{
+fn __action79(__lookbehind: &ByteIndex, __lookahead: &ByteIndex) -> ByteIndex {
     __lookahead.clone()
 }
 
-fn __action80<
->(
-    (_, __0, _): (ByteIndex, Arc<Item>, ByteIndex),
-) -> ::std::vec::Vec<Arc<Item>>
-{
+fn __action80((_, __0, _): (ByteIndex, Arc<Item>, ByteIndex)) -> ::std::vec::Vec<Arc<Item>> {
     vec![__0]
 }
 
-fn __action81<
->(
+fn __action81(
     (_, v, _): (ByteIndex, ::std::vec::Vec<Arc<Item>>, ByteIndex),
     (_, e, _): (ByteIndex, Arc<Item>, ByteIndex),
-) -> ::std::vec::Vec<Arc<Item>>
-{
-    { let mut v = v; v.push(e); v }
+) -> ::std::vec::Vec<Arc<Item>> {
+    {
+        let mut v = v;
+        v.push(e);
+        v
+    }
 }
 
-fn __action82<
->(
+fn __action82(
     (_, __0, _): (ByteIndex, Arc<Item>, ByteIndex),
     (_, _, _): (ByteIndex, ::std::option::Option<()>, ByteIndex),
-) -> Arc<Item>
-{
+) -> Arc<Item> {
     (__0)
 }
 
-fn __action83<
->(
-    (_, __0, _): (ByteIndex, (), ByteIndex),
-) -> ::std::option::Option<()>
-{
+fn __action83((_, __0, _): (ByteIndex, (), ByteIndex)) -> ::std::option::Option<()> {
     Some(__0)
 }
 
-fn __action84<
->(
-    __lookbehind: &ByteIndex,
-    __lookahead: &ByteIndex,
-) -> ::std::option::Option<()>
-{
+fn __action84(__lookbehind: &ByteIndex, __lookahead: &ByteIndex) -> ::std::option::Option<()> {
     None
 }
 
-fn __action85<
->(
-    (_, __0, _): (ByteIndex, Field, ByteIndex),
-) -> ::std::vec::Vec<Field>
-{
+fn __action85((_, __0, _): (ByteIndex, Field, ByteIndex)) -> ::std::vec::Vec<Field> {
     vec![__0]
 }
 
-fn __action86<
->(
+fn __action86(
     (_, v, _): (ByteIndex, ::std::vec::Vec<Field>, ByteIndex),
     (_, e, _): (ByteIndex, Field, ByteIndex),
-) -> ::std::vec::Vec<Field>
-{
-    { let mut v = v; v.push(e); v }
+) -> ::std::vec::Vec<Field> {
+    {
+        let mut v = v;
+        v.push(e);
+        v
+    }
 }
 
-fn __action87<
->(
+fn __action87(
     (_, __0, _): (ByteIndex, Field, ByteIndex),
     (_, _, _): (ByteIndex, (Token, ::std::option::Option<()>), ByteIndex),
-) -> Field
-{
+) -> Field {
     (__0)
 }
 
-fn __action88<
->(
-    (_, __0, _): (ByteIndex, BlockItem, ByteIndex),
-) -> ::std::vec::Vec<BlockItem>
-{
+fn __action88((_, __0, _): (ByteIndex, BlockItem, ByteIndex)) -> ::std::vec::Vec<BlockItem> {
     vec![__0]
 }
 
-fn __action89<
->(
+fn __action89(
     (_, v, _): (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     (_, e, _): (ByteIndex, BlockItem, ByteIndex),
-) -> ::std::vec::Vec<BlockItem>
-{
-    { let mut v = v; v.push(e); v }
+) -> ::std::vec::Vec<BlockItem> {
+    {
+        let mut v = v;
+        v.push(e);
+        v
+    }
 }
 
-fn __action90<
->(
+fn __action90(
     (_, __0, _): (ByteIndex, ConstructField, ByteIndex),
-) -> ::std::vec::Vec<ConstructField>
-{
+) -> ::std::vec::Vec<ConstructField> {
     vec![__0]
 }
 
-fn __action91<
->(
+fn __action91(
     (_, v, _): (ByteIndex, ::std::vec::Vec<ConstructField>, ByteIndex),
     (_, e, _): (ByteIndex, ConstructField, ByteIndex),
-) -> ::std::vec::Vec<ConstructField>
-{
-    { let mut v = v; v.push(e); v }
+) -> ::std::vec::Vec<ConstructField> {
+    {
+        let mut v = v;
+        v.push(e);
+        v
+    }
 }
 
-fn __action92<
->(
+fn __action92(
     (_, __0, _): (ByteIndex, ConstructField, ByteIndex),
     (_, _, _): (ByteIndex, (Token, ::std::option::Option<()>), ByteIndex),
-) -> ConstructField
-{
+) -> ConstructField {
     (__0)
 }
 
-fn __action93<
->(
-    (_, __0, _): (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> ::std::vec::Vec<Spanned<StringId>>
-{
+fn __action93(
+    (_, __0, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
+) -> ::std::vec::Vec<Spanned<GlobalIdentifier>> {
     vec![__0]
 }
 
-fn __action94<
->(
-    (_, v, _): (ByteIndex, ::std::vec::Vec<Spanned<StringId>>, ByteIndex),
-    (_, e, _): (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> ::std::vec::Vec<Spanned<StringId>>
-{
-    { let mut v = v; v.push(e); v }
+fn __action94(
+    (_, v, _): (
+        ByteIndex,
+        ::std::vec::Vec<Spanned<GlobalIdentifier>>,
+        ByteIndex,
+    ),
+    (_, e, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
+) -> ::std::vec::Vec<Spanned<GlobalIdentifier>> {
+    {
+        let mut v = v;
+        v.push(e);
+        v
+    }
 }
 
-fn __action95<
->(
-    (_, __0, _): (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action95(
+    (_, __0, _): (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     (_, _, _): (ByteIndex, Token, ByteIndex),
-) -> Spanned<StringId>
-{
+) -> Spanned<GlobalIdentifier> {
     (__0)
 }
 
-fn __action96<
->(
+fn __action96(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Spanned<Type>, ByteIndex),
-) -> ::std::option::Option<Spanned<Type>>
-{
+) -> ::std::option::Option<Spanned<Type>> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action70(
-        __0,
-        __1,
-    );
+    let __temp0 = __action70(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action68(
-        __temp0,
-    )
+    __action68(__temp0)
 }
 
-fn __action97<
->(
+fn __action97(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Spanned<Type>, ByteIndex),
-) -> Option<Spanned<Type>>
-{
+) -> Option<Spanned<Type>> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action96(
-        __0,
-        __1,
-    );
+    let __temp0 = __action96(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action24(
-        __temp0,
-    )
+    __action24(__temp0)
 }
 
-fn __action98<
->(
-    __lookbehind: &ByteIndex,
-    __lookahead: &ByteIndex,
-) -> Option<Spanned<Type>>
-{
+fn __action98(__lookbehind: &ByteIndex, __lookahead: &ByteIndex) -> Option<Spanned<Type>> {
     let __start0 = __lookbehind.clone();
     let __end0 = __lookahead.clone();
-    let __temp0 = __action69(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action69(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action24(
-        __temp0,
-    )
+    __action24(__temp0)
 }
 
-fn __action99<
->(
+fn __action99(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
-) -> ::std::option::Option<Expression>
-{
+) -> ::std::option::Option<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action67(
-        __0,
-        __1,
-    );
+    let __temp0 = __action67(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action65(
-        __temp0,
-    )
+    __action65(__temp0)
 }
 
-fn __action100<
->(
+fn __action100(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
-) -> Option<Expression>
-{
+) -> Option<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action99(
-        __0,
-        __1,
-    );
+    let __temp0 = __action99(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action25(
-        __temp0,
-    )
+    __action25(__temp0)
 }
 
-fn __action101<
->(
-    __lookbehind: &ByteIndex,
-    __lookahead: &ByteIndex,
-) -> Option<Expression>
-{
+fn __action101(__lookbehind: &ByteIndex, __lookahead: &ByteIndex) -> Option<Expression> {
     let __start0 = __lookbehind.clone();
     let __end0 = __lookahead.clone();
-    let __temp0 = __action66(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action66(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action25(
-        __temp0,
-    )
+    __action25(__temp0)
 }
 
-fn __action102<
->(
+fn __action102(
     __0: (ByteIndex, BlockItem, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> BlockItem
-{
+) -> BlockItem {
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action83(
-        __2,
-    );
+    let __temp0 = __action83(__2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action73(
-        __0,
-        __1,
-        __temp0,
-    )
+    __action73(__0, __1, __temp0)
 }
 
-fn __action103<
->(
+fn __action103(
     __0: (ByteIndex, BlockItem, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
-) -> BlockItem
-{
+) -> BlockItem {
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action73(
-        __0,
-        __1,
-        __temp0,
-    )
+    __action73(__0, __1, __temp0)
 }
 
-fn __action104<
->(
+fn __action104(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, (), ByteIndex),
-) -> Expression
-{
+) -> Expression {
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
     let __start1 = __3.0.clone();
     let __end1 = __3.2.clone();
-    let __temp0 = __action83(
-        __1,
-    );
+    let __temp0 = __action83(__1);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __3,
-    );
+    let __temp1 = __action83(__3);
     let __temp1 = (__start1, __temp1, __end1);
-    __action62(
-        __0,
-        __temp0,
-        __2,
-        __temp1,
-    )
+    __action62(__0, __temp0, __2, __temp1)
 }
 
-fn __action105<
->(
+fn __action105(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
-) -> Expression
-{
+) -> Expression {
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
     let __start1 = __2.2.clone();
     let __end1 = __2.2.clone();
-    let __temp0 = __action83(
-        __1,
-    );
+    let __temp0 = __action83(__1);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action62(
-        __0,
-        __temp0,
-        __2,
-        __temp1,
-    )
+    __action62(__0, __temp0, __2, __temp1)
 }
 
-fn __action106<
->(
+fn __action106(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> Expression
-{
+) -> Expression {
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
     let __start1 = __2.0.clone();
     let __end1 = __2.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __2,
-    );
+    let __temp1 = __action83(__2);
     let __temp1 = (__start1, __temp1, __end1);
-    __action62(
-        __0,
-        __temp0,
-        __1,
-        __temp1,
-    )
+    __action62(__0, __temp0, __1, __temp1)
 }
 
-fn __action107<
->(
+fn __action107(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
-) -> Expression
-{
+) -> Expression {
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
     let __start1 = __1.2.clone();
     let __end1 = __1.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action62(
-        __0,
-        __temp0,
-        __1,
-        __temp1,
-    )
+    __action62(__0, __temp0, __1, __temp1)
 }
 
-fn __action108<
->(
+fn __action108(
     __0: (ByteIndex, Arc<Item>, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
-) -> Arc<Item>
-{
+) -> Arc<Item> {
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action83(
-        __1,
-    );
+    let __temp0 = __action83(__1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action82(
-        __0,
-        __temp0,
-    )
+    __action82(__0, __temp0)
 }
 
-fn __action109<
->(
-    __0: (ByteIndex, Arc<Item>, ByteIndex),
-) -> Arc<Item>
-{
+fn __action109(__0: (ByteIndex, Arc<Item>, ByteIndex)) -> Arc<Item> {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action82(
-        __0,
-        __temp0,
-    )
+    __action82(__0, __temp0)
 }
 
-fn __action110<
->(
+fn __action110(
     __0: (ByteIndex, (), ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
     let __start1 = __2.0.clone();
     let __end1 = __2.2.clone();
-    let __temp0 = __action83(
-        __0,
-    );
+    let __temp0 = __action83(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __2,
-    );
+    let __temp1 = __action83(__2);
     let __temp1 = (__start1, __temp1, __end1);
-    __action41(
-        __temp0,
-        __1,
-        __temp1,
-    )
+    __action41(__temp0, __1, __temp1)
 }
 
-fn __action111<
->(
+fn __action111(
     __0: (ByteIndex, (), ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
     let __start1 = __1.2.clone();
     let __end1 = __1.2.clone();
-    let __temp0 = __action83(
-        __0,
-    );
+    let __temp0 = __action83(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action41(
-        __temp0,
-        __1,
-        __temp1,
-    )
+    __action41(__temp0, __1, __temp1)
 }
 
-fn __action112<
->(
+fn __action112(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
     let __start1 = __1.0.clone();
     let __end1 = __1.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __1,
-    );
+    let __temp1 = __action83(__1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action41(
-        __temp0,
-        __0,
-        __temp1,
-    )
+    __action41(__temp0, __0, __temp1)
 }
 
-fn __action113<
->(
-    __0: (ByteIndex, Expression, ByteIndex),
-) -> Vec<Expression>
-{
+fn __action113(__0: (ByteIndex, Expression, ByteIndex)) -> Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
     let __start1 = __0.2.clone();
     let __end1 = __0.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action41(
-        __temp0,
-        __0,
-        __temp1,
-    )
+    __action41(__temp0, __0, __temp1)
 }
 
-fn __action114<
->(
+fn __action114(
     __0: (ByteIndex, (), ByteIndex),
     __1: (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     __2: (ByteIndex, Expression, ByteIndex),
     __3: (ByteIndex, (), ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
     let __start1 = __3.0.clone();
     let __end1 = __3.2.clone();
-    let __temp0 = __action83(
-        __0,
-    );
+    let __temp0 = __action83(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __3,
-    );
+    let __temp1 = __action83(__3);
     let __temp1 = (__start1, __temp1, __end1);
-    __action42(
-        __temp0,
-        __1,
-        __2,
-        __temp1,
-    )
+    __action42(__temp0, __1, __2, __temp1)
 }
 
-fn __action115<
->(
+fn __action115(
     __0: (ByteIndex, (), ByteIndex),
     __1: (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     __2: (ByteIndex, Expression, ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
     let __start1 = __2.2.clone();
     let __end1 = __2.2.clone();
-    let __temp0 = __action83(
-        __0,
-    );
+    let __temp0 = __action83(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action42(
-        __temp0,
-        __1,
-        __2,
-        __temp1,
-    )
+    __action42(__temp0, __1, __2, __temp1)
 }
 
-fn __action116<
->(
+fn __action116(
     __0: (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
     let __start1 = __2.0.clone();
     let __end1 = __2.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __2,
-    );
+    let __temp1 = __action83(__2);
     let __temp1 = (__start1, __temp1, __end1);
-    __action42(
-        __temp0,
-        __0,
-        __1,
-        __temp1,
-    )
+    __action42(__temp0, __0, __1, __temp1)
 }
 
-fn __action117<
->(
+fn __action117(
     __0: (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
-) -> Vec<Expression>
-{
+) -> Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
     let __start1 = __1.2.clone();
     let __end1 = __1.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action42(
-        __temp0,
-        __0,
-        __1,
-        __temp1,
-    )
+    __action42(__temp0, __0, __1, __temp1)
 }
 
-fn __action118<
->(
+fn __action118(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
     __3: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __4: (ByteIndex, Token, ByteIndex),
     __5: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action83(
-        __2,
-    );
+    let __temp0 = __action83(__2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action19(
-        __0,
-        __1,
-        __temp0,
-        __3,
-        __4,
-        __5,
-    )
+    __action19(__0, __1, __temp0, __3, __4, __5)
 }
 
-fn __action119<
->(
+fn __action119(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action19(
-        __0,
-        __1,
-        __temp0,
-        __2,
-        __3,
-        __4,
-    )
+    __action19(__0, __1, __temp0, __2, __3, __4)
 }
 
-fn __action120<
->(
+fn __action120(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
-) -> (Token, ::std::option::Option<()>)
-{
+) -> (Token, ::std::option::Option<()>) {
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action83(
-        __1,
-    );
+    let __temp0 = __action83(__1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action7(
-        __0,
-        __temp0,
-    )
+    __action7(__0, __temp0)
 }
 
-fn __action121<
->(
-    __0: (ByteIndex, Token, ByteIndex),
-) -> (Token, ::std::option::Option<()>)
-{
+fn __action121(__0: (ByteIndex, Token, ByteIndex)) -> (Token, ::std::option::Option<()>) {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action7(
-        __0,
-        __temp0,
-    )
+    __action7(__0, __temp0)
 }
 
-fn __action122<
->(
+fn __action122(
     __0: (ByteIndex, (), ByteIndex),
     __1: (ByteIndex, Arc<Item>, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> Module
-{
+) -> Module {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
     let __start1 = __2.0.clone();
     let __end1 = __2.2.clone();
-    let __temp0 = __action83(
-        __0,
-    );
+    let __temp0 = __action83(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __2,
-    );
+    let __temp1 = __action83(__2);
     let __temp1 = (__start1, __temp1, __end1);
-    __action1(
-        __temp0,
-        __1,
-        __temp1,
-    )
+    __action1(__temp0, __1, __temp1)
 }
 
-fn __action123<
->(
-    __0: (ByteIndex, (), ByteIndex),
-    __1: (ByteIndex, Arc<Item>, ByteIndex),
-) -> Module
-{
+fn __action123(__0: (ByteIndex, (), ByteIndex), __1: (ByteIndex, Arc<Item>, ByteIndex)) -> Module {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
     let __start1 = __1.2.clone();
     let __end1 = __1.2.clone();
-    let __temp0 = __action83(
-        __0,
-    );
+    let __temp0 = __action83(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action1(
-        __temp0,
-        __1,
-        __temp1,
-    )
+    __action1(__temp0, __1, __temp1)
 }
 
-fn __action124<
->(
-    __0: (ByteIndex, Arc<Item>, ByteIndex),
-    __1: (ByteIndex, (), ByteIndex),
-) -> Module
-{
+fn __action124(__0: (ByteIndex, Arc<Item>, ByteIndex), __1: (ByteIndex, (), ByteIndex)) -> Module {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
     let __start1 = __1.0.clone();
     let __end1 = __1.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __1,
-    );
+    let __temp1 = __action83(__1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action1(
-        __temp0,
-        __0,
-        __temp1,
-    )
+    __action1(__temp0, __0, __temp1)
 }
 
-fn __action125<
->(
-    __0: (ByteIndex, Arc<Item>, ByteIndex),
-) -> Module
-{
+fn __action125(__0: (ByteIndex, Arc<Item>, ByteIndex)) -> Module {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
     let __start1 = __0.2.clone();
     let __end1 = __0.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action1(
-        __temp0,
-        __0,
-        __temp1,
-    )
+    __action1(__temp0, __0, __temp1)
 }
 
-fn __action126<
->(
+fn __action126(
     __0: (ByteIndex, (), ByteIndex),
     __1: (ByteIndex, ::std::vec::Vec<Arc<Item>>, ByteIndex),
     __2: (ByteIndex, Arc<Item>, ByteIndex),
     __3: (ByteIndex, (), ByteIndex),
-) -> Module
-{
+) -> Module {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
     let __start1 = __3.0.clone();
     let __end1 = __3.2.clone();
-    let __temp0 = __action83(
-        __0,
-    );
+    let __temp0 = __action83(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __3,
-    );
+    let __temp1 = __action83(__3);
     let __temp1 = (__start1, __temp1, __end1);
-    __action2(
-        __temp0,
-        __1,
-        __2,
-        __temp1,
-    )
+    __action2(__temp0, __1, __2, __temp1)
 }
 
-fn __action127<
->(
+fn __action127(
     __0: (ByteIndex, (), ByteIndex),
     __1: (ByteIndex, ::std::vec::Vec<Arc<Item>>, ByteIndex),
     __2: (ByteIndex, Arc<Item>, ByteIndex),
-) -> Module
-{
+) -> Module {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
     let __start1 = __2.2.clone();
     let __end1 = __2.2.clone();
-    let __temp0 = __action83(
-        __0,
-    );
+    let __temp0 = __action83(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action2(
-        __temp0,
-        __1,
-        __2,
-        __temp1,
-    )
+    __action2(__temp0, __1, __2, __temp1)
 }
 
-fn __action128<
->(
+fn __action128(
     __0: (ByteIndex, ::std::vec::Vec<Arc<Item>>, ByteIndex),
     __1: (ByteIndex, Arc<Item>, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> Module
-{
+) -> Module {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
     let __start1 = __2.0.clone();
     let __end1 = __2.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action83(
-        __2,
-    );
+    let __temp1 = __action83(__2);
     let __temp1 = (__start1, __temp1, __end1);
-    __action2(
-        __temp0,
-        __0,
-        __1,
-        __temp1,
-    )
+    __action2(__temp0, __0, __1, __temp1)
 }
 
-fn __action129<
->(
+fn __action129(
     __0: (ByteIndex, ::std::vec::Vec<Arc<Item>>, ByteIndex),
     __1: (ByteIndex, Arc<Item>, ByteIndex),
-) -> Module
-{
+) -> Module {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
     let __start1 = __1.2.clone();
     let __end1 = __1.2.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action84(
-        &__start1,
-        &__end1,
-    );
+    let __temp1 = __action84(&__start1, &__end1);
     let __temp1 = (__start1, __temp1, __end1);
-    __action2(
-        __temp0,
-        __0,
-        __1,
-        __temp1,
-    )
+    __action2(__temp0, __0, __1, __temp1)
 }
 
-fn __action130<
->(
+fn __action130(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
-    __2: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __2: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, (), ByteIndex),
     __5: (ByteIndex, Vec<Field>, ByteIndex),
     __6: (ByteIndex, Token, ByteIndex),
     __7: (ByteIndex, ByteIndex, ByteIndex),
-) -> Struct
-{
+) -> Struct {
     let __start0 = __4.0.clone();
     let __end0 = __4.2.clone();
-    let __temp0 = __action83(
-        __4,
-    );
+    let __temp0 = __action83(__4);
     let __temp0 = (__start0, __temp0, __end0);
-    __action5(
-        __0,
-        __1,
-        __2,
-        __3,
-        __temp0,
-        __5,
-        __6,
-        __7,
-    )
+    __action5(__0, __1, __2, __3, __temp0, __5, __6, __7)
 }
 
-fn __action131<
->(
+fn __action131(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
-    __2: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __2: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, Vec<Field>, ByteIndex),
     __5: (ByteIndex, Token, ByteIndex),
     __6: (ByteIndex, ByteIndex, ByteIndex),
-) -> Struct
-{
+) -> Struct {
     let __start0 = __3.2.clone();
     let __end0 = __4.0.clone();
-    let __temp0 = __action84(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action84(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action5(
-        __0,
-        __1,
-        __2,
-        __3,
-        __temp0,
-        __4,
-        __5,
-        __6,
-    )
+    __action5(__0, __1, __2, __3, __temp0, __4, __5, __6)
 }
 
-fn __action132<
->(
+fn __action132(
     __0: (ByteIndex, BlockItem, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<BlockItem>
-{
+) -> ::std::vec::Vec<BlockItem> {
     let __start0 = __0.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action102(
-        __0,
-        __1,
-        __2,
-    );
+    let __temp0 = __action102(__0, __1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action88(
-        __temp0,
-    )
+    __action88(__temp0)
 }
 
-fn __action133<
->(
+fn __action133(
     __0: (ByteIndex, BlockItem, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<BlockItem>
-{
+) -> ::std::vec::Vec<BlockItem> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action103(
-        __0,
-        __1,
-    );
+    let __temp0 = __action103(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action88(
-        __temp0,
-    )
+    __action88(__temp0)
 }
 
-fn __action134<
->(
+fn __action134(
     __0: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __1: (ByteIndex, BlockItem, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
     __3: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<BlockItem>
-{
+) -> ::std::vec::Vec<BlockItem> {
     let __start0 = __1.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action102(
-        __1,
-        __2,
-        __3,
-    );
+    let __temp0 = __action102(__1, __2, __3);
     let __temp0 = (__start0, __temp0, __end0);
-    __action89(
-        __0,
-        __temp0,
-    )
+    __action89(__0, __temp0)
 }
 
-fn __action135<
->(
+fn __action135(
     __0: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __1: (ByteIndex, BlockItem, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<BlockItem>
-{
+) -> ::std::vec::Vec<BlockItem> {
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action103(
-        __1,
-        __2,
-    );
+    let __temp0 = __action103(__1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action89(
-        __0,
-        __temp0,
-    )
+    __action89(__0, __temp0)
 }
 
-fn __action136<
->(
+fn __action136(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __2.2.clone();
     let __end0 = __3.0.clone();
-    let __temp0 = __action71(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action71(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action118(
-        __0,
-        __1,
-        __2,
-        __temp0,
-        __3,
-        __4,
-    )
+    __action118(__0, __1, __2, __temp0, __3, __4)
 }
 
-fn __action137<
->(
+fn __action137(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
     __3: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __4: (ByteIndex, Token, ByteIndex),
     __5: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action72(
-        __3,
-    );
+    let __temp0 = __action72(__3);
     let __temp0 = (__start0, __temp0, __end0);
-    __action118(
-        __0,
-        __1,
-        __2,
-        __temp0,
-        __4,
-        __5,
-    )
+    __action118(__0, __1, __2, __temp0, __4, __5)
 }
 
-fn __action138<
->(
+fn __action138(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action71(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action71(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action119(
-        __0,
-        __1,
-        __temp0,
-        __2,
-        __3,
-    )
+    __action119(__0, __1, __temp0, __2, __3)
 }
 
-fn __action139<
->(
+fn __action139(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action72(
-        __2,
-    );
+    let __temp0 = __action72(__2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action119(
-        __0,
-        __1,
-        __temp0,
-        __3,
-        __4,
-    )
+    __action119(__0, __1, __temp0, __3, __4)
 }
 
-fn __action140<
->(
+fn __action140(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, BlockItem, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action71(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action71(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action20(
-        __0,
-        __1,
-        __temp0,
-        __2,
-        __3,
-        __4,
-    )
+    __action20(__0, __1, __temp0, __2, __3, __4)
 }
 
-fn __action141<
->(
+fn __action141(
     __0: (ByteIndex, ByteIndex, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __3: (ByteIndex, BlockItem, ByteIndex),
     __4: (ByteIndex, Token, ByteIndex),
     __5: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action72(
-        __2,
-    );
+    let __temp0 = __action72(__2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action20(
-        __0,
-        __1,
-        __temp0,
-        __3,
-        __4,
-        __5,
-    )
+    __action20(__0, __1, __temp0, __3, __4, __5)
 }
 
-fn __action142<
->(
+fn __action142(
     __0: (ByteIndex, ConstructField, ByteIndex),
     __1: (ByteIndex, (Token, ::std::option::Option<()>), ByteIndex),
-) -> ::std::vec::Vec<ConstructField>
-{
+) -> ::std::vec::Vec<ConstructField> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action92(
-        __0,
-        __1,
-    );
+    let __temp0 = __action92(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action90(
-        __temp0,
-    )
+    __action90(__temp0)
 }
 
-fn __action143<
->(
+fn __action143(
     __0: (ByteIndex, ::std::vec::Vec<ConstructField>, ByteIndex),
     __1: (ByteIndex, ConstructField, ByteIndex),
     __2: (ByteIndex, (Token, ::std::option::Option<()>), ByteIndex),
-) -> ::std::vec::Vec<ConstructField>
-{
+) -> ::std::vec::Vec<ConstructField> {
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action92(
-        __1,
-        __2,
-    );
+    let __temp0 = __action92(__1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action91(
-        __0,
-        __temp0,
-    )
+    __action91(__0, __temp0)
 }
 
-fn __action144<
->(
+fn __action144(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+) -> ::std::vec::Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action104(
-        __0,
-        __1,
-        __2,
-        __3,
-    );
+    let __temp0 = __action104(__0, __1, __2, __3);
     let __temp0 = (__start0, __temp0, __end0);
-    __action60(
-        __temp0,
-    )
+    __action60(__temp0)
 }
 
-fn __action145<
->(
+fn __action145(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+) -> ::std::vec::Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action105(
-        __0,
-        __1,
-        __2,
-    );
+    let __temp0 = __action105(__0, __1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action60(
-        __temp0,
-    )
+    __action60(__temp0)
 }
 
-fn __action146<
->(
+fn __action146(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+) -> ::std::vec::Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action106(
-        __0,
-        __1,
-        __2,
-    );
+    let __temp0 = __action106(__0, __1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action60(
-        __temp0,
-    )
+    __action60(__temp0)
 }
 
-fn __action147<
->(
+fn __action147(
     __0: (ByteIndex, Expression, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+) -> ::std::vec::Vec<Expression> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action107(
-        __0,
-        __1,
-    );
+    let __temp0 = __action107(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action60(
-        __temp0,
-    )
+    __action60(__temp0)
 }
 
-fn __action148<
->(
+fn __action148(
     __0: (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+) -> ::std::vec::Vec<Expression> {
     let __start0 = __1.0.clone();
     let __end0 = __4.2.clone();
-    let __temp0 = __action104(
-        __1,
-        __2,
-        __3,
-        __4,
-    );
+    let __temp0 = __action104(__1, __2, __3, __4);
     let __temp0 = (__start0, __temp0, __end0);
-    __action61(
-        __0,
-        __temp0,
-    )
+    __action61(__0, __temp0)
 }
 
-fn __action149<
->(
+fn __action149(
     __0: (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+) -> ::std::vec::Vec<Expression> {
     let __start0 = __1.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action105(
-        __1,
-        __2,
-        __3,
-    );
+    let __temp0 = __action105(__1, __2, __3);
     let __temp0 = (__start0, __temp0, __end0);
-    __action61(
-        __0,
-        __temp0,
-    )
+    __action61(__0, __temp0)
 }
 
-fn __action150<
->(
+fn __action150(
     __0: (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+) -> ::std::vec::Vec<Expression> {
     let __start0 = __1.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action106(
-        __1,
-        __2,
-        __3,
-    );
+    let __temp0 = __action106(__1, __2, __3);
     let __temp0 = (__start0, __temp0, __end0);
-    __action61(
-        __0,
-        __temp0,
-    )
+    __action61(__0, __temp0)
 }
 
-fn __action151<
->(
+fn __action151(
     __0: (ByteIndex, ::std::vec::Vec<Expression>, ByteIndex),
     __1: (ByteIndex, Expression, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
-) -> ::std::vec::Vec<Expression>
-{
+) -> ::std::vec::Vec<Expression> {
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action107(
-        __1,
-        __2,
-    );
+    let __temp0 = __action107(__1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action61(
-        __0,
-        __temp0,
-    )
+    __action61(__0, __temp0)
 }
 
-fn __action152<
->(
+fn __action152(
     __0: (ByteIndex, Field, ByteIndex),
     __1: (ByteIndex, (Token, ::std::option::Option<()>), ByteIndex),
-) -> ::std::vec::Vec<Field>
-{
+) -> ::std::vec::Vec<Field> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action87(
-        __0,
-        __1,
-    );
+    let __temp0 = __action87(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action85(
-        __temp0,
-    )
+    __action85(__temp0)
 }
 
-fn __action153<
->(
+fn __action153(
     __0: (ByteIndex, ::std::vec::Vec<Field>, ByteIndex),
     __1: (ByteIndex, Field, ByteIndex),
     __2: (ByteIndex, (Token, ::std::option::Option<()>), ByteIndex),
-) -> ::std::vec::Vec<Field>
-{
+) -> ::std::vec::Vec<Field> {
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action87(
-        __1,
-        __2,
-    );
+    let __temp0 = __action87(__1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action86(
-        __0,
-        __temp0,
-    )
+    __action86(__0, __temp0)
 }
 
-fn __action154<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action154(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
-) -> ::std::vec::Vec<Spanned<StringId>>
-{
+) -> ::std::vec::Vec<Spanned<GlobalIdentifier>> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action95(
-        __0,
-        __1,
-    );
+    let __temp0 = __action95(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action93(
-        __temp0,
-    )
+    __action93(__temp0)
 }
 
-fn __action155<
->(
-    __0: (ByteIndex, ::std::vec::Vec<Spanned<StringId>>, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action155(
+    __0: (
+        ByteIndex,
+        ::std::vec::Vec<Spanned<GlobalIdentifier>>,
+        ByteIndex,
+    ),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
-) -> ::std::vec::Vec<Spanned<StringId>>
-{
+) -> ::std::vec::Vec<Spanned<GlobalIdentifier>> {
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action95(
-        __1,
-        __2,
-    );
+    let __temp0 = __action95(__1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action94(
-        __0,
-        __temp0,
-    )
+    __action94(__0, __temp0)
 }
 
-fn __action156<
->(
+fn __action156(
     __0: (ByteIndex, Arc<Item>, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<Arc<Item>>
-{
+) -> ::std::vec::Vec<Arc<Item>> {
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action108(
-        __0,
-        __1,
-    );
+    let __temp0 = __action108(__0, __1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action80(
-        __temp0,
-    )
+    __action80(__temp0)
 }
 
-fn __action157<
->(
-    __0: (ByteIndex, Arc<Item>, ByteIndex),
-) -> ::std::vec::Vec<Arc<Item>>
-{
+fn __action157(__0: (ByteIndex, Arc<Item>, ByteIndex)) -> ::std::vec::Vec<Arc<Item>> {
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action109(
-        __0,
-    );
+    let __temp0 = __action109(__0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action80(
-        __temp0,
-    )
+    __action80(__temp0)
 }
 
-fn __action158<
->(
+fn __action158(
     __0: (ByteIndex, ::std::vec::Vec<Arc<Item>>, ByteIndex),
     __1: (ByteIndex, Arc<Item>, ByteIndex),
     __2: (ByteIndex, (), ByteIndex),
-) -> ::std::vec::Vec<Arc<Item>>
-{
+) -> ::std::vec::Vec<Arc<Item>> {
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action108(
-        __1,
-        __2,
-    );
+    let __temp0 = __action108(__1, __2);
     let __temp0 = (__start0, __temp0, __end0);
-    __action81(
-        __0,
-        __temp0,
-    )
+    __action81(__0, __temp0)
 }
 
-fn __action159<
->(
+fn __action159(
     __0: (ByteIndex, ::std::vec::Vec<Arc<Item>>, ByteIndex),
     __1: (ByteIndex, Arc<Item>, ByteIndex),
-) -> ::std::vec::Vec<Arc<Item>>
-{
+) -> ::std::vec::Vec<Arc<Item>> {
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action109(
-        __1,
-    );
+    let __temp0 = __action109(__1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action81(
-        __0,
-        __temp0,
-    )
+    __action81(__0, __temp0)
 }
 
-fn __action160<
->(
+fn __action160(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Op>
-{
+) -> Spanned<Op> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action38(
-        __temp0,
-        __0,
-        __1,
-    )
+    __action38(__temp0, __0, __1)
 }
 
-fn __action161<
->(
+fn __action161(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action136(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-    )
+    __action136(__temp0, __0, __1, __2, __3)
 }
 
-fn __action162<
->(
+fn __action162(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action137(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-    )
+    __action137(__temp0, __0, __1, __2, __3, __4)
 }
 
-fn __action163<
->(
+fn __action163(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action138(
-        __temp0,
-        __0,
-        __1,
-        __2,
-    )
+    __action138(__temp0, __0, __1, __2)
 }
 
-fn __action164<
->(
+fn __action164(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action139(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-    )
+    __action139(__temp0, __0, __1, __2, __3)
 }
 
-fn __action165<
->(
+fn __action165(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, BlockItem, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action140(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-    )
+    __action140(__temp0, __0, __1, __2, __3)
 }
 
-fn __action166<
->(
+fn __action166(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __2: (ByteIndex, BlockItem, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action141(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-    )
+    __action141(__temp0, __0, __1, __2, __3, __4)
 }
 
-fn __action167<
->(
+fn __action167(
     __0: (ByteIndex, Callee, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Vec<Expression>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Call>
-{
+) -> Spanned<Call> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action40(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-    )
+    __action40(__temp0, __0, __1, __2, __3, __4)
 }
 
-fn __action168<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action168(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Spanned<Type>, ByteIndex),
     __3: (ByteIndex, ByteIndex, ByteIndex),
-) -> ConstructField
-{
+) -> ConstructField {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action45(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-    )
+    __action45(__temp0, __0, __1, __2, __3)
 }
 
-fn __action169<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action169(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Vec<ConstructField>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> ConstructStruct
-{
+) -> ConstructStruct {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action39(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-    )
+    __action39(__temp0, __0, __1, __2, __3, __4)
 }
 
-fn __action170<
->(
+fn __action170(
     __0: (ByteIndex, Token, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, (Vec<Field>, Option<Spanned<Type>>), ByteIndex),
     __3: (ByteIndex, Spanned<Block>, ByteIndex),
     __4: (ByteIndex, ByteIndex, ByteIndex),
-) -> Def
-{
+) -> Def {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action10(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-    )
+    __action10(__temp0, __0, __1, __2, __3, __4)
 }
 
-fn __action171<
->(
-    __0: (ByteIndex, StringId, ByteIndex),
+fn __action171(
+    __0: (ByteIndex, GlobalIdentifier, ByteIndex),
     __1: (ByteIndex, ByteIndex, ByteIndex),
-) -> Expression
-{
+) -> Expression {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action49(
-        __temp0,
-        __0,
-        __1,
-    )
+    __action49(__temp0, __0, __1)
 }
 
-fn __action172<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action172(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Spanned<Type>, ByteIndex),
     __3: (ByteIndex, ByteIndex, ByteIndex),
-) -> Field
-{
+) -> Field {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action9(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-    )
+    __action9(__temp0, __0, __1, __2, __3)
 }
 
-fn __action173<
->(
-    __0: (ByteIndex, StringId, ByteIndex),
+fn __action173(
+    __0: (ByteIndex, GlobalIdentifier, ByteIndex),
     __1: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<StringId>
-{
+) -> Spanned<GlobalIdentifier> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action52(
-        __temp0,
-        __0,
-        __1,
-    )
+    __action52(__temp0, __0, __1)
 }
 
-fn __action174<
->(
+fn __action174(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Mode>
-{
+) -> Spanned<Mode> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action17(
-        __temp0,
-        __0,
-        __1,
-    )
+    __action17(__temp0, __0, __1)
 }
 
-fn __action175<
->(
+fn __action175(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Mode>
-{
+) -> Spanned<Mode> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action18(
-        __temp0,
-        __0,
-        __1,
-    )
+    __action18(__temp0, __0, __1)
 }
 
-fn __action176<
->(
+fn __action176(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Pattern>
-{
+) -> Spanned<Pattern> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action26(
-        __temp0,
-        __0,
-        __1,
-    )
+    __action26(__temp0, __0, __1)
 }
 
-fn __action177<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action177(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Pattern>
-{
+) -> Spanned<Pattern> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action27(
-        __temp0,
-        __0,
-        __1,
-    )
+    __action27(__temp0, __0, __1)
 }
 
-fn __action178<
->(
+fn __action178(
     __0: (ByteIndex, Spanned<Mode>, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Pattern>
-{
+) -> Spanned<Pattern> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action28(
-        __temp0,
-        __0,
-        __1,
-        __2,
-    )
+    __action28(__temp0, __0, __1, __2)
 }
 
-fn __action179<
->(
+fn __action179(
     __0: (ByteIndex, Token, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, (), ByteIndex),
     __4: (ByteIndex, Vec<Field>, ByteIndex),
     __5: (ByteIndex, Token, ByteIndex),
     __6: (ByteIndex, ByteIndex, ByteIndex),
-) -> Struct
-{
+) -> Struct {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action130(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-        __5,
-        __6,
-    )
+    __action130(__temp0, __0, __1, __2, __3, __4, __5, __6)
 }
 
-fn __action180<
->(
+fn __action180(
     __0: (ByteIndex, Token, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, Vec<Field>, ByteIndex),
     __4: (ByteIndex, Token, ByteIndex),
     __5: (ByteIndex, ByteIndex, ByteIndex),
-) -> Struct
-{
+) -> Struct {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action131(
-        __temp0,
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-        __5,
-    )
+    __action131(__temp0, __0, __1, __2, __3, __4, __5)
 }
 
-fn __action181<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action181(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Type>
-{
+) -> Spanned<Type> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action15(
-        __temp0,
-        __0,
-        __1,
-    )
+    __action15(__temp0, __0, __1)
 }
 
-fn __action182<
->(
+fn __action182(
     __0: (ByteIndex, Spanned<Mode>, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, ByteIndex, ByteIndex),
-) -> Spanned<Type>
-{
+) -> Spanned<Type> {
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action79(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action79(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action16(
-        __temp0,
-        __0,
-        __1,
-        __2,
-    )
+    __action16(__temp0, __0, __1, __2)
 }
 
-fn __action183<
->(
-    __0: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Op>
-{
+fn __action183(__0: (ByteIndex, Token, ByteIndex)) -> Spanned<Op> {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action160(
-        __0,
-        __temp0,
-    )
+    __action160(__0, __temp0)
 }
 
-fn __action184<
->(
+fn __action184(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action161(
-        __0,
-        __1,
-        __2,
-        __temp0,
-    )
+    __action161(__0, __1, __2, __temp0)
 }
 
-fn __action185<
->(
+fn __action185(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, (), ByteIndex),
     __2: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __3.2.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action162(
-        __0,
-        __1,
-        __2,
-        __3,
-        __temp0,
-    )
+    __action162(__0, __1, __2, __3, __temp0)
 }
 
-fn __action186<
->(
+fn __action186(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action163(
-        __0,
-        __1,
-        __temp0,
-    )
+    __action163(__0, __1, __temp0)
 }
 
-fn __action187<
->(
+fn __action187(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action164(
-        __0,
-        __1,
-        __2,
-        __temp0,
-    )
+    __action164(__0, __1, __2, __temp0)
 }
 
-fn __action188<
->(
+fn __action188(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, BlockItem, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action165(
-        __0,
-        __1,
-        __2,
-        __temp0,
-    )
+    __action165(__0, __1, __2, __temp0)
 }
 
-fn __action189<
->(
+fn __action189(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, ::std::vec::Vec<BlockItem>, ByteIndex),
     __2: (ByteIndex, BlockItem, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Block>
-{
+) -> Spanned<Block> {
     let __start0 = __3.2.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action166(
-        __0,
-        __1,
-        __2,
-        __3,
-        __temp0,
-    )
+    __action166(__0, __1, __2, __3, __temp0)
 }
 
-fn __action190<
->(
+fn __action190(
     __0: (ByteIndex, Callee, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Vec<Expression>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Call>
-{
+) -> Spanned<Call> {
     let __start0 = __3.2.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action167(
-        __0,
-        __1,
-        __2,
-        __3,
-        __temp0,
-    )
+    __action167(__0, __1, __2, __3, __temp0)
 }
 
-fn __action191<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action191(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Spanned<Type>, ByteIndex),
-) -> ConstructField
-{
+) -> ConstructField {
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action168(
-        __0,
-        __1,
-        __2,
-        __temp0,
-    )
+    __action168(__0, __1, __2, __temp0)
 }
 
-fn __action192<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action192(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Vec<ConstructField>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
-) -> ConstructStruct
-{
+) -> ConstructStruct {
     let __start0 = __3.2.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action169(
-        __0,
-        __1,
-        __2,
-        __3,
-        __temp0,
-    )
+    __action169(__0, __1, __2, __3, __temp0)
 }
 
-fn __action193<
->(
+fn __action193(
     __0: (ByteIndex, Token, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, (Vec<Field>, Option<Spanned<Type>>), ByteIndex),
     __3: (ByteIndex, Spanned<Block>, ByteIndex),
-) -> Def
-{
+) -> Def {
     let __start0 = __3.2.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action170(
-        __0,
-        __1,
-        __2,
-        __3,
-        __temp0,
-    )
+    __action170(__0, __1, __2, __3, __temp0)
 }
 
-fn __action194<
->(
-    __0: (ByteIndex, StringId, ByteIndex),
-) -> Expression
-{
+fn __action194(__0: (ByteIndex, GlobalIdentifier, ByteIndex)) -> Expression {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action171(
-        __0,
-        __temp0,
-    )
+    __action171(__0, __temp0)
 }
 
-fn __action195<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
+fn __action195(
+    __0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __1: (ByteIndex, Token, ByteIndex),
     __2: (ByteIndex, Spanned<Type>, ByteIndex),
-) -> Field
-{
+) -> Field {
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action172(
-        __0,
-        __1,
-        __2,
-        __temp0,
-    )
+    __action172(__0, __1, __2, __temp0)
 }
 
-fn __action196<
->(
-    __0: (ByteIndex, StringId, ByteIndex),
-) -> Spanned<StringId>
-{
+fn __action196(__0: (ByteIndex, GlobalIdentifier, ByteIndex)) -> Spanned<GlobalIdentifier> {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action173(
-        __0,
-        __temp0,
-    )
+    __action173(__0, __temp0)
 }
 
-fn __action197<
->(
-    __0: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Mode>
-{
+fn __action197(__0: (ByteIndex, Token, ByteIndex)) -> Spanned<Mode> {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action174(
-        __0,
-        __temp0,
-    )
+    __action174(__0, __temp0)
 }
 
-fn __action198<
->(
-    __0: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Mode>
-{
+fn __action198(__0: (ByteIndex, Token, ByteIndex)) -> Spanned<Mode> {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action175(
-        __0,
-        __temp0,
-    )
+    __action175(__0, __temp0)
 }
 
-fn __action199<
->(
-    __0: (ByteIndex, Token, ByteIndex),
-) -> Spanned<Pattern>
-{
+fn __action199(__0: (ByteIndex, Token, ByteIndex)) -> Spanned<Pattern> {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action176(
-        __0,
-        __temp0,
-    )
+    __action176(__0, __temp0)
 }
 
-fn __action200<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> Spanned<Pattern>
-{
+fn __action200(__0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex)) -> Spanned<Pattern> {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action177(
-        __0,
-        __temp0,
-    )
+    __action177(__0, __temp0)
 }
 
-fn __action201<
->(
+fn __action201(
     __0: (ByteIndex, Spanned<Mode>, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> Spanned<Pattern>
-{
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
+) -> Spanned<Pattern> {
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action178(
-        __0,
-        __1,
-        __temp0,
-    )
+    __action178(__0, __1, __temp0)
 }
 
-fn __action202<
->(
+fn __action202(
     __0: (ByteIndex, Token, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, (), ByteIndex),
     __4: (ByteIndex, Vec<Field>, ByteIndex),
     __5: (ByteIndex, Token, ByteIndex),
-) -> Struct
-{
+) -> Struct {
     let __start0 = __5.2.clone();
     let __end0 = __5.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action179(
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-        __5,
-        __temp0,
-    )
+    __action179(__0, __1, __2, __3, __4, __5, __temp0)
 }
 
-fn __action203<
->(
+fn __action203(
     __0: (ByteIndex, Token, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, Vec<Field>, ByteIndex),
     __4: (ByteIndex, Token, ByteIndex),
-) -> Struct
-{
+) -> Struct {
     let __start0 = __4.2.clone();
     let __end0 = __4.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action180(
-        __0,
-        __1,
-        __2,
-        __3,
-        __4,
-        __temp0,
-    )
+    __action180(__0, __1, __2, __3, __4, __temp0)
 }
 
-fn __action204<
->(
-    __0: (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> Spanned<Type>
-{
+fn __action204(__0: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex)) -> Spanned<Type> {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action181(
-        __0,
-        __temp0,
-    )
+    __action181(__0, __temp0)
 }
 
-fn __action205<
->(
+fn __action205(
     __0: (ByteIndex, Spanned<Mode>, ByteIndex),
-    __1: (ByteIndex, Spanned<StringId>, ByteIndex),
-) -> Spanned<Type>
-{
+    __1: (ByteIndex, Spanned<GlobalIdentifier>, ByteIndex),
+) -> Spanned<Type> {
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action78(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action78(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action182(
-        __0,
-        __1,
-        __temp0,
-    )
+    __action182(__0, __1, __temp0)
 }
 
-fn __action206<
->(
+fn __action206(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Spanned<Pattern>, ByteIndex),
     __2: (ByteIndex, Option<Spanned<Type>>, ByteIndex),
     __3: (ByteIndex, Token, ByteIndex),
     __4: (ByteIndex, Expression, ByteIndex),
-) -> Let
-{
+) -> Let {
     let __start0 = __3.0.clone();
     let __end0 = __4.2.clone();
-    let __temp0 = __action100(
-        __3,
-        __4,
-    );
+    let __temp0 = __action100(__3, __4);
     let __temp0 = (__start0, __temp0, __end0);
-    __action23(
-        __0,
-        __1,
-        __2,
-        __temp0,
-    )
+    __action23(__0, __1, __2, __temp0)
 }
 
-fn __action207<
->(
+fn __action207(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Spanned<Pattern>, ByteIndex),
     __2: (ByteIndex, Option<Spanned<Type>>, ByteIndex),
-) -> Let
-{
+) -> Let {
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action101(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action101(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action23(
-        __0,
-        __1,
-        __2,
-        __temp0,
-    )
+    __action23(__0, __1, __2, __temp0)
 }
 
-fn __action208<
->(
+fn __action208(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Spanned<Pattern>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, Spanned<Type>, ByteIndex),
     __4: (ByteIndex, Token, ByteIndex),
     __5: (ByteIndex, Expression, ByteIndex),
-) -> Let
-{
+) -> Let {
     let __start0 = __2.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action97(
-        __2,
-        __3,
-    );
+    let __temp0 = __action97(__2, __3);
     let __temp0 = (__start0, __temp0, __end0);
-    __action206(
-        __0,
-        __1,
-        __temp0,
-        __4,
-        __5,
-    )
+    __action206(__0, __1, __temp0, __4, __5)
 }
 
-fn __action209<
->(
+fn __action209(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Spanned<Pattern>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, Expression, ByteIndex),
-) -> Let
-{
+) -> Let {
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action98(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action98(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action206(
-        __0,
-        __1,
-        __temp0,
-        __2,
-        __3,
-    )
+    __action206(__0, __1, __temp0, __2, __3)
 }
 
-fn __action210<
->(
+fn __action210(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Spanned<Pattern>, ByteIndex),
     __2: (ByteIndex, Token, ByteIndex),
     __3: (ByteIndex, Spanned<Type>, ByteIndex),
-) -> Let
-{
+) -> Let {
     let __start0 = __2.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action97(
-        __2,
-        __3,
-    );
+    let __temp0 = __action97(__2, __3);
     let __temp0 = (__start0, __temp0, __end0);
-    __action207(
-        __0,
-        __1,
-        __temp0,
-    )
+    __action207(__0, __1, __temp0)
 }
 
-fn __action211<
->(
+fn __action211(
     __0: (ByteIndex, Token, ByteIndex),
     __1: (ByteIndex, Spanned<Pattern>, ByteIndex),
-) -> Let
-{
+) -> Let {
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action98(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action98(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action207(
-        __0,
-        __1,
-        __temp0,
-    )
+    __action207(__0, __1, __temp0)
 }
 
-fn __action212<
->(
+fn __action212(
     __0: (ByteIndex, Vec<Field>, ByteIndex),
     __1: (ByteIndex, Spanned<Type>, ByteIndex),
-) -> (Vec<Field>, Option<Spanned<Type>>)
-{
+) -> (Vec<Field>, Option<Spanned<Type>>) {
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action74(
-        __1,
-    );
+    let __temp0 = __action74(__1);
     let __temp0 = (__start0, __temp0, __end0);
-    __action11(
-        __0,
-        __temp0,
-    )
+    __action11(__0, __temp0)
 }
 
-fn __action213<
->(
-    __0: (ByteIndex, Vec<Field>, ByteIndex),
-) -> (Vec<Field>, Option<Spanned<Type>>)
-{
+fn __action213(__0: (ByteIndex, Vec<Field>, ByteIndex)) -> (Vec<Field>, Option<Spanned<Type>>) {
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action75(
-        &__start0,
-        &__end0,
-    );
+    let __temp0 = __action75(&__start0, &__end0);
     let __temp0 = (__start0, __temp0, __end0);
-    __action11(
-        __0,
-        __temp0,
-    )
+    __action11(__0, __temp0)
 }
 
-pub trait __ToTriple<> {
+pub trait __ToTriple {
     type Error;
-    fn to_triple(value: Self) -> Result<(ByteIndex,Token,ByteIndex),Self::Error>;
+    fn to_triple(value: Self) -> Result<(ByteIndex, Token, ByteIndex), Self::Error>;
 }
 
-impl<> __ToTriple<> for (ByteIndex, Token, ByteIndex) {
+impl __ToTriple for (ByteIndex, Token, ByteIndex) {
     type Error = ParseError;
-    fn to_triple(value: Self) -> Result<(ByteIndex,Token,ByteIndex),ParseError> {
+    fn to_triple(value: Self) -> Result<(ByteIndex, Token, ByteIndex), ParseError> {
         Ok(value)
     }
 }
-impl<> __ToTriple<> for Result<(ByteIndex, Token, ByteIndex),ParseError> {
+impl __ToTriple for Result<(ByteIndex, Token, ByteIndex), ParseError> {
     type Error = ParseError;
-    fn to_triple(value: Self) -> Result<(ByteIndex,Token,ByteIndex),ParseError> {
+    fn to_triple(value: Self) -> Result<(ByteIndex, Token, ByteIndex), ParseError> {
         value
     }
 }

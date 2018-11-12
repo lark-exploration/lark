@@ -85,7 +85,7 @@ pub struct DefDef;
 
 #[derive(Debug)]
 struct DefDefTerm {
-    name: Spanned<StringId>,
+    name: Spanned<GlobalIdentifier>,
     params: Vec<Param>,
     ret: Option<Handle>,
 }

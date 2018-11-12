@@ -6,8 +6,9 @@
 use debug::{DebugWith, FmtWithSpecialized};
 use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
-use lark_error::{Diagnostic, ErrorSentinel};
-use parser::StringId;
+use lark_error::{ErrorReported, ErrorSentinel};
+use lark_string::global::GlobalIdentifier;
+use lark_string::global::GlobalIdentifierTables;
 
 indices::index_type! {
     pub struct Entity { .. }
@@ -17,26 +18,38 @@ indices::index_type! {
 pub enum EntityData {
     /// Indicates that fetching the entity somehow failed with an
     /// error (which has been separately reported).
-    Error(Diagnostic),
+    Error(ErrorReported),
 
     LangItem(LangItem),
 
     InputFile {
-        file: StringId,
+        file: GlobalIdentifier,
     },
     ItemName {
         base: Entity,
         kind: ItemKind,
-        id: StringId,
+        id: GlobalIdentifier,
     },
     MemberName {
         base: Entity,
         kind: MemberKind,
-        id: StringId,
+        id: GlobalIdentifier,
     },
 }
 
 impl EntityData {
+    /// Gives a little information about the name/kind of this entity,
+    /// without dumping the whole tree. Meant for debugging.
+    pub fn relative_name(self, db: &impl AsRef<GlobalIdentifierTables>) -> String {
+        match self {
+            EntityData::Error(_) => String::from("<error>"),
+            EntityData::LangItem(li) => format!("{:?}", li),
+            EntityData::InputFile { file } => format!("InputFile({})", file.untern(db)),
+            EntityData::ItemName { id, .. } => format!("ItemName({})", id.untern(db)),
+            EntityData::MemberName { id, .. } => format!("MemberName({})", id.untern(db)),
+        }
+    }
+
     /// True if this entity represents a value that the user could
     /// store into a variable (or might, in the case of error
     /// entities).
@@ -117,7 +130,7 @@ where
 
 impl Entity {
     /// The input file in which an entity appears (if any).
-    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<StringId> {
+    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<GlobalIdentifier> {
         match self.untern(db) {
             EntityData::LangItem(_) => None,
             EntityData::InputFile { file } => Some(file),
@@ -135,8 +148,7 @@ impl<DB> ErrorSentinel<&DB> for Entity
 where
     DB: AsRef<EntityTables>,
 {
-    fn error_sentinel(db: &DB, spans: &[Diagnostic]) -> Self {
-        // Pick the first error arbitrarily
-        EntityData::Error(spans[0].clone()).intern(db)
+    fn error_sentinel(db: &DB, report: ErrorReported) -> Self {
+        EntityData::Error(report).intern(db)
     }
 }

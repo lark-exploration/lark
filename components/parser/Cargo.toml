@@ -10,8 +10,10 @@ derive-new = "0.5.5"
 lalrpop-util = "0.16.0"
 lazy_static = "1.1.0"
 log = "0.4.5"
+intern = { path = "../intern" }
 itertools = "0.7.8"
 lark-debug-derive = { path = "../lark-debug-derive" }
+lark-string = { path = "../lark-string" }
 seahash = "3.0.5"
 smart-default = "0.2.0"
 unicode-xid = "0.1.0"

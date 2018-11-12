@@ -3,9 +3,9 @@
 use crate::AstDatabase;
 use debug::DebugWith;
 use lark_entity::EntityTables;
+use lark_string::global::GlobalIdentifierTables;
 use parser::{HasParserState, HasReaderState, ParserState, ReaderState};
 use salsa::Database;
-use std::sync::Arc;
 
 #[derive(Default)]
 struct TestDatabaseImpl {
@@ -44,12 +44,9 @@ impl HasParserState for TestDatabaseImpl {
     }
 }
 
-// FIXME: This whole "indirect through `LookupStringId` thing" is a
-// workaround for the fact that I don't want to be touching the parser
-// module very much right now.
-impl parser::LookupStringId for TestDatabaseImpl {
-    fn lookup(&self, id: parser::StringId) -> Arc<String> {
-        self.parser_state.untern_string(id)
+impl AsRef<GlobalIdentifierTables> for TestDatabaseImpl {
+    fn as_ref(&self) -> &GlobalIdentifierTables {
+        (&self.parser_state).as_ref()
     }
 }
 

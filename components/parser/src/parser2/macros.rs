@@ -13,20 +13,20 @@ use std::sync::Arc;
 
 #[derive(Default)]
 pub struct MacroMap {
-    macros: FxIndexMap<StringId, Arc<MacroRead>>,
+    macros: FxIndexMap<GlobalIdentifier, Arc<MacroRead>>,
 }
 
 impl MacroMap {
-    pub fn add(mut self, name: StringId, macro_def: impl MacroRead + 'static) -> MacroMap {
+    pub fn add(mut self, name: GlobalIdentifier, macro_def: impl MacroRead + 'static) -> MacroMap {
         self.macros.insert(name, Arc::new(macro_def));
         self
     }
 
-    pub fn get(&self, name: StringId) -> Option<Arc<dyn MacroRead>> {
+    pub fn get(&self, name: GlobalIdentifier) -> Option<Arc<dyn MacroRead>> {
         self.macros.get(&name).cloned()
     }
 
-    pub fn has(&self, name: &StringId) -> bool {
+    pub fn has(&self, name: &GlobalIdentifier) -> bool {
         self.macros.contains_key(name)
     }
 }
@@ -64,24 +64,24 @@ impl Debug for Macros {
 }
 
 impl Macros {
-    pub fn add(mut self, name: StringId, macro_def: impl MacroRead + 'static) -> Macros {
+    pub fn add(mut self, name: GlobalIdentifier, macro_def: impl MacroRead + 'static) -> Macros {
         self.named = self.named.add(name, macro_def);
         self
     }
 
-    pub fn get(&self, name: StringId) -> Option<Arc<dyn MacroRead>> {
+    pub fn get(&self, name: GlobalIdentifier) -> Option<Arc<dyn MacroRead>> {
         self.named.get(name)
     }
 
-    pub fn has(&self, name: &StringId) -> bool {
+    pub fn has(&self, name: &GlobalIdentifier) -> bool {
         self.named.has(name)
     }
 }
 
 pub fn macros(table: &mut ModuleTable) -> Macros {
     Macros::default()
-        .add(table.intern(&"struct"), builtins::StructDef)
-        .add(table.intern(&"def"), builtins::DefDef)
+        .add(table.intern("struct"), builtins::StructDef)
+        .add(table.intern("def"), builtins::DefDef)
 }
 
 pub trait Term: Debug {}

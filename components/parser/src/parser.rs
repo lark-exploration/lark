@@ -27,7 +27,7 @@ use std::borrow::{Borrow, Cow};
 
 pub fn parse(
     source: impl Into<Cow<'source, str>>,
-    table: &'source mut ModuleTable,
+    table: &'source ModuleTable,
     start: u32,
 ) -> Result<ast::Module, crate::errors::ParseError> {
     let cow = source.into();
