@@ -32,7 +32,7 @@ impl EntityTree {
 
 #[test]
 fn basic() {
-    pretty_env_logger::init();
+    env_logger::init();
 
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
