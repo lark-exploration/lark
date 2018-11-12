@@ -1,8 +1,11 @@
+use debug::DebugWith;
 use crate::parser::Parser;
 use crate::syntax::Delimiter;
 use crate::syntax::Syntax;
 use lark_error::ErrorReported;
+use lark_debug_derive::DebugWith;
 
+#[derive(DebugWith)]
 pub struct Delimited<D, T>(pub D, pub T);
 
 impl<D, T> Delimited<D, T> {
@@ -17,8 +20,8 @@ impl<D, T> Delimited<D, T> {
 
 impl<D, T> Syntax for Delimited<D, T>
 where
-    D: Delimiter,
-    T: Syntax,
+    D: Delimiter + DebugWith,
+    T: Syntax + DebugWith,
 {
     type Data = T::Data;
 

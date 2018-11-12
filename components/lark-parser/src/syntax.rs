@@ -1,6 +1,7 @@
 //! Built-in syntax that can be used by macros.
 
 use crate::parser::Parser;
+use debug::DebugWith;
 use lark_error::ErrorReported;
 
 pub mod delimited;
@@ -11,7 +12,7 @@ pub mod list;
 pub mod sigil;
 pub mod type_reference;
 
-pub trait Syntax {
+pub trait Syntax: DebugWith {
     /// The value that is produced (often, but not always, `Self`) by the
     /// parsing routine.
     type Data;
@@ -24,7 +25,7 @@ pub trait Syntax {
     fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported>;
 }
 
-pub trait Delimiter {
+pub trait Delimiter: DebugWith {
     type Open: Syntax;
     type Close: Syntax;
     fn open_syntax(&self) -> Self::Open;

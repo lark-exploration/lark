@@ -6,8 +6,10 @@ use crate::syntax::Syntax;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
+use lark_error::WithError;
 use std::sync::Arc;
 
+#[derive(DebugWith)]
 pub struct EntitySyntax {
     parent_entity: Entity,
 }
@@ -37,22 +39,22 @@ impl Syntax for EntitySyntax {
     }
 }
 
-#[derive(Debug, DebugWith, PartialEq, Eq)]
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
 pub struct ParsedEntity {
     /// The `Entity` identifier by which we are known.
-    entity: Entity,
+    pub entity: Entity,
 
     /// The span of the entire entity.
-    full_span: Span<CurrentFile>,
+    pub full_span: Span<CurrentFile>,
 
     /// A (sometimes) shorter span that can be used to highlight this
     /// entity in error messages. For example, for a method, it might
     /// be the method name -- this helps to avoid multi-line error
     /// messages, which are kind of a pain.
-    characteristic_span: Span<CurrentFile>,
+    pub characteristic_span: Span<CurrentFile>,
 
     /// Thunk to extract contents
-    thunk: ParsedEntityThunk,
+    pub thunk: ParsedEntityThunk,
 }
 
 impl ParsedEntity {
@@ -77,6 +79,7 @@ impl ParsedEntity {
 /// and pieces). These routines are meant to be "purely functional",
 /// but the salsa runtime will memoize and ensure they are not
 /// reinvoked.
+#[derive(Clone)]
 pub struct ParsedEntityThunk {
     object: Arc<dyn LazyParsedEntity + Send + Sync>,
 }
@@ -86,6 +89,10 @@ impl ParsedEntityThunk {
         Self {
             object: Arc::new(object),
         }
+    }
+
+    crate fn parse_children(&self) -> WithError<Vec<ParsedEntity>> {
+        self.object.parse_children()
     }
 }
 
@@ -106,13 +113,13 @@ impl std::cmp::Eq for ParsedEntityThunk {}
 debug::debug_fallback_impl!(ParsedEntityThunk);
 
 pub trait LazyParsedEntity {
-    fn parse_children(&self) -> Vec<ParsedEntity>;
+    fn parse_children(&self) -> WithError<Vec<ParsedEntity>>;
 }
 
 crate struct ErrorParsedEntity;
 
 impl LazyParsedEntity for ErrorParsedEntity {
-    fn parse_children(&self) -> Vec<ParsedEntity> {
-        vec![]
+    fn parse_children(&self) -> WithError<Vec<ParsedEntity>> {
+        WithError::ok(vec![])
     }
 }

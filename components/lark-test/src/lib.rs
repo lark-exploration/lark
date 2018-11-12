@@ -1,10 +1,16 @@
 use ast::AstDatabase;
+use debug::DebugWith;
+use intern::Intern;
+use lark_parser::FileName;
 use lark_query_system::ls_ops::Cancelled;
 use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::ls_ops::RangedDiagnostic;
 use lark_query_system::LarkDatabase;
+use lark_string::text::Text;
 use parser::HasParserState;
 use parser::HasReaderState;
+use salsa::Database;
+use std::sync::Arc;
 
 pub trait ErrorSpec {
     fn check_errors(&self, errors: &[RangedDiagnostic]);
@@ -81,4 +87,46 @@ pub fn run_test(text: &str, error_spec: impl ErrorSpec) {
             panic!("cancelled?!");
         }
     }
+}
+
+/// Creates a lark database with a single file containing the given
+/// test. Intended for tests targeting the `lark_parser` crate, which
+/// is not yet fully wired into everything else.
+pub fn lark_parser_db(text: impl AsRef<str>) -> (FileName, LarkDatabase) {
+    let text: &str = text.as_ref();
+    let mut db = LarkDatabase::default();
+
+    // Setup the input:
+    let path1 = FileName {
+        id: "path1".intern(&db),
+    };
+    let text = Text::from(text);
+    db.query_mut(lark_parser::FileNamesQuery)
+        .set((), Arc::new(vec![path1]));
+    db.query_mut(lark_parser::FileTextQuery).set(path1, text);
+
+    (path1, db)
+}
+
+pub fn compare_debug<Cx, E, A>(cx: &Cx, expected_value: &E, actual_value: &A)
+where
+    E: ?Sized + DebugWith,
+    A: ?Sized + DebugWith,
+{
+    let expected_text = format!("{:#?}", expected_value.debug_with(cx));
+    let actual_text = format!("{:#?}", actual_value.debug_with(cx));
+
+    if expected_text == actual_text {
+        return;
+    }
+
+    for diff in diff::lines(&expected_text, &actual_text) {
+        match diff {
+            diff::Result::Left(l) => println!("-{}", l),
+            diff::Result::Both(l, _) => println!(" {}", l),
+            diff::Result::Right(r) => println!("+{}", r),
+        }
+    }
+
+    panic!("debug comparison failed");
 }

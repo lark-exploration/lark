@@ -2,10 +2,12 @@ use crate::parser::Parser;
 use crate::span::Spanned;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
+use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_string::global::GlobalIdentifier;
 
+#[derive(DebugWith)]
 pub struct TypeReference;
 
 /// Parsed form of a type.

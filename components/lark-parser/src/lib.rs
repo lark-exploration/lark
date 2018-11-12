@@ -11,6 +11,7 @@ use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::syntax::entity::ParsedEntity;
 use lark_debug_derive::DebugWith;
+use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::WithError;
@@ -42,9 +43,19 @@ salsa::query_group! {
             storage input;
         }
 
-        fn parsed_entities(id: FileName) -> WithError<Arc<Vec<ParsedEntity>>> {
-            type ParsedEntitiesQuery;
-            use fn query_definitions::parsed_entities;
+        fn child_parsed_entities(entity: Entity) -> WithError<Arc<Vec<ParsedEntity>>> {
+            type ChildParsedEntitiesQuery;
+            use fn query_definitions::child_parsed_entities;
+        }
+
+        fn parsed_entity(entity: Entity) -> ParsedEntity {
+            type ParsedEntityQuery;
+            use fn query_definitions::parsed_entity;
+        }
+
+        fn child_entities(entity: Entity) -> Arc<Vec<Entity>> {
+            type ChildEntitiesQuery;
+            use fn query_definitions::child_entities;
         }
     }
 }

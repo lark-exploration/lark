@@ -1,8 +1,10 @@
 use crate::parser::Parser;
 use crate::syntax::sigil::Comma;
 use crate::syntax::Syntax;
+use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
 
+#[derive(DebugWith)]
 pub struct CommaList<T>(pub T);
 
 impl<T> CommaList<T> {
@@ -44,6 +46,7 @@ where
 /// }
 /// ^ cursor will be here when we return
 /// ```
+#[derive(DebugWith)]
 pub struct SeparatedList<T, S>(pub T, pub S);
 
 impl<T, S> SeparatedList<T, S> {

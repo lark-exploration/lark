@@ -126,6 +126,13 @@ impl<T> WithError<T> {
             Ok(self.value)
         }
     }
+
+    pub fn map<U>(self, op: impl FnOnce(T) -> U) -> WithError<U> {
+        WithError {
+            value: op(self.value),
+            errors: self.errors,
+        }
+    }
 }
 
 /// A kind of `?` operator for `Result<T, ErrorReported>` values -- if

@@ -3,9 +3,11 @@ use crate::parser::Parser;
 use crate::span::Spanned;
 use crate::syntax::Syntax;
 use intern::Intern;
+use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
 use lark_string::global::GlobalIdentifier;
 
+#[derive(DebugWith)]
 pub struct SpannedGlobalIdentifier;
 
 impl Syntax for SpannedGlobalIdentifier {

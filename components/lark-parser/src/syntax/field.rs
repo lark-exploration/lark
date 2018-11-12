@@ -5,10 +5,12 @@ use crate::syntax::sigil::Colon;
 use crate::syntax::type_reference::ParsedTypeReference;
 use crate::syntax::type_reference::TypeReference;
 use crate::syntax::Syntax;
+use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
 use lark_error::ResultExt;
 use lark_string::global::GlobalIdentifier;
 
+#[derive(DebugWith)]
 pub struct Field;
 
 /// Represents a parse of something like `foo: Type`

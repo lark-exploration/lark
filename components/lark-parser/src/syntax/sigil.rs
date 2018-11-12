@@ -3,11 +3,13 @@ use crate::parser::Parser;
 use crate::span::Spanned;
 use crate::syntax::Delimiter;
 use crate::syntax::Syntax;
+use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
 
 macro_rules! sigil_type {
     ($($v:vis struct $name:ident = ($kind:path, $token:expr);)*) => {
         $(
+            #[derive(DebugWith)]
             $v struct $name;
 
             impl $name {
@@ -48,6 +50,7 @@ sigil_type! {
     pub struct Comma = (LexToken::Sigil, ",");
 }
 
+#[derive(DebugWith)]
 pub struct Curlies;
 
 impl Delimiter for Curlies {

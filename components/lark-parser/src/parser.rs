@@ -152,6 +152,8 @@ impl Parser<'me> {
     where
         T: Syntax,
     {
+        log::trace!("eat({})", syntax.debug_with(self));
+
         if self.test(&syntax) {
             Some(self.expect(syntax))
         } else {
