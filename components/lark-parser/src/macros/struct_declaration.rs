@@ -10,6 +10,7 @@ use crate::syntax::field::ParsedField;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::sigil::Curlies;
+use debug::DebugWith;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_entity::EntityData;

@@ -3,6 +3,7 @@ use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
+use debug::DebugWith;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
@@ -29,6 +30,11 @@ impl Syntax for EntitySyntax {
 
     fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         let macro_name = parser.expect(SpannedGlobalIdentifier)?;
+
+        log::debug!(
+            "EntitySyntax::parse(macro_name = {:?})",
+            macro_name.debug_with(parser),
+        );
 
         let macro_definition = match parser.entity_macro_definitions().get(&macro_name.value) {
             Some(m) => m.clone(),

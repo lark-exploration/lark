@@ -219,7 +219,7 @@ pub fn eof<Delegate: LexerDelegateTrait>() -> LexerNext<Delegate> {
 }
 
 pub trait LexerDelegateTrait: fmt::Debug + Clone + Copy + Sized {
-    type Token: fmt::Debug + Copy;
+    type Token: fmt::Debug + DebugWith + Copy;
 
     fn next(
         &self,
@@ -454,8 +454,8 @@ impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
     ) -> Option<TokenizerItem<Delegate::Token>> {
         match &token {
             None => log::debug!("-> EOF"),
-            Some(Err(e)) => log::debug!("parse error {:?}", e),
-            Some(Ok(tok)) => log::debug!("emit {:?}", tok.span.debug_with(&self.state)),
+            Some(Err(e)) => log::debug!("parse error {:?}", e.debug_with(&self.state)),
+            Some(Ok(tok)) => log::debug!("emit {:?}", tok.debug_with(&self.state)),
         };
 
         token

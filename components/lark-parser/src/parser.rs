@@ -8,6 +8,7 @@ use crate::span::Spanned;
 use crate::syntax::entity::EntitySyntax;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::Syntax;
+use debug::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
@@ -80,10 +81,18 @@ impl Parser<'me> {
     /// old token.
     crate fn shift(&mut self) -> Spanned<LexToken> {
         self.last_span = self.token.span;
-        std::mem::replace(
+        let last_token = std::mem::replace(
             &mut self.token,
             next_token(&mut self.tokenizer, &mut self.errors, self.input),
-        )
+        );
+
+        log::trace!(
+            "shift: new token = {} old token = {}",
+            self.token.debug_with(self),
+            last_token.debug_with(self),
+        );
+
+        last_token
     }
 
     /// Extract the complete input
@@ -124,7 +133,14 @@ impl Parser<'me> {
     }
 
     crate fn test(&self, syntax: impl Syntax) -> bool {
-        syntax.test(self)
+        log::trace!("test({})", syntax.debug_with(self));
+
+        if syntax.test(self) {
+            log::trace!("test: passed");
+            true
+        } else {
+            false
+        }
     }
 
     /// Consumes all subsequent newline characters, returning true if
@@ -144,6 +160,8 @@ impl Parser<'me> {
     where
         T: Syntax,
     {
+        log::trace("expect({})", syntax.debug_with(self));
+
         syntax.parse(self)
     }
 
