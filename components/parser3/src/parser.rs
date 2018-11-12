@@ -58,7 +58,10 @@ impl Parser<'me> {
 
     /// Parse all the entities we can and return a vector
     /// (accumulating errors as we go).
-    crate fn parse_all_entities(mut self, parent_entity: Entity) -> WithError<Vec<ParsedEntity>> {
+    crate fn parse_all_entities(
+        mut self,
+        parent_entity: Entity,
+    ) -> WithError<Arc<Vec<ParsedEntity>>> {
         let mut entities = vec![];
         while let Some(entity) = self.eat(EntitySyntax::new(parent_entity)) {
             match entity {
@@ -68,7 +71,7 @@ impl Parser<'me> {
         }
 
         WithError {
-            value: entities,
+            value: Arc::new(entities),
             errors: self.errors,
         }
     }
