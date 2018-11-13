@@ -14,12 +14,14 @@ lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
 lark-mir2 = { path = "../lark-mir2" }
+lark-parser = { path = "../lark-parser" }
+lark-string = { path = "../lark-string" }
 lark-task-manager = { path = "../lark-task-manager" }
+lark-ty = { path = "../lark-ty" }
+lark-type-check = { path = "../lark-type-check" }
 log = "0.4.5"
 map = { path = "../map" }
 parking_lot = "0.6.4"
 parser = { path = "../parser" }
 salsa = "0.8"
-lark-ty = { path = "../lark-ty" }
-lark-type-check = { path = "../lark-type-check" }
 url = "1.7"

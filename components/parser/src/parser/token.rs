@@ -35,10 +35,10 @@ pub enum Token {
     KeywordOwn,
     KeywordBorrow,
     KeywordSelf,
-    Identifier(StringId),
-    StringLiteral(StringId),
-    StringFragment(StringId),
-    EndString(StringId),
+    Identifier(GlobalIdentifier),
+    StringLiteral(GlobalIdentifier),
+    StringFragment(GlobalIdentifier),
+    EndString(GlobalIdentifier),
     Newline,
     Unimplemented,
 }
@@ -81,7 +81,7 @@ impl Token {
             KeywordOwn => "own",
             KeywordBorrow => "borrow",
             KeywordSelf => "self",
-            Identifier(id) => table.lookup(id),
+            Identifier(id) => return Cow::Owned(format!("{}", table.lookup(id))),
             StringLiteral(id) => return Cow::Owned(format!("String({})", table.lookup(id))),
             StringFragment(id) => {
                 return Cow::Owned(format!("StringFragment({})", table.lookup(id)))

@@ -10,7 +10,7 @@ use intern::{Intern, Untern};
 use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
-use parser::StringId;
+use lark_string::global::GlobalIdentifier;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -207,7 +207,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     /// innermost.  Always returns a non-empty vector.
     fn entity_ids_at_position(
         &self,
-        path: StringId,
+        path: GlobalIdentifier,
         position: ByteIndex,
     ) -> Cancelable<Vec<Entity>> {
         self.check_for_cancellation()?;

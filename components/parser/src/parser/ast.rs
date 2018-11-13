@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 crate use self::debug::DebugModuleTable;
 
-pub type Identifier = Spanned<StringId>;
+pub type Identifier = Spanned<GlobalIdentifier>;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Item {
@@ -20,7 +20,7 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn name(&self) -> StringId {
+    pub fn name(&self) -> GlobalIdentifier {
         match self {
             Item::Struct(s) => *s.name,
             Item::Def(d) => *d.name,
@@ -72,7 +72,7 @@ pub struct Module {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Struct {
-    pub name: Spanned<StringId>,
+    pub name: Spanned<GlobalIdentifier>,
     pub fields: Vec<Field>,
     pub span: Span,
 }
@@ -117,7 +117,7 @@ pub enum ConstructField {
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Type {
     pub mode: Option<Spanned<Mode>>,
-    pub name: Spanned<StringId>,
+    pub name: Spanned<GlobalIdentifier>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -204,7 +204,7 @@ impl Expression {
         Expression::Call(Spanned::wrap_span(call, span))
     }
 
-    pub fn string(node: Spanned<StringId>) -> Expression {
+    pub fn string(node: Spanned<GlobalIdentifier>) -> Expression {
         Expression::Literal(Literal::String(node))
     }
 }
@@ -256,13 +256,13 @@ impl fmt::Display for Op {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum InterpolationElement {
-    String(Spanned<StringId>),
+    String(Spanned<GlobalIdentifier>),
     Expression(Expression),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Literal {
-    String(Spanned<StringId>),
+    String(Spanned<GlobalIdentifier>),
 }
 
 impl HasSpan for Literal {

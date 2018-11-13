@@ -5,8 +5,8 @@ use lark_entity::{Entity, EntityData, LangItem};
 use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_string::global::GlobalIdentifier;
 use map::FxIndexMap;
-use parser::StringId;
 use std::sync::Arc;
 
 crate fn fn_bytecode(
@@ -25,7 +25,7 @@ struct MirLower<'me, DB: MirDatabase> {
     db: &'me DB,
     item_entity: Entity,
     fn_bytecode_tables: mir::FnBytecodeTables,
-    variables: FxIndexMap<StringId, mir::Variable>,
+    variables: FxIndexMap<GlobalIdentifier, mir::Variable>,
     errors: &'me mut Vec<Diagnostic>,
 }
 

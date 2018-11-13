@@ -131,7 +131,7 @@ impl DebugModuleTable for Option<Spanned<Type>> {
     }
 }
 
-impl DebugModuleTable for StringId {
+impl DebugModuleTable for GlobalIdentifier {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
         write!(f, "{}", table.lookup(&self))
     }

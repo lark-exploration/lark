@@ -6,8 +6,15 @@ edition = "2018"
 
 [dependencies]
 ast = { path = "../ast" }
+debug = { path = "../debug" }
+diff = "0.1.0"
 env_logger = "0.5.13"
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
 lark-query-system = { path = "../lark-query-system" }
+lark-parser = { path = "../lark-parser" }
+lark-string = { path = "../lark-string" }
+lark-seq = { path = "../lark-seq" }
+intern = { path = "../intern" }
 parser = { path = "../parser" }
+salsa = "0.8.0"

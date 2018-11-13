@@ -16,5 +16,7 @@ map = { path = "../map" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
+lark-string = { path = "../lark-string" }
+lark-seq = { path = "../lark-seq" }
 parser = { path = "../parser" }
 lark-unify = { path = "../lark-unify" }

@@ -164,6 +164,6 @@ impl LexerDelegateTrait for LexerState {
     }
 }
 
-fn tk_id(token: StringId) -> Token {
+fn tk_id(token: GlobalIdentifier) -> Token {
     Token::Identifier(token)
 }

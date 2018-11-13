@@ -2,6 +2,7 @@ use codespan::{CodeMap, FileMap};
 use lark_entity::EntityTables;
 use lark_hir as hir;
 use lark_mir2 as mir;
+use lark_string::global::GlobalIdentifierTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;
@@ -57,6 +58,13 @@ impl LsDatabase for LarkDatabase {}
 
 salsa::database_storage! {
     pub struct LarkDatabaseStorage for LarkDatabase {
+        impl lark_parser::ParserDatabase {
+            fn file_names() for lark_parser::FileNamesQuery;
+            fn file_text() for lark_parser::FileTextQuery;
+            fn child_parsed_entities() for lark_parser::ChildParsedEntitiesQuery;
+            fn parsed_entity() for lark_parser::ParsedEntityQuery;
+            fn child_entities() for lark_parser::ChildEntitiesQuery;
+        }
         impl parser::ReaderDatabase {
             fn paths() for parser::Paths;
             fn paths_trigger() for parser::PathsTrigger;
@@ -88,12 +96,6 @@ salsa::database_storage! {
     }
 }
 
-impl parser::LookupStringId for LarkDatabase {
-    fn lookup(&self, id: parser::StringId) -> Arc<String> {
-        self.untern_string(id)
-    }
-}
-
 impl AsRef<EntityTables> for LarkDatabase {
     fn as_ref(&self) -> &EntityTables {
         &self.item_id_tables
@@ -109,6 +111,12 @@ impl AsRef<lark_ty::declaration::DeclarationTables> for LarkDatabase {
 impl AsRef<lark_ty::base_inferred::BaseInferredTables> for LarkDatabase {
     fn as_ref(&self) -> &lark_ty::base_inferred::BaseInferredTables {
         &self.base_inferred_tables
+    }
+}
+
+impl AsRef<GlobalIdentifierTables> for LarkDatabase {
+    fn as_ref(&self) -> &GlobalIdentifierTables {
+        <ParserState as AsRef<GlobalIdentifierTables>>::as_ref(&self.parser_state)
     }
 }
 

@@ -11,11 +11,11 @@ use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_string::global::GlobalIdentifier;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
 use lark_type_check as typecheck;
 use parser::pos::{HasSpan, Span, Spanned};
-use parser::StringId;
 use std::sync::Arc;
 
 mod fn_bytecode;
@@ -31,7 +31,7 @@ salsa::query_group! {
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum LiteralData {
-    String(StringId),
+    String(GlobalIdentifier),
 }
 
 indices::index_type! {
@@ -40,7 +40,7 @@ indices::index_type! {
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct IdentifierData {
-    pub text: StringId,
+    pub text: GlobalIdentifier,
 }
 
 indices::index_type! {
@@ -60,7 +60,7 @@ indices::index_type! {
 pub enum ErrorData {
     Misc,
     Unimplemented,
-    UnknownIdentifier { text: StringId },
+    UnknownIdentifier { text: GlobalIdentifier },
 }
 
 /// All the data for a fn-body is stored in these tables.a
@@ -154,7 +154,7 @@ indices::index_type! {
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct StructData {
     pub fields: List<Field>,
-    pub name: StringId,
+    pub name: GlobalIdentifier,
 }
 
 indices::index_type! {

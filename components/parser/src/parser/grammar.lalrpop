@@ -190,7 +190,7 @@ PathExpr: Path = {
     Delim<Identifier, "."> => unimplemented!("PathExpr::Dot"),
 }
 
-Identifier: Spanned<StringId> = {
+Identifier: Spanned<GlobalIdentifier> = {
     <l: @L> <id: identifier> <r: @R> => Spanned::from(id, l, r)
 }
 
@@ -259,10 +259,10 @@ extern {
         loop => Token::KeywordLoop,
         "for" => Token::KeywordFor,
         "unimpl" => Token::Unimplemented,
-        identifier => Token::Identifier(<StringId>),
-        string => Token::StringLiteral(<StringId>),
-        TemplateFragment => Token::StringFragment(<StringId>),
-        EndTemplate => Token::EndString(<StringId>),
+        identifier => Token::Identifier(<GlobalIdentifier>),
+        string => Token::StringLiteral(<GlobalIdentifier>),
+        TemplateFragment => Token::StringFragment(<GlobalIdentifier>),
+        EndTemplate => Token::EndString(<GlobalIdentifier>),
         newline => Token::Newline
     }
 }

@@ -40,7 +40,8 @@ impl fmt::Display for KeywordList {
                 s if s == "\"else\"" => DisplayAdapter::new("else"),
                 s if s == "\"for\"" => DisplayAdapter::new("for"),
                 other => DisplayAdapter::new(&i[..]),
-            })).finish()
+            }))
+            .finish()
     }
 }
 

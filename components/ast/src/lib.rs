@@ -9,9 +9,11 @@
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::{ErrorReported, WithError};
+use lark_seq::Seq;
+use lark_string::global::GlobalIdentifier;
 pub use parser::ast;
 use parser::pos::Span;
-use parser::{ReaderDatabase, StringId};
+use parser::ReaderDatabase;
 use std::sync::Arc;
 
 mod query_definitions;
@@ -22,12 +24,12 @@ salsa::query_group! {
         // These queries don't properly belong here -- probably in
         // parser -- but I want to minimize merge conflicts.
 
-        fn ast_of_file(path: StringId) -> WithError<Result<Arc<ast::Module>, ErrorReported>> {
+        fn ast_of_file(path: GlobalIdentifier) -> WithError<Result<Arc<ast::Module>, ErrorReported>> {
             type AstOfFileQuery;
             use fn query_definitions::ast_of_file;
         }
 
-        fn items_in_file(path: StringId) -> Arc<Vec<Entity>> {
+        fn items_in_file(path: GlobalIdentifier) -> Seq<Entity> {
             type ItemsInFileQuery;
             use fn query_definitions::items_in_file;
         }

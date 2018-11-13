@@ -15,7 +15,7 @@ token! {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Sigil(pub StringId);
+pub struct Sigil(pub GlobalIdentifier);
 
 impl DebugModuleTable for Sigil {
     fn debug(&self, f: &mut fmt::Formatter<'_>, table: &'table ModuleTable) -> fmt::Result {
@@ -27,7 +27,7 @@ impl Sigil {
     pub fn classify(&self, table: &ModuleTable) -> ClassifiedSigil {
         let string = table.lookup(&self.0);
 
-        match string {
+        match &string[..] {
             "{" => ClassifiedSigil::OpenCurly,
             "}" => ClassifiedSigil::CloseCurly,
             "(" => ClassifiedSigil::OpenRound,
@@ -47,15 +47,15 @@ pub enum ClassifiedSigil {
     CloseSquare,
     OpenRound,
     CloseRound,
-    Other(StringId),
+    Other(GlobalIdentifier),
 }
 
 impl Token {
-    pub fn sigil(id: StringId) -> Token {
+    pub fn sigil(id: GlobalIdentifier) -> Token {
         Token::Sigil(Sigil(id))
     }
 
-    pub fn data(&self) -> StringId {
+    pub fn data(&self) -> GlobalIdentifier {
         match *self {
             Token::Whitespace(s) => s,
             Token::Identifier(s) => s,
@@ -74,7 +74,7 @@ impl Token {
         }
     }
 
-    pub fn is_id_named(&self, name: StringId) -> bool {
+    pub fn is_id_named(&self, name: GlobalIdentifier) -> bool {
         match self {
             Token::Identifier(id) if *id == name => true,
             _ => false,
@@ -88,7 +88,7 @@ impl Token {
         }
     }
 
-    pub fn is_sigil_named(&self, name: StringId) -> bool {
+    pub fn is_sigil_named(&self, name: GlobalIdentifier) -> bool {
         match self {
             Token::Sigil(Sigil(id)) if *id == name => true,
             _ => false,
@@ -104,7 +104,7 @@ impl Token {
 }
 
 impl Spanned<Token> {
-    pub fn as_id(self) -> Result<Spanned<StringId>, ParseError> {
+    pub fn as_id(self) -> Result<Spanned<GlobalIdentifier>, ParseError> {
         match self.0 {
             Token::Identifier(id) => Ok(Spanned::wrap_span(id, self.1)),
             other => Err(ParseError::new(

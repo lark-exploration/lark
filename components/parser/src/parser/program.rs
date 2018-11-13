@@ -13,7 +13,7 @@ pub struct NameId {
 pub struct Environment<'parent> {
     #[new(default)]
     #[default = "BTreeMap::new()"]
-    to_name: BTreeMap<StringId, NameId>,
+    to_name: BTreeMap<GlobalIdentifier, NameId>,
 
     #[new(default)]
     #[default = "None"]

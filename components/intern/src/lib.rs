@@ -52,7 +52,7 @@ macro_rules! intern_tables {
         $(
             impl $crate::InternDirect<$InternTables> for $data {
                 fn table(
-                    tables: &dyn AsRef<$InternTables>,
+                    tables: &(impl AsRef<$InternTables> + ?Sized),
                 ) -> &parking_lot::RwLock<$crate::InternTable<$key, $data>> {
                     let tables: &$InternTables = tables.as_ref();
                     &tables.data.$field
@@ -62,7 +62,7 @@ macro_rules! intern_tables {
             impl $crate::Intern<$InternTables> for $data {
                 type Key = $key;
 
-                fn intern(self, tables: &dyn AsRef<$InternTables>) -> $key {
+                fn intern(self, tables: &(impl AsRef<$InternTables> + ?Sized)) -> $key {
                     $crate::intern_impl(self, tables, |v| v, |v| v)
                 }
             }
@@ -70,7 +70,7 @@ macro_rules! intern_tables {
             impl $crate::Untern<$InternTables> for $key {
                 type Data = $data;
 
-                fn untern(self, tables: &dyn AsRef<$InternTables>) -> $data {
+                fn untern(self, tables: &(impl AsRef<$InternTables> + ?Sized)) -> $data {
                     let tables: &$InternTables = tables.as_ref();
                     tables.data.$field.read().get(self)
                 }
@@ -145,7 +145,7 @@ where
 pub trait Intern<Interners> {
     type Key: U32Index;
 
-    fn intern(self, interner: &dyn AsRef<Interners>) -> Self::Key;
+    fn intern(self, interner: &(impl AsRef<Interners> + ?Sized)) -> Self::Key;
 }
 
 /// Reverse trait: implemented by the key (`crate::ty::Perm`)
@@ -153,13 +153,13 @@ pub trait Intern<Interners> {
 pub trait Untern<Interners>: Clone {
     type Data;
 
-    fn untern(self, interner: &dyn AsRef<Interners>) -> Self::Data;
+    fn untern(self, interner: &(impl ?Sized + AsRef<Interners>)) -> Self::Data;
 }
 
 /// Trait for something that is *directly* interned into an interning
 /// table. For example, this might be implemented by `String`.
 pub trait InternDirect<Interners>: Clone + Hash + Eq + Intern<Interners> {
-    fn table(interner: &dyn AsRef<Interners>) -> &RwLock<InternTable<Self::Key, Self>>;
+    fn table(interner: &(impl AsRef<Interners> + ?Sized)) -> &RwLock<InternTable<Self::Key, Self>>;
 }
 
 /// Helper for `Intern` implementations: interns `data` into `table`,
@@ -169,7 +169,7 @@ pub trait InternDirect<Interners>: Clone + Hash + Eq + Intern<Interners> {
 /// as needed.
 pub fn intern_impl<Data, Interners, EquivData, TableData>(
     data: Data,
-    interners: &dyn AsRef<Interners>,
+    interners: &(impl AsRef<Interners> + ?Sized),
     to_lookup_data: impl FnOnce(&Data) -> &EquivData,
     to_table_data: impl FnOnce(Data) -> TableData,
 ) -> TableData::Key

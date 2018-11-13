@@ -18,3 +18,4 @@ lark-type-check = { path = "../lark-type-check" }
 map = { path = "../map" }
 parser = { path = "../parser" }
 lark-ty = { path = "../lark-ty" }
+lark-string = {path = "../lark-string" }

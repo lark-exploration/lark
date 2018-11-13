@@ -3,9 +3,13 @@ use intern::{Intern, Untern};
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
-use parser::StringId;
+use lark_string::global::GlobalIdentifier;
 
-crate fn resolve_name(db: &impl HirDatabase, scope: Entity, name: StringId) -> Option<Entity> {
+crate fn resolve_name(
+    db: &impl HirDatabase,
+    scope: Entity,
+    name: GlobalIdentifier,
+) -> Option<Entity> {
     match scope.untern(db) {
         EntityData::InputFile { file } => {
             let items_in_file = db.items_in_file(file);
