@@ -1,6 +1,7 @@
 use crate::lexer::token::LexToken;
 use crate::parser::Parser;
 use crate::span::Spanned;
+use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
 use intern::Intern;
 use lark_debug_derive::DebugWith;
@@ -30,3 +31,5 @@ impl Syntax for SpannedGlobalIdentifier {
         }
     }
 }
+
+impl NonEmptySyntax for SpannedGlobalIdentifier {}

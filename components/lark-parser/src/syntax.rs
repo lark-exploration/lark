@@ -32,6 +32,9 @@ pub trait Syntax: DebugWith {
     fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported>;
 }
 
+/// A Syntax that always consumed at least one token.
+pub trait NonEmptySyntax: Syntax {}
+
 pub trait Delimiter: DebugWith {
     type Open: Syntax;
     type Close: Syntax;

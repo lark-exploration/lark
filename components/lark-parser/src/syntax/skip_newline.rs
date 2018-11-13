@@ -1,6 +1,6 @@
 use crate::parser::Parser;
+use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
-use debug::DebugWith;
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
 
@@ -16,7 +16,7 @@ impl<T> SkipNewline<T> {
 
 impl<T> Syntax for SkipNewline<T>
 where
-    T: Syntax + DebugWith,
+    T: Syntax,
 {
     type Data = T::Data;
 
@@ -31,3 +31,5 @@ where
         parser.expect(self.content())
     }
 }
+
+impl<T> NonEmptySyntax for SkipNewline<T> where T: NonEmptySyntax {}

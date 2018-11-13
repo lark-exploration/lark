@@ -2,6 +2,7 @@ use crate::parser::Parser;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
+use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
 use crate::ParserDatabase;
 use debug::DebugWith;
@@ -56,6 +57,8 @@ impl Syntax for EntitySyntax {
         Ok(macro_definition.expect(parser, self.parent_entity, macro_name)?)
     }
 }
+
+impl NonEmptySyntax for EntitySyntax {}
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
 pub struct ParsedEntity {

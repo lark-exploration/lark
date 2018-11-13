@@ -3,6 +3,7 @@ use crate::macros::EntityMacroDefinition;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::span::Spanned;
+use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
 use debug::DebugWith;
 use lark_entity::EntityTables;
@@ -91,7 +92,7 @@ impl Parser<'me> {
     /// we encountered.
     crate fn parse_until_eof<S>(mut self, syntax: S) -> WithError<Seq<S::Data>>
     where
-        S: Syntax,
+        S: NonEmptySyntax,
     {
         let mut entities = vec![];
         loop {
