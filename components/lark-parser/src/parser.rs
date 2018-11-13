@@ -33,7 +33,7 @@ pub struct Parser<'me> {
     /// List of all tokens.
     tokens: &'me Seq<Spanned<LexToken>>,
 
-    /// Index of the next token to consume.
+    /// Index of the token *after* the current token.
     next_lookahead_token: usize,
 
     /// Span of the last consumed token (ignoring whitespace and
@@ -59,7 +59,7 @@ impl Parser<'me> {
         // Subtle: the start token may be whitespace etc. So we actually have to invoke
         // `advance_next_token` to advance.
         let mut next_lookahead_token = start_token;
-        let lookahead_token = advance_next_token(tokens, &mut next_lookahead_token);
+        let lookahead_token = advance_next_token(input, tokens, &mut next_lookahead_token);
 
         Parser {
             global_identifier_tables: db.as_ref(),
@@ -119,10 +119,13 @@ impl Parser<'me> {
     /// Consume the current token and load the next one.  Return the
     /// old token.
     crate fn shift(&mut self) -> Spanned<LexToken> {
+        assert!(!self.is(LexToken::EOF));
+
         self.last_span = self.lookahead_token.span;
         let last_token = self.lookahead_token;
 
-        self.lookahead_token = advance_next_token(self.tokens, &mut self.next_lookahead_token);
+        self.lookahead_token =
+            advance_next_token(self.input, self.tokens, &mut self.next_lookahead_token);
 
         log::trace!(
             "shift: new lookahead token = {}, consumed token = {}",
@@ -253,12 +256,24 @@ impl AsRef<EntityTables> for Parser<'_> {
     }
 }
 
-fn advance_next_token(tokens: &[Spanned<LexToken>], next_token: &mut usize) -> Spanned<LexToken> {
+fn advance_next_token(
+    input: &Text,
+    tokens: &[Spanned<LexToken>],
+    next_token: &mut usize,
+) -> Spanned<LexToken> {
     loop {
+        if *next_token >= tokens.len() {
+            *next_token = tokens.len() + 1;
+            return Spanned {
+                value: LexToken::EOF,
+                span: Span::eof(CurrentFile, input),
+            };
+        }
+
         let token = tokens[*next_token];
 
         // Advance to the next token, unless we are at EOF.
-        *next_token = (*next_token + 1).min(tokens.len() - 1);
+        *next_token += 1;
 
         // Skip over whitespace/comments automatically (but not
         // newlines).

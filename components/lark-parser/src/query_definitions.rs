@@ -3,8 +3,6 @@ use crate::lexer::token::LexToken;
 use crate::lexer::tools::Tokenizer;
 use crate::macros;
 use crate::parser::Parser;
-use crate::span::CurrentFile;
-use crate::span::Span;
 use crate::span::Spanned;
 use crate::syntax::entity::EntitySyntax;
 use crate::syntax::entity::ParsedEntity;
@@ -33,10 +31,9 @@ crate fn file_tokens(
             Err(span) => errors.push(crate::diagnostic("unrecognized token", span)),
         }
     }
-    tokens.push(Spanned {
-        value: LexToken::EOF,
-        span: Span::eof(CurrentFile, &input),
-    });
+
+    // Note: the EOF token is constructed "on the fly" by the parser
+    // when the end of the current sequence of tokens is reached.
 
     WithError {
         value: Seq::from(tokens),
