@@ -203,3 +203,62 @@ fn two_fields_variations() {
     };
     assert_equal(&(), &tree_base, &tree_other);
 }
+
+#[test]
+fn two_structs_overlapping_lines() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+        struct Foo {
+        } struct Bar {
+        }
+        ",
+    ));
+
+    let tree = EntityTree::from_file(&db, file_name);
+    assert_expected_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                name: "InputFile(path1)",
+                children: [
+                    EntityTree {
+                        name: "ItemName(Foo)",
+                        children: []
+                    },
+                    EntityTree {
+                        name: "ItemName(Bar)",
+                        children: []
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
+}
+
+#[test]
+fn two_structs_whitespace() {
+    let base_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct Foo {
+            } struct Bar {
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+
+    let other_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct Foo {
+            }
+            struct Bar {
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &base_tree, &other_tree);
+}
