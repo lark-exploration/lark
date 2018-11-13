@@ -65,3 +65,4 @@ lark-test = { path = "components/lark-test" }
 lark-entity = { path = "components/lark-entity" }
 lark-parser = { path = "components/lark-parser" }
 env_logger = "0.5.13"
+lark-seq = { path = "components/lark-seq" }

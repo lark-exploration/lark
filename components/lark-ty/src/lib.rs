@@ -12,12 +12,12 @@ use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
 use lark_unify::InferVar;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
 use std::iter::IntoIterator;
-use std::sync::Arc;
 
 pub mod base_inferred;
 pub mod base_only;
@@ -173,12 +173,14 @@ debug::debug_fallback_impl!(BoundVar);
 /// would be `[i32]`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Generics<F: TypeFamily> {
-    elements: Option<Arc<Vec<Generic<F>>>>,
+    elements: Seq<Generic<F>>,
 }
 
 impl<F: TypeFamily> Generics<F> {
     pub fn empty() -> Self {
-        Generics { elements: None }
+        Generics {
+            elements: Seq::default(),
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -190,7 +192,7 @@ impl<F: TypeFamily> Generics<F> {
     }
 
     pub fn len(&self) -> usize {
-        self.elements.as_ref().map(|v| v.len()).unwrap_or(0)
+        self.elements.len()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Generic<F>> + '_ {
@@ -198,10 +200,7 @@ impl<F: TypeFamily> Generics<F> {
     }
 
     pub fn elements(&self) -> &[Generic<F>] {
-        match &self.elements {
-            Some(e) => &e[..],
-            None => &[],
-        }
+        &self.elements[..]
     }
 
     /// Append an item to this vector; if this set of generics is
@@ -231,15 +230,7 @@ where
     where
         T: IntoIterator<Item = Generic<F>>,
     {
-        match &mut self.elements {
-            None => {
-                self.elements = Some(Arc::new(iter.into_iter().collect()));
-            }
-
-            Some(arc_vec) => {
-                Arc::make_mut(arc_vec).extend(iter);
-            }
-        }
+        self.elements.extend(iter);
     }
 }
 
@@ -259,13 +250,8 @@ impl<F: TypeFamily> std::iter::FromIterator<Generic<F>> for Generics<F> {
     where
         T: IntoIterator<Item = Generic<F>>,
     {
-        let vec: Vec<Generic<F>> = iter.into_iter().collect();
-        if vec.is_empty() {
-            Generics { elements: None }
-        } else {
-            Generics {
-                elements: Some(Arc::new(vec)),
-            }
+        Generics {
+            elements: Seq::from_iter(iter),
         }
     }
 }
@@ -306,14 +292,14 @@ impl<T> GenericKind<T> {
 /// Note: the signature of a method *includes* the `self` type.
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Signature<F: TypeFamily> {
-    pub inputs: Arc<Vec<Ty<F>>>,
+    pub inputs: Seq<Ty<F>>,
     pub output: Ty<F>,
 }
 
 impl<F: TypeFamily> Signature<F> {
     pub fn error_sentinel(tables: &dyn AsRef<F::InternTables>, num_inputs: usize) -> Signature<F> {
         Signature {
-            inputs: Arc::new((0..num_inputs).map(|_| F::error_type(tables)).collect()),
+            inputs: (0..num_inputs).map(|_| F::error_type(tables)).collect(),
             output: F::error_type(tables),
         }
     }

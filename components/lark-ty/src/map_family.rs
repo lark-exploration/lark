@@ -7,6 +7,7 @@ use crate::Signature;
 use crate::Ty;
 use crate::TypeFamily;
 use lark_entity::Entity;
+use lark_seq::Seq;
 use map::FxIndexMap;
 use map::FxIndexSet;
 use std::collections::BTreeMap;
@@ -75,6 +76,19 @@ where
     V: Map<S, T>,
 {
     type Output = Vec<V::Output>;
+
+    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        self.iter().map(|e| e.map(mapper)).collect()
+    }
+}
+
+impl<S, T, V> Map<S, T> for Seq<V>
+where
+    S: TypeFamily,
+    T: TypeFamily,
+    V: Map<S, T>,
+{
+    type Output = Seq<V::Output>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
         self.iter().map(|e| e.map(mapper)).collect()

@@ -15,6 +15,7 @@ use lark_entity::Entity;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
 use lark_ty as ty;
 use lark_ty::declaration::{Declaration, DeclarationTables};
@@ -35,7 +36,7 @@ salsa::query_group! {
         }
 
         /// Get the list of member names and their def-ids for a given struct.
-        fn members(key: Entity) -> Result<Arc<Vec<Member>>, ErrorReported> {
+        fn members(key: Entity) -> Result<Seq<Member>, ErrorReported> {
             type MembersQuery;
             use fn query_definitions::members;
         }
@@ -46,7 +47,7 @@ salsa::query_group! {
             use fn query_definitions::member_entity;
         }
 
-        fn subentities(entity: Entity) -> Arc<Vec<Entity>> {
+        fn subentities(entity: Entity) -> Seq<Entity> {
             type SubentitiesQuery;
             use fn query_definitions::subentities;
         }

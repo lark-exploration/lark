@@ -29,6 +29,8 @@
 #![feature(decl_macro)]
 
 use lark_debug_derive::DebugWith;
+use lark_seq::seq;
+use lark_seq::Seq;
 use parser::pos::Span;
 use std::sync::Arc;
 
@@ -189,6 +191,15 @@ where
 {
     fn error_sentinel(cx: Cx, report: ErrorReported) -> Self {
         vec![T::error_sentinel(cx, report)]
+    }
+}
+
+impl<T, Cx> ErrorSentinel<Cx> for Seq<T>
+where
+    T: ErrorSentinel<Cx>,
+{
+    fn error_sentinel(cx: Cx, report: ErrorReported) -> Self {
+        seq![T::error_sentinel(cx, report)]
     }
 }
 

@@ -19,8 +19,8 @@ use lark_entity::ItemKind;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
-use std::sync::Arc;
 
 /// ```ignore
 /// struct <id> {
@@ -49,7 +49,7 @@ impl EntityMacroDefinition for StructDeclaration {
         log::trace!("StructDeclaration::parse: parsing fields");
         let fields = parser
             .expect(Delimited(Curlies, CommaList(Field)))
-            .unwrap_or_else(|ErrorReported(_)| vec![]);
+            .unwrap_or_else(|ErrorReported(_)| Seq::default());
 
         log::trace!("StructDeclaration::parse: done");
         let entity = EntityData::ItemName {
@@ -61,7 +61,6 @@ impl EntityMacroDefinition for StructDeclaration {
 
         let full_span = macro_name.span.extended_until_end_of(parser.last_span());
         let characteristic_span = struct_name.span;
-        let fields = Arc::new(fields);
 
         Ok(ParsedEntity::new(
             entity,
@@ -73,7 +72,7 @@ impl EntityMacroDefinition for StructDeclaration {
 }
 
 struct ParsedStructDeclaration {
-    fields: Arc<Vec<Spanned<ParsedField>>>,
+    fields: Seq<Spanned<ParsedField>>,
 }
 
 impl LazyParsedEntity for ParsedStructDeclaration {

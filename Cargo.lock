@@ -25,6 +25,7 @@ dependencies = [
  "lark-debug-derive 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
+ "lark-seq 0.1.0",
  "lark-string 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -357,6 +358,7 @@ dependencies = [
  "lark-mir 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
+ "lark-seq 0.1.0",
  "lark-string 0.1.0",
  "lark-task-manager 0.1.0",
  "lark-test 0.1.0",
@@ -421,6 +423,7 @@ version = "0.1.0"
 dependencies = [
  "debug 0.1.0",
  "lark-debug-derive 0.1.0",
+ "lark-seq 0.1.0",
  "parser 0.1.0",
 ]
 
@@ -442,6 +445,7 @@ dependencies = [
  "lark-debug-derive 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
+ "lark-seq 0.1.0",
  "lark-string 0.1.0",
  "lark-ty 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -478,6 +482,7 @@ dependencies = [
  "lark-debug-derive 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
+ "lark-seq 0.1.0",
  "lark-string 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "map 0.1.0",
@@ -515,6 +520,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "lark-seq"
+version = "0.1.0"
+dependencies = [
+ "debug 0.1.0",
+]
+
+[[package]]
 name = "lark-string"
 version = "0.1.0"
 dependencies = [
@@ -548,6 +560,7 @@ dependencies = [
  "lark-hir 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
+ "lark-seq 0.1.0",
  "lark-string 0.1.0",
  "parser 0.1.0",
  "salsa 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -565,6 +578,7 @@ dependencies = [
  "lark-debug-derive 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
+ "lark-seq 0.1.0",
  "lark-string 0.1.0",
  "lark-unify 0.1.0",
  "map 0.1.0",
