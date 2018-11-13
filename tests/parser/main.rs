@@ -261,4 +261,18 @@ fn two_structs_whitespace() {
         EntityTree::from_file(&db, file_name)
     };
     assert_equal(&(), &base_tree, &other_tree);
+
+    let other_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct Foo {
+            }
+
+            struct Bar {
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &base_tree, &other_tree);
 }
