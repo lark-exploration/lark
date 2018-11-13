@@ -16,7 +16,7 @@ crate trait EntityMacroDefinition {
     /// consumed. Has the job of parsing the rest of the entity (using
     /// the helper methods on `parser` to do so) and ultimately
     /// returning the entity structure.
-    fn parse(
+    fn expect(
         &self,
         // The parser we can use to extract next token and so forth.
         parser: &mut Parser<'_>,

@@ -26,7 +26,7 @@ where
         parser.test(self.content())
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         parser.skip_newlines();
         parser.expect(self.content())
     }

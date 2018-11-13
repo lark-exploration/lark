@@ -24,8 +24,8 @@ where
         SeparatedList(self.element(), Comma).test(parser)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
-        SeparatedList(self.element(), Comma).parse(parser)
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
+        SeparatedList(self.element(), Comma).expect(parser)
     }
 }
 
@@ -71,7 +71,7 @@ where
         true // we never produce an error
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
         let SeparatedList(element, delimiter) = self;
 
         let mut result = vec![];

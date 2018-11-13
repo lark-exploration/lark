@@ -194,7 +194,7 @@ impl Parser<'me> {
     {
         log::trace!("expect({})", syntax.debug_with(self));
 
-        syntax.parse(self)
+        syntax.expect(self)
     }
 
     /// Parse a piece of syntax (if it is present)

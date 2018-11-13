@@ -24,7 +24,7 @@ macro_rules! sigil_type {
                     parser.is($kind) && parser.peek_str() == $name::TEXT
                 }
 
-                fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+                fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
                     if self.test(parser) {
                         Ok(parser.shift())
                     } else {

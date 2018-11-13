@@ -32,7 +32,7 @@ impl Syntax for Field {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
         let name = parser.expect(SpannedGlobalIdentifier)?;
 
         let ty_result: Result<_, ErrorReported> = try {

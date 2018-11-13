@@ -31,7 +31,7 @@ use lark_string::global::GlobalIdentifier;
 pub struct StructDeclaration;
 
 impl EntityMacroDefinition for StructDeclaration {
-    fn parse(
+    fn expect(
         &self,
         parser: &mut Parser<'_>,
         base: Entity,

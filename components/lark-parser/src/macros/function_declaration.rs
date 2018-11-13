@@ -24,7 +24,7 @@ use std::sync::Arc;
 pub struct FunctionDeclarationMacro;
 
 impl EntityMacroDefinition for FunctionDeclarationMacro {
-    fn parse(
+    fn expect(
         &self,
         parser: &mut Parser<'_>,
         base: Entity,

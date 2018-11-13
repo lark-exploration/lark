@@ -31,7 +31,7 @@ impl Syntax for EntitySyntax {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         let macro_name = parser.expect(SpannedGlobalIdentifier)?;
 
         log::debug!(
@@ -44,7 +44,7 @@ impl Syntax for EntitySyntax {
             None => Err(parser.report_error("no macro with this name", macro_name.span))?,
         };
 
-        Ok(macro_definition.parse(parser, self.parent_entity, macro_name)?)
+        Ok(macro_definition.expect(parser, self.parent_entity, macro_name)?)
     }
 }
 

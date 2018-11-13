@@ -17,7 +17,7 @@ impl Syntax for SpannedGlobalIdentifier {
         parser.is(LexToken::Identifier)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         if self.test(parser) {
             let Spanned { span, value: _ } = parser.shift();
             Ok(Spanned {

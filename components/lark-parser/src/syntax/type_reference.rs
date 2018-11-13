@@ -30,7 +30,7 @@ impl Syntax for TypeReference {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<ParsedTypeReference, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<ParsedTypeReference, ErrorReported> {
         let identifier = parser.expect(SpannedGlobalIdentifier)?;
         Ok(ParsedTypeReference::Named(NamedTypeReference {
             identifier,

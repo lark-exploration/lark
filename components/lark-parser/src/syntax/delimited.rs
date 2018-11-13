@@ -29,7 +29,7 @@ where
         parser.test(self.delimiters().open_syntax())
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         try {
             let Delimited(delimiter, content) = self;
             parser.expect(delimiter.open_syntax())?;

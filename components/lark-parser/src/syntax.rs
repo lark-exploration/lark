@@ -18,12 +18,18 @@ pub trait Syntax: DebugWith {
     /// parsing routine.
     type Data;
 
-    /// Routine to check if this syntax applies.
+    /// Routine to check if this syntax applies. This often does a
+    /// much more shallow check than `expect`, e.g., just checking an
+    /// initial token or two.
     fn test(&self, parser: &Parser<'_>) -> bool;
 
-    /// Routine to do the parsing itself. If `test` is not true, this
-    /// will produce a parse error.
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported>;
+    /// Routine to do the parsing itself. This will produce a parse
+    /// error if the syntax is not found at the current point.
+    ///
+    /// **Relationship to test:** If `test` returns false, errors are
+    /// guaranteed. Even if `test` returns true, however, errors are
+    /// still possible, since `test` does a more shallow check.
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported>;
 }
 
 pub trait Delimiter: DebugWith {
@@ -43,7 +49,7 @@ where
         T::test(self, parser)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
-        T::parse(self, parser)
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+        T::expect(self, parser)
     }
 }
