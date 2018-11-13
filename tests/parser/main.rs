@@ -171,6 +171,25 @@ fn one_struct_newline_variations() {
         EntityTree::from_file(&db, file_name)
     };
     assert_equal(&(), &tree_base, &tree_other);
+
+    let tree_other = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct
+            Foo
+            {
+
+                x
+                :
+                uint
+
+
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &tree_base, &tree_other);
 }
 
 #[test]

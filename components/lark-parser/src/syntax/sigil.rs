@@ -2,6 +2,7 @@ use crate::lexer::token::LexToken;
 use crate::parser::Parser;
 use crate::span::Spanned;
 use crate::syntax::Delimiter;
+use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
@@ -28,13 +29,16 @@ macro_rules! sigil_type {
                     if self.test(parser) {
                         Ok(parser.shift())
                     } else {
+                        let Spanned { span, .. } = parser.shift();
                         Err(parser.report_error(
                             format!("expected `{}`", $name::TEXT),
-                            parser.peek_span(),
+                            span,
                         ))
                     }
                 }
             }
+
+            impl NonEmptySyntax for $name { }
         )*
     }
 }

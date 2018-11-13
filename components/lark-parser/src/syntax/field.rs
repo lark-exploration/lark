@@ -1,10 +1,12 @@
 use crate::parser::Parser;
 use crate::span::Spanned;
-use crate::syntax::entity::ParsedEntity;
 use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::LazyParsedEntityDatabase;
+use crate::syntax::entity::ParsedEntity;
+use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::sigil::Colon;
+use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::type_reference::ParsedTypeReference;
 use crate::syntax::type_reference::TypeReference;
 use crate::syntax::Syntax;
@@ -35,12 +37,9 @@ impl Syntax for Field {
     fn expect(&self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
         let name = parser.expect(SpannedGlobalIdentifier)?;
 
-        let ty_result: Result<_, ErrorReported> = try {
-            parser.expect(Colon)?;
-            parser.expect(TypeReference)?
-        };
-
-        let ty = ty_result.unwrap_or_error_sentinel(&*parser);
+        let ty = parser
+            .expect(SkipNewline(Guard(Colon, SkipNewline(TypeReference))))
+            .unwrap_or_error_sentinel(&*parser);
 
         let span = name.span.extended_until_end_of(parser.last_span());
 

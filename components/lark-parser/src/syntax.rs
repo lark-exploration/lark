@@ -7,6 +7,7 @@ use lark_error::ErrorReported;
 pub mod delimited;
 pub mod entity;
 pub mod field;
+pub mod guard;
 pub mod identifier;
 pub mod list;
 pub mod sigil;
