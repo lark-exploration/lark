@@ -46,12 +46,13 @@ macro_rules! sigil_type {
 sigil_type! {
     pub struct OpenCurly = (LexToken::Sigil, "{");
     pub struct CloseCurly = (LexToken::Sigil, "}");
-    pub struct OpenParen = (LexToken::Sigil, "(");
-    pub struct CloseParen = (LexToken::Sigil, ")");
+    pub struct OpenParenthesis = (LexToken::Sigil, "(");
+    pub struct CloseParenthesis = (LexToken::Sigil, ")");
     pub struct OpenSquare = (LexToken::Sigil, "[");
     pub struct CloseSquare = (LexToken::Sigil, "]");
     pub struct Colon = (LexToken::Sigil, ":");
     pub struct Comma = (LexToken::Sigil, ",");
+    pub struct RightArrow = (LexToken::Sigil, "->");
 }
 
 #[derive(DebugWith)]
@@ -67,5 +68,21 @@ impl Delimiter for Curlies {
 
     fn close_syntax(&self) -> Self::Close {
         CloseCurly
+    }
+}
+
+#[derive(DebugWith)]
+pub struct Parentheses;
+
+impl Delimiter for Parentheses {
+    type Open = OpenParenthesis;
+    type Close = CloseParenthesis;
+
+    fn open_syntax(&self) -> Self::Open {
+        OpenParenthesis
+    }
+
+    fn close_syntax(&self) -> Self::Close {
+        CloseParenthesis
     }
 }

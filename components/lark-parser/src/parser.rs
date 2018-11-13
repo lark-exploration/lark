@@ -145,6 +145,14 @@ impl Parser<'me> {
         self.lookahead_token
     }
 
+    /// Span covering the space *in between* the previous token
+    /// and the current token. This is the span where something
+    /// elided would go.
+    crate fn elided_span(&self) -> Span<CurrentFile> {
+        // FIXME -- what should we do regarding whitespace etc?
+        Span::new(CurrentFile, self.last_span.end(), self.peek_span().start())
+    }
+
     /// Span of the current lookahead token.
     crate fn peek_span(&self) -> Span<CurrentFile> {
         self.peek().span

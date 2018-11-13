@@ -9,6 +9,7 @@ use lark_string::global::GlobalIdentifierTables;
 use map::FxIndexMap;
 use std::sync::Arc;
 
+crate mod function_declaration;
 crate mod struct_declaration;
 
 crate trait EntityMacroDefinition {
@@ -55,6 +56,7 @@ crate fn default_entity_macros(
         db(db),
         macros(
             "struct" => struct_declaration::StructDeclaration,
+            "fn" => function_declaration::FunctionDeclaration,
         ),
     )
 }

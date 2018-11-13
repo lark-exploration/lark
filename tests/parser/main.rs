@@ -371,3 +371,65 @@ fn eof_extra_sigil() {
         &db.child_parsed_entities(entity).errors,
     );
 }
+
+#[test]
+fn some_function() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+        fn foo() {
+        }
+        ",
+    ));
+
+    let tree = EntityTree::from_file(&db, file_name);
+    assert_expected_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                name: "InputFile(path1)",
+                children: [
+                    EntityTree {
+                        name: "ItemName(foo)",
+                        children: []
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
+}
+
+#[test]
+fn function_variations() {
+    let base_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() { }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+
+    let other_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo(x: uint) { }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &base_tree, &other_tree);
+
+    let other_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo(
+                x: uint,
+            ) -> uint {
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &base_tree, &other_tree);
+}

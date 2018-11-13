@@ -1,4 +1,6 @@
 use crate::parser::Parser;
+use crate::span::CurrentFile;
+use crate::span::Span;
 use crate::span::Spanned;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
@@ -14,6 +16,7 @@ pub struct TypeReference;
 #[derive(Copy, Clone, DebugWith)]
 pub enum ParsedTypeReference {
     Named(NamedTypeReference),
+    Elided(Span<CurrentFile>),
     Error,
 }
 

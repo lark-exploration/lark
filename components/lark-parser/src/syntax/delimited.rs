@@ -43,7 +43,6 @@ where
 impl<D, T> NonEmptySyntax for Delimited<D, T>
 where
     D: Delimiter,
-    D::Open: NonEmptySyntax,
     T: Syntax,
 {
 }

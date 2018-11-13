@@ -10,6 +10,7 @@ pub mod field;
 pub mod guard;
 pub mod identifier;
 pub mod list;
+pub mod matched;
 pub mod sigil;
 pub mod skip_newline;
 pub mod type_reference;
@@ -37,8 +38,8 @@ pub trait Syntax: DebugWith {
 pub trait NonEmptySyntax: Syntax {}
 
 pub trait Delimiter: DebugWith {
-    type Open: Syntax;
-    type Close: Syntax;
+    type Open: NonEmptySyntax;
+    type Close: NonEmptySyntax;
     fn open_syntax(&self) -> Self::Open;
     fn close_syntax(&self) -> Self::Close;
 }

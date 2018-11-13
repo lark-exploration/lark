@@ -1,94 +1,103 @@
 use crate::macros::EntityMacroDefinition;
-use crate::parsed_entity::LazyParsedEntity;
-use crate::parsed_entity::ParsedEntity;
 use crate::parser::Parser;
-use crate::span::CurrentFile;
-use crate::span::Span;
 use crate::span::Spanned;
+use crate::syntax::delimited::Delimited;
+use crate::syntax::entity::LazyParsedEntity;
+use crate::syntax::entity::LazyParsedEntityDatabase;
+use crate::syntax::entity::ParsedEntity;
+use crate::syntax::entity::ParsedEntityThunk;
 use crate::syntax::field::Field;
 use crate::syntax::field::ParsedField;
+use crate::syntax::guard::Guard;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
-use crate::syntax::sigil::CloseCurly;
-use crate::syntax::sigil::OpenCurly;
+use crate::syntax::matched::Matched;
+use crate::syntax::sigil::Curlies;
+use crate::syntax::sigil::Parentheses;
+use crate::syntax::sigil::RightArrow;
+use crate::syntax::skip_newline::SkipNewline;
+use crate::syntax::type_reference::ParsedTypeReference;
+use crate::syntax::type_reference::TypeReference;
+use debug::DebugWith;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::ItemKind;
+use lark_error::ErrorReported;
+use lark_error::ResultExt;
+use lark_error::WithError;
+use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
-use std::sync::Arc;
 
 /// ```ignore
 /// `def` <id> `(` <id> `:` <ty> `)` [ `->` <ty> ] <block>
 /// ```
 #[derive(Default)]
-pub struct FunctionDeclarationMacro;
+pub struct FunctionDeclaration;
 
-impl EntityMacroDefinition for FunctionDeclarationMacro {
+impl EntityMacroDefinition for FunctionDeclaration {
     fn expect(
         &self,
         parser: &mut Parser<'_>,
         base: Entity,
-        start: Location<CurrentFile>,
-    ) -> ParsedEntity {
-        let function_name = or_error_entity!(
-            parser.eat_global_identifier(),
-            parser,
-            "expected function name"
+        macro_name: Spanned<GlobalIdentifier>,
+    ) -> Result<ParsedEntity, ErrorReported> {
+        log::trace!(
+            "FunctionDeclaration::parse(base={}, macro_name={})",
+            base.debug_with(parser),
+            macro_name.debug_with(parser)
         );
 
-        or_error_entity!(parser.eat_sigil("("), parser, "expected `(`");
+        let function_name = parser.expect(SkipNewline(SpannedGlobalIdentifier))?;
 
-        // Consume the parameters
-        parser.eat_newlines();
+        let parameters = parser
+            .expect(SkipNewline(Delimited(Parentheses, CommaList(Field))))
+            .unwrap_or_else(|ErrorReported(_)| Seq::default());
 
-        let mut fields = vec![];
-        loop {
-            if let Some(name) = parser.eat_global_identifier() {
-                if let Some(ty) = parser.parse_type() {
-                    fields.push(ParsedField { name, ty });
+        let return_type = match parser
+            .parse_if_present(SkipNewline(Guard(RightArrow, SkipNewline(TypeReference))))
+        {
+            Some(ty) => ty.unwrap_or_error_sentinel(&*parser),
+            None => ParsedTypeReference::Elided(parser.elided_span()),
+        };
 
-                    // If there is a `,` or a newline, then there may
-                    // be more fields, so go back around the loop.
-                    if let Some(_) = parser.eat_sigil(",") {
-                        parser.eat_newlines();
-                        continue;
-                    } else if parser.eat_newlines() {
-                        continue;
-                    }
-                }
-            }
-
-            break;
-        }
-
-        if let None = parser.eat_sigil("}") {
-            parser.report_error("expected `}`", parser.peek_span());
-        }
+        let body = parser.expect(SkipNewline(Matched(Curlies)));
 
         let entity = EntityData::ItemName {
             base,
-            kind: ItemKind::Struct,
-            id: struct_name.value,
+            kind: ItemKind::Function,
+            id: function_name.value,
         }
         .intern(parser);
 
-        let span = start.until_end_of(parser.last_span());
+        let full_span = macro_name.span.extended_until_end_of(parser.last_span());
+        let characteristic_span = function_name.span;
 
-        ParsedEntity::new(entity, span, Arc::new(ParsedStructDeclaration { fields }))
+        Ok(ParsedEntity::new(
+            entity,
+            full_span,
+            characteristic_span,
+            ParsedEntityThunk::new(ParsedFunctionDeclaration {
+                parameters,
+                return_type,
+                body,
+            }),
+        ))
     }
 }
 
-struct ParsedStructDeclaration {
-    fields: Vec<ParsedField>,
+struct ParsedFunctionDeclaration {
+    parameters: Seq<Spanned<ParsedField>>,
+    return_type: ParsedTypeReference,
+    body: Result<Spanned<()>, ErrorReported>,
 }
 
-struct ParsedField {
-    name: Spanned<GlobalIdentifier>,
-    ty: ParsedTypeReference,
-}
-
-impl LazyParsedEntity for ParsedStructDeclaration {
-    fn parse_children(&self) -> Vec<ParsedEntity> {
-        unimplemented!()
+impl LazyParsedEntity for ParsedFunctionDeclaration {
+    fn parse_children(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Vec<ParsedEntity>> {
+        WithError::ok(vec![])
     }
 }
