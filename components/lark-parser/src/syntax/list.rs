@@ -77,10 +77,10 @@ where
         let mut result = vec![];
         parser.skip_newlines();
         loop {
-            if let Some(element) = parser.eat(element) {
+            if let Some(element) = parser.parse_if_present(element) {
                 result.push(element?);
 
-                if let Some(_) = parser.eat(delimiter) {
+                if let Some(_) = parser.parse_if_present(delimiter) {
                     parser.skip_newlines();
                     continue;
                 } else if parser.skip_newlines() {

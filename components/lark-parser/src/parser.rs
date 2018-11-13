@@ -94,7 +94,7 @@ impl Parser<'me> {
     {
         let mut entities = vec![];
         loop {
-            match self.eat(&syntax) {
+            match self.parse_if_present(&syntax) {
                 Some(Ok(e)) => entities.push(e),
                 Some(Err(ErrorReported(_))) => (),
                 None => break,
@@ -164,17 +164,6 @@ impl Parser<'me> {
         kind == self.lookahead_token.value
     }
 
-    crate fn test(&self, syntax: impl Syntax) -> bool {
-        log::trace!("test({})", syntax.debug_with(self));
-
-        if syntax.test(self) {
-            log::trace!("test: passed");
-            true
-        } else {
-            false
-        }
-    }
-
     /// Consumes all subsequent newline characters, returning true if
     /// at least one newline was found.
     crate fn skip_newlines(&mut self) -> bool {
@@ -184,6 +173,18 @@ impl Parser<'me> {
             count += 1;
         }
         count > 0
+    }
+
+    /// Tests whether the syntax applies at the current point.
+    crate fn test(&self, syntax: impl Syntax) -> bool {
+        log::trace!("test({})", syntax.debug_with(self));
+
+        if syntax.test(self) {
+            log::trace!("test: passed");
+            true
+        } else {
+            false
+        }
     }
 
     /// Parses a `T` if we can and returns true if so; otherwise,
@@ -197,8 +198,9 @@ impl Parser<'me> {
         syntax.expect(self)
     }
 
-    /// Parse a piece of syntax (if it is present)
-    crate fn eat<T>(&mut self, syntax: T) -> Option<Result<T::Data, ErrorReported>>
+    /// Parse a piece of syntax (if it is present), otherwise returns
+    /// `None`. A combination of `test` and `expect`.
+    crate fn parse_if_present<T>(&mut self, syntax: T) -> Option<Result<T::Data, ErrorReported>>
     where
         T: Syntax,
     {
