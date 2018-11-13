@@ -18,11 +18,21 @@ impl<D> Matched<D> {
     }
 }
 
+/// Returns the token range of the matched block (including
+/// the delimiters).
+pub struct ParsedMatch {
+    /// Index of the first token to be included
+    start_token: usize,
+
+    /// Index *after* the final token
+    end_token: usize,
+}
+
 impl<D> Syntax for Matched<D>
 where
     D: Delimiter,
 {
-    type Data = Spanned<()>;
+    type Data = Spanned<ParsedMatch>;
 
     fn test(&self, parser: &Parser<'_>) -> bool {
         parser.test(self.delimiters().open_syntax())
@@ -32,6 +42,7 @@ where
         let open_syntax = self.delimiters().open_syntax();
         let close_syntax = self.delimiters().close_syntax();
 
+        let start_token = parser.peek_index();
         let start_span = parser.peek_span();
         parser.expect(&open_syntax)?;
 
@@ -49,8 +60,13 @@ where
             }
         }
 
+        let end_token = parser.peek_index();
         let full_span = start_span.extended_until_end_of(parser.last_span());
-        Ok(Spanned::new((), full_span))
+        let range = ParsedMatch {
+            start_token,
+            end_token,
+        };
+        Ok(Spanned::new(range, full_span))
     }
 }
 

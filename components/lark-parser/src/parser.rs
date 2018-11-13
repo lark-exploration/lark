@@ -148,6 +148,13 @@ impl Parser<'me> {
         self.entity_macro_definitions
     }
 
+    /// Peek at the index of the current lookahead token in the token
+    /// list. If this is the EOF token, then the index returned is the
+    /// length of the token list.
+    crate fn peek_index(&self) -> usize {
+        self.next_lookahead_token - 1
+    }
+
     /// Peek at the current lookahead token.
     crate fn peek(&self) -> Spanned<LexToken> {
         self.lookahead_token

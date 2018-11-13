@@ -12,6 +12,7 @@ use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::matched::Matched;
+use crate::syntax::matched::ParsedMatch;
 use crate::syntax::sigil::Curlies;
 use crate::syntax::sigil::Parentheses;
 use crate::syntax::sigil::RightArrow;
@@ -89,7 +90,7 @@ impl EntityMacroDefinition for FunctionDeclaration {
 struct ParsedFunctionDeclaration {
     parameters: Seq<Spanned<ParsedField>>,
     return_type: ParsedTypeReference,
-    body: Result<Spanned<()>, ErrorReported>,
+    body: Result<Spanned<ParsedMatch>, ErrorReported>,
 }
 
 impl LazyParsedEntity for ParsedFunctionDeclaration {
