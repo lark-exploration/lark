@@ -41,7 +41,7 @@ fn empty_struct() {
     ));
 
     let tree = EntityTree::from_file(&db, file_name);
-    compare_debug(
+    assert_expected_debug(
         &db,
         &unindent::unindent(
             r#"EntityTree {
@@ -69,7 +69,7 @@ fn one_field() {
     ));
 
     let tree = EntityTree::from_file(&db, file_name);
-    compare_debug(
+    assert_expected_debug(
         &db,
         &unindent::unindent(
             r#"EntityTree {
@@ -103,7 +103,7 @@ fn two_fields() {
     ));
 
     let tree = EntityTree::from_file(&db, file_name);
-    compare_debug(
+    assert_expected_debug(
         &db,
         &unindent::unindent(
             r#"EntityTree {
@@ -127,6 +127,69 @@ fn two_fields() {
         ),
         &tree,
     );
+}
+
+#[test]
+fn one_struct_newline_variations() {
+    let tree_base = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct Foo {
+                x: uint
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+
+    let tree_other = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct
+            Foo {
+                x: uint
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &tree_base, &tree_other);
+
+    let tree_other = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct
+            Foo
+            {
+
+                x: uint
+
+
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &tree_base, &tree_other);
+
+    let tree_other = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct
+            Foo
+            {
+
+                x
+                :
+                uint
+
+
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &tree_base, &tree_other);
 }
 
 #[test]
@@ -154,7 +217,7 @@ fn two_fields_variations() {
         ));
         EntityTree::from_file(&db, file_name)
     };
-    assert_eq!(tree_base, tree_other);
+    assert_equal(&(), &tree_base, &tree_other);
 
     let tree_other = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
@@ -167,7 +230,7 @@ fn two_fields_variations() {
         ));
         EntityTree::from_file(&db, file_name)
     };
-    assert_eq!(tree_base, tree_other);
+    assert_equal(&(), &tree_base, &tree_other);
 
     let tree_other = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
@@ -180,7 +243,7 @@ fn two_fields_variations() {
         ));
         EntityTree::from_file(&db, file_name)
     };
-    assert_eq!(tree_base, tree_other);
+    assert_equal(&(), &tree_base, &tree_other);
 
     let tree_other = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
@@ -201,5 +264,182 @@ fn two_fields_variations() {
         ));
         EntityTree::from_file(&db, file_name)
     };
-    assert_eq!(tree_base, tree_other);
+    assert_equal(&(), &tree_base, &tree_other);
+}
+
+#[test]
+fn two_structs_overlapping_lines() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+        struct Foo {
+        } struct Bar {
+        }
+        ",
+    ));
+
+    let tree = EntityTree::from_file(&db, file_name);
+    assert_expected_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                name: "InputFile(path1)",
+                children: [
+                    EntityTree {
+                        name: "ItemName(Foo)",
+                        children: []
+                    },
+                    EntityTree {
+                        name: "ItemName(Bar)",
+                        children: []
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
+}
+
+#[test]
+fn two_structs_whitespace() {
+    let base_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct Foo {
+            } struct Bar {
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+
+    let other_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct Foo {
+            }
+            struct Bar {
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &base_tree, &other_tree);
+
+    let other_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct Foo {
+            }
+
+            struct Bar {
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &base_tree, &other_tree);
+}
+
+#[test]
+fn eof_extra_sigil() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+            struct Foo {
+                x: uint
+            }
+
+            +
+            ",
+    ));
+
+    // These errors are (a) too numerous and (b) poor quality :(
+
+    let entity = EntityData::InputFile { file: file_name.id }.intern(&db);
+    assert_expected_debug(
+        &db,
+        &unindent::unindent(
+            r#"
+            [
+                Diagnostic {
+                    span: synthetic,
+                    label: "unexpected character"
+                },
+                Diagnostic {
+                    span: synthetic,
+                    label: "unexpected character"
+                },
+                Diagnostic {
+                    span: synthetic,
+                    label: "unexpected character"
+                },
+                Diagnostic {
+                    span: synthetic,
+                    label: "unexpected character"
+                }
+            ]"#,
+        ),
+        &db.child_parsed_entities(entity).errors,
+    );
+}
+
+#[test]
+fn some_function() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+        fn foo() {
+        }
+        ",
+    ));
+
+    let tree = EntityTree::from_file(&db, file_name);
+    assert_expected_debug(
+        &db,
+        &unindent::unindent(
+            r#"EntityTree {
+                name: "InputFile(path1)",
+                children: [
+                    EntityTree {
+                        name: "ItemName(foo)",
+                        children: []
+                    }
+                ]
+            }"#,
+        ),
+        &tree,
+    );
+}
+
+#[test]
+fn function_variations() {
+    let base_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() { }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+
+    let other_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo(x: uint) { }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &base_tree, &other_tree);
+
+    let other_tree = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo(
+                x: uint,
+            ) -> uint {
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &base_tree, &other_tree);
 }

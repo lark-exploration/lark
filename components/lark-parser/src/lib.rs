@@ -7,8 +7,10 @@
 #![feature(try_blocks)]
 #![allow(dead_code)]
 
+use crate::lexer::token::LexToken;
 use crate::span::CurrentFile;
 use crate::span::Span;
+use crate::span::Spanned;
 use crate::syntax::entity::ParsedEntity;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
@@ -43,6 +45,16 @@ salsa::query_group! {
             storage input;
         }
 
+        // FIXME: In general, this is wasteful of space, and not
+        // esp. incremental friendly. It would be better store
+        // e.g. the length of each token only, so that we can adjust
+        // the previous value (not to mention perhaps using a rope or
+        // some other similar data structure that permits insertions).
+        fn file_tokens(id: FileName) -> WithError<Seq<Spanned<LexToken>>> {
+            type FileTokensQuery;
+            use fn query_definitions::file_tokens;
+        }
+
         fn child_parsed_entities(entity: Entity) -> WithError<Seq<ParsedEntity>> {
             type ChildParsedEntitiesQuery;
             use fn query_definitions::child_parsed_entities;
@@ -65,7 +77,7 @@ pub struct FileName {
     pub id: GlobalIdentifier,
 }
 
-fn diagnostic(message: String, span: Span<CurrentFile>) -> Diagnostic {
+fn diagnostic(message: impl Into<String>, span: Span<CurrentFile>) -> Diagnostic {
     drop(span); // FIXME -- Diagostic uses the old codemap spans
-    Diagnostic::new(message, ::parser::pos::Span::Synthetic)
+    Diagnostic::new(message.into(), ::parser::pos::Span::Synthetic)
 }

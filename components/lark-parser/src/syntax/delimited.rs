@@ -1,7 +1,7 @@
-use debug::DebugWith;
 use crate::parser::Parser;
 use crate::syntax::Delimiter;
 use crate::syntax::Syntax;
+use crate::syntax::NonEmptySyntax;
 use lark_error::ErrorReported;
 use lark_debug_derive::DebugWith;
 
@@ -20,8 +20,8 @@ impl<D, T> Delimited<D, T> {
 
 impl<D, T> Syntax for Delimited<D, T>
 where
-    D: Delimiter + DebugWith,
-    T: Syntax + DebugWith,
+    D: Delimiter,
+    T: Syntax,
 {
     type Data = T::Data;
 
@@ -29,7 +29,7 @@ where
         parser.test(self.delimiters().open_syntax())
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         try {
             let Delimited(delimiter, content) = self;
             parser.expect(delimiter.open_syntax())?;
@@ -38,4 +38,11 @@ where
             content
         }
     }
+}
+
+impl<D, T> NonEmptySyntax for Delimited<D, T>
+where
+    D: Delimiter,
+    T: Syntax,
+{
 }

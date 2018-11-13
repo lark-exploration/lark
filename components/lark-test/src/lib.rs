@@ -11,6 +11,7 @@ use lark_string::text::Text;
 use parser::HasParserState;
 use parser::HasReaderState;
 use salsa::Database;
+use std::fmt::Debug;
 
 pub trait ErrorSpec {
     fn check_errors(&self, errors: &[RangedDiagnostic]);
@@ -108,7 +109,22 @@ pub fn lark_parser_db(text: impl AsRef<str>) -> (FileName, LarkDatabase) {
     (path1, db)
 }
 
-pub fn compare_debug<Cx, A>(cx: &Cx, expected_text: &str, actual_value: &A)
+/// Test that two values are equal, with a better error than `assert_eq`
+pub fn assert_equal<Cx, A>(cx: &Cx, expected_value: &A, actual_value: &A)
+where
+    A: ?Sized + Debug + DebugWith + Eq,
+{
+    // First check that they have the same debug text. This produces a better error.
+    let expected_text = format!("{:#?}", expected_value.debug_with(cx));
+    assert_expected_debug(cx, &expected_text, actual_value);
+
+    // Then check that they are `eq` too, for good measure.
+    assert_eq!(expected_value, actual_value);
+}
+
+/// Test that the debug output of `actual_value` is as expected. Gives
+/// a nice diff if things fail.
+pub fn assert_expected_debug<Cx, A>(cx: &Cx, expected_text: &str, actual_value: &A)
 where
     A: ?Sized + DebugWith,
 {

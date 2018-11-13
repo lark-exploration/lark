@@ -1,6 +1,7 @@
 use crate::lexer::token::LexToken;
 use crate::parser::Parser;
 use crate::span::Spanned;
+use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
 use intern::Intern;
 use lark_debug_derive::DebugWith;
@@ -17,9 +18,9 @@ impl Syntax for SpannedGlobalIdentifier {
         parser.is(LexToken::Identifier)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         if self.test(parser) {
-            let Spanned { span, value: _ } = parser.shift();
+            let Spanned { span, .. } = parser.shift();
             Ok(Spanned {
                 value: parser.input()[span].intern(parser),
                 span: span,
@@ -29,3 +30,5 @@ impl Syntax for SpannedGlobalIdentifier {
         }
     }
 }
+
+impl NonEmptySyntax for SpannedGlobalIdentifier {}
