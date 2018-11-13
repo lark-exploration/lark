@@ -86,18 +86,22 @@ impl Parser<'me> {
         }
     }
 
-    /// Parse all the entities we can and return a vector, along with
-    /// any errors that were found along the way.
-    crate fn parse_all<S>(mut self, syntax: S) -> WithError<Seq<S::Data>>
+    /// Parse all the instances of `syntax` that we can, stopping only
+    /// at EOF. Returns a vector of the results plus any parse errors
+    /// we encountered.
+    crate fn parse_until_eof<S>(mut self, syntax: S) -> WithError<Seq<S::Data>>
     where
         S: Syntax,
     {
         let mut entities = vec![];
         loop {
-            match self.parse_if_present(&syntax) {
-                Some(Ok(e)) => entities.push(e),
-                Some(Err(ErrorReported(_))) => (),
-                None => break,
+            if self.is(LexToken::EOF) {
+                break;
+            }
+
+            match self.expect(&syntax) {
+                Ok(e) => entities.push(e),
+                Err(ErrorReported(_)) => (),
             }
         }
         WithError {

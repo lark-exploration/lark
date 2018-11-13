@@ -320,3 +320,35 @@ fn two_structs_whitespace() {
     };
     assert_equal(&(), &base_tree, &other_tree);
 }
+
+#[test]
+fn eof_extra_sigil() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+            struct Foo {
+                x: uint
+            }
+
+            +
+            ",
+    ));
+
+    let entity = EntityData::InputFile { file: file_name.id }.intern(&db);
+    assert_expected_debug(
+        &db,
+        &unindent::unindent(
+            r#"
+        [
+            Diagnostic {
+                span: synthetic,
+                label: "expected an identifier"
+            },
+            Diagnostic {
+                span: synthetic,
+                label: "expected an identifier"
+            }
+        ]"#,
+        ),
+        &db.child_parsed_entities(entity).errors,
+    );
+}

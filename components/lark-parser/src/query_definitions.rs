@@ -58,7 +58,7 @@ crate fn child_parsed_entities(
             let tokens = &db.file_tokens(file_name).into_value();
             let parser = Parser::new(db, entity_macro_definitions, input, tokens, 0);
             let file_entity = EntityData::InputFile { file: file_name.id }.intern(db);
-            parser.parse_all(SkipNewline(EntitySyntax::new(file_entity)))
+            parser.parse_until_eof(SkipNewline(EntitySyntax::new(file_entity)))
         }
 
         EntityData::ItemName { .. } => db
