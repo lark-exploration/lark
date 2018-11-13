@@ -41,7 +41,7 @@ fn empty_struct() {
     ));
 
     let tree = EntityTree::from_file(&db, file_name);
-    compare_debug(
+    assert_expected_debug(
         &db,
         &unindent::unindent(
             r#"EntityTree {
@@ -69,7 +69,7 @@ fn one_field() {
     ));
 
     let tree = EntityTree::from_file(&db, file_name);
-    compare_debug(
+    assert_expected_debug(
         &db,
         &unindent::unindent(
             r#"EntityTree {
@@ -103,7 +103,7 @@ fn two_fields() {
     ));
 
     let tree = EntityTree::from_file(&db, file_name);
-    compare_debug(
+    assert_expected_debug(
         &db,
         &unindent::unindent(
             r#"EntityTree {
@@ -154,7 +154,7 @@ fn two_fields_variations() {
         ));
         EntityTree::from_file(&db, file_name)
     };
-    assert_eq!(tree_base, tree_other);
+    assert_equal(&(), &tree_base, &tree_other);
 
     let tree_other = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
@@ -167,7 +167,7 @@ fn two_fields_variations() {
         ));
         EntityTree::from_file(&db, file_name)
     };
-    assert_eq!(tree_base, tree_other);
+    assert_equal(&(), &tree_base, &tree_other);
 
     let tree_other = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
@@ -180,7 +180,7 @@ fn two_fields_variations() {
         ));
         EntityTree::from_file(&db, file_name)
     };
-    assert_eq!(tree_base, tree_other);
+    assert_equal(&(), &tree_base, &tree_other);
 
     let tree_other = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
@@ -201,5 +201,5 @@ fn two_fields_variations() {
         ));
         EntityTree::from_file(&db, file_name)
     };
-    assert_eq!(tree_base, tree_other);
+    assert_equal(&(), &tree_base, &tree_other);
 }
