@@ -73,6 +73,19 @@ impl Parser<'me> {
         }
     }
 
+    /// Clones the parser to produce a "checkpoint". You can go on
+    /// using this checkpoint, but any changes to the current token
+    /// (as well as any reported errors!) will be ignored and will not
+    /// affect the main parser. This is intended to enable "limited
+    /// lookahead" of more than one token, e.g. skipping upcoming
+    /// newlines.
+    crate fn checkpoint(&self) -> Self {
+        Parser {
+            errors: vec![],
+            ..*self
+        }
+    }
+
     /// Parse all the entities we can and return a vector, along with
     /// any errors that were found along the way.
     crate fn parse_all<S>(mut self, syntax: S) -> WithError<Seq<S::Data>>
