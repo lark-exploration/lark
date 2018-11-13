@@ -1,6 +1,4 @@
-use crate::lexer::definition::LexerState;
 use crate::lexer::token::LexToken;
-use crate::lexer::tools::Tokenizer;
 use crate::macros::EntityMacroDefinition;
 use crate::span::CurrentFile;
 use crate::span::Span;
@@ -22,19 +20,34 @@ use map::FxIndexMap;
 use std::sync::Arc;
 
 pub struct Parser<'me> {
+    /// Tables for interning global identifiers; extracted from the database.
     global_identifier_tables: &'me GlobalIdentifierTables,
+
+    /// Tables for interning entities; extracted from the database.
     entity_tables: &'me EntityTables,
+
+    /// Set of macro definitions in scope.
     entity_macro_definitions: &'me FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
+
+    /// Complete input; needed to extract the full text of tokens.
     input: &'me Text,
-    tokenizer: Tokenizer<'me, LexerState>,
-    errors: Vec<Diagnostic>,
+
+    /// List of all tokens.
+    tokens: &'me Seq<Spanned<LexToken>>,
+
+    /// Index of the next token to consume.
+    next_lookahead_token: usize,
+
+    /// Span of the last consumed token (ignoring whitespace and
+    /// comments); see the `last_span()` method below.
+    last_span: Span<CurrentFile>,
 
     /// Current lookahead token.
-    token: Spanned<LexToken>,
+    lookahead_token: Spanned<LexToken>,
 
-    /// The span of the last token that we consumed (i.e., the one
-    /// immediately before `self.token`).
-    last_span: Span<CurrentFile>,
+    /// Errors reported during parsing; these will be converted into
+    /// the final `WithError` result
+    errors: Vec<Diagnostic>,
 }
 
 impl Parser<'me> {
@@ -42,19 +55,24 @@ impl Parser<'me> {
         db: &'me (impl AsRef<GlobalIdentifierTables> + AsRef<EntityTables>),
         entity_macro_definitions: &'me FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
         input: &'me Text,
+        tokens: &'me Seq<Spanned<LexToken>>,
+        start_token: usize,
     ) -> Self {
-        let mut tokenizer = Tokenizer::new(input);
-        let mut errors = vec![];
-        let token = next_token(&mut tokenizer, &mut errors, input);
+        // Subtle: the start token may be whitespace etc. So we actually have to invoke
+        // `advance_next_token` to advance.
+        let mut next_lookahead_token = start_token;
+        let lookahead_token = advance_next_token(tokens, &mut next_lookahead_token);
+
         Parser {
             global_identifier_tables: db.as_ref(),
             entity_tables: db.as_ref(),
             entity_macro_definitions,
             input,
-            tokenizer,
-            errors,
+            tokens,
+            next_lookahead_token,
+            lookahead_token,
+            errors: vec![],
             last_span: Span::initial(CurrentFile),
-            token,
         }
     }
 
@@ -78,15 +96,14 @@ impl Parser<'me> {
     /// Consume the current token and load the next one.  Return the
     /// old token.
     crate fn shift(&mut self) -> Spanned<LexToken> {
-        self.last_span = self.token.span;
-        let last_token = std::mem::replace(
-            &mut self.token,
-            next_token(&mut self.tokenizer, &mut self.errors, self.input),
-        );
+        self.last_span = self.lookahead_token.span;
+        let last_token = self.lookahead_token;
+
+        self.lookahead_token = advance_next_token(self.tokens, &mut self.next_lookahead_token);
 
         log::trace!(
-            "shift: new token = {} old token = {}",
-            self.token.debug_with(self),
+            "shift: new lookahead token = {}, consumed token = {}",
+            self.lookahead_token.debug_with(self),
             last_token.debug_with(self),
         );
 
@@ -107,27 +124,31 @@ impl Parser<'me> {
 
     /// Peek at the current lookahead token.
     crate fn peek(&self) -> Spanned<LexToken> {
-        self.token
+        self.lookahead_token
     }
 
     /// Span of the current lookahead token.
     crate fn peek_span(&self) -> Span<CurrentFile> {
-        self.token.span
+        self.peek().span
     }
 
-    /// Span of the last consumed token.
+    /// Span of the last consumed token, ignoring whitespace and
+    /// comments. This is very handy when constructing the span of
+    /// things we are looking at.  You basically consume tokens until
+    /// the lookahead tells you that you are at the end, and then you
+    /// can look at the `last_span`
     crate fn last_span(&self) -> Span<CurrentFile> {
-        self.token.span
+        self.last_span
     }
 
     /// Peek at the string reprsentation of the current token.
     crate fn peek_str(&self) -> &'me str {
-        &self.input[self.token.span]
+        &self.input[self.peek_span()]
     }
 
     /// Test if the current token is of the given kind.
     crate fn is(&self, kind: LexToken) -> bool {
-        kind == self.token.value
+        kind == self.lookahead_token.value
     }
 
     crate fn test(&self, syntax: impl Syntax) -> bool {
@@ -199,36 +220,18 @@ impl AsRef<EntityTables> for Parser<'_> {
     }
 }
 
-fn next_token(
-    tokenizer: &mut Tokenizer<'_, LexerState>,
-    errors: &mut Vec<Diagnostic>,
-    input: &'me Text,
-) -> Spanned<LexToken> {
+fn advance_next_token(tokens: &[Spanned<LexToken>], next_token: &mut usize) -> Spanned<LexToken> {
     loop {
-        let new_token = tokenizer.next().unwrap_or_else(|| {
-            Ok(Spanned {
-                value: LexToken::EOF,
-                span: Span::eof(CurrentFile, input),
-            })
-        });
+        let token = tokens[*next_token];
+
+        // Advance to the next token, unless we are at EOF.
+        *next_token = (*next_token + 1).min(tokens.len() - 1);
 
         // Skip over whitespace/comments automatically (but not
         // newlines).
-        match new_token {
-            Ok(token) => match token.value {
-                LexToken::Whitespace | LexToken::Comment => {
-                    continue;
-                }
-
-                _ => {
-                    return token;
-                }
-            },
-
-            Err(span) => {
-                report_error(errors, "unrecognized token", span);
-                continue;
-            }
+        match token.value {
+            LexToken::Whitespace | LexToken::Comment => continue,
+            _ => return token,
         }
     }
 }

@@ -1,5 +1,11 @@
+use crate::lexer::definition::LexerState;
+use crate::lexer::token::LexToken;
+use crate::lexer::tools::Tokenizer;
 use crate::macros;
 use crate::parser::Parser;
+use crate::span::CurrentFile;
+use crate::span::Span;
+use crate::span::Spanned;
 use crate::syntax::entity::ParsedEntity;
 use crate::FileName;
 use crate::ParserDatabase;
@@ -10,6 +16,31 @@ use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_error::WithError;
 use lark_seq::Seq;
+
+crate fn file_tokens(
+    db: &impl ParserDatabase,
+    file_name: FileName,
+) -> WithError<Seq<Spanned<LexToken>>> {
+    let input = db.file_text(file_name);
+    let mut tokenizer: Tokenizer<'_, LexerState> = Tokenizer::new(&input);
+    let mut errors = vec![];
+    let mut tokens = vec![];
+    while let Some(token) = tokenizer.next() {
+        match token {
+            Ok(t) => tokens.push(t),
+            Err(span) => errors.push(crate::diagnostic("unrecognized token", span)),
+        }
+    }
+    tokens.push(Spanned {
+        value: LexToken::EOF,
+        span: Span::eof(CurrentFile, &input),
+    });
+
+    WithError {
+        value: Seq::from(tokens),
+        errors,
+    }
+}
 
 crate fn child_parsed_entities(
     db: &impl ParserDatabase,
@@ -22,7 +53,8 @@ crate fn child_parsed_entities(
             let file_name = FileName { id: file };
             let entity_macro_definitions = &macros::default_entity_macros(db);
             let input = &db.file_text(file_name);
-            let parser = Parser::new(db, entity_macro_definitions, input);
+            let tokens = &db.file_tokens(file_name).into_value();
+            let parser = Parser::new(db, entity_macro_definitions, input, tokens, 0);
             let file_entity = EntityData::InputFile { file: file_name.id }.intern(db);
             parser.parse_all_entities(file_entity)
         }
