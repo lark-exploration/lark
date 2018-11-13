@@ -3,11 +3,8 @@ use crate::macros::EntityMacroDefinition;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::span::Spanned;
-use crate::syntax::entity::EntitySyntax;
-use crate::syntax::entity::ParsedEntity;
 use crate::syntax::Syntax;
 use debug::DebugWith;
-use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::ErrorReported;
@@ -76,17 +73,20 @@ impl Parser<'me> {
         }
     }
 
-    /// Parse all the entities we can and return a vector
-    /// (accumulating errors as we go).
-    crate fn parse_all_entities(mut self, parent_entity: Entity) -> WithError<Seq<ParsedEntity>> {
+    /// Parse all the entities we can and return a vector, along with
+    /// any errors that were found along the way.
+    crate fn parse_all<S>(mut self, syntax: S) -> WithError<Seq<S::Data>>
+    where
+        S: Syntax,
+    {
         let mut entities = vec![];
-        while let Some(entity) = self.eat(EntitySyntax::new(parent_entity)) {
-            match entity {
-                Ok(entity) => entities.push(entity),
-                Err(ErrorReported(_)) => {}
+        loop {
+            match self.eat(&syntax) {
+                Some(Ok(e)) => entities.push(e),
+                Some(Err(ErrorReported(_))) => (),
+                None => break,
             }
         }
-
         WithError {
             value: Seq::from(entities),
             errors: self.errors,
