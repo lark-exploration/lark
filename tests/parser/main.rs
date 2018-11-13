@@ -130,6 +130,50 @@ fn two_fields() {
 }
 
 #[test]
+fn one_struct_newline_variations() {
+    let tree_base = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct Foo {
+                x: uint
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+
+    let tree_other = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct
+            Foo {
+                x: uint
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &tree_base, &tree_other);
+
+    let tree_other = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            struct
+            Foo
+            {
+
+                x: uint
+
+
+            }
+            ",
+        ));
+        EntityTree::from_file(&db, file_name)
+    };
+    assert_equal(&(), &tree_base, &tree_other);
+}
+
+#[test]
 fn two_fields_variations() {
     let tree_base = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
