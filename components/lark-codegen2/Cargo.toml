@@ -1,0 +1,9 @@
+[package]
+name = "lark-codegen2"
+version = "0.1.0"
+authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+lark-mir = { path = "../lark-mir" }
+lark-type-check = { path = "../lark-type-check" }
