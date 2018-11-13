@@ -19,15 +19,14 @@ impl Syntax for SpannedGlobalIdentifier {
     }
 
     fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
-        let Spanned { span, value } = parser.shift();
-
-        match value {
-            LexToken::Identifier => Ok(Spanned {
+        if self.test(parser) {
+            let Spanned { span, .. } = parser.shift();
+            Ok(Spanned {
                 value: parser.input()[span].intern(parser),
                 span: span,
-            }),
-
-            _ => Err(parser.report_error("expected an identifier", span)),
+            })
+        } else {
+            Err(parser.report_error("expected an identifier", parser.peek_span()))
         }
     }
 }

@@ -29,10 +29,9 @@ macro_rules! sigil_type {
                     if self.test(parser) {
                         Ok(parser.shift())
                     } else {
-                        let Spanned { span, .. } = parser.shift();
                         Err(parser.report_error(
                             format!("expected `{}`", $name::TEXT),
-                            span,
+                            parser.peek_span(),
                         ))
                     }
                 }

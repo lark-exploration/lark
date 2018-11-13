@@ -100,9 +100,14 @@ impl Parser<'me> {
                 break;
             }
 
-            match self.expect(&syntax) {
-                Ok(e) => entities.push(e),
-                Err(ErrorReported(_)) => (),
+            if self.test(&syntax) {
+                match self.expect(&syntax) {
+                    Ok(e) => entities.push(e),
+                    Err(ErrorReported(_)) => (),
+                }
+            } else {
+                let Spanned { span, .. } = self.shift();
+                self.report_error("unexpected character", span);
             }
         }
         WithError {

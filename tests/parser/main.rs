@@ -352,21 +352,31 @@ fn eof_extra_sigil() {
             ",
     ));
 
+    // These errors are (a) too numerous and (b) poor quality :(
+
     let entity = EntityData::InputFile { file: file_name.id }.intern(&db);
     assert_expected_debug(
         &db,
         &unindent::unindent(
             r#"
-        [
-            Diagnostic {
-                span: synthetic,
-                label: "expected an identifier"
-            },
-            Diagnostic {
-                span: synthetic,
-                label: "expected an identifier"
-            }
-        ]"#,
+            [
+                Diagnostic {
+                    span: synthetic,
+                    label: "unexpected character"
+                },
+                Diagnostic {
+                    span: synthetic,
+                    label: "unexpected character"
+                },
+                Diagnostic {
+                    span: synthetic,
+                    label: "unexpected character"
+                },
+                Diagnostic {
+                    span: synthetic,
+                    label: "unexpected character"
+                }
+            ]"#,
         ),
         &db.child_parsed_entities(entity).errors,
     );
