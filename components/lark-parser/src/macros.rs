@@ -9,6 +9,7 @@ use lark_string::global::GlobalIdentifierTables;
 use map::FxIndexMap;
 use std::sync::Arc;
 
+crate mod function_declaration;
 crate mod struct_declaration;
 
 crate trait EntityMacroDefinition {
@@ -16,7 +17,7 @@ crate trait EntityMacroDefinition {
     /// consumed. Has the job of parsing the rest of the entity (using
     /// the helper methods on `parser` to do so) and ultimately
     /// returning the entity structure.
-    fn parse(
+    fn expect(
         &self,
         // The parser we can use to extract next token and so forth.
         parser: &mut Parser<'_>,
@@ -55,6 +56,7 @@ crate fn default_entity_macros(
         db(db),
         macros(
             "struct" => struct_declaration::StructDeclaration,
+            "fn" => function_declaration::FunctionDeclaration,
         ),
     )
 }

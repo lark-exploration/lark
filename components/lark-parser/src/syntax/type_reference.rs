@@ -1,4 +1,6 @@
 use crate::parser::Parser;
+use crate::span::CurrentFile;
+use crate::span::Span;
 use crate::span::Spanned;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
@@ -14,6 +16,7 @@ pub struct TypeReference;
 #[derive(Copy, Clone, DebugWith)]
 pub enum ParsedTypeReference {
     Named(NamedTypeReference),
+    Elided(Span<CurrentFile>),
     Error,
 }
 
@@ -30,7 +33,7 @@ impl Syntax for TypeReference {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<ParsedTypeReference, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<ParsedTypeReference, ErrorReported> {
         let identifier = parser.expect(SpannedGlobalIdentifier)?;
         Ok(ParsedTypeReference::Named(NamedTypeReference {
             identifier,

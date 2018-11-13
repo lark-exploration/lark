@@ -60,6 +60,7 @@ salsa::database_storage! {
         impl lark_parser::ParserDatabase {
             fn file_names() for lark_parser::FileNamesQuery;
             fn file_text() for lark_parser::FileTextQuery;
+            fn file_tokens() for lark_parser::FileTokensQuery;
             fn child_parsed_entities() for lark_parser::ChildParsedEntitiesQuery;
             fn parsed_entity() for lark_parser::ParsedEntityQuery;
             fn child_entities() for lark_parser::ChildEntitiesQuery;

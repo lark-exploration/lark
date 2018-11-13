@@ -11,6 +11,7 @@ use crate::syntax::field::ParsedField;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::sigil::Curlies;
+use crate::syntax::skip_newline::SkipNewline;
 use debug::DebugWith;
 use intern::Intern;
 use lark_entity::Entity;
@@ -31,7 +32,7 @@ use lark_string::global::GlobalIdentifier;
 pub struct StructDeclaration;
 
 impl EntityMacroDefinition for StructDeclaration {
-    fn parse(
+    fn expect(
         &self,
         parser: &mut Parser<'_>,
         base: Entity,
@@ -44,11 +45,11 @@ impl EntityMacroDefinition for StructDeclaration {
         );
 
         log::trace!("StructDeclaration::parse: parsing name");
-        let struct_name = parser.expect(SpannedGlobalIdentifier)?;
+        let struct_name = parser.expect(SkipNewline(SpannedGlobalIdentifier))?;
 
         log::trace!("StructDeclaration::parse: parsing fields");
         let fields = parser
-            .expect(Delimited(Curlies, CommaList(Field)))
+            .expect(SkipNewline(Delimited(Curlies, CommaList(Field))))
             .unwrap_or_else(|ErrorReported(_)| Seq::default());
 
         log::trace!("StructDeclaration::parse: done");

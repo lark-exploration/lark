@@ -2,6 +2,7 @@ use crate::parser::Parser;
 use crate::span::CurrentFile;
 use crate::span::Span;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
+use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
 use crate::ParserDatabase;
 use debug::DebugWith;
@@ -31,7 +32,16 @@ impl Syntax for EntitySyntax {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn parse(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+        // Parse the macro keyword, which we must find first. So something like
+        //
+        // ```
+        // struct Foo { ... }
+        // ^^^^^^ ----------- parsed by the macro itself
+        // |
+        // parsed by us
+        // ```
+
         let macro_name = parser.expect(SpannedGlobalIdentifier)?;
 
         log::debug!(
@@ -44,9 +54,11 @@ impl Syntax for EntitySyntax {
             None => Err(parser.report_error("no macro with this name", macro_name.span))?,
         };
 
-        Ok(macro_definition.parse(parser, self.parent_entity, macro_name)?)
+        Ok(macro_definition.expect(parser, self.parent_entity, macro_name)?)
     }
 }
+
+impl NonEmptySyntax for EntitySyntax {}
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
 pub struct ParsedEntity {
