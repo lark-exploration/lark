@@ -25,7 +25,7 @@ struct MirLower<'me, DB: MirDatabase> {
     db: &'me DB,
     item_entity: Entity,
     fn_bytecode_tables: mir::FnBytecodeTables,
-    variables: FxIndexMap<GlobalIdentifier, mir::Variable>,
+    //variables: FxIndexMap<GlobalIdentifier, hir::Variable>,
     errors: &'me mut Vec<Diagnostic>,
 }
 
@@ -39,7 +39,7 @@ where
             errors,
             item_entity,
             fn_bytecode_tables: Default::default(),
-            variables: Default::default(),
+            //variables: Default::default(),
         }
     }
 
@@ -77,9 +77,6 @@ where
 
         mir::FnBytecode {
             basic_blocks: mir::List::default(),
-            local_decls: mir::List::default(),
-            arg_count: 0,
-            name: String::new(),
             tables: self.fn_bytecode_tables,
         }
     }

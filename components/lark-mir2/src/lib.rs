@@ -10,7 +10,7 @@ use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::WithError;
-use lark_hir as hir;
+use lark_hir::{Place, Variable};
 use lark_string::global::GlobalIdentifier;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
@@ -34,6 +34,7 @@ pub enum LiteralData {
     String(GlobalIdentifier),
 }
 
+/*
 indices::index_type! {
     pub struct Identifier { .. }
 }
@@ -52,6 +53,8 @@ pub struct VariableData {
     pub name: Identifier,
 }
 
+*/
+
 indices::index_type! {
     pub struct Error { .. }
 }
@@ -66,26 +69,28 @@ pub enum ErrorData {
 /// All the data for a fn-body is stored in these tables.a
 #[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
 pub struct FnBytecodeTables {
-    /// Map each expression index to its associated data.
+    /// Map each statement to its associated data.
     pub statements: IndexVec<Statement, Spanned<StatementData>>,
 
+    /// The blocks that make up the code of the function
     pub basic_blocks: IndexVec<BasicBlock, Spanned<BasicBlockData>>,
 
+    /*
     /// Map each place index to its associated data.
     pub places: IndexVec<Place, Spanned<PlaceData>>,
-
+    
     /// Map each variable index to its associated data.
     pub variables: IndexVec<Variable, Spanned<VariableData>>,
-
+    
     /// Map each identifier index to its associated data.
     pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
-
+    
     /// Map each struct index to its associated data.
     pub structs: IndexVec<Struct, Spanned<StructData>>,
-
+    
     /// Map each field index to its associated data.
     pub fields: IndexVec<Field, Spanned<FieldData>>,
-
+    */
     /// Map each terminator index to its associated data.
     pub terminators: IndexVec<Terminator, Spanned<TerminatorData>>,
 
@@ -112,12 +117,11 @@ pub struct FnBytecode {
     //First local = return value pointer
     //Followed by arg_count parameters to the function
     //Followed by user defined variables and temporaries
-    pub local_decls: List<Variable>,
+    //pub local_decls: List<Variable>,
 
-    pub arg_count: usize,
+    //pub arg_count: usize,
 
-    pub name: String,
-
+    //pub name: String,
     pub tables: FnBytecodeTables,
 }
 
@@ -145,7 +149,6 @@ impl FnBytecode {
         self.basic_blocks.push(block);
     }
 }
-*/
 
 indices::index_type! {
     pub struct Struct { .. }
@@ -165,6 +168,8 @@ indices::index_type! {
 pub struct FieldData {
     pub name: String,
 }
+
+*/
 
 indices::index_type! {
     pub struct BasicBlock { .. }
@@ -206,8 +211,8 @@ pub struct StatementData {
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum StatementKind {
-    Assign(PlaceData, Rvalue),
-    DebugPrint(PlaceData),
+    Assign(Place, Rvalue),
+    DebugPrint(Place),
 }
 
 indices::index_type! {
@@ -222,17 +227,6 @@ pub struct TerminatorData {
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum TerminatorKind {
     Return,
-}
-
-indices::index_type! {
-    pub struct Place { .. }
-}
-
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum PlaceData {
-    Variable(Variable),
-    Static(Entity),
-    Field { owner: Place, name: Identifier },
 }
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -374,11 +368,6 @@ macro_rules! define_meta_index {
 define_meta_index! {
     (Statement, StatementData, statements),
     (BasicBlock, BasicBlockData, basic_blocks),
-    (Place, PlaceData, places),
-    (Variable, VariableData, variables),
-    (Identifier, IdentifierData, identifiers),
-    (Field, FieldData, fields),
-    (Struct, StructData, structs),
 }
 
 /// A list of "MIR indices" of type `I`.
