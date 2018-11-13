@@ -32,6 +32,15 @@ impl Syntax for EntitySyntax {
     }
 
     fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+        // Parse the macro keyword, which we must find first. So something like
+        //
+        // ```
+        // struct Foo { ... }
+        // ^^^^^^ ----------- parsed by the macro itself
+        // |
+        // parsed by us
+        // ```
+
         let macro_name = parser.expect(SpannedGlobalIdentifier)?;
 
         log::debug!(
