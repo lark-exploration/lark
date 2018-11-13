@@ -13,6 +13,7 @@ languageserver-types = "0.51.0"
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
+lark-mir2 = { path = "../lark-mir2" }
 lark-task-manager = { path = "../lark-task-manager" }
 log = "0.4.5"
 map = { path = "../map" }

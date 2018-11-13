@@ -1,6 +1,7 @@
 use codespan::{CodeMap, FileMap};
 use lark_entity::EntityTables;
 use lark_hir as hir;
+use lark_mir2 as mir;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
 use parking_lot::RwLock;
@@ -80,6 +81,9 @@ salsa::database_storage! {
         }
         impl lark_type_check::TypeCheckDatabase {
             fn base_type_check() for lark_type_check::BaseTypeCheckQuery;
+        }
+        impl mir::MirDatabase {
+            fn fn_bytecode() for mir::FnBytecodeQuery;
         }
     }
 }

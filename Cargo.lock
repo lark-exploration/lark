@@ -342,11 +342,14 @@ dependencies = [
  "language-reporting 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-codegen 0.1.0",
+ "lark-codegen2 0.1.0",
  "lark-debug-derive 0.1.0",
+ "lark-entity 0.1.0",
  "lark-eval 0.1.0",
  "lark-hir 0.1.0",
  "lark-language-server 0.1.0",
  "lark-mir 0.1.0",
+ "lark-mir2 0.1.0",
  "lark-query-system 0.1.0",
  "lark-string 0.1.0",
  "lark-task-manager 0.1.0",
@@ -381,6 +384,14 @@ dependencies = [
  "cc 1.0.23 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-mir 0.1.0",
  "tempfile 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "lark-codegen2"
+version = "0.1.0"
+dependencies = [
+ "lark-mir 0.1.0",
+ "lark-type-check 0.1.0",
 ]
 
 [[package]]
@@ -456,6 +467,24 @@ name = "lark-mir"
 version = "0.1.0"
 
 [[package]]
+name = "lark-mir2"
+version = "0.1.0"
+dependencies = [
+ "debug 0.1.0",
+ "indices 0.1.0",
+ "intern 0.1.0",
+ "lark-debug-derive 0.1.0",
+ "lark-entity 0.1.0",
+ "lark-error 0.1.0",
+ "lark-hir 0.1.0",
+ "lark-ty 0.1.0",
+ "lark-type-check 0.1.0",
+ "map 0.1.0",
+ "parser 0.1.0",
+ "salsa 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "lark-query-system"
 version = "0.1.0"
 dependencies = [
@@ -467,6 +496,7 @@ dependencies = [
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
  "lark-hir 0.1.0",
+ "lark-mir2 0.1.0",
  "lark-task-manager 0.1.0",
  "lark-ty 0.1.0",
  "lark-type-check 0.1.0",

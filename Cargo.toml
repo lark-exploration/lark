@@ -42,11 +42,14 @@ debug = { path = "components/debug" }
 indices = { path = "components/indices" }
 intern = { path = "components/intern" }
 lark-codegen = { path = "components/lark-codegen" }
+lark-codegen2 = { path = "components/lark-codegen2" }
 lark-debug-derive = { path = "components/lark-debug-derive" }
+lark-entity = { path = "components/lark-entity" }
 lark-eval = { path = "components/lark-eval" }
 lark-hir = { path = "components/lark-hir" }
 lark-language-server = { path = "components/lark-language-server" }
 lark-mir = { path = "components/lark-mir" }
+lark-mir2 = { path = "components/lark-mir2" }
 lark-query-system = { path = "components/lark-query-system" }
 lark-string = { path = "components/lark-string" } 
 lark-task-manager = { path = "components/lark-task-manager" }
