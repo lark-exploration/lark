@@ -75,15 +75,15 @@ where
         let SeparatedList(element, delimiter) = self;
 
         let mut result = vec![];
-        parser.eat_newlines();
+        parser.skip_newlines();
         loop {
             if let Some(element) = parser.eat(element) {
                 result.push(element?);
 
                 if let Some(_) = parser.eat(delimiter) {
-                    parser.eat_newlines();
+                    parser.skip_newlines();
                     continue;
-                } else if parser.eat_newlines() {
+                } else if parser.skip_newlines() {
                     continue;
                 } else {
                     break;

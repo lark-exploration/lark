@@ -10,6 +10,7 @@ pub mod field;
 pub mod identifier;
 pub mod list;
 pub mod sigil;
+pub mod skip_newline;
 pub mod type_reference;
 
 pub trait Syntax: DebugWith {

@@ -177,7 +177,7 @@ impl Parser<'me> {
 
     /// Consumes all subsequent newline characters, returning true if
     /// at least one newline was found.
-    crate fn eat_newlines(&mut self) -> bool {
+    crate fn skip_newlines(&mut self) -> bool {
         let mut count = 0;
         while self.is(LexToken::Newline) {
             self.shift();
