@@ -49,6 +49,7 @@ sigil_type! {
     pub struct OpenSquare = (LexToken::Sigil, "[");
     pub struct CloseSquare = (LexToken::Sigil, "]");
     pub struct Colon = (LexToken::Sigil, ":");
+    pub struct Semicolon = (LexToken::Sigil, ";");
     pub struct Comma = (LexToken::Sigil, ",");
     pub struct RightArrow = (LexToken::Sigil, "->");
 }
