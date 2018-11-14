@@ -90,6 +90,15 @@ where
     }
 }
 
+impl<T> DebugWith for &mut T
+where
+    T: DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        T::fmt_with(self, cx, fmt)
+    }
+}
+
 impl<T> DebugWith for Option<T>
 where
     T: DebugWith,
