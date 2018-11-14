@@ -52,6 +52,7 @@ sigil_type! {
     pub struct Semicolon = (LexToken::Sigil, ";");
     pub struct Comma = (LexToken::Sigil, ",");
     pub struct RightArrow = (LexToken::Sigil, "->");
+    pub struct Let = (LexToken::Identifier, "let");
 }
 
 #[derive(DebugWith)]
