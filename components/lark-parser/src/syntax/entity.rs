@@ -163,6 +163,9 @@ impl LazyParsedEntity for ErrorParsedEntity {
 
 /// The trait given to the [`LazyParsedEntity`] methods. It is a "dyn
 /// capable" variant of `ParserDatabase`.
-pub trait LazyParsedEntityDatabase: AsRef<GlobalIdentifierTables> + AsRef<EntityTables> {}
+pub trait LazyParsedEntityDatabase: AsRef<GlobalIdentifierTables> + AsRef<EntityTables> {
+    /// Looks up a name `name` to see if it matches any entities in the scope of `item_entity`.
+    fn resolve_name(&self, item_entity: Entity, name: &str) -> Option<Entity>;
+}
 
 impl<T: ParserDatabase> LazyParsedEntityDatabase for T {}
