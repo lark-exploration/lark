@@ -14,15 +14,36 @@ pub struct SpannedGlobalIdentifier;
 impl Syntax<'parse> for SpannedGlobalIdentifier {
     type Data = Spanned<GlobalIdentifier>;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&self, parser: &Parser<'parse>) -> bool {
+        SpannedLocalIdentifier.test(parser)
+    }
+
+    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let Spanned { span, value } = SpannedLocalIdentifier.expect(parser)?;
+        Ok(Spanned {
+            value: value.intern(parser),
+            span: span,
+        })
+    }
+}
+
+impl NonEmptySyntax<'parse> for SpannedGlobalIdentifier {}
+
+#[derive(DebugWith)]
+pub struct SpannedLocalIdentifier;
+
+impl Syntax<'parse> for SpannedLocalIdentifier {
+    type Data = Spanned<&'parse str>;
+
+    fn test(&self, parser: &Parser<'parse>) -> bool {
         parser.is(LexToken::Identifier)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         if self.test(parser) {
             let Spanned { span, .. } = parser.shift();
             Ok(Spanned {
-                value: parser.input()[span].intern(parser),
+                value: &parser.input()[span],
                 span: span,
             })
         } else {
@@ -31,4 +52,4 @@ impl Syntax<'parse> for SpannedGlobalIdentifier {
     }
 }
 
-impl NonEmptySyntax<'parse> for SpannedGlobalIdentifier {}
+impl NonEmptySyntax<'parse> for SpannedLocalIdentifier {}
