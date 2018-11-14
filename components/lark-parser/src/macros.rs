@@ -1,11 +1,11 @@
 use crate::parser::Parser;
-use crate::span::Spanned;
 use crate::syntax::entity::ParsedEntity;
+
 use intern::Intern;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
-use lark_string::global::GlobalIdentifier;
-use lark_string::global::GlobalIdentifierTables;
+use lark_span::Spanned;
+use lark_string::global::{GlobalIdentifier, GlobalIdentifierTables};
 use map::FxIndexMap;
 use std::sync::Arc;
 

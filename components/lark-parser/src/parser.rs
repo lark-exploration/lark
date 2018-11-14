@@ -1,16 +1,15 @@
 use crate::lexer::token::LexToken;
 use crate::macros::EntityMacroDefinition;
-use crate::span::CurrentFile;
-use crate::span::Span;
-use crate::span::Spanned;
 use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
+
 use debug::DebugWith;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::ErrorReported;
 use lark_error::WithError;
 use lark_seq::Seq;
+use lark_span::{CurrentFile, Span, Spanned};
 use lark_string::global::GlobalIdentifier;
 use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;

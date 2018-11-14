@@ -1,16 +1,14 @@
 use crate::parser::Parser;
-use crate::span::CurrentFile;
-use crate::span::Span;
-use crate::syntax::identifier::SpannedGlobalIdentifier;
-use crate::syntax::NonEmptySyntax;
-use crate::syntax::Syntax;
+use crate::syntax::{NonEmptySyntax, Syntax};
 use crate::ParserDatabase;
+
 use debug::DebugWith;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_span::{CurrentFile, Span, SpannedGlobalIdentifier};
 use lark_string::global::GlobalIdentifierTables;
 use std::sync::Arc;
 

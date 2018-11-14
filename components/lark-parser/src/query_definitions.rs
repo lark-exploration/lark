@@ -3,19 +3,18 @@ use crate::lexer::token::LexToken;
 use crate::lexer::tools::Tokenizer;
 use crate::macros;
 use crate::parser::Parser;
-use crate::span::Spanned;
 use crate::syntax::entity::EntitySyntax;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::skip_newline::SkipNewline;
 use crate::FileName;
 use crate::ParserDatabase;
+
 use debug::DebugWith;
-use intern::Intern;
-use intern::Untern;
-use lark_entity::Entity;
-use lark_entity::EntityData;
+use intern::{Intern, Untern};
+use lark_entity::{Entity, EntityData};
 use lark_error::WithError;
 use lark_seq::Seq;
+use lark_span::Spanned;
 
 crate fn file_tokens(
     db: &impl ParserDatabase,

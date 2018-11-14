@@ -1,27 +1,21 @@
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
-use crate::span::Spanned;
 use crate::syntax::delimited::Delimited;
-use crate::syntax::entity::LazyParsedEntity;
-use crate::syntax::entity::LazyParsedEntityDatabase;
-use crate::syntax::entity::ParsedEntity;
-use crate::syntax::entity::ParsedEntityThunk;
-use crate::syntax::field::Field;
-use crate::syntax::field::ParsedField;
-use crate::syntax::identifier::SpannedGlobalIdentifier;
+use crate::syntax::entity::{
+    LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity, ParsedEntityThunk,
+};
+use crate::syntax::field::{Field, ParsedField};
 use crate::syntax::list::CommaList;
 use crate::syntax::sigil::Curlies;
 use crate::syntax::skip_newline::SkipNewline;
+
 use debug::DebugWith;
 use intern::Intern;
-use lark_entity::Entity;
-use lark_entity::EntityData;
-use lark_entity::ItemKind;
-use lark_entity::MemberKind;
-use lark_error::ErrorReported;
-use lark_error::WithError;
+use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
+use lark_error::{ErrorReported, WithError};
 use lark_seq::Seq;
-use lark_string::global::GlobalIdentifier;
+use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_string::GlobalIdentifier;
 
 /// ```ignore
 /// struct <id> {

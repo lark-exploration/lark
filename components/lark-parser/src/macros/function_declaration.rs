@@ -1,6 +1,5 @@
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
-use crate::span::Spanned;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::LazyParsedEntityDatabase;
@@ -9,7 +8,6 @@ use crate::syntax::entity::ParsedEntityThunk;
 use crate::syntax::field::Field;
 use crate::syntax::field::ParsedField;
 use crate::syntax::guard::Guard;
-use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::matched::Matched;
 use crate::syntax::matched::ParsedMatch;
@@ -19,15 +17,13 @@ use crate::syntax::sigil::RightArrow;
 use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::type_reference::ParsedTypeReference;
 use crate::syntax::type_reference::TypeReference;
+
 use debug::DebugWith;
 use intern::Intern;
-use lark_entity::Entity;
-use lark_entity::EntityData;
-use lark_entity::ItemKind;
-use lark_error::ErrorReported;
-use lark_error::ResultExt;
-use lark_error::WithError;
+use lark_entity::{Entity, EntityData, ItemKind};
+use lark_error::{ErrorReported, ResultExt, WithError};
 use lark_seq::Seq;
+use lark_span::{Spanned, SpannedGlobalIdentifier};
 use lark_string::global::GlobalIdentifier;
 
 /// ```ignore

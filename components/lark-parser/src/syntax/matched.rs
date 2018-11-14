@@ -1,10 +1,9 @@
 use crate::parser::Parser;
-use crate::span::Spanned;
-use crate::syntax::Delimiter;
-use crate::syntax::NonEmptySyntax;
-use crate::syntax::Syntax;
+use crate::syntax::{Delimiter, NonEmptySyntax, Syntax};
+
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
+use lark_span::Spanned;
 
 /// Some sequence of tokens that begins with an open delimiter and
 /// ends with a (matched) close delimiter. The tokens in between are
