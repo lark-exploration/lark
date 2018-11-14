@@ -1,13 +1,10 @@
 use crate::parser::Parser;
-use crate::span::CurrentFile;
-use crate::span::Span;
-use crate::span::Spanned;
-use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
+
 use lark_debug_derive::DebugWith;
-use lark_error::ErrorReported;
-use lark_error::ErrorSentinel;
-use lark_string::global::GlobalIdentifier;
+use lark_error::{ErrorReported, ErrorSentinel};
+use lark_span::{CurrentFile, Span, Spanned, SpannedGlobalIdentifier};
+use lark_string::GlobalIdentifier;
 
 #[derive(DebugWith)]
 pub struct TypeReference;

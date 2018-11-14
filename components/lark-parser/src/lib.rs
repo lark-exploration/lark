@@ -8,16 +8,15 @@
 #![allow(dead_code)]
 
 use crate::lexer::token::LexToken;
-use crate::span::CurrentFile;
-use crate::span::Span;
-use crate::span::Spanned;
 use crate::syntax::entity::ParsedEntity;
+
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_seq::Seq;
+use lark_span::{CurrentFile, Span, Spanned};
 use lark_string::global::GlobalIdentifier;
 use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;
@@ -27,7 +26,6 @@ mod lexer;
 mod macros;
 mod parser;
 mod query_definitions;
-pub mod span;
 pub mod syntax;
 
 salsa::query_group! {

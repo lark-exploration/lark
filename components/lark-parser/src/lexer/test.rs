@@ -2,9 +2,8 @@
 
 use crate::lexer::definition::LexerState;
 use crate::lexer::tools::Tokenizer;
-use crate::span::CurrentFile;
-use crate::span::Span;
 
+use lark_span::{CurrentFile, Span};
 use unindent::unindent;
 
 /// The "specification" consists of alternating source lines

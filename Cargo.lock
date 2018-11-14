@@ -483,6 +483,7 @@ dependencies = [
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
  "lark-seq 0.1.0",
+ "lark-span 0.1.0",
  "lark-string 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "map 0.1.0",
@@ -524,6 +525,16 @@ name = "lark-seq"
 version = "0.1.0"
 dependencies = [
  "debug 0.1.0",
+]
+
+[[package]]
+name = "lark-span"
+version = "0.1.0"
+dependencies = [
+ "debug 0.1.0",
+ "derive-new 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lark-debug-derive 0.1.0",
+ "lark-string 0.1.0",
 ]
 
 [[package]]
@@ -733,6 +744,7 @@ dependencies = [
  "lalrpop-util 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "language-reporting 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-debug-derive 0.1.0",
+ "lark-span 0.1.0",
  "lark-string 0.1.0",
  "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",

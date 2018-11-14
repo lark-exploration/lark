@@ -1,15 +1,11 @@
 use crate::lexer::token::LexToken;
 use crate::parser::Parser;
-use crate::span::Spanned;
-use crate::syntax::NonEmptySyntax;
-use crate::syntax::Syntax;
-use intern::Intern;
-use lark_debug_derive::DebugWith;
-use lark_error::ErrorReported;
-use lark_string::global::GlobalIdentifier;
+use crate::syntax::{NonEmptySyntax, Syntax};
 
-#[derive(DebugWith)]
-pub struct SpannedGlobalIdentifier;
+use intern::Intern;
+use lark_error::ErrorReported;
+use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_string::global::GlobalIdentifier;
 
 impl Syntax for SpannedGlobalIdentifier {
     type Data = Spanned<GlobalIdentifier>;

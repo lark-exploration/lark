@@ -1,21 +1,16 @@
 use crate::parser::Parser;
-use crate::span::Spanned;
-use crate::syntax::entity::LazyParsedEntity;
-use crate::syntax::entity::LazyParsedEntityDatabase;
-use crate::syntax::entity::ParsedEntity;
+use crate::syntax::entity::{LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity};
 use crate::syntax::guard::Guard;
-use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::sigil::Colon;
 use crate::syntax::skip_newline::SkipNewline;
-use crate::syntax::type_reference::ParsedTypeReference;
-use crate::syntax::type_reference::TypeReference;
+use crate::syntax::type_reference::{ParsedTypeReference, TypeReference};
 use crate::syntax::Syntax;
+
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
-use lark_error::ErrorReported;
-use lark_error::ResultExt;
-use lark_error::WithError;
-use lark_string::global::GlobalIdentifier;
+use lark_error::{ErrorReported, ResultExt, WithError};
+use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_string::GlobalIdentifier;
 
 #[derive(DebugWith)]
 pub struct Field;

@@ -5,3 +5,6 @@
 
 pub mod global;
 pub mod text;
+
+pub use self::global::{GlobalIdentifier, GlobalIdentifierTables};
+pub use self::text::Text;

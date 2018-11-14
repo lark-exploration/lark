@@ -1,11 +1,10 @@
 use crate::lexer::token::LexToken;
 use crate::parser::Parser;
-use crate::span::Spanned;
-use crate::syntax::Delimiter;
-use crate::syntax::NonEmptySyntax;
-use crate::syntax::Syntax;
+use crate::syntax::{Delimiter, NonEmptySyntax, Syntax};
+
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
+use lark_span::Spanned;
 
 macro_rules! sigil_type {
     ($($v:vis struct $name:ident = ($kind:path, $token:expr);)*) => {

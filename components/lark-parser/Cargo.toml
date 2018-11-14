@@ -15,6 +15,7 @@ lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 lark-string = { path = "../lark-string" }
 lark-seq = { path = "../lark-seq" }
+lark-span = { path = "../lark-span" }
 log = "0.4.5"
 map = { path = "../map" }
 parser = { path = "../parser" }
