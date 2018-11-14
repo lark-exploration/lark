@@ -189,12 +189,12 @@ impl ExpressionScope<'parse> {
 }
 
 impl DebugWith for ExpressionScope<'parse> {
-    fn fmt_with<Cx: ?Sized>(
-        &self,
-        _cx: &Cx,
-        _fmt: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        unimplemented!()
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_struct("ExpressionScope")
+            .field("item_entity", &self.item_entity.debug_with(cx))
+            .field("variables", &self.variables.debug_with(cx))
+            .field("fn_body_tables", &self.fn_body_tables.debug_with(cx))
+            .finish()
     }
 }
 

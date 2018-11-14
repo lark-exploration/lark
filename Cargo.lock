@@ -130,6 +130,7 @@ name = "debug"
 version = "0.1.0"
 dependencies = [
  "indices 0.1.0",
+ "map 0.1.0",
 ]
 
 [[package]]
