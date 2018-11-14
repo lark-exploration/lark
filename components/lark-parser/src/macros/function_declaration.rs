@@ -8,6 +8,7 @@ use crate::syntax::entity::ParsedEntityThunk;
 use crate::syntax::field::Field;
 use crate::syntax::field::ParsedField;
 use crate::syntax::guard::Guard;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::matched::Matched;
 use crate::syntax::matched::ParsedMatch;
@@ -23,7 +24,7 @@ use intern::Intern;
 use lark_entity::{Entity, EntityData, ItemKind};
 use lark_error::{ErrorReported, ResultExt, WithError};
 use lark_seq::Seq;
-use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
 
 /// ```ignore

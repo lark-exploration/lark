@@ -14,17 +14,17 @@ impl<T> CommaList<T> {
     }
 }
 
-impl<T> Syntax for CommaList<T>
+impl<T> Syntax<'parse> for CommaList<T>
 where
-    T: Syntax,
+    T: Syntax<'parse>,
 {
     type Data = Seq<T::Data>;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&self, parser: &Parser<'parse>) -> bool {
         SeparatedList(self.element(), Comma).test(parser)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Seq<T::Data>, ErrorReported> {
         SeparatedList(self.element(), Comma).expect(parser)
     }
 }
@@ -60,18 +60,18 @@ impl<T, S> SeparatedList<T, S> {
     }
 }
 
-impl<T, S> Syntax for SeparatedList<T, S>
+impl<T, S> Syntax<'parse> for SeparatedList<T, S>
 where
-    T: Syntax,
-    S: Syntax,
+    T: Syntax<'parse>,
+    S: Syntax<'parse>,
 {
     type Data = Seq<T::Data>;
 
-    fn test(&self, _parser: &Parser<'_>) -> bool {
+    fn test(&self, _parser: &Parser<'parse>) -> bool {
         true // we never produce an error
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Seq<T::Data>, ErrorReported> {
         let SeparatedList(element, delimiter) = self;
 
         let mut result = vec![];

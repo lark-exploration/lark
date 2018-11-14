@@ -1,14 +1,14 @@
 use crate::parser::Parser;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::{NonEmptySyntax, Syntax};
 use crate::ParserDatabase;
-
 use debug::DebugWith;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::ErrorReported;
 use lark_error::WithError;
-use lark_span::{CurrentFile, Span, SpannedGlobalIdentifier};
+use lark_span::{CurrentFile, Span};
 use lark_string::global::GlobalIdentifierTables;
 use std::sync::Arc;
 
@@ -23,7 +23,7 @@ impl EntitySyntax {
     }
 }
 
-impl Syntax for EntitySyntax {
+impl Syntax<'parse> for EntitySyntax {
     type Data = ParsedEntity;
 
     fn test(&self, parser: &Parser<'_>) -> bool {
@@ -56,7 +56,7 @@ impl Syntax for EntitySyntax {
     }
 }
 
-impl NonEmptySyntax for EntitySyntax {}
+impl NonEmptySyntax<'parse> for EntitySyntax {}
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
 pub struct ParsedEntity {

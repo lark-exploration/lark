@@ -17,14 +17,14 @@ macro_rules! sigil_type {
                 $v const TEXT: &'static str = $token;
             }
 
-            impl Syntax for $name {
+            impl Syntax<'parse> for $name {
                 type Data = Spanned<LexToken>;
 
-                fn test(&self, parser: &Parser<'_>) -> bool {
+                fn test(&self, parser: &Parser<'parse>) -> bool {
                     parser.is($kind) && parser.peek_str() == $name::TEXT
                 }
 
-                fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+                fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
                     if self.test(parser) {
                         Ok(parser.shift())
                     } else {
@@ -36,7 +36,7 @@ macro_rules! sigil_type {
                 }
             }
 
-            impl NonEmptySyntax for $name { }
+            impl NonEmptySyntax<'parse> for $name { }
         )*
     }
 }
@@ -56,7 +56,7 @@ sigil_type! {
 #[derive(DebugWith)]
 pub struct Curlies;
 
-impl Delimiter for Curlies {
+impl Delimiter<'parse> for Curlies {
     type Open = OpenCurly;
     type Close = CloseCurly;
 
@@ -72,7 +72,7 @@ impl Delimiter for Curlies {
 #[derive(DebugWith)]
 pub struct Parentheses;
 
-impl Delimiter for Parentheses {
+impl Delimiter<'parse> for Parentheses {
     type Open = OpenParenthesis;
     type Close = CloseParenthesis;
 

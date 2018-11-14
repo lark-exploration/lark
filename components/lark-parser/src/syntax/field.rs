@@ -1,15 +1,15 @@
 use crate::parser::Parser;
 use crate::syntax::entity::{LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity};
 use crate::syntax::guard::Guard;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::sigil::Colon;
 use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::type_reference::{ParsedTypeReference, TypeReference};
 use crate::syntax::Syntax;
-
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::{ErrorReported, ResultExt, WithError};
-use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_span::Spanned;
 use lark_string::GlobalIdentifier;
 
 #[derive(DebugWith)]
@@ -22,7 +22,7 @@ pub struct ParsedField {
     pub ty: ParsedTypeReference,
 }
 
-impl Syntax for Field {
+impl Syntax<'parse> for Field {
     type Data = Spanned<ParsedField>;
 
     fn test(&self, parser: &Parser<'_>) -> bool {

@@ -1,9 +1,9 @@
 use crate::parser::Parser;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
-
 use lark_debug_derive::DebugWith;
 use lark_error::{ErrorReported, ErrorSentinel};
-use lark_span::{CurrentFile, Span, Spanned, SpannedGlobalIdentifier};
+use lark_span::{CurrentFile, Span, Spanned};
 use lark_string::GlobalIdentifier;
 
 #[derive(DebugWith)]
@@ -23,14 +23,14 @@ pub struct NamedTypeReference {
     pub identifier: Spanned<GlobalIdentifier>,
 }
 
-impl Syntax for TypeReference {
+impl Syntax<'parse> for TypeReference {
     type Data = ParsedTypeReference;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&self, parser: &Parser<'parse>) -> bool {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<ParsedTypeReference, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'parse>) -> Result<ParsedTypeReference, ErrorReported> {
         let identifier = parser.expect(SpannedGlobalIdentifier)?;
         Ok(ParsedTypeReference::Named(NamedTypeReference {
             identifier,

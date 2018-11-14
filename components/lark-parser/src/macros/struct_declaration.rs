@@ -5,6 +5,7 @@ use crate::syntax::entity::{
     LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity, ParsedEntityThunk,
 };
 use crate::syntax::field::{Field, ParsedField};
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::sigil::Curlies;
 use crate::syntax::skip_newline::SkipNewline;
@@ -14,7 +15,7 @@ use intern::Intern;
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::{ErrorReported, WithError};
 use lark_seq::Seq;
-use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_span::Spanned;
 use lark_string::GlobalIdentifier;
 
 /// ```ignore

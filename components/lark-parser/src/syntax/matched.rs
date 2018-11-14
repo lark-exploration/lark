@@ -27,17 +27,17 @@ pub struct ParsedMatch {
     end_token: usize,
 }
 
-impl<D> Syntax for Matched<D>
+impl<D> Syntax<'parse> for Matched<D>
 where
-    D: Delimiter,
+    D: Delimiter<'parse>,
 {
     type Data = Spanned<ParsedMatch>;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&self, parser: &Parser<'parse>) -> bool {
         parser.test(self.delimiters().open_syntax())
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         let open_syntax = self.delimiters().open_syntax();
         let close_syntax = self.delimiters().close_syntax();
 
@@ -69,4 +69,4 @@ where
     }
 }
 
-impl<D> NonEmptySyntax for Matched<D> where D: Delimiter {}
+impl<D> NonEmptySyntax<'parse> for Matched<D> where D: Delimiter<'parse> {}

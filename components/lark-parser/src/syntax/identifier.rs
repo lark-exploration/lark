@@ -3,11 +3,15 @@ use crate::parser::Parser;
 use crate::syntax::{NonEmptySyntax, Syntax};
 
 use intern::Intern;
+use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
-use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
 
-impl Syntax for SpannedGlobalIdentifier {
+#[derive(DebugWith)]
+pub struct SpannedGlobalIdentifier;
+
+impl Syntax<'parse> for SpannedGlobalIdentifier {
     type Data = Spanned<GlobalIdentifier>;
 
     fn test(&self, parser: &Parser<'_>) -> bool {
@@ -27,4 +31,4 @@ impl Syntax for SpannedGlobalIdentifier {
     }
 }
 
-impl NonEmptySyntax for SpannedGlobalIdentifier {}
+impl NonEmptySyntax<'parse> for SpannedGlobalIdentifier {}

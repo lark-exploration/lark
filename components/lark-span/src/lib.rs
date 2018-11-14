@@ -3,11 +3,9 @@
 #![feature(in_band_lifetimes)]
 
 mod file;
-mod identifier;
 mod span;
 mod spanned;
 
 pub use self::file::*;
-pub use self::identifier::*;
 pub use self::span::*;
 pub use self::spanned::*;
