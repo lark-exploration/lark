@@ -23,7 +23,7 @@ pub trait Syntax<'parse>: DebugWith {
     /// Routine to check if this syntax applies. This often does a
     /// much more shallow check than `expect`, e.g., just checking an
     /// initial token or two.
-    fn test(&self, parser: &Parser<'parse>) -> bool;
+    fn test(&mut self, parser: &Parser<'parse>) -> bool;
 
     /// Routine to do the parsing itself. This will produce a parse
     /// error if the syntax is not found at the current point.
@@ -31,7 +31,7 @@ pub trait Syntax<'parse>: DebugWith {
     /// **Relationship to test:** If `test` returns false, errors are
     /// guaranteed. Even if `test` returns true, however, errors are
     /// still possible, since `test` does a more shallow check.
-    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported>;
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported>;
 }
 
 /// A Syntax whose `expect` method, when `test` returns true, always
@@ -45,17 +45,17 @@ pub trait Delimiter<'parse>: DebugWith {
     fn close_syntax(&self) -> Self::Close;
 }
 
-impl<T> Syntax<'parse> for &T
+impl<T> Syntax<'parse> for &mut T
 where
     T: Syntax<'parse>,
 {
     type Data = T::Data;
 
-    fn test(&self, parser: &Parser<'parse>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         T::test(self, parser)
     }
 
-    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         T::expect(self, parser)
     }
 }

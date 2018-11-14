@@ -25,11 +25,11 @@ pub struct ParsedField {
 impl Syntax<'parse> for Field {
     type Data = Spanned<ParsedField>;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'_>) -> bool {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
         let name = parser.expect(SpannedGlobalIdentifier)?;
 
         let ty = parser

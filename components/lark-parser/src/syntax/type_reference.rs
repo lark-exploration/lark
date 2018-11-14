@@ -26,11 +26,14 @@ pub struct NamedTypeReference {
 impl Syntax<'parse> for TypeReference {
     type Data = ParsedTypeReference;
 
-    fn test(&self, parser: &Parser<'parse>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn expect(&self, parser: &mut Parser<'parse>) -> Result<ParsedTypeReference, ErrorReported> {
+    fn expect(
+        &mut self,
+        parser: &mut Parser<'parse>,
+    ) -> Result<ParsedTypeReference, ErrorReported> {
         let identifier = parser.expect(SpannedGlobalIdentifier)?;
         Ok(ParsedTypeReference::Named(NamedTypeReference {
             identifier,

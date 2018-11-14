@@ -9,8 +9,8 @@ use lark_error::ErrorReported;
 pub struct SkipNewline<T>(pub T);
 
 impl<T> SkipNewline<T> {
-    fn content(&self) -> &T {
-        &self.0
+    fn content(&mut self) -> &mut T {
+        &mut self.0
     }
 }
 
@@ -20,13 +20,13 @@ where
 {
     type Data = T::Data;
 
-    fn test(&self, parser: &Parser<'parse>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         let mut parser = parser.checkpoint();
         parser.skip_newlines();
         parser.test(self.content())
     }
 
-    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         parser.skip_newlines();
         parser.expect(self.content())
     }

@@ -33,23 +33,23 @@ where
 {
     type Data = Spanned<ParsedMatch>;
 
-    fn test(&self, parser: &Parser<'parse>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.test(self.delimiters().open_syntax())
     }
 
-    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        let open_syntax = self.delimiters().open_syntax();
-        let close_syntax = self.delimiters().close_syntax();
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let mut open_syntax = self.delimiters().open_syntax();
+        let mut close_syntax = self.delimiters().close_syntax();
 
         let start_token = parser.peek_index();
         let start_span = parser.peek_span();
-        parser.expect(&open_syntax)?;
+        parser.expect(&mut open_syntax)?;
 
         let mut counter = 1;
         loop {
-            if let Some(_) = parser.parse_if_present(&open_syntax) {
+            if let Some(_) = parser.parse_if_present(&mut open_syntax) {
                 counter += 1;
-            } else if let Some(_) = parser.parse_if_present(&close_syntax) {
+            } else if let Some(_) = parser.parse_if_present(&mut close_syntax) {
                 counter -= 1;
                 if counter == 0 {
                     break;

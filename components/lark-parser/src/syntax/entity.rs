@@ -26,11 +26,11 @@ impl EntitySyntax {
 impl Syntax<'parse> for EntitySyntax {
     type Data = ParsedEntity;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'_>) -> bool {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         // Parse the macro keyword, which we must find first. So something like
         //
         // ```
@@ -168,4 +168,8 @@ pub trait LazyParsedEntityDatabase: AsRef<GlobalIdentifierTables> + AsRef<Entity
     fn resolve_name(&self, item_entity: Entity, name: &str) -> Option<Entity>;
 }
 
-impl<T: ParserDatabase> LazyParsedEntityDatabase for T {}
+impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
+    fn resolve_name(&self, _item_entity: Entity, _name: &str) -> Option<Entity> {
+        unimplemented!()
+    }
+}

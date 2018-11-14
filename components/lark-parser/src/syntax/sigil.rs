@@ -20,11 +20,11 @@ macro_rules! sigil_type {
             impl Syntax<'parse> for $name {
                 type Data = Spanned<LexToken>;
 
-                fn test(&self, parser: &Parser<'parse>) -> bool {
+                fn test(&mut self, parser: &Parser<'parse>) -> bool {
                     parser.is($kind) && parser.peek_str() == $name::TEXT
                 }
 
-                fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+                fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
                     if self.test(parser) {
                         Ok(parser.shift())
                     } else {

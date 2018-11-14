@@ -25,11 +25,12 @@ where
 {
     type Data = T::Data;
 
-    fn test(&self, parser: &Parser<'parse>) -> bool {
+    fn test(&mut self,
+            parser: &Parser<'parse>) -> bool {
         parser.test(self.delimiters().open_syntax())
     }
 
-    fn expect(&self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         try {
             let Delimited(delimiter, content) = self;
             parser.expect(delimiter.open_syntax())?;

@@ -92,7 +92,7 @@ impl Parser<'parse> {
     /// Parse all the instances of `syntax` that we can, stopping only
     /// at EOF. Returns a vector of the results plus any parse errors
     /// we encountered.
-    crate fn parse_until_eof<S>(mut self, syntax: S) -> WithError<Seq<S::Data>>
+    crate fn parse_until_eof<S>(mut self, mut syntax: S) -> WithError<Seq<S::Data>>
     where
         S: NonEmptySyntax<'parse>,
     {
@@ -102,8 +102,8 @@ impl Parser<'parse> {
                 break;
             }
 
-            if self.test(&syntax) {
-                match self.expect(&syntax) {
+            if self.test(&mut syntax) {
+                match self.expect(&mut syntax) {
                     Ok(e) => entities.push(e),
                     Err(ErrorReported(_)) => (),
                 }
@@ -206,7 +206,7 @@ impl Parser<'parse> {
     }
 
     /// Tests whether the syntax applies at the current point.
-    crate fn test(&self, syntax: impl Syntax<'parse>) -> bool {
+    crate fn test(&self, mut syntax: impl Syntax<'parse>) -> bool {
         log::trace!("test({})", syntax.debug_with(self));
 
         if syntax.test(self) {
@@ -219,7 +219,7 @@ impl Parser<'parse> {
 
     /// Parses a `T` if we can and returns true if so; otherwise,
     /// reports an error and returns false.
-    crate fn expect<T>(&'s mut self, syntax: T) -> Result<T::Data, ErrorReported>
+    crate fn expect<T>(&'s mut self, mut syntax: T) -> Result<T::Data, ErrorReported>
     where
         T: Syntax<'parse>,
     {
@@ -230,13 +230,13 @@ impl Parser<'parse> {
 
     /// Parse a piece of syntax (if it is present), otherwise returns
     /// `None`. A combination of `test` and `expect`.
-    crate fn parse_if_present<T>(&mut self, syntax: T) -> Option<Result<T::Data, ErrorReported>>
+    crate fn parse_if_present<T>(&mut self, mut syntax: T) -> Option<Result<T::Data, ErrorReported>>
     where
         T: Syntax<'parse>,
     {
         log::trace!("eat({})", syntax.debug_with(self));
 
-        if self.test(&syntax) {
+        if self.test(&mut syntax) {
             Some(self.expect(syntax))
         } else {
             None
