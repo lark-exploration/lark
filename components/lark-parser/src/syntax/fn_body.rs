@@ -20,6 +20,7 @@ use lark_hir as hir;
 use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
 use map::FxIndexMap;
+use std::rc::Rc;
 
 // # True grammar:
 //
@@ -133,10 +134,15 @@ impl ParsedExpression {
     }
 }
 
+#[derive(Copy, Clone)]
+enum ParsedStatement {
+    Expression(hir::Expression),
+}
+
 struct ExpressionScope<'parse> {
     db: &'parse dyn LazyParsedEntityDatabase,
     item_entity: Entity,
-    variables: FxIndexMap<&'parse str, hir::Variable>,
+    variables: Rc<FxIndexMap<&'parse str, hir::Variable>>,
     fn_body_tables: hir::FnBodyTables,
 }
 
@@ -322,6 +328,9 @@ impl Syntax<'parse> for Block<'me, 'parse> {
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        // Save the map of variables before we start parsing
+        let variables_on_entry = self.scope.variables.clone();
+
         // Convert a sequence of statements like `[a, b, c]` into a HIR tree
         // like `Sequence { first: Sequence { first: a, second: b }, second: c }`
         let start_span = parser.peek_span();
@@ -357,6 +366,9 @@ impl Syntax<'parse> for Block<'me, 'parse> {
             );
         }
 
+        // Restore the map of variables to what it used to be
+        self.scope.variables = variables_on_entry;
+
         Ok(ParsedExpression::Expression(result))
     }
 }
@@ -367,13 +379,13 @@ struct Statement<'me, 'parse> {
 }
 
 impl Syntax<'parse> for Statement<'me, 'parse> {
-    type Data = ParsedExpression;
+    type Data = ParsedStatement;
 
-    fn test(&mut self, _parser: &Parser<'parse>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         unimplemented!()
     }
 
-    fn expect(&mut self, _parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         unimplemented!()
     }
 }
