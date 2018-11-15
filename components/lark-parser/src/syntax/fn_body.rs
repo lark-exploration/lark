@@ -4,9 +4,14 @@ use crate::span::Span;
 use crate::span::Spanned;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::LazyParsedEntityDatabase;
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::identifier::SpannedLocalIdentifier;
+use crate::syntax::list::CommaList;
 use crate::syntax::list::SeparatedList;
+use crate::syntax::sigil::Colon;
 use crate::syntax::sigil::Curlies;
+use crate::syntax::sigil::Dot;
+use crate::syntax::sigil::OpenParenthesis;
 use crate::syntax::sigil::Parentheses;
 use crate::syntax::sigil::Semicolon;
 use crate::syntax::skip_newline::SkipNewline;
@@ -134,6 +139,16 @@ impl ParsedExpression {
             }
         }
     }
+
+    fn to_hir_place(self, scope: &mut ExpressionScope<'_>) -> hir::Place {
+        match self {
+            ParsedExpression::Place(place) => place,
+            ParsedExpression::Expression(expression) => {
+                let span = scope.span(expression);
+                scope.add(span, hir::PlaceData::Temporary(expression))
+            }
+        }
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -173,6 +188,9 @@ impl ExpressionScope<'parse> {
         let message = match data {
             hir::ErrorData::Misc => "error".to_string(),
             hir::ErrorData::Unimplemented => "unimplemented".to_string(),
+            hir::ErrorData::CanOnlyConstructStructs => {
+                "can only supply named arguments when constructing structs".to_string()
+            }
             hir::ErrorData::UnknownIdentifier { text } => {
                 format!("unknown identifier `{}`", text.untern(self.db))
             }
@@ -208,6 +226,25 @@ impl DebugWith for ExpressionScope<'parse> {
 }
 
 #[derive(new, DebugWith)]
+struct HirExpression<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for HirExpression<'me, 'parse> {
+    type Data = hir::Expression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(Expr::new(self.scope))
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        Ok(parser
+            .expect(Expr::new(self.scope))?
+            .to_hir_expression(self.scope))
+    }
+}
+
+#[derive(new, DebugWith)]
 struct Expr<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
@@ -237,10 +274,234 @@ impl Syntax<'parse> for Expr1<'me, 'parse> {
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        let expr0 = parser.expect(Expr0::new(self.scope))?;
+        let mut expr = parser.expect(Expr0::new(self.scope))?;
 
-        drop(expr0);
-        unimplemented!()
+        // foo(a, b, c) -- call
+        if let Some(arguments) = parser.parse_if_present(CallArguments::new(self.scope)) {
+            let arguments = arguments?;
+            let function = expr.to_hir_place(self.scope);
+            let span = self
+                .scope
+                .span(function)
+                .extended_until_end_of(parser.last_span());
+            let expression = self.scope.add(
+                span,
+                hir::ExpressionData::Call {
+                    function,
+                    arguments,
+                },
+            );
+            return Ok(ParsedExpression::Expression(expression));
+        }
+
+        // foo(f: a, g: b) -- struct construction
+        //
+        // FIXME -- we probably want to support `foo.bar.baz(f: a, g:
+        // b)`, too? Have to figure out the module system.
+        if let Some(fields) = parser.parse_if_present(IdentifiedCallArguments::new(self.scope)) {
+            let fields = fields?;
+
+            let place = expr.to_hir_place(self.scope);
+
+            let span = self
+                .scope
+                .span(place)
+                .extended_until_end_of(parser.last_span());
+
+            // This is only legal if the receiver is a struct. This
+            // seems like it should maybe not be baked into the
+            // structure of the HIR, though...? (At minimum, the
+            // entity reference should have a span!) In particular, I
+            // imagine that at some point we might want to support
+            // "type-relative" paths here, through associated
+            // types. Ah well, worry about it then.
+            if let hir::PlaceData::Entity(entity) = self.scope.fn_body_tables[place] {
+                let expression = self
+                    .scope
+                    .add(span, hir::ExpressionData::Aggregate { entity, fields });
+                return Ok(ParsedExpression::Expression(expression));
+            } else {
+                // Everything else is an error.
+                let error_expression = self.scope.report_error_expression(
+                    parser,
+                    span,
+                    hir::ErrorData::CanOnlyConstructStructs,
+                );
+                return Ok(ParsedExpression::Expression(error_expression));
+            }
+        }
+
+        // foo.bar.baz
+        // foo.bar.baz(a, b, c)
+        while let Some(member_access) = parser.parse_if_present(MemberAccess::new(self.scope)) {
+            let member_access = member_access?;
+            let owner = expr.to_hir_place(self.scope);
+            let span = self
+                .scope
+                .span(owner)
+                .extended_until_end_of(parser.last_span());
+            match member_access {
+                ParsedMemberAccess::Field { member_name: name } => {
+                    expr = ParsedExpression::Place(
+                        self.scope.add(span, hir::PlaceData::Field { owner, name }),
+                    );
+                }
+                ParsedMemberAccess::Method {
+                    member_name: method,
+                    arguments,
+                } => {
+                    expr = ParsedExpression::Expression(self.scope.add(
+                        span,
+                        hir::ExpressionData::MethodCall {
+                            owner,
+                            method,
+                            arguments,
+                        },
+                    ));
+                }
+            }
+        }
+
+        Ok(expr)
+    }
+}
+
+#[derive(new, DebugWith)]
+struct MemberAccess<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+enum ParsedMemberAccess {
+    Field {
+        member_name: hir::Identifier,
+    },
+    Method {
+        member_name: hir::Identifier,
+        arguments: hir::List<hir::Expression>,
+    },
+}
+
+impl Syntax<'parse> for MemberAccess<'me, 'parse> {
+    type Data = ParsedMemberAccess;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(SkipNewline(Dot))
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        parser.expect(SkipNewline(Dot))?;
+        let member_name = parser.expect(HirIdentifier::new(self.scope))?;
+
+        if let Some(arguments) = parser.parse_if_present(CallArguments::new(self.scope)) {
+            let arguments = arguments?;
+            Ok(ParsedMemberAccess::Method {
+                member_name,
+                arguments,
+            })
+        } else {
+            Ok(ParsedMemberAccess::Field { member_name })
+        }
+    }
+}
+
+#[derive(new, DebugWith)]
+struct CallArguments<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for CallArguments<'me, 'parse> {
+    type Data = hir::List<hir::Expression>;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(OpenParenthesis)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let expressions = parser.expect(Delimited(
+            Parentheses,
+            CommaList(HirExpression::new(self.scope)),
+        ))?;
+        Ok(hir::List::from_iterator(
+            &mut self.scope.fn_body_tables,
+            expressions.iter().cloned(),
+        ))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct IdentifiedCallArguments<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for IdentifiedCallArguments<'me, 'parse> {
+    type Data = hir::List<hir::IdentifiedExpression>;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(OpenParenthesis)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let seq: Seq<hir::IdentifiedExpression> = parser.expect(Delimited(
+            Parentheses,
+            CommaList(IdentifiedExpression::new(self.scope)),
+        ))?;
+        Ok(hir::List::from_iterator(
+            &mut self.scope.fn_body_tables,
+            seq.iter().cloned(),
+        ))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct IdentifiedExpression<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for IdentifiedExpression<'me, 'parse> {
+    type Data = hir::IdentifiedExpression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(HirIdentifier::new(self.scope))
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let identifier = parser.expect(HirIdentifier::new(self.scope))?;
+        parser.expect(Colon)?;
+        let expression = parser.expect(SkipNewline(HirExpression::new(self.scope)))?;
+        let span = self
+            .scope
+            .span(identifier)
+            .extended_until_end_of(self.scope.span(expression));
+        Ok(self.scope.add(
+            span,
+            hir::IdentifiedExpressionData {
+                identifier,
+                expression,
+            },
+        ))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct HirIdentifier<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for HirIdentifier<'me, 'parse> {
+    type Data = hir::Identifier;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(SpannedGlobalIdentifier)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let global_identifier = parser.expect(SpannedGlobalIdentifier)?;
+        Ok(self.scope.add(
+            global_identifier.span,
+            hir::IdentifierData {
+                text: global_identifier.value,
+            },
+        ))
     }
 }
 
@@ -264,14 +525,10 @@ impl Syntax<'parse> for Expr0<'me, 'parse> {
 
             // FIXME generalize this to any macro
             if text.value == "if" {
-                let condition = parser
-                    .expect(Expr::new(self.scope))?
-                    .to_hir_expression(self.scope);
-                let if_true = parser
-                    .expect(Block::new(self.scope))?
-                    .to_hir_expression(self.scope);
+                let condition = parser.expect(HirExpression::new(self.scope))?;
+                let if_true = parser.expect(Block::new(self.scope))?;
                 let if_false = if let Some(b) = parser.parse_if_present(Block::new(self.scope)) {
-                    b?.to_hir_expression(self.scope)
+                    b?
                 } else {
                     self.scope.unit_expression(parser.elided_span())
                 };
@@ -324,7 +581,7 @@ impl Syntax<'parse> for Expr0<'me, 'parse> {
 
         // Expr0 = `{` Block `}`
         if let Some(block) = parser.parse_if_present(Block::new(self.scope)) {
-            return Ok(block?);
+            return Ok(ParsedExpression::Expression(block?));
         }
 
         Err(parser.report_error("unrecognized start of expression", parser.peek_span()))
@@ -348,7 +605,7 @@ impl Block<'me, 'parse> {
 }
 
 impl Syntax<'parse> for Block<'me, 'parse> {
-    type Data = ParsedExpression;
+    type Data = hir::Expression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.test(self.definition())
@@ -365,9 +622,7 @@ impl Syntax<'parse> for Block<'me, 'parse> {
             // FIXME -- it'd be better if `Delimited` gave back a
             // `Spanned<X>` for its contents.
             let span = start_span.extended_until_end_of(parser.peek_span());
-            return Ok(ParsedExpression::Expression(
-                self.scope.unit_expression(span),
-            ));
+            return Ok(self.scope.unit_expression(span));
         }
 
         // Convert a sequence of statements like `[a, b, c]` into a HIR tree
@@ -414,7 +669,7 @@ impl Syntax<'parse> for Block<'me, 'parse> {
         // Restore the map of variables to what it used to be
         self.scope.variables = variables_on_entry;
 
-        Ok(ParsedExpression::Expression(result))
+        Ok(result)
     }
 }
 

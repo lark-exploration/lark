@@ -302,6 +302,9 @@ where
         let message = match data {
             hir::ErrorData::Misc => "error".to_string(),
             hir::ErrorData::Unimplemented => "unimplemented".to_string(),
+            hir::ErrorData::CanOnlyConstructStructs => {
+                "can only use named arguments to construct structs".to_string()
+            }
             hir::ErrorData::UnknownIdentifier { text } => {
                 format!("unknown identifier `{}`", self.db.untern_string(text))
             }
