@@ -1,4 +1,5 @@
 use crate::lexer::token::LexToken;
+use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
 use crate::span::CurrentFile;
 use crate::span::Span;
@@ -25,11 +26,14 @@ use intern::Untern;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
+use lark_error::WithError;
 use lark_hir as hir;
 use lark_seq::Seq;
 use lark_string::global::GlobalIdentifier;
+use lark_string::text::Text;
 use map::FxIndexMap;
 use std::rc::Rc;
+use std::sync::Arc;
 
 // # True grammar:
 //
@@ -108,21 +112,34 @@ use std::rc::Rc;
 /// Parses an expression to create a `hir::FnBody`. Despite the name,
 /// this can be used for any "free-standing" expression, such as the
 /// value of a `const` and so forth.
-#[derive(DebugWith)]
-pub struct FnBody {
-    arguments: Seq<Spanned<GlobalIdentifier>>,
-}
+crate fn parse_fn_body(
+    db: &dyn LazyParsedEntityDatabase,
+    item_entity: Entity,
+    entity_macro_definitions: &FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
+    input: &Text,                              // complete Text of file
+    tokens: &Seq<Spanned<LexToken>>,           // subset of Token corresponding to this expression
+    arguments: Seq<Spanned<GlobalIdentifier>>, // names of the arguments
+) -> WithError<hir::FnBody> {
+    let mut scope = ExpressionScope {
+        db,
+        item_entity,
+        variables: Default::default(),
+        fn_body_tables: Default::default(),
+    };
 
-impl Syntax<'parse> for FnBody {
-    type Data = hir::FnBody;
-
-    fn test(&mut self, _parser: &Parser<'parse>) -> bool {
-        unimplemented!()
+    for &argument in &arguments {
+        let name = scope.add(
+            argument.span,
+            hir::IdentifierData {
+                text: argument.value,
+            },
+        );
+        let variable = scope.add(argument.span, hir::VariableData { name });
+        scope.introduce(variable);
     }
 
-    fn expect(&mut self, _parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        unimplemented!()
-    }
+    drop((entity_macro_definitions, input, tokens));
+    unimplemented!()
 }
 
 #[derive(Copy, Clone)]
@@ -163,13 +180,34 @@ enum ParsedStatement {
 struct ExpressionScope<'parse> {
     db: &'parse dyn LazyParsedEntityDatabase,
     item_entity: Entity,
-    variables: Rc<FxIndexMap<&'parse str, hir::Variable>>,
+
+    // FIXME -- we should not need to make *global identifiers* here,
+    // but the current HIR requires it. We would need to refactor
+    // `hir::Identifier` to take a `Text` instead (and, indeed, we
+    // should do so).
+    variables: Rc<FxIndexMap<GlobalIdentifier, hir::Variable>>,
+
     fn_body_tables: hir::FnBodyTables,
 }
 
 impl ExpressionScope<'parse> {
     fn span(&self, _node: impl hir::HirIndex) -> Span<CurrentFile> {
         unimplemented!()
+    }
+
+    fn save_scope(&self) -> Rc<FxIndexMap<GlobalIdentifier, hir::Variable>> {
+        self.variables.clone()
+    }
+
+    fn restore_scope(&mut self, scope: Rc<FxIndexMap<GlobalIdentifier, hir::Variable>>) {
+        self.variables = scope;
+    }
+
+    /// Brings a variable into scope, returning anything that was shadowed.
+    fn introduce(&mut self, variable: hir::Variable) {
+        let name = self[variable].name;
+        let text = self[name].text;
+        Rc::make_mut(&mut self.variables).insert(text, variable);
     }
 
     fn add<D: hir::HirIndexData>(&mut self, span: Span<CurrentFile>, node: D) -> D::Index {
@@ -215,6 +253,17 @@ impl ExpressionScope<'parse> {
 
     fn unit_expression(&mut self, span: Span<CurrentFile>) -> hir::Expression {
         self.add(span, hir::ExpressionData::Unit {})
+    }
+}
+
+impl<I> std::ops::Index<I> for ExpressionScope<'parse>
+where
+    I: hir::HirIndex,
+{
+    type Output = I::Data;
+
+    fn index(&self, index: I) -> &I::Data {
+        &self.fn_body_tables[index]
     }
 }
 
@@ -571,7 +620,7 @@ impl Syntax<'parse> for Expression1<'me, 'parse> {
             // imagine that at some point we might want to support
             // "type-relative" paths here, through associated
             // types. Ah well, worry about it then.
-            if let hir::PlaceData::Entity(entity) = self.scope.fn_body_tables[place] {
+            if let hir::PlaceData::Entity(entity) = self.scope[place] {
                 let expression = self
                     .scope
                     .add(span, hir::ExpressionData::Aggregate { entity, fields });
@@ -801,7 +850,11 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
                 return Ok(ParsedExpression::Expression(expression));
             }
 
-            if let Some(&variable) = self.scope.variables.get(&text.value) {
+            // FIXME -- we should not need to intern this; see
+            // definition of `variables` field above for details
+            let global_id = text.value.intern(self.scope.db);
+
+            if let Some(&variable) = self.scope.variables.get(&global_id) {
                 let place = self
                     .scope
                     .add(text.span, hir::PlaceData::Variable(variable));
