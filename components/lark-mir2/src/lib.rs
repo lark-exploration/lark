@@ -257,6 +257,31 @@ impl AsRef<FnBytecodeTables> for Arc<FnBytecode> {
     }
 }
 
+/// Permit indexing the HIR by any of the various index types.
+/// Returns the underlying data from the index, skipping over the
+/// span.
+impl<I> std::ops::Index<I> for FnBytecode
+where
+    I: MirIndex,
+{
+    type Output = I::Data;
+
+    fn index(&self, index: I) -> &I::Data {
+        &self.tables[index]
+    }
+}
+
+impl<I> std::ops::Index<I> for FnBytecodeTables
+where
+    I: MirIndex,
+{
+    type Output = I::Data;
+
+    fn index(&self, index: I) -> &I::Data {
+        &I::index_vec(self)[index]
+    }
+}
+
 indices::index_type! {
     pub struct Place { .. }
 }
@@ -419,10 +444,10 @@ impl<I: MirIndex> List<I> {
 
     /// Creates a `List` containing the results of `from_iterator`.
     pub fn from_iterator(
-        mut fn_body: impl AsMut<FnBytecodeTables>,
+        mut fn_bytecode: impl AsMut<FnBytecodeTables>,
         iterator: impl IntoIterator<Item = I>,
     ) -> Self {
-        let tables = fn_body.as_mut();
+        let tables = fn_bytecode.as_mut();
         let start_index = tables.list_entries.len();
         tables
             .list_entries

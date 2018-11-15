@@ -136,7 +136,7 @@ where
         let typed_expressions = self.db.base_type_check(self.item_entity);
         let fn_body = self.db.fn_body(self.item_entity);
 
-        self.lower_basic_block(&fn_body.value, fn_body.value.root_expression);
+        let basic_block = self.lower_basic_block(&fn_body.value, fn_body.value.root_expression);
         /*
         match fn_body.value.tables[fn_body.value.root_expression] {
             hir::ExpressionData::Place { place, perm } => match fn_body.value.tables[place] {
@@ -164,8 +164,10 @@ where
         }
         */
 
+        let basic_blocks = vec![basic_block];
+
         mir::FnBytecode {
-            basic_blocks: mir::List::default(),
+            basic_blocks: mir::List::from_iterator(&mut self.fn_bytecode_tables, basic_blocks),
             tables: self.fn_bytecode_tables,
         }
     }
