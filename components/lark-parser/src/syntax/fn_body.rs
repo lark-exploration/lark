@@ -225,6 +225,26 @@ impl Syntax<'parse> for Expr<'me, 'parse> {
 }
 
 #[derive(new, DebugWith)]
+struct Expr1<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for Expr1<'me, 'parse> {
+    type Data = ParsedExpression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(Expr0::new(self.scope))
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let expr0 = parser.expect(Expr0::new(self.scope))?;
+
+        drop(expr0);
+        unimplemented!()
+    }
+}
+
+#[derive(new, DebugWith)]
 struct Expr0<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
