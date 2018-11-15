@@ -1,3 +1,4 @@
+use crate::lexer::token::LexToken;
 use crate::parser::Parser;
 use crate::span::CurrentFile;
 use crate::span::Span;
@@ -11,6 +12,7 @@ use crate::syntax::list::SeparatedList;
 use crate::syntax::sigil::Colon;
 use crate::syntax::sigil::Curlies;
 use crate::syntax::sigil::Dot;
+use crate::syntax::sigil::ExclamationPoint;
 use crate::syntax::sigil::OpenParenthesis;
 use crate::syntax::sigil::Parentheses;
 use crate::syntax::sigil::Semicolon;
@@ -71,13 +73,14 @@ use std::rc::Rc;
 // }
 //
 // Expr1 = {
-//   Expr0 Expr1Suffix*
+//   Expr0 "(" Comma(Expr) ")"
+//   Expr0 "(" Comma(Field) ")"
+//   Expr0 MemberAccess*
 // }
 //
-// Expr1Suffix = {
+// MemberAccess = {
 //   \n* "." Identifier,
 //   "(" Comma(Expr) ")",
-//   "(" Comma(Field) ")",
 // }
 //
 // Expr0 = {
@@ -258,6 +261,202 @@ impl Syntax<'parse> for Expr<'me, 'parse> {
 
     fn expect(&mut self, _parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         unimplemented!()
+    }
+}
+
+#[derive(new, DebugWith)]
+struct Expr3<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for Expr3<'me, 'parse> {
+    type Data = ParsedExpression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(Expr2::new(self.scope))
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        parser.expect(BinaryOperatorExpr {
+            expr: Expr2::new(self.scope),
+            op: BinaryOperator::new(BINARY_OPERATORS_EXPR3),
+            permit_chain: true,
+        })
+    }
+}
+
+#[derive(new, DebugWith)]
+struct BinaryOperatorExpr<EXPR, OP> {
+    // Expressions from below this level of operator precedence.
+    expr: EXPR,
+
+    // Operator to parse.
+    op: OP,
+
+    /// If true, we permit "chained" operators like `a + b + c`. If
+    /// false, we only permit one use of operator, like `a == b`.
+    permit_chain: bool,
+}
+
+impl<EXPR, OP> BinaryOperatorExpr<EXPR, OP>
+where
+    EXPR: AsMut<ExpressionScope<'parse>>,
+{
+    fn scope(&mut self) -> &mut ExpressionScope<'parse> {
+        self.expr.as_mut()
+    }
+}
+
+impl<EXPR, OP> Syntax<'parse> for BinaryOperatorExpr<EXPR, OP>
+where
+    EXPR: Syntax<'parse, Data = ParsedExpression> + AsMut<ExpressionScope<'parse>>,
+    OP: Syntax<'parse, Data = hir::BinaryOperator>,
+{
+    type Data = ParsedExpression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(&mut self.expr)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let left = parser.expect(&mut self.expr)?;
+
+        if parser.test(&mut self.op) {
+            // From this point out, we know that this is not a "place expression".
+            let mut left = left.to_hir_expression(self.scope());
+
+            while let Some(operator) = parser.parse_if_present(&mut self.op) {
+                let operator = operator?;
+                let right = parser
+                    .expect(SkipNewline(Expr2::new(self.scope())))?
+                    .to_hir_expression(self.scope());
+                let span = self
+                    .scope()
+                    .span(left)
+                    .extended_until_end_of(parser.last_span());
+                left = self.scope().add(
+                    span,
+                    hir::ExpressionData::Binary {
+                        operator,
+                        left,
+                        right,
+                    },
+                );
+
+                if !self.permit_chain {
+                    break;
+                }
+            }
+        }
+
+        Ok(left)
+    }
+}
+
+const BINARY_OPERATORS_EXPR3: &[(&str, hir::BinaryOperator)] = &[
+    ("*", hir::BinaryOperator::Multiply),
+    ("/", hir::BinaryOperator::Divide),
+];
+
+const BINARY_OPERATORS_EXPR2: &[(&str, hir::BinaryOperator)] = &[
+    ("+", hir::BinaryOperator::Add),
+    ("_", hir::BinaryOperator::Subtract),
+];
+
+const BINARY_OPERATORS_EXPR1: &[(&str, hir::BinaryOperator)] = &[
+    ("==", hir::BinaryOperator::Equals),
+    ("!=", hir::BinaryOperator::NotEquals),
+];
+
+#[derive(new, DebugWith)]
+struct BinaryOperator {
+    operators: &'static [(&'static str, hir::BinaryOperator)],
+}
+
+impl Syntax<'parse> for BinaryOperator {
+    type Data = hir::BinaryOperator;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        if !parser.is(LexToken::Sigil) {
+            return false;
+        }
+
+        let s = parser.peek_str();
+        self.operators.iter().any(|(text, _)| *text == s)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let sigil_str = parser.peek_str();
+        let token = parser.shift();
+        if token.value != LexToken::Sigil {
+            return Err(parser.report_error("expected an operator", token.span));
+        }
+
+        self.operators
+            .iter()
+            .filter_map(|&(text, binary_operator)| {
+                if text == sigil_str {
+                    Some(binary_operator)
+                } else {
+                    None
+                }
+            })
+            .next()
+            .ok_or_else(|| parser.report_error("unexpected operator", token.span))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct Expr2<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl AsMut<ExpressionScope<'parse>> for Expr2<'_, 'parse> {
+    fn as_mut(&mut self) -> &mut ExpressionScope<'parse> {
+        self.scope
+    }
+}
+
+impl Syntax<'parse> for Expr2<'me, 'parse> {
+    type Data = ParsedExpression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(Expr1::new(self.scope)) || parser.test(UnaryOperator)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        if let Some(operator) = parser.parse_if_present(UnaryOperator) {
+            let operator = operator?;
+            let value = parser
+                .expect(SkipNewline(Expr2::new(self.scope)))?
+                .to_hir_expression(self.scope);
+            let span = operator.span.extended_until_end_of(self.scope.span(value));
+            return Ok(ParsedExpression::Expression(self.scope.add(
+                span,
+                hir::ExpressionData::Unary {
+                    operator: operator.value,
+                    value,
+                },
+            )));
+        }
+
+        parser.expect(Expr1::new(self.scope))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct UnaryOperator;
+
+impl Syntax<'parse> for UnaryOperator {
+    type Data = Spanned<hir::UnaryOperator>;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(ExclamationPoint)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let spanned = parser.expect(ExclamationPoint)?;
+        Ok(spanned.map(|_| hir::UnaryOperator::Not))
     }
 }
 

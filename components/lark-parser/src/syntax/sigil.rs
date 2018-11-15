@@ -54,6 +54,11 @@ sigil_type! {
     pub struct RightArrow = (LexToken::Sigil, "->");
     pub struct Dot = (LexToken::Sigil, ".");
     pub struct Let = (LexToken::Identifier, "let");
+    pub struct ExclamationPoint = (LexToken::Sigil, "!");
+    pub struct Plus = (LexToken::Sigil, "+");
+    pub struct Minus = (LexToken::Sigil, "-");
+    pub struct Star = (LexToken::Sigil, "*");
+    pub struct Slash = (LexToken::Sigil, "/");
 }
 
 #[derive(DebugWith)]
