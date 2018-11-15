@@ -47,35 +47,35 @@ use std::rc::Rc;
 //
 // # Factored into "almost LL" form:
 //
-// Expression = Expr5
+// Expression = Expression5
 //
-// Expr5 = {
-//   Expr4,
-//   Expr5 \n* `==` Expr4,
-//   Expr5 \n* `!=` Expr4,
+// Expression5 = {
+//   Expression4,
+//   Expression5 \n* `==` Expression4,
+//   Expression5 \n* `!=` Expression4,
 // }
 //
-// Expr4 = {
-//   Expr3,
-//   Expr4 \n* `+` Expr3,
-//   Expr4 \n* `-` Expr3,
+// Expression4 = {
+//   Expression3,
+//   Expression4 \n* `+` Expression3,
+//   Expression4 \n* `-` Expression3,
 // }
 //
-// Expr3 = {
-//   Expr2,
-//   Expr3 \n* `*` Expr2,
-//   Expr3 \n* `/` Expr2,
+// Expression3 = {
+//   Expression2,
+//   Expression3 \n* `*` Expression2,
+//   Expression3 \n* `/` Expression2,
 // }
 //
-// Expr2 = {
-//   Expr1,
-//   UnaryOp Expr0,
+// Expression2 = {
+//   Expression1,
+//   UnaryOp Expression0,
 // }
 //
-// Expr1 = {
-//   Expr0 "(" Comma(Expression) ")"
-//   Expr0 "(" Comma(Field) ")"
-//   Expr0 MemberAccess*
+// Expression1 = {
+//   Expression0 "(" Comma(Expression) ")"
+//   Expression0 "(" Comma(Field) ")"
+//   Expression0 MemberAccess*
 // }
 //
 // MemberAccess = {
@@ -83,7 +83,7 @@ use std::rc::Rc;
 //   "(" Comma(Expression) ")",
 // }
 //
-// Expr0 = {
+// Expression0 = {
 //   Identifier,
 //   "(" \n* Expression \n* ")",  // Should we allow newlines *anywhere* here?
 //   Block,
@@ -256,81 +256,81 @@ impl Syntax<'parse> for Expression<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(Expr5::new(self.scope))
+        parser.test(Expression5::new(self.scope))
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        parser.expect(Expr5::new(self.scope))
+        parser.expect(Expression5::new(self.scope))
     }
 }
 
 #[derive(new, DebugWith)]
-struct Expr5<'me, 'parse> {
+struct Expression5<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
 
-impl Syntax<'parse> for Expr5<'me, 'parse> {
+impl Syntax<'parse> for Expression5<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(Expr4::new(self.scope))
+        parser.test(Expression4::new(self.scope))
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         parser.expect(BinaryOperatorExpression {
-            expr: Expr4::new(self.scope),
+            expr: Expression4::new(self.scope),
             op: BinaryOperator::new(BINARY_OPERATORS_EXPR5),
         })
     }
 }
 
 #[derive(new, DebugWith)]
-struct Expr4<'me, 'parse> {
+struct Expression4<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
 
-impl AsMut<ExpressionScope<'parse>> for Expr4<'_, 'parse> {
+impl AsMut<ExpressionScope<'parse>> for Expression4<'_, 'parse> {
     fn as_mut(&mut self) -> &mut ExpressionScope<'parse> {
         self.scope
     }
 }
 
-impl Syntax<'parse> for Expr4<'me, 'parse> {
+impl Syntax<'parse> for Expression4<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(Expr3::new(self.scope))
+        parser.test(Expression3::new(self.scope))
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         parser.expect(BinaryOperatorExpression {
-            expr: Expr3::new(self.scope),
+            expr: Expression3::new(self.scope),
             op: BinaryOperator::new(BINARY_OPERATORS_EXPR4),
         })
     }
 }
 
 #[derive(new, DebugWith)]
-struct Expr3<'me, 'parse> {
+struct Expression3<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
 
-impl AsMut<ExpressionScope<'parse>> for Expr3<'_, 'parse> {
+impl AsMut<ExpressionScope<'parse>> for Expression3<'_, 'parse> {
     fn as_mut(&mut self) -> &mut ExpressionScope<'parse> {
         self.scope
     }
 }
 
-impl Syntax<'parse> for Expr3<'me, 'parse> {
+impl Syntax<'parse> for Expression3<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(Expr2::new(self.scope))
+        parser.test(Expression2::new(self.scope))
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         parser.expect(BinaryOperatorExpression {
-            expr: Expr2::new(self.scope),
+            expr: Expression2::new(self.scope),
             op: BinaryOperator::new(BINARY_OPERATORS_EXPR3),
         })
     }
@@ -375,7 +375,7 @@ where
             while let Some(operator) = parser.parse_if_present(&mut self.op) {
                 let operator = operator?;
                 let right = parser
-                    .expect(SkipNewline(Expr2::new(self.scope())))?
+                    .expect(SkipNewline(Expression2::new(self.scope())))?
                     .to_hir_expression(self.scope());
                 let span = self
                     .scope()
@@ -464,28 +464,28 @@ impl Syntax<'parse> for BinaryOperator {
 }
 
 #[derive(new, DebugWith)]
-struct Expr2<'me, 'parse> {
+struct Expression2<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
 
-impl AsMut<ExpressionScope<'parse>> for Expr2<'_, 'parse> {
+impl AsMut<ExpressionScope<'parse>> for Expression2<'_, 'parse> {
     fn as_mut(&mut self) -> &mut ExpressionScope<'parse> {
         self.scope
     }
 }
 
-impl Syntax<'parse> for Expr2<'me, 'parse> {
+impl Syntax<'parse> for Expression2<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(Expr1::new(self.scope)) || parser.test(UnaryOperator)
+        parser.test(Expression1::new(self.scope)) || parser.test(UnaryOperator)
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         if let Some(operator) = parser.parse_if_present(UnaryOperator) {
             let operator = operator?;
             let value = parser
-                .expect(SkipNewline(Expr2::new(self.scope)))?
+                .expect(SkipNewline(Expression2::new(self.scope)))?
                 .to_hir_expression(self.scope);
             let span = operator.span.extended_until_end_of(self.scope.span(value));
             return Ok(ParsedExpression::Expression(self.scope.add(
@@ -497,7 +497,7 @@ impl Syntax<'parse> for Expr2<'me, 'parse> {
             )));
         }
 
-        parser.expect(Expr1::new(self.scope))
+        parser.expect(Expression1::new(self.scope))
     }
 }
 
@@ -518,19 +518,19 @@ impl Syntax<'parse> for UnaryOperator {
 }
 
 #[derive(new, DebugWith)]
-struct Expr1<'me, 'parse> {
+struct Expression1<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
 
-impl Syntax<'parse> for Expr1<'me, 'parse> {
+impl Syntax<'parse> for Expression1<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(Expr0::new(self.scope))
+        parser.test(Expression0::new(self.scope))
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        let mut expr = parser.expect(Expr0::new(self.scope))?;
+        let mut expr = parser.expect(Expression0::new(self.scope))?;
 
         // foo(a, b, c) -- call
         if let Some(arguments) = parser.parse_if_present(CallArguments::new(self.scope)) {
@@ -762,11 +762,11 @@ impl Syntax<'parse> for HirIdentifier<'me, 'parse> {
 }
 
 #[derive(new, DebugWith)]
-struct Expr0<'me, 'parse> {
+struct Expression0<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
 
-impl Syntax<'parse> for Expr0<'me, 'parse> {
+impl Syntax<'parse> for Expression0<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
@@ -774,8 +774,8 @@ impl Syntax<'parse> for Expr0<'me, 'parse> {
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        // Expr0 = Identifier
-        // Expr0 = "if" Expression Block [ "else" Block ]
+        // Expression0 = Identifier
+        // Expression0 = "if" Expression Block [ "else" Block ]
         if parser.test(SpannedLocalIdentifier) {
             let text = parser.expect(SpannedLocalIdentifier)?;
 
@@ -828,7 +828,7 @@ impl Syntax<'parse> for Expr0<'me, 'parse> {
             return Ok(ParsedExpression::Expression(error_expression));
         }
 
-        // Expr0 = `(` Expression ')'
+        // Expression0 = `(` Expression ')'
         if let Some(expr) = parser.parse_if_present(Delimited(
             Parentheses,
             SkipNewline(Expression::new(self.scope)),
@@ -836,7 +836,7 @@ impl Syntax<'parse> for Expr0<'me, 'parse> {
             return Ok(expr?);
         }
 
-        // Expr0 = `{` Block `}`
+        // Expression0 = `{` Block `}`
         if let Some(block) = parser.parse_if_present(Block::new(self.scope)) {
             return Ok(ParsedExpression::Expression(block?));
         }
