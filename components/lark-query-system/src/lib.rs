@@ -64,6 +64,7 @@ salsa::database_storage! {
             fn child_parsed_entities() for lark_parser::ChildParsedEntitiesQuery;
             fn parsed_entity() for lark_parser::ParsedEntityQuery;
             fn child_entities() for lark_parser::ChildEntitiesQuery;
+            fn fn_body2() for lark_parser::FnBodyQuery;
         }
         impl parser::ReaderDatabase {
             fn paths() for parser::Paths;

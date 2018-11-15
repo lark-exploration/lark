@@ -9,27 +9,27 @@ use lark_error::ErrorReported;
 pub struct SkipNewline<T>(pub T);
 
 impl<T> SkipNewline<T> {
-    fn content(&self) -> &T {
-        &self.0
+    fn content(&mut self) -> &mut T {
+        &mut self.0
     }
 }
 
-impl<T> Syntax for SkipNewline<T>
+impl<T> Syntax<'parse> for SkipNewline<T>
 where
-    T: Syntax,
+    T: Syntax<'parse>,
 {
     type Data = T::Data;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         let mut parser = parser.checkpoint();
         parser.skip_newlines();
         parser.test(self.content())
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         parser.skip_newlines();
         parser.expect(self.content())
     }
 }
 
-impl<T> NonEmptySyntax for SkipNewline<T> where T: NonEmptySyntax {}
+impl<T> NonEmptySyntax<'parse> for SkipNewline<T> where T: NonEmptySyntax<'parse> {}

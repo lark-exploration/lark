@@ -38,6 +38,17 @@ pub enum EntityData {
 }
 
 impl EntityData {
+    pub fn file_name(&self, db: &(impl AsRef<EntityTables> + ?Sized)) -> Option<GlobalIdentifier> {
+        match self {
+            EntityData::Error(_) => None, // FIXME
+            EntityData::LangItem(_) => None,
+            EntityData::InputFile { file } => Some(*file),
+            EntityData::ItemName { base, .. } | EntityData::MemberName { base, .. } => {
+                base.untern(db).file_name(db)
+            }
+        }
+    }
+
     /// Gives a little information about the name/kind of this entity,
     /// without dumping the whole tree. Meant for debugging.
     pub fn relative_name(self, db: &impl AsRef<GlobalIdentifierTables>) -> String {

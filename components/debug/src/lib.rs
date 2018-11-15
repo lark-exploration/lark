@@ -8,6 +8,8 @@
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 
+use map::FxIndexMap;
+
 /// A `Debug` trait that carries a context. Most types in Lark
 /// implement it, and you can use `derive(DebugWith)` to get
 /// Debug-like behavior (from the lark-debug-derive crate).
@@ -81,9 +83,51 @@ where
     }
 }
 
+impl<K, V> DebugWith for FxIndexMap<K, V>
+where
+    K: DebugWith + std::hash::Hash + Eq,
+    V: DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(
+        &self,
+        _cx: &Cx,
+        _fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        unimplemented!()
+        //fmt.debug_list()
+        //    .entries(
+        //        self.iter()
+        //            .map(|elem| (elem.0.debug_with(cx), elem.1.debug_with(cx))),
+        //    )
+        //    .finish()
+    }
+}
+
+impl<A, B> DebugWith for (A, B)
+where
+    A: DebugWith,
+    B: DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_tuple("")
+            .field(&self.0.debug_with(cx))
+            .field(&self.1.debug_with(cx))
+            .finish()
+    }
+}
+
 impl<T> DebugWith for &T
 where
-    T: DebugWith,
+    T: ?Sized + DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        T::fmt_with(self, cx, fmt)
+    }
+}
+
+impl<T> DebugWith for &mut T
+where
+    T: ?Sized + DebugWith,
 {
     fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         T::fmt_with(self, cx, fmt)

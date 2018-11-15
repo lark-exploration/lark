@@ -31,6 +31,11 @@ impl EntityTree {
     }
 }
 
+fn select_entity(db: &impl ParserDatabase, file: FileName, index: usize) -> Entity {
+    let file_entity = EntityData::InputFile { file: file.id }.intern(db);
+    db.child_entities(file_entity)[index]
+}
+
 #[test]
 fn empty_struct() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
@@ -442,4 +447,21 @@ fn function_variations() {
         EntityTree::from_file(&db, file_name)
     };
     assert_equal(&(), &base_tree, &other_tree);
+}
+
+#[test]
+#[should_panic] // not yet all implemented
+fn parse_fn_body() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+            fn foo() {
+              let bar = baz
+              bar
+            }
+        ",
+    ));
+
+    let foo = select_entity(&db, file_name, 0);
+    let fn_body = db.fn_body2(foo);
+    assert!(fn_body.errors.is_empty());
 }

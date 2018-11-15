@@ -16,21 +16,21 @@ use lark_string::text::Text;
 use map::FxIndexMap;
 use std::sync::Arc;
 
-pub struct Parser<'me> {
+pub struct Parser<'parse> {
     /// Tables for interning global identifiers; extracted from the database.
-    global_identifier_tables: &'me GlobalIdentifierTables,
+    global_identifier_tables: &'parse GlobalIdentifierTables,
 
     /// Tables for interning entities; extracted from the database.
-    entity_tables: &'me EntityTables,
+    entity_tables: &'parse EntityTables,
 
     /// Set of macro definitions in scope.
-    entity_macro_definitions: &'me FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
+    entity_macro_definitions: &'parse FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
 
     /// Complete input; needed to extract the full text of tokens.
-    input: &'me Text,
+    input: &'parse Text,
 
     /// List of all tokens.
-    tokens: &'me Seq<Spanned<LexToken>>,
+    tokens: &'parse Seq<Spanned<LexToken>>,
 
     /// Index of the token *after* the current token.
     next_lookahead_token: usize,
@@ -47,12 +47,15 @@ pub struct Parser<'me> {
     errors: Vec<Diagnostic>,
 }
 
-impl Parser<'me> {
+impl Parser<'parse> {
     crate fn new(
-        db: &'me (impl AsRef<GlobalIdentifierTables> + AsRef<EntityTables>),
-        entity_macro_definitions: &'me FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
-        input: &'me Text,
-        tokens: &'me Seq<Spanned<LexToken>>,
+        db: &'parse (impl AsRef<GlobalIdentifierTables> + AsRef<EntityTables> + ?Sized),
+        entity_macro_definitions: &'parse FxIndexMap<
+            GlobalIdentifier,
+            Arc<dyn EntityMacroDefinition>,
+        >,
+        input: &'parse Text,
+        tokens: &'parse Seq<Spanned<LexToken>>,
         start_token: usize,
     ) -> Self {
         // Subtle: the start token may be whitespace etc. So we actually have to invoke
@@ -89,9 +92,9 @@ impl Parser<'me> {
     /// Parse all the instances of `syntax` that we can, stopping only
     /// at EOF. Returns a vector of the results plus any parse errors
     /// we encountered.
-    crate fn parse_until_eof<S>(mut self, syntax: S) -> WithError<Seq<S::Data>>
+    crate fn parse_until_eof<S>(mut self, mut syntax: S) -> WithError<Seq<S::Data>>
     where
-        S: NonEmptySyntax,
+        S: NonEmptySyntax<'parse>,
     {
         let mut entities = vec![];
         loop {
@@ -99,8 +102,8 @@ impl Parser<'me> {
                 break;
             }
 
-            if self.test(&syntax) {
-                match self.expect(&syntax) {
+            if self.test(&mut syntax) {
+                match self.expect(&mut syntax) {
                     Ok(e) => entities.push(e),
                     Err(ErrorReported(_)) => (),
                 }
@@ -109,8 +112,13 @@ impl Parser<'me> {
                 self.report_error("unexpected character", span);
             }
         }
+
+        self.into_with_error(Seq::from(entities))
+    }
+
+    crate fn into_with_error<T>(self, value: T) -> WithError<T> {
         WithError {
-            value: Seq::from(entities),
+            value,
             errors: self.errors,
         }
     }
@@ -136,14 +144,14 @@ impl Parser<'me> {
     }
 
     /// Extract the complete input
-    crate fn input(&self) -> &'me Text {
+    crate fn input(&self) -> &'parse Text {
         self.input
     }
 
     /// Extract the complete input
     crate fn entity_macro_definitions(
         &self,
-    ) -> &'me FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> {
+    ) -> &'parse FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> {
         self.entity_macro_definitions
     }
 
@@ -182,13 +190,28 @@ impl Parser<'me> {
     }
 
     /// Peek at the string reprsentation of the current token.
-    crate fn peek_str(&self) -> &'me str {
+    crate fn peek_str(&self) -> &'parse str {
         &self.input[self.peek_span()]
     }
 
     /// Test if the current token is of the given kind.
     crate fn is(&self, kind: LexToken) -> bool {
         kind == self.lookahead_token.value
+    }
+
+    /// If at EOF, returns `None`. Otherwise, shifts all remaining
+    /// tokens out and returns the span that covers them.
+    crate fn parse_extra_input(&mut self) -> Option<Span<CurrentFile>> {
+        if self.is(LexToken::EOF) {
+            return None;
+        }
+
+        let start = self.shift();
+        while !self.is(LexToken::EOF) {
+            self.shift();
+        }
+        let span = start.span.extended_until_end_of(self.peek_span());
+        return Some(span);
     }
 
     /// Consumes all subsequent newline characters, returning true if
@@ -203,7 +226,7 @@ impl Parser<'me> {
     }
 
     /// Tests whether the syntax applies at the current point.
-    crate fn test(&self, syntax: impl Syntax) -> bool {
+    crate fn test(&self, mut syntax: impl Syntax<'parse>) -> bool {
         log::trace!("test({})", syntax.debug_with(self));
 
         if syntax.test(self) {
@@ -216,9 +239,9 @@ impl Parser<'me> {
 
     /// Parses a `T` if we can and returns true if so; otherwise,
     /// reports an error and returns false.
-    crate fn expect<T>(&'s mut self, syntax: T) -> Result<T::Data, ErrorReported>
+    crate fn expect<T>(&'s mut self, mut syntax: T) -> Result<T::Data, ErrorReported>
     where
-        T: Syntax,
+        T: Syntax<'parse>,
     {
         log::trace!("expect({})", syntax.debug_with(self));
 
@@ -227,13 +250,13 @@ impl Parser<'me> {
 
     /// Parse a piece of syntax (if it is present), otherwise returns
     /// `None`. A combination of `test` and `expect`.
-    crate fn parse_if_present<T>(&mut self, syntax: T) -> Option<Result<T::Data, ErrorReported>>
+    crate fn parse_if_present<T>(&mut self, mut syntax: T) -> Option<Result<T::Data, ErrorReported>>
     where
-        T: Syntax,
+        T: Syntax<'parse>,
     {
         log::trace!("eat({})", syntax.debug_with(self));
 
-        if self.test(&syntax) {
+        if self.test(&mut syntax) {
             Some(self.expect(syntax))
         } else {
             None
