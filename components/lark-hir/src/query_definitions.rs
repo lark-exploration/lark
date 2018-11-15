@@ -1,20 +1,18 @@
-use ast::ast as a;
 use crate::HirDatabase;
 use crate::Member;
-use intern::Intern;
-use intern::Untern;
-use lark_entity::Entity;
-use lark_entity::EntityData;
-use lark_entity::ItemKind;
-use lark_entity::MemberKind;
-use lark_error::ErrorReported;
-use lark_error::ErrorSentinel;
+
+use intern::{Intern, Untern};
+use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
+use lark_error::{ErrorReported, ErrorSentinel};
+use lark_parser::uhir;
 use lark_seq::Seq;
-use lark_string::global::GlobalIdentifier;
+use lark_span::FileName;
+use lark_string::GlobalIdentifier;
 
 crate fn members(db: &impl HirDatabase, owner: Entity) -> Result<Seq<Member>, ErrorReported> {
-    match &*db.ast_of_item(owner)? {
-        a::Item::Struct(s) => Ok(s
+    let u = db.uhir_of_entity(owner);
+    match &u.value {
+        uhir::Entity::Struct(s) => Ok(s
             .fields
             .iter()
             .map(|f| {
@@ -33,7 +31,7 @@ crate fn members(db: &impl HirDatabase, owner: Entity) -> Result<Seq<Member>, Er
             })
             .collect()),
 
-        a::Item::Def(_) => panic!("asked for members of a function"),
+        uhir::Entity::Def(_) => panic!("asked for members of a function"),
     }
 }
 
@@ -78,7 +76,14 @@ crate fn subentities(db: &impl HirDatabase, root: Entity) -> Seq<Entity> {
             },
 
             EntityData::InputFile { file } => {
-                entities.extend(db.items_in_file(file).iter().cloned());
+                entities.extend(
+                    db.parsed_file(FileName { id: file })
+                        .value
+                        .entities()
+                        .iter()
+                        .map(|e| e.entity)
+                        .clone(),
+                );
             }
 
             // No nested entities for these kinds of entities.

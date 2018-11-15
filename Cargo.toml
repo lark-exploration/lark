@@ -52,7 +52,6 @@ lark-query-system = { path = "components/lark-query-system" }
 lark-string = { path = "components/lark-string" } 
 lark-task-manager = { path = "components/lark-task-manager" }
 map = { path = "components/map" }
-parser = { path = "components/parser" }
 language-reporting = "0.2.0"
 termcolor = "1.0.4"
 lark-ty = { path = "components/lark-ty" }

@@ -29,19 +29,18 @@
 #![feature(decl_macro)]
 
 use lark_debug_derive::DebugWith;
-use lark_seq::seq;
-use lark_seq::Seq;
-use parser::pos::Span;
+use lark_seq::{seq, Seq};
+use lark_span::{FileName, Span};
 use std::sync::Arc;
 
 /// Unit type used in `Result` to indicate a value derived from other
 /// value where an error was already reported. The span is "some span"
 /// from one of the errors.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ErrorReported(pub Span);
+pub struct ErrorReported(pub Span<FileName>);
 
 impl ErrorReported {
-    pub fn at_span(s: Span) -> Self {
+    pub fn at_span(s: Span<FileName>) -> Self {
         ErrorReported(s)
     }
 
@@ -54,7 +53,7 @@ impl ErrorReported {
         Self::at_diagnostic(&s[0])
     }
 
-    pub fn span(&self) -> Span {
+    pub fn span(&self) -> Span<FileName> {
         self.0
     }
 }
@@ -64,11 +63,11 @@ impl ErrorReported {
 /// reporting
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Diagnostic {
-    pub span: Span,
+    pub span: Span<FileName>,
     pub label: String,
 }
 impl Diagnostic {
-    pub fn new(label: String, span: Span) -> Diagnostic {
+    pub fn new(label: String, span: Span<FileName>) -> Self {
         Diagnostic { label, span }
     }
 }
@@ -100,7 +99,7 @@ impl<T> WithError<T> {
     /// Convenience function: generates a `WithError` indicating that
     /// this query found an error that was not yet reported. The value
     /// is the error-sentinel for this type.
-    pub fn report_error<Cx>(cx: Cx, label: String, span: Span) -> WithError<T>
+    pub fn report_error<Cx>(cx: Cx, label: String, span: Span<FileName>) -> WithError<T>
     where
         T: ErrorSentinel<Cx>,
     {

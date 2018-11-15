@@ -3,7 +3,7 @@ use crate::syntax::Syntax;
 
 use lark_debug_derive::DebugWith;
 use lark_error::{ErrorReported, ErrorSentinel};
-use lark_span::{CurrentFile, Span, Spanned, SpannedGlobalIdentifier};
+use lark_span::{FileName, Span, Spanned, SpannedGlobalIdentifier};
 use lark_string::GlobalIdentifier;
 
 #[derive(DebugWith)]
@@ -13,14 +13,14 @@ pub struct TypeReference;
 #[derive(Copy, Clone, DebugWith)]
 pub enum ParsedTypeReference {
     Named(NamedTypeReference),
-    Elided(Span<CurrentFile>),
+    Elided(Span<FileName>),
     Error,
 }
 
 /// Named type like `String` or (eventually) `Vec<u32>`
 #[derive(Copy, Clone, DebugWith)]
 pub struct NamedTypeReference {
-    pub identifier: Spanned<GlobalIdentifier>,
+    pub identifier: Spanned<GlobalIdentifier, FileName>,
 }
 
 impl Syntax for TypeReference {

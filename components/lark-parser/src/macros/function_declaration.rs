@@ -1,29 +1,23 @@
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
 use crate::syntax::delimited::Delimited;
-use crate::syntax::entity::LazyParsedEntity;
-use crate::syntax::entity::LazyParsedEntityDatabase;
-use crate::syntax::entity::ParsedEntity;
-use crate::syntax::entity::ParsedEntityThunk;
-use crate::syntax::field::Field;
-use crate::syntax::field::ParsedField;
+use crate::syntax::entity::{
+    LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity, ParsedEntityThunk,
+};
+use crate::syntax::field::{Field, ParsedField};
 use crate::syntax::guard::Guard;
 use crate::syntax::list::CommaList;
-use crate::syntax::matched::Matched;
-use crate::syntax::matched::ParsedMatch;
-use crate::syntax::sigil::Curlies;
-use crate::syntax::sigil::Parentheses;
-use crate::syntax::sigil::RightArrow;
+use crate::syntax::matched::{Matched, ParsedMatch};
+use crate::syntax::sigil::{Curlies, Parentheses, RightArrow};
 use crate::syntax::skip_newline::SkipNewline;
-use crate::syntax::type_reference::ParsedTypeReference;
-use crate::syntax::type_reference::TypeReference;
+use crate::syntax::type_reference::{ParsedTypeReference, TypeReference};
 
 use debug::DebugWith;
 use intern::Intern;
 use lark_entity::{Entity, EntityData, ItemKind};
 use lark_error::{ErrorReported, ResultExt, WithError};
 use lark_seq::Seq;
-use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_span::{FileName, Spanned, SpannedGlobalIdentifier};
 use lark_string::global::GlobalIdentifier;
 
 /// ```ignore
@@ -37,7 +31,7 @@ impl EntityMacroDefinition for FunctionDeclaration {
         &self,
         parser: &mut Parser<'_>,
         base: Entity,
-        macro_name: Spanned<GlobalIdentifier>,
+        macro_name: Spanned<GlobalIdentifier, FileName>,
     ) -> Result<ParsedEntity, ErrorReported> {
         log::trace!(
             "FunctionDeclaration::parse(base={}, macro_name={})",
@@ -84,9 +78,9 @@ impl EntityMacroDefinition for FunctionDeclaration {
 }
 
 struct ParsedFunctionDeclaration {
-    parameters: Seq<Spanned<ParsedField>>,
+    parameters: Seq<Spanned<ParsedField, FileName>>,
     return_type: ParsedTypeReference,
-    body: Result<Spanned<ParsedMatch>, ErrorReported>,
+    body: Result<Spanned<ParsedMatch, FileName>, ErrorReported>,
 }
 
 impl LazyParsedEntity for ParsedFunctionDeclaration {

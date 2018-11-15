@@ -1,8 +1,7 @@
 use crate::HirDatabase;
 use intern::{Intern, Untern};
-use lark_entity::Entity;
-use lark_entity::EntityData;
-use lark_entity::LangItem;
+use lark_entity::{Entity, EntityData, LangItem};
+use lark_span::FileName;
 use lark_string::global::GlobalIdentifier;
 
 crate fn resolve_name(
@@ -12,9 +11,12 @@ crate fn resolve_name(
 ) -> Option<Entity> {
     match scope.untern(db) {
         EntityData::InputFile { file } => {
-            let items_in_file = db.items_in_file(file);
-            items_in_file
+            let parsed_file = db.parsed_file(FileName { id: file });
+            parsed_file
+                .value
+                .entities()
                 .iter()
+                .map(|e| e.entity)
                 .filter(|entity| match entity.untern(db) {
                     EntityData::ItemName { id, .. } | EntityData::MemberName { id, .. } => {
                         id == name

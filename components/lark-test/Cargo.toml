@@ -16,5 +16,4 @@ lark-parser = { path = "../lark-parser" }
 lark-string = { path = "../lark-string" }
 lark-seq = { path = "../lark-seq" }
 intern = { path = "../intern" }
-parser = { path = "../parser" }
 salsa = "0.8.0"

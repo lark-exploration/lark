@@ -4,8 +4,8 @@ use crate::syntax::entity::ParsedEntity;
 use intern::Intern;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
-use lark_span::Spanned;
-use lark_string::global::{GlobalIdentifier, GlobalIdentifierTables};
+use lark_span::{FileName, Spanned};
+use lark_string::{GlobalIdentifier, GlobalIdentifierTables};
 use map::FxIndexMap;
 use std::sync::Arc;
 
@@ -29,7 +29,7 @@ crate trait EntityMacroDefinition {
         // The macro name we were invoked with (and the span). Note
         // that the "start" of this span will also be the start of
         // our entity's span.
-        macro_name: Spanned<GlobalIdentifier>,
+        macro_name: Spanned<GlobalIdentifier, FileName>,
     ) -> Result<ParsedEntity, ErrorReported>;
 }
 

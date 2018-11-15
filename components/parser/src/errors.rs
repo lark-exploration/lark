@@ -1,14 +1,14 @@
 use crate::prelude::*;
 
-use codespan::ByteIndex;
+use lark_span::{ByteIndex, Span, SpanFile};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
-pub struct ParseError {
+pub struct ParseError<File: SpanFile> {
     pub description: String,
-    pub span: Span,
+    pub span: Span<File>,
 }
 
-impl ParseError {
+impl<File: SpanFile> ParseError<File> {
     pub fn from_pos(description: impl Into<String>, left: impl Into<ByteIndex>) -> ParseError {
         let pos = left.into();
         ParseError {
@@ -36,7 +36,7 @@ impl ParseError {
     }
 }
 
-impl fmt::Display for ParseError {
+impl<File: SpanFile> fmt::Display for ParseError<File> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ParseError: {} at {:?}", self.description, self.span)
     }

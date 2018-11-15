@@ -1,15 +1,12 @@
-use parser::prelude::*;
-
-use ast::ast as a;
 use crate as hir;
 use crate::HirDatabase;
+
 use lark_entity::Entity;
-use lark_error::Diagnostic;
-use lark_error::ErrorReported;
-use lark_error::WithError;
-use lark_string::global::GlobalIdentifier;
+use lark_error::{Diagnostic, WithError};
+use lark_parser::uhir::{self, Identifier, Span, Spanned};
+use lark_span::FileName;
+use lark_string::GlobalIdentifier;
 use map::FxIndexMap;
-use parser::pos::{Span, Spanned};
 use std::sync::Arc;
 
 crate fn fn_body(db: &impl HirDatabase, item_entity: Entity) -> WithError<Arc<crate::FnBody>> {
@@ -44,7 +41,7 @@ where
     }
 
     fn add<D: hir::HirIndexData>(&mut self, span: Span, node: D) -> D::Index {
-        D::index_vec_mut(&mut self.fn_body_tables).push(Spanned(node, span))
+        D::index_vec_mut(&mut self.fn_body_tables).push(Spanned::new(node, span))
     }
 
     fn span(&self, index: impl hir::SpanIndex) -> Span {
@@ -66,34 +63,22 @@ where
     }
 
     fn lower_ast_of_item(mut self) -> hir::FnBody {
-        match self.db.ast_of_item(self.item_entity) {
-            Ok(ast) => match &*ast {
-                a::Item::Struct(_) => panic!("asked for fn-body of struct {:?}", self.item_entity),
-                a::Item::Def(def) => {
-                    let arguments = self.lower_parameters(&def.parameters);
+        let result = self.db.uhir_of_entity(self.item_entity);
+        match result.value {
+            uhir::Entity::Struct(_) => panic!("asked for fn-body of struct {:?}", self.item_entity),
+            uhir::Entity::Def(def) => {
+                let arguments = self.lower_parameters(&def.parameters);
 
-                    for &argument in &arguments {
-                        self.bring_into_scope(argument);
-                    }
-
-                    let root_expression = self.lower_block(&def.body);
-
-                    let arguments = hir::List::from_iterator(&mut self.fn_body_tables, arguments);
-
-                    hir::FnBody {
-                        arguments,
-                        root_expression,
-                        tables: self.fn_body_tables,
-                    }
+                for &argument in &arguments {
+                    self.bring_into_scope(argument);
                 }
-            },
 
-            Err(ErrorReported(span)) => {
-                let root_expression =
-                    self.already_reported_error_expression(span, hir::ErrorData::Misc);
+                let root_expression = self.lower_block(&def.body);
+
+                let arguments = hir::List::from_iterator(&mut self.fn_body_tables, arguments);
 
                 hir::FnBody {
-                    arguments: hir::List::default(),
+                    arguments,
                     root_expression,
                     tables: self.fn_body_tables,
                 }
@@ -101,12 +86,12 @@ where
         }
     }
 
-    fn lower_parameters(&mut self, parameters: &Vec<a::Field>) -> Vec<hir::Variable> {
+    fn lower_parameters(&mut self, parameters: &Vec<uhir::Field>) -> Vec<hir::Variable> {
         parameters
             .iter()
             .map(|parameter| {
                 let name = self.add(
-                    parameter.name.span(),
+                    parameter.name.span,
                     hir::IdentifierData {
                         text: *parameter.name,
                     },
@@ -116,21 +101,21 @@ where
             .collect()
     }
 
-    fn lower_block(&mut self, block: &Spanned<a::Block>) -> hir::Expression {
+    fn lower_block(&mut self, block: &Spanned<uhir::Block>) -> hir::Expression {
         self.lower_block_items(&block.expressions)
-            .unwrap_or_else(|| self.unit_expression(block.span()))
+            .unwrap_or_else(|| self.unit_expression(block.span))
     }
 
     fn lower_block_items(&mut self, all_block_items: &[a::BlockItem]) -> Option<hir::Expression> {
         let (first_block_item, remaining_block_items) = all_block_items.split_first()?;
         match first_block_item {
-            a::BlockItem::Item(_) => return self.lower_block_items(remaining_block_items),
+            uhir::BlockItem::Item(_) => return self.lower_block_items(remaining_block_items),
 
-            a::BlockItem::Decl(decl) => match decl {
-                a::Declaration::Let(l) => Some(self.lower_let(l, remaining_block_items)),
+            uhir::BlockItem::Decl(decl) => match decl {
+                uhir::Declaration::Let(l) => Some(self.lower_let(l, remaining_block_items)),
             },
 
-            a::BlockItem::Expr(expr) => {
+            uhir::BlockItem::Expr(expr) => {
                 let first = self.lower_expression(expr);
 
                 match self.lower_block_items(remaining_block_items) {

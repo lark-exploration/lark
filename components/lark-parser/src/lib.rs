@@ -8,25 +8,25 @@
 #![allow(dead_code)]
 
 use crate::lexer::token::LexToken;
-use crate::syntax::entity::ParsedEntity;
 
 use lark_debug_derive::DebugWith;
-use lark_entity::Entity;
-use lark_entity::EntityTables;
-use lark_error::Diagnostic;
-use lark_error::WithError;
+use lark_entity::{Entity, EntityTables};
+use lark_error::{Diagnostic, WithError};
 use lark_seq::Seq;
-use lark_span::{CurrentFile, Span, Spanned};
-use lark_string::global::GlobalIdentifier;
-use lark_string::global::GlobalIdentifierTables;
-use lark_string::text::Text;
+use lark_span::{FileName, Span, Spanned};
+use lark_string::{GlobalIdentifierTables, Text};
 
 pub mod current_file;
+mod ir;
 mod lexer;
 mod macros;
 mod parser;
 mod query_definitions;
 pub mod syntax;
+
+pub use self::ir::ParsedFile;
+pub use self::syntax::entity::ParsedEntity;
+pub use self::syntax::uhir;
 
 salsa::query_group! {
     pub trait ParserDatabase: AsRef<GlobalIdentifierTables>
@@ -48,9 +48,14 @@ salsa::query_group! {
         // e.g. the length of each token only, so that we can adjust
         // the previous value (not to mention perhaps using a rope or
         // some other similar data structure that permits insertions).
-        fn file_tokens(id: FileName) -> WithError<Seq<Spanned<LexToken>>> {
+        fn file_tokens(id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>> {
             type FileTokensQuery;
             use fn query_definitions::file_tokens;
+        }
+
+        fn parsed_file(id: FileName) -> WithError<ParsedFile> {
+            type RootEntitiesQuery;
+            use fn query_definitions::parsed_file;
         }
 
         fn child_parsed_entities(entity: Entity) -> WithError<Seq<ParsedEntity>> {
@@ -58,7 +63,7 @@ salsa::query_group! {
             use fn query_definitions::child_parsed_entities;
         }
 
-        fn parsed_entity(entity: Entity) -> ParsedEntity {
+        fn parsed_entity(entity: Entity) -> WithError<ParsedEntity> {
             type ParsedEntityQuery;
             use fn query_definitions::parsed_entity;
         }
@@ -67,15 +72,14 @@ salsa::query_group! {
             type ChildEntitiesQuery;
             use fn query_definitions::child_entities;
         }
+
+        fn uhir_of_entity(entity: Entity) -> WithError<uhir::Entity> {
+            type UhirOfEntityQuery;
+            use fn query_definitions::uhir_of_entity;
+        }
     }
 }
 
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct FileName {
-    pub id: GlobalIdentifier,
-}
-
-fn diagnostic(message: impl Into<String>, span: Span<CurrentFile>) -> Diagnostic {
-    drop(span); // FIXME -- Diagostic uses the old codemap spans
-    Diagnostic::new(message.into(), ::parser::pos::Span::Synthetic)
+fn diagnostic(message: impl Into<String>, span: Span<FileName>) -> Diagnostic {
+    Diagnostic::new(message.into(), span)
 }

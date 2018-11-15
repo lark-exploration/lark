@@ -16,16 +16,18 @@ use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::WithError;
 use lark_seq::Seq;
+use lark_span::{FileName, Span, Spanned as GenericSpanned};
 use lark_string::global::GlobalIdentifier;
 use lark_ty as ty;
 use lark_ty::declaration::{Declaration, DeclarationTables};
-use parser::pos::{HasSpan, Span, Spanned};
 use std::sync::Arc;
 
 mod fn_body;
 mod query_definitions;
 mod scope;
 mod type_conversion;
+
+type Spanned<T> = GenericSpanned<T, FileName>;
 
 salsa::query_group! {
     pub trait HirDatabase: AstDatabase + AsRef<DeclarationTables> {
@@ -199,26 +201,26 @@ where
 /// Trait for the various types for which a span can be had --
 /// corresponds to all the index types plus `MetaIndex`.
 pub trait SpanIndex {
-    fn span_from(self, tables: &FnBodyTables) -> Span;
+    fn span_from(self, tables: &FnBodyTables) -> Span<FileName>;
 }
 
 impl FnBody {
     /// Get the span for the given part of the HIR.
-    pub fn span(&self, index: impl SpanIndex) -> Span {
+    pub fn span(&self, index: impl SpanIndex) -> Span<FileName> {
         index.span_from(&self.tables)
     }
 }
 
 impl FnBodyTables {
     /// Get the span for the given part of the HIR.
-    pub fn span(&self, index: impl SpanIndex) -> Span {
+    pub fn span(&self, index: impl SpanIndex) -> Span<FileName> {
         index.span_from(self)
     }
 }
 
 impl<I: HirIndex> SpanIndex for I {
-    fn span_from(self, tables: &FnBodyTables) -> Span {
-        I::index_vec(tables)[self].span()
+    fn span_from(self, tables: &FnBodyTables) -> Span<FileName> {
+        I::index_vec(tables)[self].span
     }
 }
 
@@ -265,7 +267,7 @@ macro_rules! define_meta_index {
         }
 
         impl SpanIndex for MetaIndex {
-            fn span_from(self, tables: &FnBodyTables) -> Span {
+            fn span_from(self, tables: &FnBodyTables) -> Span<FileName> {
                 match self {
                     $(
                         MetaIndex::$index_ty(index) => index.span_from(tables),

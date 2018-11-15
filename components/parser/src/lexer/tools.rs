@@ -2,8 +2,8 @@ use crate::prelude::*;
 
 use crate::intern::ModuleTable;
 
-use codespan::ByteIndex;
 use derive_new::new;
+use lark_span::{ByteIndex, CurrentFile, Span};
 use log::{debug, trace};
 use std::fmt::{self, Debug};
 use std::marker::PhantomData;
@@ -298,7 +298,7 @@ pub struct Tokenizer<'table, Delegate: LexerDelegateTrait> {
     token: PhantomData<Delegate::Token>,
 }
 
-pub type TokenizerItem<Token> = Result<(ByteIndex, Token, ByteIndex), ParseError>;
+pub type TokenizerItem<Token> = Result<(ByteIndex, Token, ByteIndex), ParseError<CurrentFile>>;
 
 impl<Delegate: LexerDelegateTrait + Debug> Iterator for Tokenizer<'table, Delegate> {
     type Item = TokenizerItem<Delegate::Token>;

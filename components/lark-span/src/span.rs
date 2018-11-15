@@ -1,13 +1,34 @@
-use crate::SpanFile;
+use crate::{FileName, SpanFile};
 
 use lark_debug_derive::DebugWith;
 use lark_string::Text;
+use std::ops::Index;
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ByteIndex(usize);
+
+impl From<usize> for ByteIndex {
+    fn from(u: usize) -> ByteIndex {
+        ByteIndex(u)
+    }
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ByteSize(usize);
+
+impl<File: SpanFile> Index<Span<File>> for str {
+    type Output = str;
+
+    fn index(&self, range: Span<File>) -> &str {
+        &self[range.start.0..range.end.0]
+    }
+}
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span<File: SpanFile> {
     file: File,
-    crate start: usize,
-    crate end: usize,
+    crate start: ByteIndex,
+    crate end: ByteIndex,
 }
 
 /// Relative to the "current file", which must be known.
@@ -19,8 +40,12 @@ pub struct CurrentFile;
 pub struct CurrentEntity;
 
 impl<File: SpanFile> Span<File> {
-    pub fn new(file: File, start: usize, end: usize) -> Self {
-        assert!(end >= start);
+    pub fn new(file: File, start: impl Into<ByteIndex>, end: impl Into<ByteIndex>) -> Self {
+        let start = start.into();
+        let end = end.into();
+
+        assert!(end.0 >= start.0);
+
         Span { file, start, end }
     }
 
@@ -45,11 +70,11 @@ impl<File: SpanFile> Span<File> {
         Span::new(self.file, self.start, other_span.end)
     }
 
-    pub fn start(&self) -> usize {
+    pub fn start(&self) -> ByteIndex {
         self.start
     }
 
-    pub fn end(&self) -> usize {
+    pub fn end(&self) -> ByteIndex {
         self.end
     }
 
@@ -57,18 +82,22 @@ impl<File: SpanFile> Span<File> {
         Span::new(file, self.start, self.end)
     }
 
+    pub fn in_file_named(self, file: FileName) -> Span<FileName> {
+        Span::new(file, self.start, self.end)
+    }
+
     pub fn contains(self, span: Span<File>) -> bool {
         self.start >= span.start && self.end < span.end
     }
 
-    pub fn len(&self) -> usize {
-        self.end - self.start
+    pub fn len(&self) -> ByteSize {
+        ByteSize(self.end.0 - self.start.0)
     }
 
     pub fn relative_to_entity(self, entity_span: Span<File>) -> Span<CurrentEntity> {
         assert!(entity_span.contains(self));
         let len = self.len();
-        let start = self.start - entity_span.start;
-        Span::new(CurrentEntity, start, start + len)
+        let start = self.start.0 - entity_span.start.0;
+        Span::new(CurrentEntity, start, start + len.0)
     }
 }

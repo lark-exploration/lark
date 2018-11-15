@@ -4,11 +4,9 @@ use crate::ParserDatabase;
 
 use debug::DebugWith;
 use lark_debug_derive::DebugWith;
-use lark_entity::Entity;
-use lark_entity::EntityTables;
-use lark_error::ErrorReported;
-use lark_error::WithError;
-use lark_span::{CurrentFile, Span, SpannedGlobalIdentifier};
+use lark_entity::{Entity, EntityTables};
+use lark_error::{ErrorReported, WithError};
+use lark_span::{FileName, Span, SpannedGlobalIdentifier};
 use lark_string::global::GlobalIdentifierTables;
 use std::sync::Arc;
 
@@ -64,13 +62,13 @@ pub struct ParsedEntity {
     pub entity: Entity,
 
     /// The span of the entire entity.
-    pub full_span: Span<CurrentFile>,
+    pub full_span: Span<FileName>,
 
     /// A (sometimes) shorter span that can be used to highlight this
     /// entity in error messages. For example, for a method, it might
     /// be the method name -- this helps to avoid multi-line error
     /// messages, which are kind of a pain.
-    pub characteristic_span: Span<CurrentFile>,
+    pub characteristic_span: Span<FileName>,
 
     /// Thunk to extract contents
     pub thunk: ParsedEntityThunk,
@@ -79,8 +77,8 @@ pub struct ParsedEntity {
 impl ParsedEntity {
     crate fn new(
         entity: Entity,
-        full_span: Span<CurrentFile>,
-        characteristic_span: Span<CurrentFile>,
+        full_span: Span<FileName>,
+        characteristic_span: Span<FileName>,
         thunk: ParsedEntityThunk,
     ) -> Self {
         Self {

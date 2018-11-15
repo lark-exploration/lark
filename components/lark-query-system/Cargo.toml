@@ -21,6 +21,5 @@ lark-type-check = { path = "../lark-type-check" }
 log = "0.4.5"
 map = { path = "../map" }
 parking_lot = "0.6.4"
-parser = { path = "../parser" }
 salsa = "0.8"
 url = "1.7"

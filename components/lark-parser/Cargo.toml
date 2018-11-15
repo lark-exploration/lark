@@ -18,7 +18,6 @@ lark-seq = { path = "../lark-seq" }
 lark-span = { path = "../lark-span" }
 log = "0.4.5"
 map = { path = "../map" }
-parser = { path = "../parser" }
 salsa = "0.8.0"
 parking_lot = "0.6.4"
 unicode-xid = "0.1.0"

@@ -14,7 +14,6 @@ pub mod errors;
 pub mod intern;
 pub mod parser;
 crate mod parser2;
-pub mod pos;
 pub mod prelude;
 crate mod query;
 crate mod reporting;

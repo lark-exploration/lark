@@ -3,16 +3,13 @@ use crate::prelude::*;
 use crate::intern::ModuleTable;
 use crate::parser::test_helpers::{LineTokenizer, Token};
 
-use codespan::ByteIndex;
-use codespan::{ByteOffset, CodeMap};
 use derive_new::new;
 use itertools::Itertools;
 use log::{debug, trace};
 use unicode_xid::UnicodeXID;
 
 pub fn process(source: &str) -> (String, Annotations) {
-    let codemap = CodeMap::new();
-    extract(&source, codemap, 1)
+    extract(&source, 1)
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -23,7 +20,7 @@ pub enum Annotation {
     Sigil(Span),
 }
 
-fn extract(s: &str, codemap: CodeMap, mut codespan_start: u32) -> (String, Annotations) {
+fn extract(s: &str, mut codespan_start: u32) -> (String, Annotations) {
     let mut source = String::new();
     let mut t2 = ModuleTable::new();
     let mut anns = vec![];
@@ -117,7 +114,7 @@ fn extract(s: &str, codemap: CodeMap, mut codespan_start: u32) -> (String, Annot
         codespan_start = (source.len() as u32) + 1;
     }
 
-    (source, Annotations::new(codemap, t2, anns))
+    (source, Annotations::new(t2, anns))
 }
 
 fn ident(

@@ -1,12 +1,8 @@
 use debug::DebugWith;
 use std::fmt::Debug;
-use std::hash::Hash;
-use std::hash::Hasher;
-use std::iter::once;
-use std::iter::FromIterator;
-use std::ops::Deref;
-use std::ops::DerefMut;
-use std::ops::Range;
+use std::hash::{Hash, Hasher};
+use std::iter::{once, FromIterator, IntoIterator};
+use std::ops::{Deref, DerefMut, Range};
 use std::sync::Arc;
 
 mod test;

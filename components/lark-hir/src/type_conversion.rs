@@ -1,28 +1,15 @@
-use ast::ast as a;
 use crate::HirDatabase;
+
 use debug::DebugWith;
-use intern::Intern;
-use intern::Untern;
-use lark_entity::Entity;
-use lark_entity::EntityData;
-use lark_entity::LangItem;
-use lark_entity::MemberKind;
-use lark_error::or_return_sentinel;
-use lark_error::ErrorReported;
-use lark_error::ErrorSentinel;
-use lark_error::WithError;
+use intern::{Intern, Untern};
+use lark_entity::{Entity, EntityData, LangItem, MemberKind};
+use lark_error::{or_return_sentinel, ErrorReported, ErrorSentinel, WithError};
+use lark_parser::uhir;
 use lark_seq::Seq;
-use lark_ty::declaration::Declaration;
-use lark_ty::BaseData;
-use lark_ty::BaseKind;
-use lark_ty::BoundVar;
-use lark_ty::Erased;
-use lark_ty::GenericDeclarations;
-use lark_ty::GenericKind;
-use lark_ty::Generics;
-use lark_ty::Signature;
-use lark_ty::Ty;
-use lark_ty::TypeFamily;
+use lark_ty::{
+    BaseData, BaseKind, BoundVar, Declaration, Erased, GenericDeclarations, GenericKind, Generics,
+    Signature, Ty, TypeFamily,
+};
 use std::sync::Arc;
 
 crate fn generic_declarations(
@@ -52,11 +39,13 @@ crate fn generic_declarations(
         }
 
         EntityData::ItemName { .. } => {
-            let ast = or_return_sentinel!(db, db.ast_of_item(entity));
+            let ast = db.uhir_of_entity(entity);
 
             // Eventually, items ought to be permitted to have generic types attached to them.
-            match &*ast {
-                a::Item::Struct(_) | a::Item::Def(_) => WithError::ok(Ok(empty_declarations(None))),
+            match &ast.value {
+                uhir::Entity::Struct(_) | uhir::Entity::Def(_) => {
+                    WithError::ok(Ok(empty_declarations(None)))
+                }
             }
         }
 
@@ -104,10 +93,10 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<Ty<Declaration>>
         }
 
         EntityData::ItemName { .. } => {
-            let ast = or_return_sentinel!(db, db.ast_of_item(entity));
+            let ast = db.uhir_of_entity(entity);
 
-            match &*ast {
-                a::Item::Struct(_) | a::Item::Def(_) => {
+            match &ast.value {
+                uhir::Entity::Struct(_) | uhir::Entity::Def(_) => {
                     WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
                 }
             }
@@ -139,10 +128,10 @@ crate fn signature(
 ) -> WithError<Result<Signature<Declaration>, ErrorReported>> {
     let mut errors = vec![];
 
-    match &*or_return_sentinel!(db, db.ast_of_item(owner)) {
-        a::Item::Struct(_) => panic!("asked for signature of a struct"),
+    match db.uhir_of_entity(owner).value {
+        uhir::Entity::Struct(_) => panic!("asked for signature of a struct"),
 
-        a::Item::Def(d) => {
+        uhir::Entity::Def(d) => {
             let inputs: Seq<_> = d
                 .parameters
                 .iter()
@@ -187,7 +176,7 @@ fn declaration_ty_named(
 fn declaration_ty_from_ast_ty(
     db: &impl HirDatabase,
     scope_entity: Entity,
-    ast_ty: &a::Type,
+    ast_ty: &uhir::Type,
 ) -> WithError<Ty<Declaration>> {
     match db.resolve_name(scope_entity, *ast_ty.name) {
         Some(entity) => WithError::ok(declaration_ty_named(db, entity, Generics::empty())),

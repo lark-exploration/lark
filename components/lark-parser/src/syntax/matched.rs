@@ -3,7 +3,7 @@ use crate::syntax::{Delimiter, NonEmptySyntax, Syntax};
 
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
-use lark_span::Spanned;
+use lark_span::{FileName, Spanned};
 
 /// Some sequence of tokens that begins with an open delimiter and
 /// ends with a (matched) close delimiter. The tokens in between are
@@ -31,7 +31,7 @@ impl<D> Syntax for Matched<D>
 where
     D: Delimiter,
 {
-    type Data = Spanned<ParsedMatch>;
+    type Data = Spanned<ParsedMatch, FileName>;
 
     fn test(&self, parser: &Parser<'_>) -> bool {
         parser.test(self.delimiters().open_syntax())

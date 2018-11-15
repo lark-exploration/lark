@@ -258,7 +258,7 @@ pub struct Tokenizer<'table, Delegate: LexerDelegateTrait> {
     token: PhantomData<Delegate::Token>,
 }
 
-pub type TokenizerItem<Token> = Result<Spanned<Token>, Span<CurrentFile>>;
+pub type TokenizerItem<Token> = Result<Spanned<Token, CurrentFile>, Span<CurrentFile>>;
 
 impl<Delegate: LexerDelegateTrait + Debug> Iterator for Tokenizer<'table, Delegate> {
     type Item = TokenizerItem<Delegate::Token>;
@@ -308,7 +308,7 @@ enum LoopCompletion<T> {
 }
 
 impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
-    pub fn tokens(self) -> Result<Vec<Spanned<Delegate::Token>>, Span<CurrentFile>> {
+    pub fn tokens(self) -> Result<Vec<Spanned<Delegate::Token, CurrentFile>>, Span<CurrentFile>> {
         self.collect()
     }
 

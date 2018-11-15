@@ -4,29 +4,17 @@ use crate::AstDatabase;
 use debug::DebugWith;
 use lark_entity::EntityTables;
 use lark_string::global::GlobalIdentifierTables;
-use parser::{HasParserState, HasReaderState, ParserState, ReaderState};
 use salsa::Database;
 
 #[derive(Default)]
 struct TestDatabaseImpl {
     runtime: salsa::Runtime<TestDatabaseImpl>,
-    parser_state: ParserState,
-    reader_state: ReaderState,
     item_id_tables: EntityTables,
 }
 
 salsa::database_storage! {
     pub struct TestDatabaseImplStorage for TestDatabaseImpl {
-        impl parser::ReaderDatabase {
-            fn paths_trigger() for parser::PathsTrigger;
-            fn paths() for parser::Paths;
-            fn source() for parser::Source;
-        }
         impl AstDatabase {
-            fn ast_of_file() for crate::AstOfFileQuery;
-            fn items_in_file() for crate::ItemsInFileQuery;
-            fn ast_of_item() for crate::AstOfItemQuery;
-            fn ast_of_field() for crate::AstOfFieldQuery;
             fn entity_span() for crate::EntitySpanQuery;
         }
     }
@@ -38,21 +26,9 @@ impl Database for TestDatabaseImpl {
     }
 }
 
-impl HasParserState for TestDatabaseImpl {
-    fn parser_state(&self) -> &ParserState {
-        &self.parser_state
-    }
-}
-
 impl AsRef<GlobalIdentifierTables> for TestDatabaseImpl {
     fn as_ref(&self) -> &GlobalIdentifierTables {
         (&self.parser_state).as_ref()
-    }
-}
-
-impl parser::HasReaderState for TestDatabaseImpl {
-    fn reader_state(&self) -> &ReaderState {
-        &self.reader_state
     }
 }
 

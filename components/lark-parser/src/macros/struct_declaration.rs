@@ -14,7 +14,7 @@ use intern::Intern;
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::{ErrorReported, WithError};
 use lark_seq::Seq;
-use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_span::{FileName, Spanned, SpannedGlobalIdentifier};
 use lark_string::GlobalIdentifier;
 
 /// ```ignore
@@ -30,7 +30,7 @@ impl EntityMacroDefinition for StructDeclaration {
         &self,
         parser: &mut Parser<'_>,
         base: Entity,
-        macro_name: Spanned<GlobalIdentifier>,
+        macro_name: Spanned<GlobalIdentifier, FileName>,
     ) -> Result<ParsedEntity, ErrorReported> {
         log::trace!(
             "StructDeclaration::parse(base={}, macro_name={})",
@@ -67,7 +67,7 @@ impl EntityMacroDefinition for StructDeclaration {
 }
 
 struct ParsedStructDeclaration {
-    fields: Seq<Spanned<ParsedField>>,
+    fields: Seq<Spanned<ParsedField, FileName>>,
 }
 
 impl LazyParsedEntity for ParsedStructDeclaration {

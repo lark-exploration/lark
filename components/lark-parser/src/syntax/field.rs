@@ -9,7 +9,7 @@ use crate::syntax::Syntax;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::{ErrorReported, ResultExt, WithError};
-use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_span::{FileName, Spanned, SpannedGlobalIdentifier};
 use lark_string::GlobalIdentifier;
 
 #[derive(DebugWith)]
@@ -18,18 +18,21 @@ pub struct Field;
 /// Represents a parse of something like `foo: Type`
 #[derive(Copy, Clone, DebugWith)]
 pub struct ParsedField {
-    pub name: Spanned<GlobalIdentifier>,
+    pub name: Spanned<GlobalIdentifier, FileName>,
     pub ty: ParsedTypeReference,
 }
 
 impl Syntax for Field {
-    type Data = Spanned<ParsedField>;
+    type Data = Spanned<ParsedField, FileName>;
 
     fn test(&self, parser: &Parser<'_>) -> bool {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
+    fn expect(
+        &self,
+        parser: &mut Parser<'_>,
+    ) -> Result<Spanned<ParsedField, FileName>, ErrorReported> {
         let name = parser.expect(SpannedGlobalIdentifier)?;
 
         let ty = parser

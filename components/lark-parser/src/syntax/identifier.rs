@@ -4,11 +4,11 @@ use crate::syntax::{NonEmptySyntax, Syntax};
 
 use intern::Intern;
 use lark_error::ErrorReported;
-use lark_span::{Spanned, SpannedGlobalIdentifier};
+use lark_span::{FileName, Spanned, SpannedGlobalIdentifier};
 use lark_string::global::GlobalIdentifier;
 
 impl Syntax for SpannedGlobalIdentifier {
-    type Data = Spanned<GlobalIdentifier>;
+    type Data = Spanned<GlobalIdentifier, FileName>;
 
     fn test(&self, parser: &Parser<'_>) -> bool {
         parser.is(LexToken::Identifier)
