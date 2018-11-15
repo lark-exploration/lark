@@ -33,13 +33,13 @@ use std::rc::Rc;
 
 // # True grammar:
 //
-// Expr = Place | Value
+// Expression = Place | Value
 //
 // Value = Block
-//    | Expr "(" (Expr),* ")"
-//    | Expr BinaryOp Expr
-//    | UnaryOp Expr
-//    | Place "=" Expr
+//    | Expression "(" (Expression),* ")"
+//    | Expression BinaryOp Expression
+//    | UnaryOp Expression
+//    | Place "=" Expression
 //
 // Place = Identifier
 //    | Value // temporary
@@ -47,7 +47,7 @@ use std::rc::Rc;
 //
 // # Factored into "almost LL" form:
 //
-// Expr = Expr5
+// Expression = Expr5
 //
 // Expr5 = {
 //   Expr4,
@@ -73,19 +73,19 @@ use std::rc::Rc;
 // }
 //
 // Expr1 = {
-//   Expr0 "(" Comma(Expr) ")"
+//   Expr0 "(" Comma(Expression) ")"
 //   Expr0 "(" Comma(Field) ")"
 //   Expr0 MemberAccess*
 // }
 //
 // MemberAccess = {
 //   \n* "." Identifier,
-//   "(" Comma(Expr) ")",
+//   "(" Comma(Expression) ")",
 // }
 //
 // Expr0 = {
 //   Identifier,
-//   "(" \n* Expr \n* ")",  // Should we allow newlines *anywhere* here?
+//   "(" \n* Expression \n* ")",  // Should we allow newlines *anywhere* here?
 //   Block,
 //   "if" Expression Block [ "else" Block ]
 // }
@@ -95,8 +95,8 @@ use std::rc::Rc;
 // }
 //
 // Statement = {
-//   \n* Expr Terminator,
-//   \n* `let` Identifier [`:` Ty ] `=` Expr Terminator,
+//   \n* Expression Terminator,
+//   \n* `let` Identifier [`:` Ty ] `=` Expression Terminator,
 // }
 //
 // Terminator = {
@@ -237,36 +237,88 @@ impl Syntax<'parse> for HirExpression<'me, 'parse> {
     type Data = hir::Expression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(Expr::new(self.scope))
+        parser.test(Expression::new(self.scope))
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         Ok(parser
-            .expect(Expr::new(self.scope))?
+            .expect(Expression::new(self.scope))?
             .to_hir_expression(self.scope))
     }
 }
 
 #[derive(new, DebugWith)]
-struct Expr<'me, 'parse> {
+struct Expression<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
 }
 
-impl Syntax<'parse> for Expr<'me, 'parse> {
+impl Syntax<'parse> for Expression<'me, 'parse> {
     type Data = ParsedExpression;
 
-    fn test(&mut self, _parser: &Parser<'parse>) -> bool {
-        unimplemented!()
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(Expr5::new(self.scope))
     }
 
-    fn expect(&mut self, _parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        unimplemented!()
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        parser.expect(Expr5::new(self.scope))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct Expr5<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for Expr5<'me, 'parse> {
+    type Data = ParsedExpression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(Expr4::new(self.scope))
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        parser.expect(BinaryOperatorExpression {
+            expr: Expr4::new(self.scope),
+            op: BinaryOperator::new(BINARY_OPERATORS_EXPR5),
+        })
+    }
+}
+
+#[derive(new, DebugWith)]
+struct Expr4<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl AsMut<ExpressionScope<'parse>> for Expr4<'_, 'parse> {
+    fn as_mut(&mut self) -> &mut ExpressionScope<'parse> {
+        self.scope
+    }
+}
+
+impl Syntax<'parse> for Expr4<'me, 'parse> {
+    type Data = ParsedExpression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(Expr3::new(self.scope))
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        parser.expect(BinaryOperatorExpression {
+            expr: Expr3::new(self.scope),
+            op: BinaryOperator::new(BINARY_OPERATORS_EXPR4),
+        })
     }
 }
 
 #[derive(new, DebugWith)]
 struct Expr3<'me, 'parse> {
     scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl AsMut<ExpressionScope<'parse>> for Expr3<'_, 'parse> {
+    fn as_mut(&mut self) -> &mut ExpressionScope<'parse> {
+        self.scope
+    }
 }
 
 impl Syntax<'parse> for Expr3<'me, 'parse> {
@@ -277,28 +329,23 @@ impl Syntax<'parse> for Expr3<'me, 'parse> {
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        parser.expect(BinaryOperatorExpr {
+        parser.expect(BinaryOperatorExpression {
             expr: Expr2::new(self.scope),
             op: BinaryOperator::new(BINARY_OPERATORS_EXPR3),
-            permit_chain: true,
         })
     }
 }
 
 #[derive(new, DebugWith)]
-struct BinaryOperatorExpr<EXPR, OP> {
+struct BinaryOperatorExpression<EXPR, OP> {
     // Expressions from below this level of operator precedence.
     expr: EXPR,
 
     // Operator to parse.
     op: OP,
-
-    /// If true, we permit "chained" operators like `a + b + c`. If
-    /// false, we only permit one use of operator, like `a == b`.
-    permit_chain: bool,
 }
 
-impl<EXPR, OP> BinaryOperatorExpr<EXPR, OP>
+impl<EXPR, OP> BinaryOperatorExpression<EXPR, OP>
 where
     EXPR: AsMut<ExpressionScope<'parse>>,
 {
@@ -307,7 +354,7 @@ where
     }
 }
 
-impl<EXPR, OP> Syntax<'parse> for BinaryOperatorExpr<EXPR, OP>
+impl<EXPR, OP> Syntax<'parse> for BinaryOperatorExpression<EXPR, OP>
 where
     EXPR: Syntax<'parse, Data = ParsedExpression> + AsMut<ExpressionScope<'parse>>,
     OP: Syntax<'parse, Data = hir::BinaryOperator>,
@@ -343,8 +390,18 @@ where
                     },
                 );
 
-                if !self.permit_chain {
-                    break;
+                match operator {
+                    hir::BinaryOperator::Equals | hir::BinaryOperator::NotEquals => {
+                        // Do not parse `a == b == c` etc
+                        break;
+                    }
+
+                    hir::BinaryOperator::Add
+                    | hir::BinaryOperator::Subtract
+                    | hir::BinaryOperator::Multiply
+                    | hir::BinaryOperator::Divide => {
+                        // `a + b + c` is ok
+                    }
                 }
             }
         }
@@ -358,12 +415,12 @@ const BINARY_OPERATORS_EXPR3: &[(&str, hir::BinaryOperator)] = &[
     ("/", hir::BinaryOperator::Divide),
 ];
 
-const BINARY_OPERATORS_EXPR2: &[(&str, hir::BinaryOperator)] = &[
+const BINARY_OPERATORS_EXPR4: &[(&str, hir::BinaryOperator)] = &[
     ("+", hir::BinaryOperator::Add),
     ("_", hir::BinaryOperator::Subtract),
 ];
 
-const BINARY_OPERATORS_EXPR1: &[(&str, hir::BinaryOperator)] = &[
+const BINARY_OPERATORS_EXPR5: &[(&str, hir::BinaryOperator)] = &[
     ("==", hir::BinaryOperator::Equals),
     ("!=", hir::BinaryOperator::NotEquals),
 ];
@@ -771,10 +828,11 @@ impl Syntax<'parse> for Expr0<'me, 'parse> {
             return Ok(ParsedExpression::Expression(error_expression));
         }
 
-        // Expr0 = `(` Expr ')'
-        if let Some(expr) =
-            parser.parse_if_present(Delimited(Parentheses, SkipNewline(Expr::new(self.scope))))
-        {
+        // Expr0 = `(` Expression ')'
+        if let Some(expr) = parser.parse_if_present(Delimited(
+            Parentheses,
+            SkipNewline(Expression::new(self.scope)),
+        )) {
             return Ok(expr?);
         }
 
