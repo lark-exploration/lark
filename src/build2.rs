@@ -44,8 +44,20 @@ pub(crate) fn build(filename: &str) {
     let mut db = LarkDatabase::default();
     let _ = db.add_file(filename, contents.to_string());
 
+    let file_path = if cfg!(windows) {
+        std::path::Path::new(filename).with_extension("exe")
+    } else {
+        std::path::Path::new(filename).with_extension("")
+    };
+
     let source_file = lark_codegen2::codegen(&mut db, lark_codegen2::CodegenType::Rust);
-    println!("{}", source_file);
+
+    let _ = lark_codegen2::build(
+        file_path.file_name().unwrap().to_str().unwrap(),
+        &source_file,
+        lark_codegen2::CodegenType::Rust,
+    );
+    //println!("{}", source_file);
 }
 
 trait FileMapExt {
