@@ -137,6 +137,7 @@ impl ParsedExpression {
 #[derive(Copy, Clone)]
 enum ParsedStatement {
     Expression(hir::Expression),
+    Let(Span<CurrentFile>, hir::Variable, Option<hir::Expression>),
 }
 
 struct ExpressionScope<'parse> {
@@ -331,39 +332,57 @@ impl Syntax<'parse> for Block<'me, 'parse> {
         // Save the map of variables before we start parsing
         let variables_on_entry = self.scope.variables.clone();
 
-        // Convert a sequence of statements like `[a, b, c]` into a HIR tree
-        // like `Sequence { first: Sequence { first: a, second: b }, second: c }`
         let start_span = parser.peek_span();
         let statements = parser.expect(self.definition())?;
 
-        let mut statements_iter = statements.into_iter().cloned();
-
-        let mut result = if let Some(first) = statements_iter.next() {
-            first.to_hir_expression(self.scope)
-        } else {
+        if statements.is_empty() {
             // FIXME -- it'd be better if `Delimited` gave back a
             // `Spanned<X>` for its contents.
             let span = start_span.extended_until_end_of(parser.peek_span());
             return Ok(ParsedExpression::Expression(
                 self.scope.unit_expression(span),
             ));
+        }
+
+        // Convert a sequence of statements like `[a, b, c]` into a HIR tree
+        // `[a, [b, c]]`.
+        let mut statements_iter = statements.into_iter().rev().cloned();
+
+        let mut result = match statements_iter.next().unwrap() {
+            ParsedStatement::Expression(e) => e,
+            ParsedStatement::Let(span, variable, initializer) => {
+                // If a `let` appears as the last statement, then its associated
+                // value is just a unit expression.
+                let body = self.scope.unit_expression(parser.last_span());
+                self.scope.add(
+                    span,
+                    hir::ExpressionData::Let {
+                        variable,
+                        initializer,
+                        body,
+                    },
+                )
+            }
         };
 
-        while let Some(next) = statements_iter.next() {
-            let next = next.to_hir_expression(self.scope);
-
-            let span = self
-                .scope
-                .span(result)
-                .extended_until_end_of(self.scope.span(next));
-
-            result = self.scope.add(
-                span,
-                hir::ExpressionData::Sequence {
-                    first: result,
-                    second: next,
-                },
-            );
+        while let Some(previous_statement) = statements_iter.next() {
+            result = match previous_statement {
+                ParsedStatement::Expression(previous) => self.scope.add(
+                    self.scope.span(previous),
+                    hir::ExpressionData::Sequence {
+                        first: previous,
+                        second: result,
+                    },
+                ),
+                ParsedStatement::Let(span, variable, initializer) => self.scope.add(
+                    span,
+                    hir::ExpressionData::Let {
+                        variable,
+                        initializer,
+                        body: result,
+                    },
+                ),
+            };
         }
 
         // Restore the map of variables to what it used to be
@@ -381,11 +400,11 @@ struct Statement<'me, 'parse> {
 impl Syntax<'parse> for Statement<'me, 'parse> {
     type Data = ParsedStatement;
 
-    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+    fn test(&mut self, _parser: &Parser<'parse>) -> bool {
         unimplemented!()
     }
 
-    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, _parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         unimplemented!()
     }
 }
