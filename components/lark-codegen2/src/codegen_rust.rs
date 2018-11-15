@@ -2,7 +2,10 @@ use ast::AstDatabase;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_hir::HirDatabase;
-use lark_mir2::{BasicBlock, FnBytecode, MirDatabase, Operand, Rvalue, Statement, StatementKind};
+use lark_mir2::{
+    BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Rvalue, RvalueData, Statement,
+    StatementKind,
+};
 use lark_query_system::LarkDatabase;
 use lark_ty::Ty;
 use parser::ReaderDatabase;
@@ -10,6 +13,7 @@ use parser::ReaderDatabase;
 pub fn build_type(db: &mut LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>) -> String {
     let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(db);
     let uint_entity = EntityData::LangItem(LangItem::Uint).intern(db);
+    let void_entity = EntityData::LangItem(LangItem::Tuple(0)).intern(db);
 
     match ty.base.untern(db) {
         lark_ty::BoundVarOr::BoundVar(_) => unimplemented!("Bound variables not yet supported"),
@@ -19,8 +23,10 @@ pub fn build_type(db: &mut LarkDatabase, ty: &Ty<lark_ty::declaration::Declarati
                     "bool".into()
                 } else if entity == uint_entity {
                     "u32".into()
+                } else if entity == void_entity {
+                    "()".into()
                 } else {
-                    unimplemented!("Unknown type")
+                    unimplemented!("Unknown type: {:#?}", entity)
                 }
             }
             _ => unimplemented!("Unknown base kind"),
@@ -38,21 +44,36 @@ fn build_var_name(
     identifier.text.untern(db).to_string()
 }
 
+fn build_entity_name(
+    db: &mut LarkDatabase,
+    fn_bytecode: &std::sync::Arc<FnBytecode>,
+    entity: Entity,
+) -> String {
+    let entity_data = entity.untern(db);
+    match entity_data {
+        EntityData::LangItem(LangItem::False) => "false".into(),
+        EntityData::LangItem(LangItem::True) => "true".into(),
+        EntityData::LangItem(LangItem::Debug) => "println!".into(),
+        _ => unimplemented!("Unsupported entity name"),
+    }
+}
+
 fn build_operand(
     db: &mut LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
-    operand: &Operand,
+    operand: Operand,
 ) -> String {
-    match operand {
-        Operand::ConstantInt(i) => format!("{}", i),
-        Operand::ConstantString(s) => format!("\"{}\"", s),
-        Operand::Copy(place) | Operand::Move(place) => {
+    match &fn_bytecode.tables[operand] {
+        OperandData::ConstantInt(i) => format!("{}", i),
+        OperandData::ConstantString(s) => format!("\"{}\"", s),
+        OperandData::Copy(place) | OperandData::Move(place) => {
             let place_data = &fn_bytecode.tables[*place];
             match place_data {
                 lark_mir2::PlaceData::Variable(variable) => {
                     build_var_name(db, fn_bytecode, *variable)
                 }
-                _ => unimplemented!("Unsupported place data"),
+                lark_mir2::PlaceData::Entity(entity) => build_entity_name(db, fn_bytecode, *entity),
+                x => unimplemented!("Unsupported place data: {:#?}", x),
             }
         }
     }
@@ -84,13 +105,38 @@ pub fn codegen_struct(
 
 pub fn codegen_rvalue(
     db: &mut LarkDatabase,
-    rvalue: &Rvalue,
+    rvalue: Rvalue,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
     output: &mut String,
 ) {
-    match rvalue {
-        Rvalue::Use(operand) => output.push_str(&build_operand(db, fn_bytecode, operand)),
-        _ => unimplemented!("Rvalue value not supported"),
+    match &fn_bytecode.tables[rvalue] {
+        RvalueData::Use(operand) => output.push_str(&build_operand(db, fn_bytecode, *operand)),
+        RvalueData::Call(entity, args) => {
+            output.push_str(&build_entity_name(db, fn_bytecode, *entity));
+
+            output.push_str("(");
+            let mut first = true;
+
+            match entity.untern(db) {
+                EntityData::LangItem(LangItem::Debug) => {
+                    output.push_str("\"{}\"");
+                    first = false;
+                }
+                _ => {}
+            }
+
+            for arg in args.iter(fn_bytecode) {
+                if !first {
+                    output.push_str(", ");
+                } else {
+                    first = false;
+                }
+
+                output.push_str(&build_operand(db, fn_bytecode, arg));
+            }
+            output.push_str(")");
+        }
+        x => unimplemented!("Rvalue value not supported: {:?}", x),
     }
 }
 
@@ -104,10 +150,12 @@ pub fn codegen_statement(
 
     match &statement_data.kind {
         StatementKind::Expression(rvalue) => {
-            codegen_rvalue(db, rvalue, fn_bytecode, output);
+            codegen_rvalue(db, *rvalue, fn_bytecode, output);
         }
         _ => unimplemented!("Unsupported statement kind"),
     }
+
+    output.push_str(";\n")
 }
 
 pub fn codegen_basic_block(

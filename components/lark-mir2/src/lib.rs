@@ -79,6 +79,12 @@ pub struct FnBytecodeTables {
     /// Map each identifier index to its associated data.
     pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
 
+    /// Map each rvalue index to its associated data.
+    pub rvalues: IndexVec<Rvalue, Spanned<RvalueData>>,
+
+    /// Map each operand index to its associated data.
+    pub operands: IndexVec<Operand, Spanned<OperandData>>,
+
     /// The data values for any `List<I>` values that appear elsewhere
     /// in the HIR; the way this works is that all of the list value
     /// are concatenated into one big vector, and each list just pulls
@@ -102,52 +108,6 @@ pub struct FnBytecode {
     pub tables: FnBytecodeTables,
 }
 
-/*
-impl FnBytecode {
-    pub fn new(return_ty: Ty, mut args: Vec<LocalDecl>, name: String) -> FnBytecode {
-        let arg_count = args.len();
-        let mut local_decls = vec![LocalDecl::new_return_place(return_ty)];
-        local_decls.append(&mut args);
-
-        FnBytecode {
-            basic_blocks: vec![],
-            local_decls,
-            arg_count,
-            name,
-        }
-    }
-
-    pub fn new_temp(&mut self, ty: Ty) -> VarId {
-        self.local_decls.push(LocalDecl::new_temp(ty));
-        self.local_decls.len() - 1
-    }
-
-    pub fn push_block(&mut self, block: BasicBlockData) {
-        self.basic_blocks.push(block);
-    }
-}
-
-indices::index_type! {
-    pub struct Struct { .. }
-}
-
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct StructData {
-    pub fields: List<Field>,
-    pub name: GlobalIdentifier,
-}
-
-indices::index_type! {
-    pub struct Field { .. }
-}
-
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct FieldData {
-    pub name: String,
-}
-
-*/
-
 indices::index_type! {
     pub struct BasicBlock { .. }
 }
@@ -157,27 +117,6 @@ pub struct BasicBlockData {
     pub statements: List<Statement>,
     pub terminator: Terminator,
 }
-
-/*
-impl BasicBlockData {
-    pub fn new() -> BasicBlockData {
-        BasicBlockData {
-            statements: vec![],
-            terminator: None,
-        }
-    }
-
-    pub fn push_stmt(&mut self, kind: StatementKind) {
-        self.statements.push(StatementData { kind });
-    }
-
-    pub fn terminate(&mut self, terminator_kind: TerminatorKind) {
-        self.terminator = Some(TerminatorData {
-            kind: terminator_kind,
-        });
-    }
-}
-*/
 
 indices::index_type! {
     pub struct Statement { .. }
@@ -201,16 +140,22 @@ pub enum Terminator {
     PassThrough,
 }
 
+indices::index_type! {
+    pub struct Rvalue { .. }
+}
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum Rvalue {
+pub enum RvalueData {
     Use(Operand),
     BinaryOp(BinOp, Variable, Variable),
     //FIXME: MIR has this as a TerminatorData, presumably because stack can unwind
-    Call(Entity, Vec<Operand>),
+    Call(Entity, List<Operand>),
 }
 
+indices::index_type! {
+    pub struct Operand { .. }
+}
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum Operand {
+pub enum OperandData {
     Copy(Place),
     Move(Place),
     //FIXME: Move to Box<Constant>
@@ -402,6 +347,8 @@ define_meta_index! {
     (Place, PlaceData, places),
     (Variable, VariableData, variables),
     (Identifier, IdentifierData, identifiers),
+    (Operand, OperandData, operands),
+    (Rvalue, RvalueData, rvalues),
 }
 
 /// A list of "MIR indices" of type `I`.
@@ -502,74 +449,3 @@ impl<I: MirIndex> List<I> {
 }
 
 debug::debug_fallback_impl!(for[I: MirIndex] List<I>);
-
-/*
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct LocalDecl {
-    pub ty: Ty,
-    pub name: Option<String>,
-}
-
-impl LocalDecl {
-    pub fn new_return_place(return_ty: Ty) -> LocalDecl {
-        LocalDecl {
-            ty: return_ty,
-            name: None,
-        }
-    }
-
-    pub fn new_temp(ty: Ty) -> LocalDecl {
-        LocalDecl { ty, name: None }
-    }
-
-    pub fn new(ty: Ty, name: Option<String>) -> LocalDecl {
-        LocalDecl { ty, name }
-    }
-}
-
-
-pub mod builtin_type {
-    #[allow(unused)]
-    pub const UNKNOWN: usize = 0;
-    pub const VOID: usize = 1;
-    pub const I32: usize = 2;
-    pub const STRING: usize = 3;
-    pub const ERROR: usize = 100;
-}
-
-#[derive(Debug)]
-pub enum Definition {
-    Builtin,
-    Fn(FnBytecode),
-    Struct(Struct),
-}
-
-pub struct Context {
-    pub definitions: Vec<Definition>,
-}
-
-impl Context {
-    pub fn new() -> Context {
-        let mut definitions = vec![];
-
-        for _ in 0..(builtin_type::ERROR + 1) {
-            definitions.push(Definition::Builtin); // UNKNOWN
-        }
-
-        Context { definitions }
-    }
-
-    pub fn add_definition(&mut self, def: Definition) -> usize {
-        self.definitions.push(def);
-        self.definitions.len() - 1
-    }
-
-    pub fn simple_type_for_entity(&self, entity: Entity) -> Ty {
-        Ty { entity: entity }
-    }
-
-    pub fn get_entity_for_ty(&self, ty: Ty) -> Option<Entity> {
-        Some(ty.entity)
-    }
-}
-*/

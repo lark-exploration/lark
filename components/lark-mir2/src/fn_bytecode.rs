@@ -78,13 +78,31 @@ where
         }
     }
 
+    fn lower_operand(
+        &mut self,
+        fn_body: &hir::FnBody,
+        expression: hir::Expression,
+        statements: &mut Vec<mir::Statement>,
+    ) -> mir::Operand {
+        match fn_body.tables[expression] {
+            hir::ExpressionData::Place { place, .. } => {
+                let place = self.lower_place(fn_body, place);
+                self.add(fn_body.span(expression), mir::OperandData::Copy(place))
+            }
+            _ => unimplemented!("Unsupported expression for operands"),
+        }
+    }
+
     fn lower_place(&mut self, fn_body: &hir::FnBody, place: hir::Place) -> mir::Place {
         match fn_body.tables[place] {
             hir::PlaceData::Variable(variable) => {
                 let mir_variable = self.lower_variable(fn_body, variable);
                 self.add(fn_body.span(place), mir::PlaceData::Variable(mir_variable))
             }
-            _ => unimplemented!("Do not yet support non-variable places"),
+            hir::PlaceData::Entity(entity) => {
+                self.add(fn_body.span(place), mir::PlaceData::Entity(entity))
+            }
+            x => unimplemented!("Do not yet support lowering place: {:#?}", x),
         }
     }
 
@@ -96,19 +114,49 @@ where
     ) {
         match fn_body.tables[expression] {
             hir::ExpressionData::Place { place, .. } => {
-                let place = self.lower_place(fn_body, place);
+                let operand = self.lower_operand(fn_body, expression, statements);
+                let rvalue = self.add(fn_body.span(expression), mir::RvalueData::Use(operand));
+                let statement = self.add(
+                    fn_body.span(expression),
+                    mir::StatementData {
+                        kind: mir::StatementKind::Expression(rvalue),
+                    },
+                );
+
+                statements.push(statement);
+            }
+            hir::ExpressionData::Call {
+                function,
+                arguments,
+            } => {
+                let mut args = vec![];
+
+                for argument in arguments.iter(fn_body) {
+                    args.push(self.lower_operand(fn_body, argument, statements));
+                }
+
+                let call_arguments = mir::List::from_iterator(&mut self.fn_bytecode_tables, args);
+
+                let entity = match fn_body.tables[function] {
+                    hir::PlaceData::Entity(entity) => entity,
+                    _ => unimplemented!("Call to non-entity"),
+                };
+
+                let rvalue = self.add(
+                    fn_body.span(expression),
+                    mir::RvalueData::Call(entity, call_arguments),
+                );
 
                 let statement = self.add(
                     fn_body.span(expression),
                     mir::StatementData {
-                        kind: mir::StatementKind::Expression(mir::Rvalue::Use(mir::Operand::Copy(
-                            place,
-                        ))),
+                        kind: mir::StatementKind::Expression(rvalue),
                     },
                 );
                 statements.push(statement);
             }
-            _ => unimplemented!("Expression kind not yet support in MIR"),
+            hir::ExpressionData::Unit {} => {}
+            x => unimplemented!("Expression kind not yet support in MIR: {:#?}", x),
         }
     }
 
@@ -137,32 +185,6 @@ where
         let fn_body = self.db.fn_body(self.item_entity);
 
         let basic_block = self.lower_basic_block(&fn_body.value, fn_body.value.root_expression);
-        /*
-        match fn_body.value.tables[fn_body.value.root_expression] {
-            hir::ExpressionData::Place { place, perm } => match fn_body.value.tables[place] {
-                hir::PlaceData::Variable(variable) => {
-                    let variable_data = fn_body.value.tables[variable];
-                    let variable_type = typed_expressions.value.ty(variable).base.untern(self.db);
-        
-                    let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(self.db);
-                    let uint_entity = EntityData::LangItem(LangItem::Uint).intern(self.db);
-        
-                    match variable_type.kind {
-                        lark_ty::BaseKind::Named(entity) => {
-                            if entity == boolean_entity {
-                                println!("boolean");
-                            } else if entity == uint_entity {
-                                println!("uint");
-                            }
-                        }
-                        _ => println!("Unknown basetype kind"),
-                    }
-                }
-                _ => unimplemented!("Not a variable"),
-            },
-            _ => unimplemented!("Not a variable"),
-        }
-        */
 
         let basic_blocks = vec![basic_block];
 
