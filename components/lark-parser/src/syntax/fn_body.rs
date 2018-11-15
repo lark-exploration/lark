@@ -130,19 +130,42 @@ crate fn parse_fn_body(
         fn_body_tables: Default::default(),
     };
 
-    for &argument in &arguments {
-        let name = scope.add(
-            argument.span,
-            hir::IdentifierData {
-                text: argument.value,
-            },
-        );
-        let variable = scope.add(argument.span, hir::VariableData { name });
-        scope.introduce_variable(variable);
+    let arguments: Vec<_> = arguments
+        .iter()
+        .map(|&argument| {
+            let name = scope.add(
+                argument.span,
+                hir::IdentifierData {
+                    text: argument.value,
+                },
+            );
+            let variable = scope.add(argument.span, hir::VariableData { name });
+            scope.introduce_variable(variable);
+            variable
+        })
+        .collect();
+    let arguments = hir::List::from_iterator(&mut scope.fn_body_tables, arguments);
+
+    let mut parser = Parser::new(db, entity_macro_definitions, input, tokens, 0);
+
+    let root_expression = match parser.expect(HirExpression::new(&mut scope)) {
+        Ok(e) => e,
+        Err(err) => {
+            let span = scope.convert_to_new_span(err.span());
+            let error = scope.add(span, hir::ErrorData::Misc);
+            scope.add(span, hir::ExpressionData::Error { error })
+        }
+    };
+
+    if let Some(span) = parser.parse_extra_input() {
+        parser.report_error("extra input after end of expression", span);
     }
 
-    drop((entity_macro_definitions, input, tokens));
-    unimplemented!()
+    parser.into_with_error(hir::FnBody {
+        arguments,
+        root_expression,
+        tables: scope.fn_body_tables,
+    })
 }
 
 #[derive(Copy, Clone)]
@@ -194,8 +217,12 @@ struct ExpressionScope<'parse> {
 }
 
 impl ExpressionScope<'parse> {
-    fn span(&self, _node: impl hir::HirIndex) -> Span<CurrentFile> {
-        unimplemented!()
+    fn span(&self, node: impl hir::HirIndex) -> Span<CurrentFile> {
+        self.convert_to_new_span(self.fn_body_tables.span(node))
+    }
+
+    fn convert_to_new_span(&self, _span: parser::pos::Span) -> Span<CurrentFile> {
+        Span::initial(CurrentFile)
     }
 
     fn save_scope(&self) -> Rc<FxIndexMap<GlobalIdentifier, hir::Variable>> {

@@ -49,7 +49,7 @@ pub struct Parser<'parse> {
 
 impl Parser<'parse> {
     crate fn new(
-        db: &'parse (impl AsRef<GlobalIdentifierTables> + AsRef<EntityTables>),
+        db: &'parse (impl AsRef<GlobalIdentifierTables> + AsRef<EntityTables> + ?Sized),
         entity_macro_definitions: &'parse FxIndexMap<
             GlobalIdentifier,
             Arc<dyn EntityMacroDefinition>,
@@ -112,8 +112,13 @@ impl Parser<'parse> {
                 self.report_error("unexpected character", span);
             }
         }
+
+        self.into_with_error(Seq::from(entities))
+    }
+
+    crate fn into_with_error<T>(self, value: T) -> WithError<T> {
         WithError {
-            value: Seq::from(entities),
+            value,
             errors: self.errors,
         }
     }
@@ -192,6 +197,21 @@ impl Parser<'parse> {
     /// Test if the current token is of the given kind.
     crate fn is(&self, kind: LexToken) -> bool {
         kind == self.lookahead_token.value
+    }
+
+    /// If at EOF, returns `None`. Otherwise, shifts all remaining
+    /// tokens out and returns the span that covers them.
+    crate fn parse_extra_input(&mut self) -> Option<Span<CurrentFile>> {
+        if self.is(LexToken::EOF) {
+            return None;
+        }
+
+        let start = self.shift();
+        while !self.is(LexToken::EOF) {
+            self.shift();
+        }
+        let span = start.span.extended_until_end_of(self.peek_span());
+        return Some(span);
     }
 
     /// Consumes all subsequent newline characters, returning true if
