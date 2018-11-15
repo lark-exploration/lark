@@ -1,12 +1,14 @@
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
 use crate::syntax::delimited::Delimited;
+use crate::syntax::entity::ErrorParsedEntity;
 use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::entity::ParsedEntityThunk;
 use crate::syntax::field::Field;
 use crate::syntax::field::ParsedField;
+use crate::syntax::fn_body;
 use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
@@ -18,11 +20,17 @@ use crate::syntax::sigil::RightArrow;
 use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::type_reference::ParsedTypeReference;
 use crate::syntax::type_reference::TypeReference;
-
+use crate::FileName;
 use debug::DebugWith;
 use intern::Intern;
-use lark_entity::{Entity, EntityData, ItemKind};
-use lark_error::{ErrorReported, ResultExt, WithError};
+use intern::Untern;
+use lark_entity::Entity;
+use lark_entity::EntityData;
+use lark_entity::ItemKind;
+use lark_error::ErrorReported;
+use lark_error::ResultExt;
+use lark_error::WithError;
+use lark_hir as hir;
 use lark_seq::Seq;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
@@ -97,5 +105,43 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         _db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>> {
         WithError::ok(vec![])
+    }
+
+    fn parse_fn_body(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<hir::FnBody> {
+        match self.body {
+            Err(_) => ErrorParsedEntity.parse_fn_body(entity, db),
+
+            Ok(Spanned {
+                span: _,
+                value:
+                    ParsedMatch {
+                        start_token,
+                        end_token,
+                    },
+            }) => {
+                let file_name = FileName {
+                    id: entity.untern(db).file_name(db).unwrap(),
+                };
+                let input = db.file_text(file_name);
+                let tokens = db
+                    .file_tokens(file_name)
+                    .into_value()
+                    .extract(start_token..end_token);
+                let entity_macro_definitions = crate::macro_definitions(db, entity);
+                let arguments: Seq<_> = self.parameters.iter().map(|f| f.value.name).collect();
+                fn_body::parse_fn_body(
+                    entity,
+                    db,
+                    &entity_macro_definitions,
+                    &input,
+                    &tokens,
+                    arguments,
+                )
+            }
+        }
     }
 }

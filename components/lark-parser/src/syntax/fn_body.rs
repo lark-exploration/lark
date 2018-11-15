@@ -1,9 +1,6 @@
 use crate::lexer::token::LexToken;
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
-use crate::span::CurrentFile;
-use crate::span::Span;
-use crate::span::Spanned;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::guard::Guard;
@@ -32,6 +29,9 @@ use lark_error::ErrorReported;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_seq::Seq;
+use lark_span::CurrentFile;
+use lark_span::Span;
+use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
 use lark_string::text::Text;
 use map::FxIndexMap;
@@ -116,8 +116,8 @@ use std::sync::Arc;
 /// this can be used for any "free-standing" expression, such as the
 /// value of a `const` and so forth.
 crate fn parse_fn_body(
-    db: &dyn LazyParsedEntityDatabase,
     item_entity: Entity,
+    db: &dyn LazyParsedEntityDatabase,
     entity_macro_definitions: &FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
     input: &Text,                              // complete Text of file
     tokens: &Seq<Spanned<LexToken>>,           // subset of Token corresponding to this expression

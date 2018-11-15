@@ -1,7 +1,6 @@
 use crate::lexer::definition::LexerState;
 use crate::lexer::token::LexToken;
 use crate::lexer::tools::Tokenizer;
-use crate::macros;
 use crate::parser::Parser;
 use crate::syntax::entity::EntitySyntax;
 use crate::syntax::entity::ParsedEntity;
@@ -13,6 +12,7 @@ use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData};
 use lark_error::WithError;
+use lark_hir as hir;
 use lark_seq::Seq;
 use lark_span::Spanned;
 
@@ -49,11 +49,11 @@ crate fn child_parsed_entities(
     match entity.untern(db) {
         EntityData::InputFile { file } => {
             let file_name = FileName { id: file };
-            let entity_macro_definitions = &macros::default_entity_macros(db);
+            let file_entity = EntityData::InputFile { file: file_name.id }.intern(db);
+            let entity_macro_definitions = crate::macro_definitions(&db, file_entity);
             let input = &db.file_text(file_name);
             let tokens = &db.file_tokens(file_name).into_value();
-            let parser = Parser::new(db, entity_macro_definitions, input, tokens, 0);
-            let file_entity = EntityData::InputFile { file: file_name.id }.intern(db);
+            let parser = Parser::new(db, &entity_macro_definitions, input, tokens, 0);
             parser.parse_until_eof(SkipNewline(EntitySyntax::new(file_entity)))
         }
 
@@ -104,4 +104,8 @@ crate fn child_entities(db: &impl ParserDatabase, entity: Entity) -> Seq<Entity>
         .iter()
         .map(|parsed_entity| parsed_entity.entity)
         .collect()
+}
+
+crate fn fn_body(db: &impl ParserDatabase, entity: Entity) -> WithError<hir::FnBody> {
+    db.parsed_entity(entity).thunk.parse_fn_body(entity, db)
 }

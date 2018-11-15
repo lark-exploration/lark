@@ -1,18 +1,14 @@
 use crate::parser::Parser;
 use crate::syntax::entity::ParsedEntity;
-
-use intern::Intern;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
 use lark_span::Spanned;
-use lark_string::global::{GlobalIdentifier, GlobalIdentifierTables};
-use map::FxIndexMap;
-use std::sync::Arc;
+use lark_string::global::GlobalIdentifier;
 
 crate mod function_declaration;
 crate mod struct_declaration;
 
-crate trait EntityMacroDefinition {
+crate trait EntityMacroDefinition: Send {
     /// Invoked when the macro name has been recognized and
     /// consumed. Has the job of parsing the rest of the entity (using
     /// the helper methods on `parser` to do so) and ultimately
@@ -31,32 +27,4 @@ crate trait EntityMacroDefinition {
         // our entity's span.
         macro_name: Spanned<GlobalIdentifier>,
     ) -> Result<ParsedEntity, ErrorReported>;
-}
-
-macro_rules! declare_macro {
-    (
-        db($db:expr),
-        macros($($name:expr => $macro_definition:ty,)*),
-    ) => {
-        {
-            let mut map: FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> = FxIndexMap::default();
-            $(
-                let name = $name.intern($db);
-                map.insert(name, std::sync::Arc::new(<$macro_definition>::default()));
-            )*
-                map
-        }
-    }
-}
-
-crate fn default_entity_macros(
-    db: &dyn AsRef<GlobalIdentifierTables>,
-) -> FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> {
-    declare_macro!(
-        db(db),
-        macros(
-            "struct" => struct_declaration::StructDeclaration,
-            "fn" => function_declaration::FunctionDeclaration,
-        ),
-    )
 }

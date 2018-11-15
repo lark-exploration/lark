@@ -1,5 +1,8 @@
 use crate::parser::Parser;
-use crate::syntax::entity::{LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity};
+use crate::syntax::entity::InvalidParsedEntity;
+use crate::syntax::entity::LazyParsedEntity;
+use crate::syntax::entity::LazyParsedEntityDatabase;
+use crate::syntax::entity::ParsedEntity;
 use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::sigil::Colon;
@@ -8,9 +11,12 @@ use crate::syntax::type_reference::{ParsedTypeReference, TypeReference};
 use crate::syntax::Syntax;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
-use lark_error::{ErrorReported, ResultExt, WithError};
+use lark_error::ErrorReported;
+use lark_error::ResultExt;
+use lark_error::WithError;
+use lark_hir as hir;
 use lark_span::Spanned;
-use lark_string::GlobalIdentifier;
+use lark_string::global::GlobalIdentifier;
 
 #[derive(DebugWith)]
 pub struct Field;
@@ -52,5 +58,13 @@ impl LazyParsedEntity for ParsedField {
         _db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>> {
         WithError::ok(vec![])
+    }
+
+    fn parse_fn_body(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<hir::FnBody> {
+        InvalidParsedEntity.parse_fn_body(entity, db)
     }
 }

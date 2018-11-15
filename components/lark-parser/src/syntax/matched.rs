@@ -21,10 +21,10 @@ impl<D> Matched<D> {
 /// the delimiters).
 pub struct ParsedMatch {
     /// Index of the first token to be included
-    start_token: usize,
+    pub start_token: usize,
 
     /// Index *after* the final token
-    end_token: usize,
+    pub end_token: usize,
 }
 
 impl<D> Syntax<'parse> for Matched<D>

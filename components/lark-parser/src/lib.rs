@@ -8,22 +8,28 @@
 #![allow(dead_code)]
 
 use crate::lexer::token::LexToken;
+use crate::macros::EntityMacroDefinition;
 use crate::syntax::entity::ParsedEntity;
-
+use intern::Intern;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::Diagnostic;
 use lark_error::WithError;
+use lark_hir as hir;
 use lark_seq::Seq;
-use lark_span::{CurrentFile, Span, Spanned};
+use lark_span::CurrentFile;
+use lark_span::Span;
+use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
 use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;
+use map::FxIndexMap;
+use std::sync::Arc;
 
 pub mod current_file;
 mod lexer;
-mod macros;
+pub mod macros;
 mod parser;
 mod query_definitions;
 pub mod syntax;
@@ -67,6 +73,12 @@ salsa::query_group! {
             type ChildEntitiesQuery;
             use fn query_definitions::child_entities;
         }
+
+        /// This should eventually become the main `fn_body` query, for now it has another name
+        fn fn_body2(entity: Entity) -> WithError<hir::FnBody> {
+            type FnBodyQuery;
+            use fn query_definitions::fn_body;
+        }
     }
 }
 
@@ -78,4 +90,36 @@ pub struct FileName {
 fn diagnostic(message: impl Into<String>, span: Span<CurrentFile>) -> Diagnostic {
     drop(span); // FIXME -- Diagostic uses the old codemap spans
     Diagnostic::new(message.into(), ::parser::pos::Span::Synthetic)
+}
+
+/// Set of macro definitions in scope for `entity`. For now, this is
+/// always the default set. This function really just exists as a
+/// placeholder for us to change later.
+fn macro_definitions(
+    db: &(impl AsRef<GlobalIdentifierTables> + ?Sized),
+    _entity: Entity,
+) -> FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> {
+    macro_rules! declare_macro {
+        (
+            db($db:expr),
+            macros($($name:expr => $macro_definition:ty,)*),
+        ) => {
+            {
+                let mut map: FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> = FxIndexMap::default();
+                $(
+                    let name = $name.intern($db);
+                    map.insert(name, std::sync::Arc::new(<$macro_definition>::default()));
+                )*
+                    map
+            }
+        }
+    }
+
+    declare_macro!(
+        db(db),
+        macros(
+            "struct" => macros::struct_declaration::StructDeclaration,
+            "fn" => macros::function_declaration::FunctionDeclaration,
+        ),
+    )
 }
