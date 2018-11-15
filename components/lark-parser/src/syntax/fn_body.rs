@@ -6,6 +6,7 @@ use crate::span::Span;
 use crate::span::Spanned;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::LazyParsedEntityDatabase;
+use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::identifier::SpannedLocalIdentifier;
 use crate::syntax::list::CommaList;
@@ -13,7 +14,9 @@ use crate::syntax::list::SeparatedList;
 use crate::syntax::sigil::Colon;
 use crate::syntax::sigil::Curlies;
 use crate::syntax::sigil::Dot;
+use crate::syntax::sigil::Equals;
 use crate::syntax::sigil::ExclamationPoint;
+use crate::syntax::sigil::Let;
 use crate::syntax::sigil::OpenParenthesis;
 use crate::syntax::sigil::Parentheses;
 use crate::syntax::sigil::Semicolon;
@@ -135,7 +138,7 @@ crate fn parse_fn_body(
             },
         );
         let variable = scope.add(argument.span, hir::VariableData { name });
-        scope.introduce(variable);
+        scope.introduce_variable(variable);
     }
 
     drop((entity_macro_definitions, input, tokens));
@@ -203,8 +206,17 @@ impl ExpressionScope<'parse> {
         self.variables = scope;
     }
 
+    /// Lookup a variable by name.
+    fn lookup_variable(&self, text: &str) -> Option<hir::Variable> {
+        // FIXME -- we should not need to intern this; see
+        // definition of `variables` field above for details
+        let global_id = text.intern(self.db);
+
+        self.variables.get(&global_id).cloned()
+    }
+
     /// Brings a variable into scope, returning anything that was shadowed.
-    fn introduce(&mut self, variable: hir::Variable) {
+    fn introduce_variable(&mut self, variable: hir::Variable) {
         let name = self[variable].name;
         let text = self[name].text;
         Rc::make_mut(&mut self.variables).insert(text, variable);
@@ -850,11 +862,7 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
                 return Ok(ParsedExpression::Expression(expression));
             }
 
-            // FIXME -- we should not need to intern this; see
-            // definition of `variables` field above for details
-            let global_id = text.value.intern(self.scope.db);
-
-            if let Some(&variable) = self.scope.variables.get(&global_id) {
+            if let Some(variable) = self.scope.lookup_variable(text.value) {
                 let place = self
                     .scope
                     .add(text.span, hir::PlaceData::Variable(variable));
@@ -923,7 +931,7 @@ impl Syntax<'parse> for Block<'me, 'parse> {
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         // Save the map of variables before we start parsing
-        let variables_on_entry = self.scope.variables.clone();
+        let variables_on_entry = self.scope.save_scope();
 
         let start_span = parser.peek_span();
         let statements = parser.expect(self.definition())?;
@@ -977,7 +985,7 @@ impl Syntax<'parse> for Block<'me, 'parse> {
         }
 
         // Restore the map of variables to what it used to be
-        self.scope.variables = variables_on_entry;
+        self.scope.restore_scope(variables_on_entry);
 
         Ok(result)
     }
@@ -991,11 +999,54 @@ struct Statement<'me, 'parse> {
 impl Syntax<'parse> for Statement<'me, 'parse> {
     type Data = ParsedStatement;
 
-    fn test(&mut self, _parser: &Parser<'parse>) -> bool {
-        unimplemented!()
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(LetStatement::new(self.scope)) || parser.test(HirExpression::new(self.scope))
     }
 
-    fn expect(&mut self, _parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        unimplemented!()
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        if let Some(r) = parser.parse_if_present(LetStatement::new(self.scope)) {
+            return r;
+        }
+
+        let expression = parser.expect(HirExpression::new(self.scope))?;
+        Ok(ParsedStatement::Expression(expression))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct LetStatement<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for LetStatement<'me, 'parse> {
+    type Data = ParsedStatement;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.test(Let)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let let_keyword = parser.expect(Let)?;
+        let name = parser.expect(HirIdentifier::new(self.scope))?;
+
+        let mut initializer = None;
+        if let Some(expression) =
+            parser.parse_if_present(Guard(Equals, SkipNewline(HirExpression::new(self.scope))))
+        {
+            initializer = Some(expression?);
+        }
+
+        let span = let_keyword.span.extended_until_end_of(parser.peek_span());
+
+        let name_span = self.scope.span(name);
+        let variable = self.scope.add(name_span, hir::VariableData { name });
+
+        // Subtle: This is a "side effect" that is visible to other
+        // parsers that come after us within the same scope. Note that
+        // entering a block (or other lexical scope) saves/restores
+        // the set of variable bindings.
+        self.scope.introduce_variable(variable);
+
+        Ok(ParsedStatement::Let(span, variable, initializer))
     }
 }

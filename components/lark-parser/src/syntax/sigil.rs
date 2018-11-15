@@ -59,6 +59,7 @@ sigil_type! {
     pub struct Minus = (LexToken::Sigil, "-");
     pub struct Star = (LexToken::Sigil, "*");
     pub struct Slash = (LexToken::Sigil, "/");
+    pub struct Equals = (LexToken::Sigil, "=");
 }
 
 #[derive(DebugWith)]
