@@ -7,7 +7,9 @@ use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::identifier::SpannedLocalIdentifier;
 use crate::syntax::list::SeparatedList;
 use crate::syntax::sigil::Curlies;
+use crate::syntax::sigil::Parentheses;
 use crate::syntax::sigil::Semicolon;
+use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::Syntax;
 use debug::DebugWith;
 use derive_new::new;
@@ -294,7 +296,11 @@ impl Syntax<'parse> for Expr0<'me, 'parse> {
         }
 
         // Expr0 = `(` Expr ')'
-        // FIXME
+        if let Some(expr) =
+            parser.parse_if_present(Delimited(Parentheses, SkipNewline(Expr::new(self.scope))))
+        {
+            return Ok(expr?);
+        }
 
         // Expr0 = `{` Block `}`
         if let Some(block) = parser.parse_if_present(Block::new(self.scope)) {
