@@ -929,7 +929,8 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
             return Ok(ParsedExpression::Expression(block?));
         }
 
-        Err(parser.report_error("unrecognized start of expression", parser.peek_span()))
+        let token = parser.shift();
+        Err(parser.report_error("unrecognized start of expression", token.span))
     }
 }
 
