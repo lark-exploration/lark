@@ -10,7 +10,7 @@ use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::WithError;
-use lark_hir::{Place, Variable};
+use lark_hir as hir;
 use lark_string::global::GlobalIdentifier;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
@@ -27,11 +27,6 @@ salsa::query_group! {
             use fn fn_bytecode::fn_bytecode;
         }
     }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum LiteralData {
-    String(GlobalIdentifier),
 }
 
 /*
@@ -75,24 +70,14 @@ pub struct FnBytecodeTables {
     /// The blocks that make up the code of the function
     pub basic_blocks: IndexVec<BasicBlock, Spanned<BasicBlockData>>,
 
-    /*
     /// Map each place index to its associated data.
     pub places: IndexVec<Place, Spanned<PlaceData>>,
-    
+
     /// Map each variable index to its associated data.
     pub variables: IndexVec<Variable, Spanned<VariableData>>,
-    
+
     /// Map each identifier index to its associated data.
     pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
-    
-    /// Map each struct index to its associated data.
-    pub structs: IndexVec<Struct, Spanned<StructData>>,
-    
-    /// Map each field index to its associated data.
-    pub fields: IndexVec<Field, Spanned<FieldData>>,
-    */
-    /// Map each terminator index to its associated data.
-    pub terminators: IndexVec<Terminator, Spanned<TerminatorData>>,
 
     /// The data values for any `List<I>` values that appear elsewhere
     /// in the HIR; the way this works is that all of the list value
@@ -114,14 +99,6 @@ impl AsMut<FnBytecodeTables> for FnBytecodeTables {
 pub struct FnBytecode {
     pub basic_blocks: List<BasicBlock>,
 
-    //First local = return value pointer
-    //Followed by arg_count parameters to the function
-    //Followed by user defined variables and temporaries
-    //pub local_decls: List<Variable>,
-
-    //pub arg_count: usize,
-
-    //pub name: String,
     pub tables: FnBytecodeTables,
 }
 
@@ -177,10 +154,11 @@ indices::index_type! {
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct BasicBlockData {
-    pub statements: Vec<StatementData>,
-    pub terminator: Option<TerminatorData>,
+    pub statements: List<Statement>,
+    pub terminator: Terminator,
 }
 
+/*
 impl BasicBlockData {
     pub fn new() -> BasicBlockData {
         BasicBlockData {
@@ -199,6 +177,7 @@ impl BasicBlockData {
         });
     }
 }
+*/
 
 indices::index_type! {
     pub struct Statement { .. }
@@ -212,21 +191,14 @@ pub struct StatementData {
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum StatementKind {
     Assign(Place, Rvalue),
+    Expression(Rvalue),
     DebugPrint(Place),
 }
 
-indices::index_type! {
-    pub struct Terminator { .. }
-}
-
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct TerminatorData {
-    pub kind: TerminatorKind,
-}
-
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum TerminatorKind {
+pub enum Terminator {
     Return,
+    PassThrough,
 }
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -283,6 +255,40 @@ impl AsRef<FnBytecodeTables> for Arc<FnBytecode> {
     fn as_ref(&self) -> &FnBytecodeTables {
         &self.tables
     }
+}
+
+indices::index_type! {
+    pub struct Place { .. }
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum PlaceData {
+    Variable(Variable),
+    Entity(Entity),
+    Field { owner: Place, name: Identifier },
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum LiteralData {
+    String(GlobalIdentifier),
+}
+
+indices::index_type! {
+    pub struct Variable { .. }
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub struct VariableData {
+    pub name: Identifier,
+}
+
+indices::index_type! {
+    pub struct Identifier { .. }
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub struct IdentifierData {
+    pub text: GlobalIdentifier,
 }
 
 /// Trait for the various types for which a span can be had --
@@ -368,6 +374,9 @@ macro_rules! define_meta_index {
 define_meta_index! {
     (Statement, StatementData, statements),
     (BasicBlock, BasicBlockData, basic_blocks),
+    (Place, PlaceData, places),
+    (Variable, VariableData, variables),
+    (Identifier, IdentifierData, identifiers),
 }
 
 /// A list of "MIR indices" of type `I`.

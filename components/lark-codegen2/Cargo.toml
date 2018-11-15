@@ -5,5 +5,12 @@ authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-lark-mir = { path = "../lark-mir" }
+lark-mir2 = { path = "../lark-mir2" }
 lark-type-check = { path = "../lark-type-check" }
+lark-query-system = { path = "../lark-query-system" }
+lark-entity = { path = "../lark-entity" }
+parser = { path = "../parser" }
+tempfile = "2.0"
+intern = { path = "../intern" }
+ast = { path = "../ast" }
+cc = "1.0"
