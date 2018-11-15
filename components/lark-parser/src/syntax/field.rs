@@ -1,5 +1,5 @@
 use crate::parser::Parser;
-use crate::span::Spanned;
+use crate::syntax::entity::InvalidParsedEntity;
 use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
@@ -7,14 +7,15 @@ use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::sigil::Colon;
 use crate::syntax::skip_newline::SkipNewline;
-use crate::syntax::type_reference::ParsedTypeReference;
-use crate::syntax::type_reference::TypeReference;
+use crate::syntax::type_reference::{ParsedTypeReference, TypeReference};
 use crate::syntax::Syntax;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
 use lark_error::ResultExt;
 use lark_error::WithError;
+use lark_hir as hir;
+use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
 
 #[derive(DebugWith)]
@@ -27,14 +28,14 @@ pub struct ParsedField {
     pub ty: ParsedTypeReference,
 }
 
-impl Syntax for Field {
+impl Syntax<'parse> for Field {
     type Data = Spanned<ParsedField>;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'_>) -> bool {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
         let name = parser.expect(SpannedGlobalIdentifier)?;
 
         let ty = parser
@@ -57,5 +58,13 @@ impl LazyParsedEntity for ParsedField {
         _db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>> {
         WithError::ok(vec![])
+    }
+
+    fn parse_fn_body(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<hir::FnBody> {
+        InvalidParsedEntity.parse_fn_body(entity, db)
     }
 }

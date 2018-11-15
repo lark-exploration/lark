@@ -9,22 +9,22 @@ use lark_seq::Seq;
 pub struct CommaList<T>(pub T);
 
 impl<T> CommaList<T> {
-    fn element(&self) -> &T {
-        &self.0
+    fn element(&mut self) -> &mut T {
+        &mut self.0
     }
 }
 
-impl<T> Syntax for CommaList<T>
+impl<T> Syntax<'parse> for CommaList<T>
 where
-    T: Syntax,
+    T: Syntax<'parse>,
 {
     type Data = Seq<T::Data>;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         SeparatedList(self.element(), Comma).test(parser)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Seq<T::Data>, ErrorReported> {
         SeparatedList(self.element(), Comma).expect(parser)
     }
 }
@@ -60,27 +60,27 @@ impl<T, S> SeparatedList<T, S> {
     }
 }
 
-impl<T, S> Syntax for SeparatedList<T, S>
+impl<T, S> Syntax<'parse> for SeparatedList<T, S>
 where
-    T: Syntax,
-    S: Syntax,
+    T: Syntax<'parse>,
+    S: Syntax<'parse>,
 {
     type Data = Seq<T::Data>;
 
-    fn test(&self, _parser: &Parser<'_>) -> bool {
+    fn test(&mut self, _parser: &Parser<'parse>) -> bool {
         true // we never produce an error
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Seq<T::Data>, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Seq<T::Data>, ErrorReported> {
         let SeparatedList(element, delimiter) = self;
 
         let mut result = vec![];
         parser.skip_newlines();
         loop {
-            if let Some(element) = parser.parse_if_present(element) {
+            if let Some(element) = parser.parse_if_present(&mut *element) {
                 result.push(element?);
 
-                if let Some(_) = parser.parse_if_present(delimiter) {
+                if let Some(_) = parser.parse_if_present(&mut *delimiter) {
                     parser.skip_newlines();
                     continue;
                 } else if parser.skip_newlines() {

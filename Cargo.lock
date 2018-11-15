@@ -130,6 +130,7 @@ name = "debug"
 version = "0.1.0"
 dependencies = [
  "indices 0.1.0",
+ "map 0.1.0",
 ]
 
 [[package]]
@@ -521,7 +522,9 @@ dependencies = [
  "lark-debug-derive 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
+ "lark-hir 0.1.0",
  "lark-seq 0.1.0",
+ "lark-span 0.1.0",
  "lark-string 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "map 0.1.0",
@@ -567,6 +570,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "lark-span"
+version = "0.1.0"
+dependencies = [
+ "debug 0.1.0",
+ "derive-new 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lark-debug-derive 0.1.0",
+ "lark-string 0.1.0",
+]
+
+[[package]]
 name = "lark-string"
 version = "0.1.0"
 dependencies = [
@@ -574,6 +587,7 @@ dependencies = [
  "indices 0.1.0",
  "intern 0.1.0",
  "lark-debug-derive 0.1.0",
+ "map 0.1.0",
  "parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -773,6 +787,7 @@ dependencies = [
  "lalrpop-util 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "language-reporting 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-debug-derive 0.1.0",
+ "lark-span 0.1.0",
  "lark-string 0.1.0",
  "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",

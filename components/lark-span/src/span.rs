@@ -1,16 +1,13 @@
-use derive_new::new;
-use lark_debug_derive::DebugWith;
-use lark_string::text::Text;
-use std::fmt::Debug;
+use crate::SpanFile;
 
-pub trait SpanFile: Copy + Debug + Eq {}
-impl<T: Copy + Debug + Eq> SpanFile for T {}
+use lark_debug_derive::DebugWith;
+use lark_string::Text;
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span<File: SpanFile> {
     file: File,
-    start: usize,
-    end: usize,
+    crate start: usize,
+    crate end: usize,
 }
 
 /// Relative to the "current file", which must be known.
@@ -73,37 +70,5 @@ impl<File: SpanFile> Span<File> {
         let len = self.len();
         let start = self.start - entity_span.start;
         Span::new(CurrentEntity, start, start + len)
-    }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
-pub struct Spanned<T> {
-    pub value: T,
-    pub span: Span<CurrentFile>,
-}
-
-impl<T> Spanned<T> {
-    pub fn map<U>(self, value: impl FnOnce(T) -> U) -> Spanned<U> {
-        Spanned {
-            value: value(self.value),
-            span: self.span,
-        }
-    }
-}
-
-impl<T> std::ops::Deref for Spanned<T> {
-    type Target = T;
-
-    fn deref(&self) -> &T {
-        &self.value
-    }
-}
-
-impl std::ops::Index<Span<CurrentFile>> for Text {
-    type Output = str;
-
-    fn index(&self, span: Span<CurrentFile>) -> &str {
-        let s: &str = self;
-        &s[span.start..span.end]
     }
 }

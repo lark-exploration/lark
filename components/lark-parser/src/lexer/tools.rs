@@ -1,8 +1,6 @@
-use crate::span::CurrentFile;
-use crate::span::Span;
-use crate::span::Spanned;
 use debug::DebugWith;
 use derive_new::new;
+use lark_span::{CurrentFile, Span, Spanned};
 use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 

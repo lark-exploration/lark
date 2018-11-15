@@ -1,13 +1,17 @@
 use debug::DebugWith;
+use std::hash::Hash;
+use std::hash::Hasher;
 use std::ops::Range;
 use std::sync::Arc;
+
+mod test;
 
 /// A "Text" is like a string except that it can be cheaply cloned.
 /// You can also "extract" subtexts quite cheaply. You can also deref
 /// an `&Text` into a `&str` for interoperability.
 ///
 /// Used to represent the value of an input file.
-#[derive(Clone, Hash)]
+#[derive(Clone)]
 pub struct Text {
     text: Arc<String>,
     start: usize,
@@ -49,35 +53,25 @@ impl From<Arc<String>> for Text {
 
 impl AsRef<str> for Text {
     fn as_ref(&self) -> &str {
-        &self.text
+        &*self
     }
 }
 
 impl From<String> for Text {
     fn from(text: String) -> Self {
-        let end = text.len();
-        Self {
-            text: Arc::new(text),
-            start: 0,
-            end,
-        }
+        Text::from(Arc::new(text))
     }
 }
 
 impl From<&str> for Text {
     fn from(text: &str) -> Self {
-        let end = text.len();
-        Self {
-            text: Arc::new(text.to_string()),
-            start: 0,
-            end,
-        }
+        Text::from(text.to_string())
     }
 }
 
 impl std::borrow::Borrow<str> for Text {
     fn borrow(&self) -> &str {
-        &self.text
+        &*self
     }
 }
 
@@ -85,7 +79,7 @@ impl std::ops::Deref for Text {
     type Target = str;
 
     fn deref(&self) -> &str {
-        &self.text
+        &self.text[self.start..self.end]
     }
 }
 
@@ -150,5 +144,11 @@ where
 {
     fn eq(&self, other: &&T) -> bool {
         self == *other
+    }
+}
+
+impl Hash for Text {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        <str as Hash>::hash(self, state)
     }
 }

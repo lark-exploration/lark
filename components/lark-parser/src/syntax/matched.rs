@@ -1,10 +1,9 @@
 use crate::parser::Parser;
-use crate::span::Spanned;
-use crate::syntax::Delimiter;
-use crate::syntax::NonEmptySyntax;
-use crate::syntax::Syntax;
+use crate::syntax::{Delimiter, NonEmptySyntax, Syntax};
+
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
+use lark_span::Spanned;
 
 /// Some sequence of tokens that begins with an open delimiter and
 /// ends with a (matched) close delimiter. The tokens in between are
@@ -22,35 +21,35 @@ impl<D> Matched<D> {
 /// the delimiters).
 pub struct ParsedMatch {
     /// Index of the first token to be included
-    start_token: usize,
+    pub start_token: usize,
 
     /// Index *after* the final token
-    end_token: usize,
+    pub end_token: usize,
 }
 
-impl<D> Syntax for Matched<D>
+impl<D> Syntax<'parse> for Matched<D>
 where
-    D: Delimiter,
+    D: Delimiter<'parse>,
 {
     type Data = Spanned<ParsedMatch>;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.test(self.delimiters().open_syntax())
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
-        let open_syntax = self.delimiters().open_syntax();
-        let close_syntax = self.delimiters().close_syntax();
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let mut open_syntax = self.delimiters().open_syntax();
+        let mut close_syntax = self.delimiters().close_syntax();
 
         let start_token = parser.peek_index();
         let start_span = parser.peek_span();
-        parser.expect(&open_syntax)?;
+        parser.expect(&mut open_syntax)?;
 
         let mut counter = 1;
         loop {
-            if let Some(_) = parser.parse_if_present(&open_syntax) {
+            if let Some(_) = parser.parse_if_present(&mut open_syntax) {
                 counter += 1;
-            } else if let Some(_) = parser.parse_if_present(&close_syntax) {
+            } else if let Some(_) = parser.parse_if_present(&mut close_syntax) {
                 counter -= 1;
                 if counter == 0 {
                     break;
@@ -70,4 +69,4 @@ where
     }
 }
 
-impl<D> NonEmptySyntax for Matched<D> where D: Delimiter {}
+impl<D> NonEmptySyntax<'parse> for Matched<D> where D: Delimiter<'parse> {}

@@ -1,9 +1,9 @@
+use crate::lexer::token::LexToken;
 use crate::parser::Parser;
-use crate::span::CurrentFile;
-use crate::span::Span;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
+use crate::FileName;
 use crate::ParserDatabase;
 use debug::DebugWith;
 use lark_debug_derive::DebugWith;
@@ -11,7 +11,13 @@ use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_hir as hir;
+use lark_seq::Seq;
+use lark_span::CurrentFile;
+use lark_span::Span;
+use lark_span::Spanned;
 use lark_string::global::GlobalIdentifierTables;
+use lark_string::text::Text;
 use std::sync::Arc;
 
 #[derive(DebugWith)]
@@ -25,14 +31,14 @@ impl EntitySyntax {
     }
 }
 
-impl Syntax for EntitySyntax {
+impl Syntax<'parse> for EntitySyntax {
     type Data = ParsedEntity;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'_>) -> bool {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         // Parse the macro keyword, which we must find first. So something like
         //
         // ```
@@ -58,7 +64,7 @@ impl Syntax for EntitySyntax {
     }
 }
 
-impl NonEmptySyntax for EntitySyntax {}
+impl NonEmptySyntax<'parse> for EntitySyntax {}
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
 pub struct ParsedEntity {
@@ -119,6 +125,14 @@ impl ParsedEntityThunk {
     ) -> WithError<Vec<ParsedEntity>> {
         self.object.parse_children(entity, db)
     }
+
+    crate fn parse_fn_body(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<hir::FnBody> {
+        self.object.parse_fn_body(entity, db)
+    }
 }
 
 impl std::fmt::Debug for ParsedEntityThunk {
@@ -149,6 +163,19 @@ pub trait LazyParsedEntity {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>>;
+
+    /// Parses the fn body associated with this entity,
+    /// panicking if there is none.
+    ///
+    /// # Parameters
+    ///
+    /// - `entity`: the entity id of self
+    /// - `db`: the necessary bits/pieces of the parser database
+    fn parse_fn_body(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<hir::FnBody>;
 }
 
 crate struct ErrorParsedEntity;
@@ -161,10 +188,62 @@ impl LazyParsedEntity for ErrorParsedEntity {
     ) -> WithError<Vec<ParsedEntity>> {
         WithError::ok(vec![])
     }
+
+    fn parse_fn_body(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<hir::FnBody> {
+        unimplemented!()
+    }
+}
+
+/// Convenience type: implemnts `LazyParsedEntityDatabase` but just
+/// panics.  Use as the impl for methods you don't support on a
+/// certain kind of entity.
+crate struct InvalidParsedEntity;
+
+impl LazyParsedEntity for InvalidParsedEntity {
+    fn parse_children(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Vec<ParsedEntity>> {
+        panic!("cannot parse children of {:?}", entity.debug_with(db))
+    }
+
+    fn parse_fn_body(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<hir::FnBody> {
+        panic!("cannot parse fn body of {:?}", entity.debug_with(db))
+    }
 }
 
 /// The trait given to the [`LazyParsedEntity`] methods. It is a "dyn
 /// capable" variant of `ParserDatabase`.
-pub trait LazyParsedEntityDatabase: AsRef<GlobalIdentifierTables> + AsRef<EntityTables> {}
+pub trait LazyParsedEntityDatabase: AsRef<GlobalIdentifierTables> + AsRef<EntityTables> {
+    /// Looks up a name `name` to see if it matches any entities in the scope of `item_entity`.
+    fn resolve_name(&self, item_entity: Entity, name: &str) -> Option<Entity>;
 
-impl<T: ParserDatabase> LazyParsedEntityDatabase for T {}
+    /// The `file_text` query
+    fn file_text(&self, id: FileName) -> Text;
+
+    /// The `file_tokens` query
+    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken>>>;
+}
+
+impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
+    fn file_text(&self, id: FileName) -> Text {
+        ParserDatabase::file_text(self, id)
+    }
+
+    fn resolve_name(&self, _item_entity: Entity, _name: &str) -> Option<Entity> {
+        unimplemented!()
+    }
+
+    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken>>> {
+        ParserDatabase::file_tokens(self, id)
+    }
+}

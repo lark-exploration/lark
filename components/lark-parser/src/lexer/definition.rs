@@ -4,8 +4,8 @@ use crate::lexer::tools::consume_n;
 use crate::lexer::tools::reconsume;
 use crate::lexer::tools::LexerDelegateTrait;
 use crate::lexer::tools::LexerNext;
-use crate::span::CurrentFile;
-use crate::span::Span;
+
+use lark_span::{CurrentFile, Span};
 use unicode_xid::UnicodeXID;
 
 #[derive(Debug, Copy, Clone)]

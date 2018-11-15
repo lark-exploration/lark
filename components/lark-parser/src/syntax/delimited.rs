@@ -18,18 +18,19 @@ impl<D, T> Delimited<D, T> {
     }
 }
 
-impl<D, T> Syntax for Delimited<D, T>
+impl<D, T> Syntax<'parse> for Delimited<D, T>
 where
-    D: Delimiter,
-    T: Syntax,
+    D: Delimiter<'parse>,
+    T: Syntax<'parse>,
 {
     type Data = T::Data;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self,
+            parser: &Parser<'parse>) -> bool {
         parser.test(self.delimiters().open_syntax())
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         try {
             let Delimited(delimiter, content) = self;
             parser.expect(delimiter.open_syntax())?;
@@ -40,9 +41,9 @@ where
     }
 }
 
-impl<D, T> NonEmptySyntax for Delimited<D, T>
+impl<D, T> NonEmptySyntax<'parse> for Delimited<D, T>
 where
-    D: Delimiter,
-    T: Syntax,
+    D: Delimiter<'parse>,
+    T: Syntax<'parse>,
 {
 }
