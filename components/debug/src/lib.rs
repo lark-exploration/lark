@@ -17,7 +17,14 @@ use map::FxIndexMap;
 /// To use it, do something like `format!("{}",
 /// value.debug_with(cx))`.
 pub trait DebugWith {
-    fn debug_with<Cx: ?Sized>(&'me self, cx: &'me Cx) -> DebugCxPair<'me, Self, Cx> {
+    fn debug_with<Cx: ?Sized>(&'me self, cx: &'me Cx) -> DebugCxPair<'me, &'me Self, Cx> {
+        DebugCxPair { value: self, cx }
+    }
+
+    fn into_debug_with<Cx: ?Sized>(self, cx: &'me Cx) -> DebugCxPair<'me, Self, Cx>
+    where
+        Self: Sized,
+    {
         DebugCxPair { value: self, cx }
     }
 
@@ -46,15 +53,15 @@ where
     }
 }
 
-pub struct DebugCxPair<'me, Value: ?Sized, Cx: ?Sized>
+pub struct DebugCxPair<'me, Value, Cx: ?Sized>
 where
     Value: DebugWith,
 {
-    value: &'me Value,
+    value: Value,
     cx: &'me Cx,
 }
 
-impl<Value: ?Sized, Cx: ?Sized> std::fmt::Debug for DebugCxPair<'me, Value, Cx>
+impl<Value, Cx: ?Sized> std::fmt::Debug for DebugCxPair<'me, Value, Cx>
 where
     Value: DebugWith,
 {
@@ -63,7 +70,7 @@ where
     }
 }
 
-impl<Value: ?Sized, Cx: ?Sized> std::fmt::Display for DebugCxPair<'me, Value, Cx>
+impl<Value, Cx: ?Sized> std::fmt::Display for DebugCxPair<'me, Value, Cx>
 where
     Value: DebugWith,
 {
