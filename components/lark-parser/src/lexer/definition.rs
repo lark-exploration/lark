@@ -157,7 +157,7 @@ impl LexerDelegateTrait for LexerState {
 
 fn is_sigil_char(c: char) -> bool {
     match c {
-        '{' | '}' | '(' | ')' | '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' => true,
+        '{' | '}' | '(' | ')' | '+' | '-' | '*' | '/' | ':' | ',' | '>' | '<' | '=' | '.' => true,
         _ => false,
     }
 }
