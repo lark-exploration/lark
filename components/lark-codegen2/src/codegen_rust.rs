@@ -54,7 +54,8 @@ fn build_entity_name(
         EntityData::LangItem(LangItem::False) => "false".into(),
         EntityData::LangItem(LangItem::True) => "true".into(),
         EntityData::LangItem(LangItem::Debug) => "println!".into(),
-        _ => unimplemented!("Unsupported entity name"),
+        EntityData::ItemName { id, .. } => id.untern(db).to_string(),
+        x => unimplemented!("Unsupported entity name: {:#?}", x),
     }
 }
 

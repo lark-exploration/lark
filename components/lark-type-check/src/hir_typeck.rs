@@ -255,6 +255,7 @@ where
 
                     EntityData::LangItem(LangItem::Debug) => {
                         // You can call into the debug function
+                        return self.check_arguments_in_case_of_error(arguments);
                     }
 
                     _ => {

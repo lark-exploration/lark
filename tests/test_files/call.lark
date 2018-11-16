@@ -1,7 +1,7 @@
-def return_true(x: bool,) -> bool {
-    true
+def print_bool(x: bool,) {
+    debug(x)
 }
 
 def main() {
-    debug(return_true(false))
+    print_bool(false)
 }
