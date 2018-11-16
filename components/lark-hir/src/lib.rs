@@ -510,8 +510,19 @@ pub enum PlaceData {
 }
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum LiteralData {
-    String(GlobalIdentifier),
+pub struct LiteralData {
+    pub kind: LiteralKind,
+
+    /// We represent all literals as strings internally, which
+    /// sidesteps questions about how many bits to allocate for an
+    /// integer and so forth.
+    pub value: GlobalIdentifier,
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum LiteralKind {
+    UnsignedInteger,
+    String,
 }
 
 indices::index_type! {

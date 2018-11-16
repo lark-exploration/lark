@@ -133,8 +133,9 @@ where
                 self.least_upper_bound(expression, true_ty, false_ty)
             }
 
-            hir::ExpressionData::Literal { data } => match data {
-                hir::LiteralData::String(_) => self.string_type(),
+            hir::ExpressionData::Literal { data } => match data.kind {
+                hir::LiteralKind::String => self.string_type(),
+                hir::LiteralKind::UnsignedInteger => self.uint_type(),
             },
 
             hir::ExpressionData::Unit {} => self.unit_type(),
