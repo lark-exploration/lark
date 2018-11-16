@@ -1,3 +1,4 @@
+use debug::DebugWith;
 use intern::Intern;
 use intern::Untern;
 use lark_debug_derive::DebugWith;
@@ -570,4 +571,56 @@ fn parse_fn_body() {
         ),
         &fn_body,
     );
+}
+
+#[test]
+fn parse_fn_body_variations() {
+    let debug1 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let bar = 22
+              let baz = 44
+              bar + baz * baz + bar
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let bar =
+              22
+              let baz =
+              44
+              bar +
+              baz *
+              baz +
+              bar
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    assert_equal(&(), &debug1, &debug2);
 }
