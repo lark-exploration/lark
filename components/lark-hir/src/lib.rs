@@ -9,6 +9,7 @@
 #![feature(specialization)]
 
 use ast::AstDatabase;
+use debug::DebugWith;
 use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
@@ -85,7 +86,7 @@ pub struct Member {
     pub entity: Entity,
 }
 
-#[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
@@ -97,6 +98,18 @@ pub struct FnBody {
 
     /// Contains all the data.
     pub tables: FnBodyTables,
+}
+
+impl debug::DebugWith for FnBody {
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Intentionally omit the `tables` implementation here; you
+        // can use the `Debug` impl if you *really* want to see the
+        // *raw guts*
+        fmt.debug_struct("FnBody")
+            .field("arguments", &self.arguments.debug_with(cx))
+            .field("root_expression", &self.root_expression.debug_with(cx))
+            .finish()
+    }
 }
 
 /// All the data for a fn-body is stored in these tables.a
@@ -140,14 +153,14 @@ impl AsMut<FnBodyTables> for FnBodyTables {
 
 /// Trait implemented by the various kinds of indices that reach into
 /// the HIR; allows us to grab the vector that they correspond to.
-pub trait HirIndex: U32Index + Into<MetaIndex> {
-    type Data: Clone;
+pub trait HirIndex: U32Index + Into<MetaIndex> + DebugWith {
+    type Data: Clone + DebugWith;
 
     fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>>;
     fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Spanned<Self::Data>>;
 }
 
-pub trait HirIndexData: Sized + Clone {
+pub trait HirIndexData: Sized + Clone + DebugWith {
     type Index: HirIndex<Data = Self>;
 
     fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Spanned<Self>> {
@@ -246,6 +259,15 @@ macro_rules! define_meta_index {
             }
 
             debug::debug_fallback_impl!($index_ty);
+
+            impl<Cx> debug::FmtWithSpecialized<Cx> for $index_ty
+            where Cx: AsRef<FnBodyTables>
+            {
+                fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let tables: &FnBodyTables = cx.as_ref();
+                    debug::DebugWith::fmt_with(&tables[*self], cx, fmt)
+                }
+            }
 
             impl From<$index_ty> for MetaIndex {
                 fn from(value: $index_ty) -> MetaIndex {
@@ -382,6 +404,18 @@ impl<I: HirIndex> List<I> {
 
 debug::debug_fallback_impl!(for[I: HirIndex] List<I>);
 
+impl<Cx, I> debug::FmtWithSpecialized<Cx> for List<I>
+where
+    Cx: AsRef<FnBodyTables>,
+    I: HirIndex,
+{
+    fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_list()
+            .entries(self.iter_data(cx).map(|d| d.into_debug_with(cx)))
+            .finish()
+    }
+}
+
 indices::index_type! {
     pub struct Expression { .. }
 }
@@ -510,8 +544,19 @@ pub enum PlaceData {
 }
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum LiteralData {
-    String(GlobalIdentifier),
+pub struct LiteralData {
+    pub kind: LiteralKind,
+
+    /// We represent all literals as strings internally, which
+    /// sidesteps questions about how many bits to allocate for an
+    /// integer and so forth.
+    pub value: GlobalIdentifier,
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum LiteralKind {
+    UnsignedInteger,
+    String,
 }
 
 indices::index_type! {

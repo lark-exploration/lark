@@ -117,6 +117,15 @@ impl<T> WithError<T> {
         self.value
     }
 
+    pub fn assert_no_errors(self) -> T {
+        assert!(
+            self.errors.is_empty(),
+            "expected no errors, found: {:#?}",
+            self.errors
+        );
+        self.into_value()
+    }
+
     pub fn into_value(self) -> T {
         self.value
     }

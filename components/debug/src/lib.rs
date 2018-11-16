@@ -17,7 +17,14 @@ use map::FxIndexMap;
 /// To use it, do something like `format!("{}",
 /// value.debug_with(cx))`.
 pub trait DebugWith {
-    fn debug_with<Cx: ?Sized>(&'me self, cx: &'me Cx) -> DebugCxPair<'me, Self, Cx> {
+    fn debug_with<Cx: ?Sized>(&'me self, cx: &'me Cx) -> DebugCxPair<'me, &'me Self, Cx> {
+        DebugCxPair { value: self, cx }
+    }
+
+    fn into_debug_with<Cx: ?Sized>(self, cx: &'me Cx) -> DebugCxPair<'me, Self, Cx>
+    where
+        Self: Sized,
+    {
         DebugCxPair { value: self, cx }
     }
 
@@ -46,15 +53,15 @@ where
     }
 }
 
-pub struct DebugCxPair<'me, Value: ?Sized, Cx: ?Sized>
+pub struct DebugCxPair<'me, Value, Cx: ?Sized>
 where
     Value: DebugWith,
 {
-    value: &'me Value,
+    value: Value,
     cx: &'me Cx,
 }
 
-impl<Value: ?Sized, Cx: ?Sized> std::fmt::Debug for DebugCxPair<'me, Value, Cx>
+impl<Value, Cx: ?Sized> std::fmt::Debug for DebugCxPair<'me, Value, Cx>
 where
     Value: DebugWith,
 {
@@ -63,7 +70,7 @@ where
     }
 }
 
-impl<Value: ?Sized, Cx: ?Sized> std::fmt::Display for DebugCxPair<'me, Value, Cx>
+impl<Value, Cx: ?Sized> std::fmt::Display for DebugCxPair<'me, Value, Cx>
 where
     Value: DebugWith,
 {
@@ -88,18 +95,13 @@ where
     K: DebugWith + std::hash::Hash + Eq,
     V: DebugWith,
 {
-    fn fmt_with<Cx: ?Sized>(
-        &self,
-        _cx: &Cx,
-        _fmt: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        unimplemented!()
-        //fmt.debug_list()
-        //    .entries(
-        //        self.iter()
-        //            .map(|elem| (elem.0.debug_with(cx), elem.1.debug_with(cx))),
-        //    )
-        //    .finish()
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_list()
+            .entries(
+                self.iter()
+                    .map(|elem| (elem.0.into_debug_with(cx), elem.1.into_debug_with(cx))),
+            )
+            .finish()
     }
 }
 
@@ -142,6 +144,19 @@ where
         match self {
             None => fmt.debug_struct("None").finish(),
             Some(v) => v.fmt_with(cx, fmt),
+        }
+    }
+}
+
+impl<O, E> DebugWith for Result<O, E>
+where
+    O: DebugWith,
+    E: DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Ok(v) => fmt.debug_tuple("Ok").field(&v.debug_with(cx)).finish(),
+            Err(v) => fmt.debug_tuple("Err").field(&v.debug_with(cx)).finish(),
         }
     }
 }

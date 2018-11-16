@@ -1,10 +1,14 @@
+use debug::DebugWith;
 use intern::Intern;
 use intern::Untern;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
+use lark_hir as hir;
 use lark_parser::FileName;
 use lark_parser::ParserDatabase;
+use lark_query_system::LarkDatabase;
+use lark_string::GlobalIdentifierTables;
 use lark_test::*;
 
 #[derive(Debug, DebugWith, PartialEq, Eq)]
@@ -449,19 +453,174 @@ fn function_variations() {
     assert_equal(&(), &base_tree, &other_tree);
 }
 
+pub struct FnBodyContext<'me> {
+    db: &'me LarkDatabase,
+    fn_body: &'me hir::FnBody,
+}
+
+impl AsRef<GlobalIdentifierTables> for FnBodyContext<'_> {
+    fn as_ref(&self) -> &GlobalIdentifierTables {
+        self.db.as_ref()
+    }
+}
+
+impl AsRef<hir::FnBodyTables> for FnBodyContext<'_> {
+    fn as_ref(&self) -> &hir::FnBodyTables {
+        self.fn_body.as_ref()
+    }
+}
+
 #[test]
-#[should_panic] // not yet all implemented
 fn parse_fn_body() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
             fn foo() {
-              let bar = baz
-              bar
+              let bar = 22
+              let baz = 44
+              bar + baz * baz + bar
             }
         ",
     ));
 
     let foo = select_entity(&db, file_name, 0);
-    let fn_body = db.fn_body2(foo);
-    assert!(fn_body.errors.is_empty());
+    let fn_body = db.fn_body2(foo).assert_no_errors();
+    assert_expected_debug(
+        &FnBodyContext {
+            db: &db,
+            fn_body: &fn_body,
+        },
+        &unindent::unindent(
+            r#"FnBody {
+    arguments: [],
+    root_expression: Let {
+        variable: VariableData {
+            name: IdentifierData {
+                text: "bar"
+            }
+        },
+        initializer: Literal {
+            data: LiteralData {
+                kind: UnsignedInteger,
+                value: "22"
+            }
+        },
+        body: Let {
+            variable: VariableData {
+                name: IdentifierData {
+                    text: "baz"
+                }
+            },
+            initializer: Literal {
+                data: LiteralData {
+                    kind: UnsignedInteger,
+                    value: "44"
+                }
+            },
+            body: Binary {
+                operator: Add,
+                left: Binary {
+                    operator: Add,
+                    left: Place {
+                        perm: Default,
+                        place: Variable(
+                            VariableData {
+                                name: IdentifierData {
+                                    text: "bar"
+                                }
+                            }
+                        )
+                    },
+                    right: Binary {
+                        operator: Multiply,
+                        left: Place {
+                            perm: Default,
+                            place: Variable(
+                                VariableData {
+                                    name: IdentifierData {
+                                        text: "baz"
+                                    }
+                                }
+                            )
+                        },
+                        right: Place {
+                            perm: Default,
+                            place: Variable(
+                                VariableData {
+                                    name: IdentifierData {
+                                        text: "baz"
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                right: Place {
+                    perm: Default,
+                    place: Variable(
+                        VariableData {
+                            name: IdentifierData {
+                                text: "bar"
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}"#,
+        ),
+        &fn_body,
+    );
+}
+
+#[test]
+fn parse_fn_body_variations() {
+    let debug1 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let bar = 22
+              let baz = 44
+              bar + baz * baz + bar
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let bar =
+              22
+              let baz =
+              44
+              bar +
+              baz *
+              baz +
+              bar
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    assert_equal(&(), &debug1, &debug2);
 }

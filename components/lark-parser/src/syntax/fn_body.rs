@@ -33,6 +33,7 @@ use lark_span::CurrentFile;
 use lark_span::Span;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
+use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;
 use map::FxIndexMap;
 use std::rc::Rc;
@@ -47,6 +48,7 @@ use std::sync::Arc;
 //    | Expression BinaryOp Expression
 //    | UnaryOp Expression
 //    | Place "=" Expression
+//    | Literal
 //
 // Place = Identifier
 //    | Value // temporary
@@ -91,6 +93,7 @@ use std::sync::Arc;
 // }
 //
 // Expression0 = {
+//   Literal
 //   Identifier,
 //   "(" \n* Expression \n* ")",  // Should we allow newlines *anywhere* here?
 //   Block,
@@ -295,6 +298,18 @@ impl ExpressionScope<'parse> {
     }
 }
 
+impl AsRef<hir::FnBodyTables> for ExpressionScope<'_> {
+    fn as_ref(&self) -> &hir::FnBodyTables {
+        &self.fn_body_tables
+    }
+}
+
+impl AsRef<GlobalIdentifierTables> for ExpressionScope<'_> {
+    fn as_ref(&self) -> &GlobalIdentifierTables {
+        self.db.as_ref()
+    }
+}
+
 impl<I> std::ops::Index<I> for ExpressionScope<'parse>
 where
     I: hir::HirIndex,
@@ -454,16 +469,16 @@ where
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        let left = parser.expect(&mut self.expr)?;
+        let left_parsed = parser.expect(&mut self.expr)?;
 
         if parser.test(&mut self.op) {
             // From this point out, we know that this is not a "place expression".
-            let mut left = left.to_hir_expression(self.scope());
+            let mut left = left_parsed.to_hir_expression(self.scope());
 
             while let Some(operator) = parser.parse_if_present(&mut self.op) {
                 let operator = operator?;
                 let right = parser
-                    .expect(SkipNewline(Expression2::new(self.scope())))?
+                    .expect(SkipNewline(&mut self.expr))?
                     .to_hir_expression(self.scope());
                 let span = self
                     .scope()
@@ -492,9 +507,11 @@ where
                     }
                 }
             }
-        }
 
-        Ok(left)
+            Ok(ParsedExpression::Expression(left))
+        } else {
+            Ok(left_parsed)
+        }
     }
 }
 
@@ -858,7 +875,7 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        SpannedLocalIdentifier.test(parser)
+        SpannedLocalIdentifier.test(parser) || Literal::new(self.scope).test(parser)
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
@@ -916,6 +933,11 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
             return Ok(ParsedExpression::Expression(error_expression));
         }
 
+        // Expression0 = Literal
+        if let Some(expr) = parser.parse_if_present(Literal::new(self.scope)) {
+            return Ok(ParsedExpression::Expression(expr?));
+        }
+
         // Expression0 = `(` Expression ')'
         if let Some(expr) = parser.parse_if_present(Delimited(
             Parentheses,
@@ -931,6 +953,34 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
 
         let token = parser.shift();
         Err(parser.report_error("unrecognized start of expression", token.span))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct Literal<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for Literal<'me, 'parse> {
+    type Data = hir::Expression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.is(LexToken::Integer) || parser.is(LexToken::String)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let text = parser.peek_str();
+        let token = parser.shift();
+        let kind = match token.value {
+            LexToken::Integer => hir::LiteralKind::UnsignedInteger,
+            LexToken::String => hir::LiteralKind::String,
+            _ => return Err(parser.report_error("expected a literal", token.span)),
+        };
+        let value = text.intern(parser);
+        let data = hir::LiteralData { kind, value };
+        Ok(self
+            .scope
+            .add(token.span, hir::ExpressionData::Literal { data }))
     }
 }
 

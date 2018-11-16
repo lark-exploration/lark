@@ -16,6 +16,7 @@ crate enum LexerState {
     ContinueIdent,
     StringLiteral,
     Sigil,
+    Number,
     Comment(u32),
 }
 
@@ -45,6 +46,7 @@ impl LexerDelegateTrait for LexerState {
                         LexerNext::begin(Sigil)
                         // LexerNext::dynamic_sigil(Token::Sigil)
                     }
+                    '0'..='9' => LexerNext::begin(Number),
                     '"' => consume().and_transition(StringLiteral),
                     '\n' => LexerNext::sigil(LexToken::Newline),
                     c if c.is_whitespace() => LexerNext::begin(Whitespace),
@@ -60,6 +62,17 @@ impl LexerDelegateTrait for LexerState {
                 Some(c) if is_sigil_char(c) => consume().and_remain(),
                 _ => reconsume()
                     .and_emit(LexToken::Sigil)
+                    .and_transition(LexerState::Top),
+            },
+
+            LexerState::Number => match c {
+                None => reconsume()
+                    .and_emit(LexToken::Integer)
+                    .and_transition(LexerState::Top),
+                Some('0'..='9') => consume().and_remain(),
+                Some('_') => consume().and_remain(),
+                Some(_) => reconsume()
+                    .and_emit(LexToken::Integer)
                     .and_transition(LexerState::Top),
             },
 
