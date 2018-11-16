@@ -95,18 +95,13 @@ where
     K: DebugWith + std::hash::Hash + Eq,
     V: DebugWith,
 {
-    fn fmt_with<Cx: ?Sized>(
-        &self,
-        _cx: &Cx,
-        _fmt: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        unimplemented!()
-        //fmt.debug_list()
-        //    .entries(
-        //        self.iter()
-        //            .map(|elem| (elem.0.debug_with(cx), elem.1.debug_with(cx))),
-        //    )
-        //    .finish()
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_list()
+            .entries(
+                self.iter()
+                    .map(|elem| (elem.0.into_debug_with(cx), elem.1.into_debug_with(cx))),
+            )
+            .finish()
     }
 }
 
@@ -149,6 +144,19 @@ where
         match self {
             None => fmt.debug_struct("None").finish(),
             Some(v) => v.fmt_with(cx, fmt),
+        }
+    }
+}
+
+impl<O, E> DebugWith for Result<O, E>
+where
+    O: DebugWith,
+    E: DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Ok(v) => fmt.debug_tuple("Ok").field(&v.debug_with(cx)).finish(),
+            Err(v) => fmt.debug_tuple("Err").field(&v.debug_with(cx)).finish(),
         }
     }
 }

@@ -227,7 +227,12 @@ impl Parser<'parse> {
 
     /// Tests whether the syntax applies at the current point.
     crate fn test(&self, mut syntax: impl Syntax<'parse>) -> bool {
-        log::trace!("test({})", syntax.debug_with(self));
+        log::trace!(
+            "test({}) at token `{}({})`",
+            syntax.debug_with(self),
+            self.lookahead_token.value.debug_with(self),
+            self.peek_str().debug_with(self),
+        );
 
         if syntax.test(self) {
             log::trace!("test: passed");
@@ -243,7 +248,12 @@ impl Parser<'parse> {
     where
         T: Syntax<'parse>,
     {
-        log::trace!("expect({})", syntax.debug_with(self));
+        log::debug!(
+            "expect({}) at token `{}({})`",
+            syntax.debug_with(self),
+            self.lookahead_token.value.debug_with(self),
+            self.peek_str().debug_with(self),
+        );
 
         syntax.expect(self)
     }
@@ -254,7 +264,12 @@ impl Parser<'parse> {
     where
         T: Syntax<'parse>,
     {
-        log::trace!("eat({})", syntax.debug_with(self));
+        log::trace!(
+            "eat({}) at token `{}({})`",
+            syntax.debug_with(self),
+            self.lookahead_token.value.debug_with(self),
+            self.peek_str().debug_with(self),
+        );
 
         if self.test(&mut syntax) {
             Some(self.expect(syntax))
