@@ -1,6 +1,7 @@
 use ast::AstDatabase;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
+use lark_error::{Diagnostic, WithError};
 use lark_hir::HirDatabase;
 use lark_mir2::{
     BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Rvalue, RvalueData, Statement,
@@ -84,24 +85,30 @@ pub fn codegen_struct(
     db: &mut LarkDatabase,
     entity: Entity,
     id: lark_string::global::GlobalIdentifier,
-    output: &mut String,
-) {
+) -> WithError<String> {
     let name = id.untern(db);
     let members = db.members(entity).unwrap();
+    let mut output = String::new();
+    let mut errors: Vec<Diagnostic> = vec![];
 
     output.push_str(&format!("struct {} {{\n", name));
 
     for member in members.iter() {
         let member_name = member.name.untern(db);
-        let member_ty = db.ty(member.entity);
+        let member_ty = db.ty(member.entity).accumulate_errors_into(&mut errors);
         output.push_str(&format!(
             "{}: {},\n",
             member_name,
-            build_type(db, &member_ty.value)
+            build_type(db, &member_ty)
         ));
     }
 
     output.push_str("}\n");
+
+    WithError {
+        value: output,
+        errors,
+    }
 }
 
 pub fn codegen_rvalue(
@@ -176,11 +183,16 @@ pub fn codegen_function(
     db: &mut LarkDatabase,
     entity: Entity,
     id: lark_string::global::GlobalIdentifier,
-    output: &mut String,
-) {
-    let mir_bytecode = db.fn_bytecode(entity);
-    let signature = db.signature(entity).value.unwrap();
-    let fn_body = db.fn_body(entity).value;
+) -> WithError<String> {
+    let mut output = String::new();
+    let mut errors: Vec<Diagnostic> = vec![];
+
+    let mut mir_bytecode = db.fn_bytecode(entity).accumulate_errors_into(&mut errors);
+    let mut signature = db
+        .signature(entity)
+        .accumulate_errors_into(&mut errors)
+        .unwrap();
+    let fn_body = db.fn_body(entity).accumulate_errors_into(&mut errors);
 
     let name = id.untern(db);
 
@@ -210,16 +222,22 @@ pub fn codegen_function(
     output.push_str(") -> ");
     output.push_str(&format!("{}", build_type(db, &signature.output)));
     output.push_str(" {\n");
-    for basic_block in mir_bytecode.value.basic_blocks.iter(&mir_bytecode.value) {
-        codegen_basic_block(db, basic_block, &mir_bytecode.value, output);
+    for basic_block in mir_bytecode.basic_blocks.iter(&mir_bytecode) {
+        codegen_basic_block(db, basic_block, &mir_bytecode, &mut output);
     }
     output.push_str("}\n");
+
+    WithError {
+        value: output,
+        errors,
+    }
 }
 
 /// Converts the MIR context of definitions into Rust source
-pub fn codegen_rust(db: &mut LarkDatabase) -> String {
+pub fn codegen_rust(db: &mut LarkDatabase) -> WithError<String> {
     let mut output = String::new();
     let input_files = db.paths();
+    let mut errors: Vec<Diagnostic> = vec![];
 
     for &input_file in &*input_files {
         let entities = db.items_in_file(input_file);
@@ -231,19 +249,32 @@ pub fn codegen_rust(db: &mut LarkDatabase) -> String {
                     id,
                     ..
                 } => {
-                    codegen_function(db, entity, id, &mut output);
+                    let mut result = codegen_function(db, entity, id);
+                    if result.errors.len() > 0 {
+                        errors.append(&mut result.errors);
+                    } else {
+                        output.push_str(&result.value);
+                    }
                 }
                 EntityData::ItemName {
                     kind: ItemKind::Struct,
                     id,
                     ..
                 } => {
-                    codegen_struct(db, entity, id, &mut output);
+                    let mut result = codegen_struct(db, entity, id);
+                    if result.errors.len() > 0 {
+                        errors.append(&mut result.errors);
+                    } else {
+                        output.push_str(&result.value);
+                    }
                 }
                 x => unimplemented!("Can not codegen {:#?}", x),
             }
         }
     }
 
-    output
+    WithError {
+        value: output,
+        errors,
+    }
 }

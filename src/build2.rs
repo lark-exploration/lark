@@ -52,12 +52,32 @@ pub(crate) fn build(filename: &str) {
 
     let source_file = lark_codegen2::codegen(&mut db, lark_codegen2::CodegenType::Rust);
 
-    let out_filename = file_path.file_name().unwrap().to_str().unwrap();
+    if source_file.errors.len() > 0 {
+        for error in source_file.errors {
+            /*
+            let writer = StandardStream::stderr(ColorChoice::Auto);
+            emit(
+                &mut writer.lock(),
+                &db.code_map().read(),
+                &error,
+                &language_reporting::DefaultConfig,
+            )
+            .unwrap();
+            */
+            println!("Error: {:#?}", error);
+        }
+    } else {
+        let out_filename = file_path.file_name().unwrap().to_str().unwrap();
 
-    println!("Output: {}", out_filename);
-    println!("{}", source_file);
-    let result =
-        lark_codegen2::build(out_filename, &source_file, lark_codegen2::CodegenType::Rust).unwrap();
+        println!("Output: {}", out_filename);
+        println!("{}", source_file.value);
+        lark_codegen2::build(
+            out_filename,
+            &source_file.value,
+            lark_codegen2::CodegenType::Rust,
+        )
+        .unwrap();
+    }
 }
 
 trait FileMapExt {

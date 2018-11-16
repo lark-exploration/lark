@@ -181,10 +181,16 @@ where
     }
 
     fn lower_typecheck_of_item(mut self) -> mir::FnBytecode {
-        let typed_expressions = self.db.base_type_check(self.item_entity);
-        let fn_body = self.db.fn_body(self.item_entity);
+        let typed_expressions = self
+            .db
+            .base_type_check(self.item_entity)
+            .accumulate_errors_into(&mut self.errors);
+        let fn_body = self
+            .db
+            .fn_body(self.item_entity)
+            .accumulate_errors_into(&mut self.errors);
 
-        let basic_block = self.lower_basic_block(&fn_body.value, fn_body.value.root_expression);
+        let basic_block = self.lower_basic_block(&fn_body, fn_body.root_expression);
 
         let basic_blocks = vec![basic_block];
 
