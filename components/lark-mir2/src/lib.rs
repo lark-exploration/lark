@@ -10,9 +10,7 @@ use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::WithError;
-use lark_hir as hir;
 use lark_string::global::GlobalIdentifier;
-use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
 use lark_type_check as typecheck;
 use parser::pos::{HasSpan, Span, Spanned};
@@ -130,6 +128,13 @@ pub struct StatementData {
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum StatementKind {
     Assign(Place, Rvalue),
+
+    /// Start a live range for the storage of the variable.
+    StorageLive(Variable),
+
+    /// End the current live range for the storage of the variable.
+    StorageDead(Variable),
+
     Expression(Rvalue),
     DebugPrint(Place),
 }

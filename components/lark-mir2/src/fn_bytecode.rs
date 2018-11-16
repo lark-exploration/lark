@@ -1,13 +1,11 @@
 use crate as mir;
 use crate::MirDatabase;
-use intern::{Intern, Untern};
-use lark_entity::{Entity, EntityData, LangItem};
+use intern::Intern;
+use lark_entity::Entity;
 use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_hir as hir;
-use lark_string::global::GlobalIdentifier;
-use map::FxIndexMap;
-use parser::pos::{HasSpan, Span, Spanned};
+use parser::pos::{Span, Spanned};
 use std::sync::Arc;
 
 crate fn fn_bytecode(
@@ -28,6 +26,7 @@ struct MirLower<'me, DB: MirDatabase> {
     fn_bytecode_tables: mir::FnBytecodeTables,
     //variables: FxIndexMap<GlobalIdentifier, hir::Variable>,
     errors: &'me mut Vec<Diagnostic>,
+    next_temporary_id: usize,
 }
 
 impl<'me, DB> MirLower<'me, DB>
@@ -41,6 +40,7 @@ where
             item_entity,
             fn_bytecode_tables: Default::default(),
             //variables: Default::default(),
+            next_temporary_id: 0,
         }
     }
 
@@ -48,9 +48,11 @@ where
         D::index_vec_mut(&mut self.fn_bytecode_tables).push(Spanned(node, span))
     }
 
+    /*
     fn span(&self, index: impl mir::SpanIndex) -> Span {
         index.span_from(&self.fn_bytecode_tables)
     }
+    */
 
     fn lower_identifier(
         &mut self,
@@ -62,6 +64,23 @@ where
                 self.add(fn_body.span(identifier), mir::IdentifierData { text })
             }
         }
+    }
+
+    fn create_temporary(&mut self, span: Span) -> mir::Variable {
+        let temp_variable_name = format!("_tmp{}", self.next_temporary_id).intern(&mut self.db);
+        let temp_identifier = self.add(
+            span,
+            mir::IdentifierData {
+                text: temp_variable_name,
+            },
+        );
+        self.next_temporary_id += 1;
+        self.add(
+            span,
+            mir::VariableData {
+                name: temp_identifier,
+            },
+        )
     }
 
     fn lower_variable(&mut self, fn_body: &hir::FnBody, variable: hir::Variable) -> mir::Variable {
@@ -90,6 +109,22 @@ where
                 self.add(fn_body.span(expression), mir::OperandData::Copy(place))
             }
             _ => unimplemented!("Unsupported expression for operands"),
+        }
+    }
+
+    fn lower_rvalue(
+        &mut self,
+        fn_body: &hir::FnBody,
+        expression: hir::Expression,
+        statements: &mut Vec<mir::Statement>,
+    ) -> mir::Rvalue {
+        match fn_body.tables[expression] {
+            hir::ExpressionData::Place { place, .. } => {
+                let place = self.lower_place(fn_body, place);
+                let operand = self.add(fn_body.span(expression), mir::OperandData::Copy(place));
+                self.add(fn_body.span(expression), mir::RvalueData::Use(operand))
+            }
+            _ => unimplemented!("Unsupported expression for rvalues"),
         }
     }
 
@@ -156,6 +191,53 @@ where
                 statements.push(statement);
             }
             hir::ExpressionData::Unit {} => {}
+            hir::ExpressionData::Let {
+                variable,
+                initializer,
+                body,
+            } => {
+                let mir_variable = self.lower_variable(fn_body, variable);
+                // Start the variable scope
+                let statement = self.add(
+                    fn_body.span(expression),
+                    mir::StatementData {
+                        kind: mir::StatementKind::StorageLive(mir_variable),
+                    },
+                );
+                statements.push(statement);
+
+                // Initialize if there is an intializer
+                match initializer {
+                    Some(initial_value) => {
+                        let rvalue = self.lower_rvalue(fn_body, initial_value, statements);
+
+                        let lvalue = self.add(
+                            fn_body.span(expression),
+                            mir::PlaceData::Variable(mir_variable),
+                        );
+                        let statement = self.add(
+                            fn_body.span(expression),
+                            mir::StatementData {
+                                kind: mir::StatementKind::Assign(lvalue, rvalue),
+                            },
+                        );
+                        statements.push(statement);
+                    }
+                    None => {}
+                }
+
+                // Body of the let
+                self.lower_statement(fn_body, body, statements);
+
+                // End the variable scope
+                let statement = self.add(
+                    fn_body.span(expression),
+                    mir::StatementData {
+                        kind: mir::StatementKind::StorageDead(mir_variable),
+                    },
+                );
+                statements.push(statement);
+            }
             x => unimplemented!("Expression kind not yet support in MIR: {:#?}", x),
         }
     }
@@ -181,7 +263,7 @@ where
     }
 
     fn lower_typecheck_of_item(mut self) -> mir::FnBytecode {
-        let typed_expressions = self
+        let _ = self
             .db
             .base_type_check(self.item_entity)
             .accumulate_errors_into(&mut self.errors);

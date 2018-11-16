@@ -23,8 +23,7 @@ use std::{env, io};
 
 mod build;
 mod build2;
-
-fn run(_filename: &str) {}
+mod run;
 
 fn repl() {}
 
@@ -51,7 +50,7 @@ fn main() {
     match (args.next(), args.next(), args.next()) {
         (_, Some(ref cmd), Some(ref x)) if cmd == "build" => build::build(x),
         (_, Some(ref cmd), Some(ref x)) if cmd == "build2" => build2::build(x),
-        (_, Some(ref cmd), Some(ref x)) if cmd == "run" => run(x),
+        (_, Some(ref cmd), Some(ref x)) if cmd == "run" => run::run(x),
         (_, Some(ref cmd), None) if cmd == "repl" => repl(),
         (_, Some(ref cmd), None) if cmd == "ide" => ide(),
         _ => {

@@ -47,6 +47,7 @@ lark-codegen2 = { path = "components/lark-codegen2" }
 lark-debug-derive = { path = "components/lark-debug-derive" }
 lark-entity = { path = "components/lark-entity" }
 lark-eval = { path = "components/lark-eval" }
+lark-eval2 = { path = "components/lark-eval2" }
 lark-hir = { path = "components/lark-hir" }
 lark-language-server = { path = "components/lark-language-server" }
 lark-mir = { path = "components/lark-mir" }

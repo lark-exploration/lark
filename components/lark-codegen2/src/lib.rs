@@ -2,7 +2,6 @@ mod build;
 mod codegen_rust;
 
 use lark_error::WithError;
-use lark_mir2 as mir;
 use lark_query_system::LarkDatabase;
 
 #[derive(Copy, Clone)]

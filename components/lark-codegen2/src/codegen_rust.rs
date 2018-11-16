@@ -1,11 +1,11 @@
 use ast::AstDatabase;
 use intern::{Intern, Untern};
-use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
+use lark_entity::{Entity, EntityData, ItemKind, LangItem};
 use lark_error::{Diagnostic, WithError};
 use lark_hir::HirDatabase;
 use lark_mir2::{
-    BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Rvalue, RvalueData, Statement,
-    StatementKind,
+    BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
+    RvalueData, Statement, StatementKind, Variable,
 };
 use lark_query_system::LarkDatabase;
 use lark_ty::Ty;
@@ -35,7 +35,7 @@ pub fn build_type(db: &mut LarkDatabase, ty: &Ty<lark_ty::declaration::Declarati
     }
 }
 
-fn build_var_name(
+fn build_variable_name(
     db: &mut LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
     variable: lark_mir2::Variable,
@@ -60,6 +60,18 @@ fn build_entity_name(
     }
 }
 
+pub fn build_place(
+    db: &mut LarkDatabase,
+    fn_bytecode: &std::sync::Arc<FnBytecode>,
+    place: Place,
+) -> String {
+    match &fn_bytecode.tables[place] {
+        PlaceData::Variable(variable) => build_variable_name(db, fn_bytecode, *variable),
+        PlaceData::Entity(entity) => build_entity_name(db, fn_bytecode, *entity),
+        x => unimplemented!("Unsupported place data: {:#?}", x),
+    }
+}
+
 fn build_operand(
     db: &mut LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
@@ -69,14 +81,8 @@ fn build_operand(
         OperandData::ConstantInt(i) => format!("{}", i),
         OperandData::ConstantString(s) => format!("\"{}\"", s),
         OperandData::Copy(place) | OperandData::Move(place) => {
-            let place_data = &fn_bytecode.tables[*place];
-            match place_data {
-                lark_mir2::PlaceData::Variable(variable) => {
-                    build_var_name(db, fn_bytecode, *variable)
-                }
-                lark_mir2::PlaceData::Entity(entity) => build_entity_name(db, fn_bytecode, *entity),
-                x => unimplemented!("Unsupported place data: {:#?}", x),
-            }
+            //FIXME: separate copy and move
+            build_place(db, fn_bytecode, *place)
         }
     }
 }
@@ -113,8 +119,8 @@ pub fn codegen_struct(
 
 pub fn codegen_rvalue(
     db: &mut LarkDatabase,
-    rvalue: Rvalue,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
+    rvalue: Rvalue,
     output: &mut String,
 ) {
     match &fn_bytecode.tables[rvalue] {
@@ -158,7 +164,20 @@ pub fn codegen_statement(
 
     match &statement_data.kind {
         StatementKind::Expression(rvalue) => {
-            codegen_rvalue(db, *rvalue, fn_bytecode, output);
+            codegen_rvalue(db, fn_bytecode, *rvalue, output);
+        }
+        StatementKind::Assign(lvalue, rvalue) => {
+            output.push_str(&format!("{} = ", build_place(db, fn_bytecode, *lvalue)));
+            codegen_rvalue(db, fn_bytecode, *rvalue, output);
+        }
+        StatementKind::StorageLive(variable) => {
+            output.push_str(&format!(
+                "{{\nlet {};\n",
+                build_variable_name(db, fn_bytecode, *variable)
+            ));
+        }
+        StatementKind::StorageDead(_) => {
+            output.push_str("\n}\n");
         }
         _ => unimplemented!("Unsupported statement kind"),
     }
@@ -168,8 +187,8 @@ pub fn codegen_statement(
 
 pub fn codegen_basic_block(
     db: &mut LarkDatabase,
-    basic_block: BasicBlock,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
+    basic_block: BasicBlock,
     output: &mut String,
 ) {
     let basic_block_data = &fn_bytecode.tables[basic_block];
@@ -187,8 +206,8 @@ pub fn codegen_function(
     let mut output = String::new();
     let mut errors: Vec<Diagnostic> = vec![];
 
-    let mut mir_bytecode = db.fn_bytecode(entity).accumulate_errors_into(&mut errors);
-    let mut signature = db
+    let mir_bytecode = db.fn_bytecode(entity).accumulate_errors_into(&mut errors);
+    let signature = db
         .signature(entity)
         .accumulate_errors_into(&mut errors)
         .unwrap();
@@ -223,7 +242,7 @@ pub fn codegen_function(
     output.push_str(&format!("{}", build_type(db, &signature.output)));
     output.push_str(" {\n");
     for basic_block in mir_bytecode.basic_blocks.iter(&mir_bytecode) {
-        codegen_basic_block(db, basic_block, &mir_bytecode, &mut output);
+        codegen_basic_block(db, &mir_bytecode, basic_block, &mut output);
     }
     output.push_str("}\n");
 
