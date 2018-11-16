@@ -195,7 +195,10 @@ where
                 a::Literal::String(s) => self.add(
                     s.span(),
                     hir::ExpressionData::Literal {
-                        data: hir::LiteralData::String(**s),
+                        data: hir::LiteralData {
+                            kind: hir::LiteralKind::String,
+                            value: **s,
+                        },
                     },
                 ),
             },

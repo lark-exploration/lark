@@ -64,8 +64,8 @@ fn test_quicklex() -> Result<(), Span<CurrentFile>> {
             00111234444445 Whitespace Identifier Sigil Whitespace Identifier Sigil
               level: String,
             0011111234444445 Whitespace Identifier Sigil Whitespace Identifier Sigil
-            }
-            0 Sigil
+            } 22 1_000
+            0122344444 Sigil Whitespace Integer Whitespace Integer
             "##,
     );
 
