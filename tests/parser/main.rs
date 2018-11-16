@@ -450,12 +450,11 @@ fn function_variations() {
 }
 
 #[test]
-#[should_panic] // not yet all implemented
 fn parse_fn_body() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
             fn foo() {
-              let bar = baz
+              let bar = 22
               bar
             }
         ",

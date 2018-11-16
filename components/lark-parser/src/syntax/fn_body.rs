@@ -47,6 +47,7 @@ use std::sync::Arc;
 //    | Expression BinaryOp Expression
 //    | UnaryOp Expression
 //    | Place "=" Expression
+//    | Literal
 //
 // Place = Identifier
 //    | Value // temporary
@@ -91,6 +92,7 @@ use std::sync::Arc;
 // }
 //
 // Expression0 = {
+//   Literal
 //   Identifier,
 //   "(" \n* Expression \n* ")",  // Should we allow newlines *anywhere* here?
 //   Block,
@@ -858,7 +860,7 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
     type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        SpannedLocalIdentifier.test(parser)
+        SpannedLocalIdentifier.test(parser) || Literal::new(self.scope).test(parser)
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
@@ -916,6 +918,11 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
             return Ok(ParsedExpression::Expression(error_expression));
         }
 
+        // Expression0 = Literal
+        if let Some(expr) = parser.parse_if_present(Literal::new(self.scope)) {
+            return Ok(ParsedExpression::Expression(expr?));
+        }
+
         // Expression0 = `(` Expression ')'
         if let Some(expr) = parser.parse_if_present(Delimited(
             Parentheses,
@@ -931,6 +938,34 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
 
         let token = parser.shift();
         Err(parser.report_error("unrecognized start of expression", token.span))
+    }
+}
+
+#[derive(new, DebugWith)]
+struct Literal<'me, 'parse> {
+    scope: &'me mut ExpressionScope<'parse>,
+}
+
+impl Syntax<'parse> for Literal<'me, 'parse> {
+    type Data = hir::Expression;
+
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
+        parser.is(LexToken::Integer) || parser.is(LexToken::String)
+    }
+
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let text = parser.peek_str();
+        let token = parser.shift();
+        let kind = match token.value {
+            LexToken::Integer => hir::LiteralKind::UnsignedInteger,
+            LexToken::String => hir::LiteralKind::String,
+            _ => return Err(parser.report_error("expected a literal", token.span)),
+        };
+        let value = text.intern(parser);
+        let data = hir::LiteralData { kind, value };
+        Ok(self
+            .scope
+            .add(token.span, hir::ExpressionData::Literal { data }))
     }
 }
 
