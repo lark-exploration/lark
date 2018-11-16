@@ -706,3 +706,13 @@ fn parse_methods_chained_variations() {
 
     assert_equal(&(), &debug1, &debug2);
 }
+
+#[test]
+fn parse_bad_token() {
+    // check that unexpected tokens (or utf-8 tokens!) avoid an infinite loop
+    let (file_name, db) = lark_parser_db(unindent::unindent("fn foo() { 😊  }"));
+    assert_eq!(
+        db.fn_body2(select_entity(&db, file_name, 0)).errors.len(),
+        2
+    );
+}
