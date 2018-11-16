@@ -475,7 +475,8 @@ fn parse_fn_body() {
         "
             fn foo() {
               let bar = 22
-              bar
+              let baz = 44
+              bar + baz * baz + bar
             }
         ",
     ));
@@ -502,15 +503,67 @@ fn parse_fn_body() {
                 value: "22"
             }
         },
-        body: Place {
-            perm: Default,
-            place: Variable(
-                VariableData {
-                    name: IdentifierData {
-                        text: "bar"
-                    }
+        body: Let {
+            variable: VariableData {
+                name: IdentifierData {
+                    text: "baz"
                 }
-            )
+            },
+            initializer: Literal {
+                data: LiteralData {
+                    kind: UnsignedInteger,
+                    value: "44"
+                }
+            },
+            body: Binary {
+                operator: Add,
+                left: Binary {
+                    operator: Add,
+                    left: Place {
+                        perm: Default,
+                        place: Variable(
+                            VariableData {
+                                name: IdentifierData {
+                                    text: "bar"
+                                }
+                            }
+                        )
+                    },
+                    right: Binary {
+                        operator: Multiply,
+                        left: Place {
+                            perm: Default,
+                            place: Variable(
+                                VariableData {
+                                    name: IdentifierData {
+                                        text: "baz"
+                                    }
+                                }
+                            )
+                        },
+                        right: Place {
+                            perm: Default,
+                            place: Variable(
+                                VariableData {
+                                    name: IdentifierData {
+                                        text: "baz"
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                right: Place {
+                    perm: Default,
+                    place: Variable(
+                        VariableData {
+                            name: IdentifierData {
+                                text: "bar"
+                            }
+                        }
+                    )
+                }
+            }
         }
     }
 }"#,
