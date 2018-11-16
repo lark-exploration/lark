@@ -268,6 +268,10 @@ where
                 self.drain_temp_variables(fn_body.span(expression), temp_vars, statements);
             }
             hir::ExpressionData::Unit {} => {}
+            hir::ExpressionData::Sequence { first, second } => {
+                self.lower_statement(fn_body, first, statements);
+                self.lower_statement(fn_body, second, statements);
+            }
             hir::ExpressionData::Let {
                 variable,
                 initializer,
