@@ -33,6 +33,7 @@ use lark_span::CurrentFile;
 use lark_span::Span;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
+use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;
 use map::FxIndexMap;
 use std::rc::Rc;
@@ -297,6 +298,18 @@ impl ExpressionScope<'parse> {
     }
 }
 
+impl AsRef<hir::FnBodyTables> for ExpressionScope<'_> {
+    fn as_ref(&self) -> &hir::FnBodyTables {
+        &self.fn_body_tables
+    }
+}
+
+impl AsRef<GlobalIdentifierTables> for ExpressionScope<'_> {
+    fn as_ref(&self) -> &GlobalIdentifierTables {
+        self.db.as_ref()
+    }
+}
+
 impl<I> std::ops::Index<I> for ExpressionScope<'parse>
 where
     I: hir::HirIndex,
@@ -456,16 +469,16 @@ where
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        let left = parser.expect(&mut self.expr)?;
+        let left_parsed = parser.expect(&mut self.expr)?;
 
         if parser.test(&mut self.op) {
             // From this point out, we know that this is not a "place expression".
-            let mut left = left.to_hir_expression(self.scope());
+            let mut left = left_parsed.to_hir_expression(self.scope());
 
             while let Some(operator) = parser.parse_if_present(&mut self.op) {
                 let operator = operator?;
                 let right = parser
-                    .expect(SkipNewline(Expression2::new(self.scope())))?
+                    .expect(SkipNewline(&mut self.expr))?
                     .to_hir_expression(self.scope());
                 let span = self
                     .scope()
@@ -494,9 +507,11 @@ where
                     }
                 }
             }
-        }
 
-        Ok(left)
+            Ok(ParsedExpression::Expression(left))
+        } else {
+            Ok(left_parsed)
+        }
     }
 }
 
