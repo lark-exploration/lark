@@ -471,7 +471,7 @@ impl AsRef<hir::FnBodyTables> for FnBodyContext<'_> {
 }
 
 #[test]
-fn parse_fn_body() {
+fn parse_binary_expressions_precedence() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
             fn foo() {
@@ -608,6 +608,88 @@ fn parse_fn_body_variations() {
               baz *
               baz +
               bar
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    assert_equal(&(), &debug1, &debug2);
+}
+
+#[test]
+fn parse_binary_expressions_chained_comparison() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+            fn foo() {
+              let bar = 22
+              let baz = 44
+              bar == baz == bar
+            }
+        ",
+    ));
+
+    let foo = select_entity(&db, file_name, 0);
+    let fn_body = db.fn_body2(foo);
+    assert_eq!(fn_body.errors.len(), 2);
+}
+
+#[test]
+fn parse_binary_expressions_comparison() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+            fn foo() {
+              let bar = 22
+              let baz = 44
+              bar == bar + baz
+            }
+        ",
+    ));
+
+    let foo = select_entity(&db, file_name, 0);
+    db.fn_body2(foo).assert_no_errors();
+}
+
+#[test]
+fn parse_methods_chained_variations() {
+    let debug1 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let bar = 22
+              let baz = 44
+              bar.method1().method2()
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let bar = 22
+              let baz = 44
+              bar
+                .method1()
+                .method2()
             }
         ",
         ));
