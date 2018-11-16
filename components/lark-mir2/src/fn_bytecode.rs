@@ -97,16 +97,89 @@ where
         }
     }
 
+    fn lower_call(
+        &mut self,
+        fn_body: &hir::FnBody,
+        function: hir::Place,
+        arguments: hir::List<hir::Expression>,
+        statements: &mut Vec<mir::Statement>,
+    ) -> (Entity, mir::List<mir::Operand>, Vec<mir::Variable>) {
+        let mut args = vec![];
+        let mut temp_vars = vec![];
+
+        for argument in arguments.iter(fn_body) {
+            let (arg_operand, mut arg_temp_vars) =
+                self.lower_operand(fn_body, argument, statements);
+            args.push(arg_operand);
+            arg_temp_vars.append(&mut temp_vars);
+            temp_vars = arg_temp_vars;
+        }
+
+        let call_arguments = mir::List::from_iterator(&mut self.fn_bytecode_tables, args);
+
+        let entity = match fn_body.tables[function] {
+            hir::PlaceData::Entity(entity) => entity,
+            _ => unimplemented!("Call to non-entity"),
+        };
+
+        (entity, call_arguments, temp_vars)
+    }
+
     fn lower_operand(
         &mut self,
         fn_body: &hir::FnBody,
         expression: hir::Expression,
         statements: &mut Vec<mir::Statement>,
-    ) -> mir::Operand {
+    ) -> (mir::Operand, Vec<mir::Variable>) {
         match fn_body.tables[expression] {
             hir::ExpressionData::Place { place, .. } => {
                 let place = self.lower_place(fn_body, place);
-                self.add(fn_body.span(expression), mir::OperandData::Copy(place))
+                (
+                    self.add(fn_body.span(expression), mir::OperandData::Copy(place)),
+                    vec![],
+                )
+            }
+            hir::ExpressionData::Call {
+                function,
+                arguments,
+            } => {
+                let (entity, call_arguments, mut temp_vars) =
+                    self.lower_call(fn_body, function, arguments, statements);
+                let new_temp_var = self.create_temporary(fn_body.span(expression));
+
+                // Start the variable scope
+                let statement = self.add(
+                    fn_body.span(expression),
+                    mir::StatementData {
+                        kind: mir::StatementKind::StorageLive(new_temp_var),
+                    },
+                );
+                statements.push(statement);
+
+                // Assign this call to the temp variable
+                let rvalue = self.add(
+                    fn_body.span(expression),
+                    mir::RvalueData::Call(entity, call_arguments),
+                );
+                let lvalue = self.add(
+                    fn_body.span(expression),
+                    mir::PlaceData::Variable(new_temp_var),
+                );
+                let statement = self.add(
+                    fn_body.span(expression),
+                    mir::StatementData {
+                        kind: mir::StatementKind::Assign(lvalue, rvalue),
+                    },
+                );
+                statements.push(statement);
+
+                // Record that we've created this temporary variable for later dropping
+                temp_vars.insert(0, new_temp_var);
+
+                // Finally, create the operand we'll use to refer to this call
+                let operand = self.add(fn_body.span(expression), mir::OperandData::Copy(lvalue));
+
+                (operand, temp_vars)
             }
             _ => unimplemented!("Unsupported expression for operands"),
         }
@@ -117,12 +190,29 @@ where
         fn_body: &hir::FnBody,
         expression: hir::Expression,
         statements: &mut Vec<mir::Statement>,
-    ) -> mir::Rvalue {
+    ) -> (mir::Rvalue, Vec<mir::Variable>) {
         match fn_body.tables[expression] {
             hir::ExpressionData::Place { place, .. } => {
                 let place = self.lower_place(fn_body, place);
                 let operand = self.add(fn_body.span(expression), mir::OperandData::Copy(place));
-                self.add(fn_body.span(expression), mir::RvalueData::Use(operand))
+                (
+                    self.add(fn_body.span(expression), mir::RvalueData::Use(operand)),
+                    vec![],
+                )
+            }
+            hir::ExpressionData::Call {
+                function,
+                arguments,
+            } => {
+                let (entity, call_arguments, temp_vars) =
+                    self.lower_call(fn_body, function, arguments, statements);
+
+                let rvalue = self.add(
+                    fn_body.span(expression),
+                    mir::RvalueData::Call(entity, call_arguments),
+                );
+
+                (rvalue, temp_vars)
             }
             _ => unimplemented!("Unsupported expression for rvalues"),
         }
@@ -141,6 +231,23 @@ where
         }
     }
 
+    fn drain_temp_variables(
+        &mut self,
+        span: Span,
+        temp_vars: Vec<mir::Variable>,
+        statements: &mut Vec<mir::Statement>,
+    ) {
+        for temp_var in temp_vars {
+            let statement = self.add(
+                span,
+                mir::StatementData {
+                    kind: mir::StatementKind::StorageDead(temp_var),
+                },
+            );
+            statements.push(statement);
+        }
+    }
+
     fn lower_statement(
         &mut self,
         fn_body: &hir::FnBody,
@@ -148,9 +255,8 @@ where
         statements: &mut Vec<mir::Statement>,
     ) {
         match fn_body.tables[expression] {
-            hir::ExpressionData::Place { place, .. } => {
-                let operand = self.lower_operand(fn_body, expression, statements);
-                let rvalue = self.add(fn_body.span(expression), mir::RvalueData::Use(operand));
+            hir::ExpressionData::Place { .. } | hir::ExpressionData::Call { .. } => {
+                let (rvalue, temp_vars) = self.lower_rvalue(fn_body, expression, statements);
                 let statement = self.add(
                     fn_body.span(expression),
                     mir::StatementData {
@@ -159,36 +265,7 @@ where
                 );
 
                 statements.push(statement);
-            }
-            hir::ExpressionData::Call {
-                function,
-                arguments,
-            } => {
-                let mut args = vec![];
-
-                for argument in arguments.iter(fn_body) {
-                    args.push(self.lower_operand(fn_body, argument, statements));
-                }
-
-                let call_arguments = mir::List::from_iterator(&mut self.fn_bytecode_tables, args);
-
-                let entity = match fn_body.tables[function] {
-                    hir::PlaceData::Entity(entity) => entity,
-                    _ => unimplemented!("Call to non-entity"),
-                };
-
-                let rvalue = self.add(
-                    fn_body.span(expression),
-                    mir::RvalueData::Call(entity, call_arguments),
-                );
-
-                let statement = self.add(
-                    fn_body.span(expression),
-                    mir::StatementData {
-                        kind: mir::StatementKind::Expression(rvalue),
-                    },
-                );
-                statements.push(statement);
+                self.drain_temp_variables(fn_body.span(expression), temp_vars, statements);
             }
             hir::ExpressionData::Unit {} => {}
             hir::ExpressionData::Let {
@@ -209,7 +286,8 @@ where
                 // Initialize if there is an intializer
                 match initializer {
                     Some(initial_value) => {
-                        let rvalue = self.lower_rvalue(fn_body, initial_value, statements);
+                        let (rvalue, temp_vars) =
+                            self.lower_rvalue(fn_body, initial_value, statements);
 
                         let lvalue = self.add(
                             fn_body.span(expression),
@@ -222,6 +300,7 @@ where
                             },
                         );
                         statements.push(statement);
+                        self.drain_temp_variables(fn_body.span(expression), temp_vars, statements);
                     }
                     None => {}
                 }

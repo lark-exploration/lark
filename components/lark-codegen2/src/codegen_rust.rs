@@ -181,8 +181,6 @@ pub fn codegen_statement(
         }
         _ => unimplemented!("Unsupported statement kind"),
     }
-
-    output.push_str(";\n")
 }
 
 pub fn codegen_basic_block(
@@ -193,7 +191,14 @@ pub fn codegen_basic_block(
 ) {
     let basic_block_data = &fn_bytecode.tables[basic_block];
 
+    let mut first = true;
+
     for statement in basic_block_data.statements.iter(&fn_bytecode) {
+        if !first {
+            output.push_str(";\n")
+        } else {
+            first = false;
+        }
         codegen_statement(db, statement, fn_bytecode, output);
     }
 }
