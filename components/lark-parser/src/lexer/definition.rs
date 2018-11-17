@@ -54,6 +54,9 @@ impl LexerDelegateTrait for LexerState {
                 None => reconsume()
                     .and_emit(LexToken::Sigil)
                     .and_transition(LexerState::Top),
+                Some(c) if is_delimiter_sigil_char(c) => reconsume()
+                    .and_emit(LexToken::Sigil)
+                    .and_transition(LexerState::Top),
                 Some(c) if is_sigil_char(c) => consume(c).and_remain(),
                 _ => reconsume()
                     .and_emit(LexToken::Sigil)

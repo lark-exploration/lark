@@ -716,3 +716,95 @@ fn parse_bad_token() {
         2
     );
 }
+
+#[test]
+fn parse_call_variations() {
+    let debug1 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let f = 0
+              f(22, 44)
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let f = 0
+              f(
+                22,
+                44,
+              )
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+    assert_equal(&(), &debug1, &debug2);
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let f = 0
+              f(22, 44,)
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+    assert_equal(&(), &debug1, &debug2);
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            fn foo() {
+              let f = 0
+              f(
+                22
+                44
+              )
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body2(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+    assert_equal(&(), &debug1, &debug2);
+}
