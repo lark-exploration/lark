@@ -4,12 +4,12 @@
 //! (e.g. `&uri`) that wouldn't be possible otherwise, which is
 //! convenient.
 
-use codespan::ByteIndex;
 use debug::DebugWith;
 use intern::{Intern, Untern};
 use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
+use lark_span::{ByteIndex, FileName};
 use lark_string::global::GlobalIdentifier;
 use std::collections::HashMap;
 
@@ -39,7 +39,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     }
 
     fn errors_for_project(&self) -> Cancelable<HashMap<String, Vec<RangedDiagnostic>>> {
-        let input_files = self.paths();
+        let input_files = self.file_names();
         let mut file_errors = HashMap::new();
 
         for &input_file in &*input_files {
@@ -48,49 +48,26 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             // Check file for syntax errors
             let mut errors = vec![];
             let _ = self
-                .ast_of_file(input_file)
+                .parsed_file(input_file)
                 .accumulate_errors_into(&mut errors);
 
             // Next, check entities in file for type-safety
-            let file_entity = EntityData::InputFile { file: input_file }.intern(self);
+            let file_entity = EntityData::InputFile {
+                file: input_file.id,
+            }
+            .intern(self);
             for &entity in self.subentities(file_entity).iter() {
                 self.accumulate_errors_for_entity(entity, &mut errors)?;
             }
 
-            let filename = self.untern_string(input_file).to_string();
-            let file_maps = self.source(input_file);
+            let text = self.file_text(input_file);
 
             let error_ranges = errors
                 .iter()
-                .map(|x| {
-                    let origin_byte_offset = file_maps.byte_index(0, 0).unwrap();
-
-                    let left_side = x.span.start().unwrap();
-                    let (left_line, left_col) = file_maps.location(
-                        left_side
-                            + codespan::ByteOffset::from(
-                                origin_byte_offset.0 as codespan::RawOffset - 1,
-                            ),
-                    );
-                    let left_position = Position::new(left_line, left_col);
-
-                    let right_side = x.span.end().unwrap();
-                    let (right_line, right_col) = file_maps.location(
-                        right_side
-                            + codespan::ByteOffset::from(
-                                origin_byte_offset.0 as codespan::RawOffset - 1,
-                            ),
-                    );
-                    let right_position = Position::new(right_line, right_col);
-
-                    RangedDiagnostic::new(
-                        x.label.clone(),
-                        Range::new(left_position, right_position),
-                    )
-                })
+                .map(|x| RangedDiagnostic::new(x.label.clone(), x.span.to_range(&text).unwrap()))
                 .collect();
 
-            file_errors.insert(filename, error_ranges);
+            file_errors.insert(input_file.id.untern(self).to_string(), error_ranges);
         }
 
         Ok(file_errors)
@@ -158,7 +135,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     /// any).
     fn hover_text_at_position(&self, url: &str, position: Position) -> Cancelable<Option<String>> {
         let byte_index = self.position_to_byte_index(url, position);
-        let interned_path = self.intern_string(url);
+        let interned_path = url.intern(self);
         let entity_ids = self.entity_ids_at_position(interned_path, byte_index)?;
         self.check_for_cancellation()?;
         let entity = *entity_ids.last().unwrap();
@@ -167,7 +144,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                 kind: ItemKind::Struct,
                 id,
                 ..
-            } => Ok(Some(format!("struct {}", self.untern_string(id)))),
+            } => Ok(Some(format!("struct {}", id.untern(self)))),
 
             EntityData::MemberName {
                 kind: MemberKind::Field,
@@ -197,10 +174,8 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     }
 
     fn position_to_byte_index(&self, url: &str, position: Position) -> ByteIndex {
-        let url_id = self.intern_string(url);
-        self.source(url_id)
-            .byte_index(position.line, position.character)
-            .unwrap()
+        let url_id = url.intern(self);
+        self.byte_index(FileName { id: url_id }, (position.line, position.character))
     }
 
     /// Return a "stack" of entity-ids in position, from outermost to
@@ -208,7 +183,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     fn entity_ids_at_position(
         &self,
         path: GlobalIdentifier,
-        position: ByteIndex,
+        index: ByteIndex,
     ) -> Cancelable<Vec<Entity>> {
         self.check_for_cancellation()?;
 
@@ -218,10 +193,9 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             .subentities(file_entity)
             .iter()
             .filter_map(|&entity| {
-                if let Some(span) = self.entity_span(entity) {
-                    if span.contains(position) {
-                        return Some(entity);
-                    }
+                let span = self.entity_span(entity);
+                if span.contains_index(index) {
+                    return Some(entity);
                 }
 
                 None
@@ -240,9 +214,9 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         //       ^^^^^^^   1
         // ^^^^^^^^^^^^^^^ 0
         entities.sort_by_key(|&entity| {
-            let span = self.entity_span(entity).unwrap();
-            let start = span.start().map(|v| v.to_usize());
-            let end = span.end().map(|v| std::usize::MAX - v.to_usize());
+            let span = self.entity_span(entity);
+            let start = span.start();
+            let end = std::usize::MAX - span.end().to_usize();
             (start, end)
         });
 

@@ -26,14 +26,13 @@ crate fn resolve_name(
                     | EntityData::Error(_)
                     | EntityData::InputFile { .. } => false,
                 })
-                .cloned()
                 .next()
                 .or_else(|| {
                     // Implicit root scope:
-                    let bool_id = db.intern_string("bool");
-                    let int_id = db.intern_string("int");
-                    let uint_id = db.intern_string("uint");
-                    let string_id = db.intern_string("String");
+                    let bool_id = "bool".intern(db);
+                    let int_id = "int".intern(db);
+                    let uint_id = "uint".intern(db);
+                    let string_id = "String".intern(db);
                     if name == bool_id {
                         Some(EntityData::LangItem(LangItem::Boolean).intern(db))
                     } else if name == int_id {

@@ -1,15 +1,12 @@
-use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use flexi_logger::{opt_format, Logger};
 use language_reporting::{emit, Diagnostic, Label, Severity};
 use languageserver_types::Position;
 use lark_language_server::{lsp_serve, LspResponder};
-use lark_query_system::ls_ops::Cancelled;
-use lark_query_system::ls_ops::LsDatabase;
-use lark_query_system::LarkDatabase;
-use lark_query_system::QuerySystem;
+use lark_parser::{IntoFileName, ParserDatabase, ParserDatabaseExt};
+use lark_query_system::ls_ops::{Cancelled, LsDatabase};
+use lark_query_system::{LarkDatabase, QuerySystem};
+use lark_span::{ByteIndex, Span};
 use lark_task_manager::Actor;
-use parser::pos::Span;
-use parser::{HasParserState, HasReaderState, ReaderDatabase};
 use salsa::Database;
 use std::borrow::Cow;
 use std::fs::File;
@@ -18,11 +15,11 @@ use std::sync::Arc;
 use std::{env, io};
 use termcolor::{ColorChoice, StandardStream};
 
-pub(crate) fn build(filename: &str) {
-    let mut file = match File::open(filename) {
+pub(crate) fn build(file_name: &str) {
+    let mut file = match File::open(file_name) {
         Ok(f) => f,
         Err(err) => {
-            eprintln!("failed to open `{}`: {}", filename, err);
+            eprintln!("failed to open `{}`: {}", file_name, err);
             return;
         }
     };
@@ -31,13 +28,15 @@ pub(crate) fn build(filename: &str) {
     match file.read_to_string(&mut contents) {
         Ok(_bytes_read) => {}
         Err(err) => {
-            eprintln!("failed to read `{}`: {}", filename, err);
+            eprintln!("failed to read `{}`: {}", file_name, err);
             return;
         }
     }
 
     let mut db = LarkDatabase::default();
-    let file = db.add_file(filename, contents.to_string());
+    db.add_file(file_name, contents);
+
+    let file_id = file_name.into_file_name(&db);
 
     match db.errors_for_project() {
         Ok(errors) => {
@@ -51,11 +50,10 @@ pub(crate) fn build(filename: &str) {
                     let range = ranged_diagnostic.range;
                     let error = Diagnostic::new(Severity::Error, ranged_diagnostic.label);
 
-                    let span = codespan::Span::new(
-                        file.byte_index(range.start.line, range.start.character)
-                            .unwrap(),
-                        file.byte_index(range.end.line, range.end.character)
-                            .unwrap(),
+                    let span = Span::new(
+                        file_name,
+                        db.byte_index(file_id, (range.start.line, range.start.character)),
+                        db.byte_index(file_id, (range.end.line, range.end.character)),
                     );
 
                     let error = error.with_label(Label::new_primary(span));
@@ -74,17 +72,5 @@ pub(crate) fn build(filename: &str) {
         }
 
         Err(Cancelled) => unreachable!("cancellation?"),
-    }
-}
-
-trait FileMapExt {
-    fn byte_index_for_position(&self, position: Position) -> ByteIndex;
-}
-
-impl FileMapExt for FileMap {
-    fn byte_index_for_position(&self, position: Position) -> ByteIndex {
-        let line = LineIndex::from(position.line as u32);
-        let column = ColumnIndex::from(position.character as u32);
-        self.byte_index(line, column).unwrap()
     }
 }

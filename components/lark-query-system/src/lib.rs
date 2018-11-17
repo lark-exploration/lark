@@ -1,11 +1,10 @@
-use codespan::{CodeMap, FileMap};
+use intern::{Intern, Untern};
 use lark_entity::EntityTables;
 use lark_hir as hir;
-use lark_string::global::GlobalIdentifierTables;
+use lark_parser::{ParserDatabase, ParserDatabaseExt};
+use lark_span::FileName;
+use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
-use map::FxIndexMap;
-use parking_lot::RwLock;
-use parser::{HasParserState, HasReaderState, ParserState, ReaderDatabase, ReaderState};
 use salsa::{Database, ParallelDatabase, Snapshot};
 use std::collections::VecDeque;
 use std::sync::Arc;
@@ -17,18 +16,21 @@ use self::ls_ops::{Cancelled, LsDatabase};
 #[derive(Default)]
 pub struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
-    code_map: Arc<RwLock<CodeMap>>,
-    file_maps: Arc<RwLock<FxIndexMap<String, Arc<FileMap>>>>,
-    parser_state: Arc<ParserState>,
-    reader_state: ReaderState,
     item_id_tables: Arc<EntityTables>,
+    global_id_tables: Arc<GlobalIdentifierTables>,
     declaration_tables: Arc<lark_ty::declaration::DeclarationTables>,
     base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
 }
 
+impl ParserDatabaseExt for LarkDatabase {}
+
 impl LarkDatabase {
-    pub fn code_map(&self) -> &RwLock<CodeMap> {
-        &self.code_map
+    pub fn intern_string(&self, s: &str) -> GlobalIdentifier {
+        s.intern(self)
+    }
+
+    pub fn untern_string(&self, id: GlobalIdentifier) -> Text {
+        id.untern(self)
     }
 }
 
@@ -41,12 +43,9 @@ impl Database for LarkDatabase {
 impl ParallelDatabase for LarkDatabase {
     fn snapshot(&self) -> Snapshot<Self> {
         Snapshot::new(LarkDatabase {
-            code_map: self.code_map.clone(),
-            file_maps: self.file_maps.clone(),
             runtime: self.runtime.snapshot(self),
-            parser_state: self.parser_state.clone(),
-            reader_state: self.reader_state.clone(),
             item_id_tables: self.item_id_tables.clone(),
+            global_id_tables: self.global_id_tables.clone(),
             declaration_tables: self.declaration_tables.clone(),
             base_inferred_tables: self.base_inferred_tables.clone(),
         })
@@ -60,21 +59,18 @@ salsa::database_storage! {
         impl lark_parser::ParserDatabase {
             fn file_names() for lark_parser::FileNamesQuery;
             fn file_text() for lark_parser::FileTextQuery;
+            fn line_offsets() for lark_parser::LineOffsetsQuery;
+            fn location() for lark_parser::LocationQuery;
+            fn byte_index() for lark_parser::ByteIndexQuery;
             fn file_tokens() for lark_parser::FileTokensQuery;
+            fn parsed_file() for lark_parser::ParsedFileQuery;
             fn child_parsed_entities() for lark_parser::ChildParsedEntitiesQuery;
             fn parsed_entity() for lark_parser::ParsedEntityQuery;
             fn child_entities() for lark_parser::ChildEntitiesQuery;
-        }
-        impl parser::ReaderDatabase {
-            fn paths() for parser::Paths;
-            fn paths_trigger() for parser::PathsTrigger;
-            fn source() for parser::Source;
+            fn uhir_of_entity() for lark_parser::UhirOfEntityQuery;
+            fn uhir_of_field() for lark_parser::UhirOfFieldQuery;
         }
         impl ast::AstDatabase {
-            fn ast_of_file() for ast::AstOfFileQuery;
-            fn items_in_file() for ast::ItemsInFileQuery;
-            fn ast_of_item() for ast::AstOfItemQuery;
-            fn ast_of_field() for ast::AstOfFieldQuery;
             fn entity_span() for ast::EntitySpanQuery;
         }
         impl hir::HirDatabase {
@@ -99,6 +95,12 @@ impl AsRef<EntityTables> for LarkDatabase {
     }
 }
 
+impl AsRef<GlobalIdentifierTables> for LarkDatabase {
+    fn as_ref(&self) -> &GlobalIdentifierTables {
+        &self.global_id_tables
+    }
+}
+
 impl AsRef<lark_ty::declaration::DeclarationTables> for LarkDatabase {
     fn as_ref(&self) -> &lark_ty::declaration::DeclarationTables {
         &self.declaration_tables
@@ -108,24 +110,6 @@ impl AsRef<lark_ty::declaration::DeclarationTables> for LarkDatabase {
 impl AsRef<lark_ty::base_inferred::BaseInferredTables> for LarkDatabase {
     fn as_ref(&self) -> &lark_ty::base_inferred::BaseInferredTables {
         &self.base_inferred_tables
-    }
-}
-
-impl AsRef<GlobalIdentifierTables> for LarkDatabase {
-    fn as_ref(&self) -> &GlobalIdentifierTables {
-        <ParserState as AsRef<GlobalIdentifierTables>>::as_ref(&self.parser_state)
-    }
-}
-
-impl HasParserState for LarkDatabase {
-    fn parser_state(&self) -> &ParserState {
-        &self.parser_state
-    }
-}
-
-impl HasReaderState for LarkDatabase {
-    fn reader_state(&self) -> &ReaderState {
-        &self.reader_state
     }
 }
 
@@ -216,49 +200,43 @@ impl QuerySystem {
 
         match message {
             QueryRequest::OpenFile(url, contents) => {
+                let text = contents.intern(&self.lark_db).untern(&self.lark_db);
+
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
-                self.lark_db.add_file(url.as_str(), contents.as_str());
+                self.lark_db.add_file(url.as_str(), text);
             }
 
             QueryRequest::EditFile(url, changes) => {
                 // Process sets on the same thread -- this not only gives them priority,
                 // it ensures an overall ordering to edits.
                 let path_id = self.lark_db.intern_string(url.as_str());
+                let file_name = FileName { id: path_id };
 
-                let file_maps = self.lark_db.source(path_id);
-
-                let mut current_contents = file_maps.source().to_string();
-
-                let origin_byte_offset = file_maps.byte_index(0, 0).unwrap();
+                let text = self.lark_db.file_text(file_name);
+                let mut current_contents = text.to_string();
 
                 for change in changes {
                     let start_position = change.0.start;
-                    let start_byte_offset = file_maps
-                        .byte_index(start_position.line, start_position.character)
-                        .unwrap();
+                    let start_offset = self
+                        .lark_db
+                        .byte_index(file_name, (start_position.line, start_position.character));
 
                     let end_position = change.0.end;
-                    let end_byte_offset = file_maps
-                        .byte_index(end_position.line, end_position.character)
-                        .unwrap();
+                    let end_offset = self
+                        .lark_db
+                        .byte_index(file_name, (end_position.line, end_position.character));
 
                     unsafe {
                         let vec = current_contents.as_mut_vec();
-                        vec.drain(
-                            (start_byte_offset - origin_byte_offset).to_usize()
-                                ..(end_byte_offset - origin_byte_offset).to_usize(),
-                        );
+                        vec.drain(start_offset.to_usize()..end_offset.to_usize());
                     }
 
-                    current_contents.insert_str(
-                        (start_byte_offset - origin_byte_offset).to_usize(),
-                        &change.1,
-                    );
+                    current_contents.insert_str(start_offset.to_usize(), &change.1);
                 }
 
-                self.lark_db
-                    .add_file(url.as_str(), current_contents.to_string());
+                let text = Text::from(current_contents);
+                self.lark_db.add_file(url.as_str(), text);
             }
             QueryRequest::TypeAtPosition(task_id, url, position) => {
                 std::thread::spawn({

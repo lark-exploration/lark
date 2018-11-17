@@ -14,7 +14,8 @@ use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData};
 use lark_error::WithError;
 use lark_seq::Seq;
-use lark_span::{FileName, Span, Spanned};
+use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
+use std::sync::Arc;
 
 crate fn file_tokens(
     db: &impl ParserDatabase,
@@ -135,6 +136,22 @@ crate fn child_entities(db: &impl ParserDatabase, entity: Entity) -> Seq<Entity>
         .collect()
 }
 
+crate fn line_offsets(_db: &impl ParserDatabase, _id: FileName) -> Arc<Vec<usize>> {
+    unimplemented!()
+}
+
+crate fn location(_db: &impl ParserDatabase, _id: FileName, _index: ByteIndex) -> Location {
+    unimplemented!()
+}
+
+crate fn byte_index(_db: &impl ParserDatabase, _id: FileName, _position: (u64, u64)) -> ByteIndex {
+    unimplemented!()
+}
+
 crate fn uhir_of_entity(_db: &impl ParserDatabase, _entity: Entity) -> WithError<uhir::Entity> {
+    unimplemented!()
+}
+
+crate fn uhir_of_field(_db: &impl ParserDatabase, _entity: Entity) -> WithError<uhir::Field> {
     unimplemented!()
 }

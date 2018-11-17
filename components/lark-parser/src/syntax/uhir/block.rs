@@ -9,8 +9,8 @@ pub struct Block {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum BlockItem {
-    Decl(Declaration),
-    Expr(Expression),
+    Decl(Spanned<Declaration>),
+    Expr(Spanned<Expression>),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -24,7 +24,11 @@ pub enum Expression {
     ConstructStruct(ConstructStruct),
     Call(Spanned<Call>),
     Ref(Identifier),
-    Binary(Spanned<Op>, Box<Expression>, Box<Expression>),
+    Binary(
+        Spanned<Op>,
+        Box<Spanned<Expression>>,
+        Box<Spanned<Expression>>,
+    ),
     Literal(Literal),
 }
 
@@ -51,7 +55,7 @@ pub struct ConstructStruct {
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Call {
     pub callee: Callee,
-    pub arguments: Vec<Expression>,
+    pub arguments: Vec<Spanned<Expression>>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
@@ -63,12 +67,17 @@ pub enum Callee {
 pub struct Let {
     pub pattern: Spanned<Pattern>,
     pub ty: Option<Spanned<Type>>,
-    pub init: Option<Expression>,
+    pub init: Option<Spanned<Expression>>,
 }
 
 pub enum If {
-    If(Box<Expression>, Block, Option<ChainedElse>),
-    IfLet(Pattern, Box<Expression>, Block, Option<ChainedElse>),
+    If(Box<Spanned<Expression>>, Block, Option<ChainedElse>),
+    IfLet(
+        Pattern,
+        Box<Spanned<Expression>>,
+        Block,
+        Option<ChainedElse>,
+    ),
 }
 
 pub enum ChainedElse {

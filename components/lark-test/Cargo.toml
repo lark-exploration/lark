@@ -13,6 +13,7 @@ lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
 lark-query-system = { path = "../lark-query-system" }
 lark-parser = { path = "../lark-parser" }
+lark-span = { path = "../lark-span" }
 lark-string = { path = "../lark-string" }
 lark-seq = { path = "../lark-seq" }
 intern = { path = "../intern" }

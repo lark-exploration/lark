@@ -10,6 +10,7 @@ derive-new = "0.5.5"
 indices = { path = "../indices" }
 intern = { path = "../intern" }
 itertools = "0.7.8"
+languageserver-types = "0.51.0"
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }

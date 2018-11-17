@@ -1,10 +1,8 @@
-use intern::Intern;
-use intern::Untern;
+use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
-use lark_entity::Entity;
-use lark_entity::EntityData;
-use lark_parser::FileName;
+use lark_entity::{Entity, EntityData};
 use lark_parser::ParserDatabase;
+use lark_span::FileName;
 use lark_test::*;
 
 #[derive(Debug, DebugWith, PartialEq, Eq)]

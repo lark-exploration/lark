@@ -15,8 +15,6 @@ opt-level = 1
 members = ["components/lark-parser", "components/lark-span"]
 
 [dependencies]
-codespan = "0.2.0"
-codespan-reporting = "0.2.0"
 derive-new = "0.5.5"
 derive_more = "0.12.0"
 lazy_static = "1.1.0"
@@ -49,8 +47,10 @@ lark-hir = { path = "components/lark-hir" }
 lark-language-server = { path = "components/lark-language-server" }
 lark-mir = { path = "components/lark-mir" }
 lark-query-system = { path = "components/lark-query-system" }
+lark-span = { path = "components/lark-span" }
 lark-string = { path = "components/lark-string" } 
 lark-task-manager = { path = "components/lark-task-manager" }
+lark-parser = { path = "components/lark-parser" }
 map = { path = "components/map" }
 language-reporting = "0.2.0"
 termcolor = "1.0.4"

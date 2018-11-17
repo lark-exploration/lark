@@ -4,10 +4,12 @@
 
 mod file;
 mod identifier;
+mod location;
 mod span;
 mod spanned;
 
 pub use self::file::*;
 pub use self::identifier::*;
+pub use self::location::*;
 pub use self::span::*;
 pub use self::spanned::*;

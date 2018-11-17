@@ -3,7 +3,7 @@ use crate::HirDatabase;
 use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, LangItem, MemberKind};
-use lark_error::{or_return_sentinel, ErrorReported, ErrorSentinel, WithError};
+use lark_error::{ErrorReported, ErrorSentinel, WithError};
 use lark_parser::uhir;
 use lark_seq::Seq;
 use lark_ty::{
@@ -106,8 +106,8 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<Ty<Declaration>>
             kind: MemberKind::Field,
             ..
         } => {
-            let field = or_return_sentinel!(db, db.ast_of_field(entity));
-            declaration_ty_from_ast_ty(db, entity, &field.ty)
+            let field = db.uhir_of_field(entity);
+            declaration_ty_from_ast_ty(db, entity, &field.value.ty)
         }
 
         EntityData::MemberName {
@@ -181,8 +181,8 @@ fn declaration_ty_from_ast_ty(
     match db.resolve_name(scope_entity, *ast_ty.name) {
         Some(entity) => WithError::ok(declaration_ty_named(db, entity, Generics::empty())),
         None => {
-            let msg = format!("unknown type: {}", db.untern_string(ast_ty.name.0));
-            WithError::report_error(db, msg, ast_ty.name.1)
+            let msg = format!("unknown type: {}", ast_ty.name.untern(db));
+            WithError::report_error(db, msg, ast_ty.name.span)
         }
     }
 }

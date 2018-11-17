@@ -1,11 +1,17 @@
-use crate::{FileName, SpanFile};
+use crate::{FileName, Location, OutOfBounds, SpanFile};
 
 use lark_debug_derive::DebugWith;
 use lark_string::Text;
 use std::ops::Index;
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ByteIndex(usize);
+pub struct ByteIndex(crate usize);
+
+impl ByteIndex {
+    pub fn to_usize(self) -> usize {
+        self.0
+    }
+}
 
 impl From<usize> for ByteIndex {
     fn from(u: usize) -> ByteIndex {
@@ -14,7 +20,7 @@ impl From<usize> for ByteIndex {
 }
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ByteSize(usize);
+pub struct ByteSize(crate usize);
 
 impl<File: SpanFile> Index<Span<File>> for str {
     type Output = str;
@@ -90,6 +96,10 @@ impl<File: SpanFile> Span<File> {
         self.start >= span.start && self.end < span.end
     }
 
+    pub fn contains_index(self, index: ByteIndex) -> bool {
+        self.start >= index && self.end < index
+    }
+
     pub fn len(&self) -> ByteSize {
         ByteSize(self.end.0 - self.start.0)
     }
@@ -99,5 +109,12 @@ impl<File: SpanFile> Span<File> {
         let len = self.len();
         let start = self.start.0 - entity_span.start.0;
         Span::new(CurrentEntity, start, start + len.0)
+    }
+
+    pub fn to_range(&self, s: &str) -> Result<languageserver_types::Range, OutOfBounds> {
+        let left = Location::from_index(s, self.start)?.as_position();
+        let right = Location::from_index(s, self.end)?.as_position();
+
+        Ok(languageserver_types::Range::new(left, right))
     }
 }

@@ -1,10 +1,10 @@
 use crate as hir;
 use crate::HirDatabase;
 
+use intern::Untern;
 use lark_entity::Entity;
 use lark_error::{Diagnostic, WithError};
-use lark_parser::uhir::{self, Identifier, Span, Spanned};
-use lark_span::FileName;
+use lark_parser::uhir::{self, Span, Spanned};
 use lark_string::GlobalIdentifier;
 use map::FxIndexMap;
 use std::sync::Arc;
@@ -106,12 +106,13 @@ where
             .unwrap_or_else(|| self.unit_expression(block.span))
     }
 
-    fn lower_block_items(&mut self, all_block_items: &[a::BlockItem]) -> Option<hir::Expression> {
+    fn lower_block_items(
+        &mut self,
+        all_block_items: &[uhir::BlockItem],
+    ) -> Option<hir::Expression> {
         let (first_block_item, remaining_block_items) = all_block_items.split_first()?;
         match first_block_item {
-            uhir::BlockItem::Item(_) => return self.lower_block_items(remaining_block_items),
-
-            uhir::BlockItem::Decl(decl) => match decl {
+            uhir::BlockItem::Decl(decl) => match &decl.value {
                 uhir::Declaration::Let(l) => Some(self.lower_let(l, remaining_block_items)),
             },
 
@@ -130,21 +131,25 @@ where
         }
     }
 
-    fn lower_let(&mut self, let_decl: &a::Let, block_items: &[a::BlockItem]) -> hir::Expression {
+    fn lower_let(
+        &mut self,
+        let_decl: &uhir::Let,
+        block_items: &[uhir::BlockItem],
+    ) -> hir::Expression {
         let saved_scope = self.save_scope();
 
-        let a::Let {
+        let uhir::Let {
             pattern,
             ty: _, /* FIXME */
             init,
         } = let_decl;
 
-        let variable = match **pattern {
-            a::Pattern::Underscore => unimplemented!("underscore patterns -- too lazy"),
+        let variable = match pattern.value {
+            uhir::Pattern::Underscore => unimplemented!("underscore patterns -- too lazy"),
 
-            a::Pattern::Identifier(identifier, _mode) => {
-                let name = self.add(identifier.span(), hir::IdentifierData { text: *identifier });
-                self.add(identifier.span(), hir::VariableData { name })
+            uhir::Pattern::Identifier(identifier, _mode) => {
+                let name = self.add(identifier.span, hir::IdentifierData { text: *identifier });
+                self.add(identifier.span, hir::VariableData { name })
             }
         };
 
@@ -172,20 +177,20 @@ where
         )
     }
 
-    fn lower_expression(&mut self, expr: &a::Expression) -> hir::Expression {
-        match expr {
-            a::Expression::Block(block) => self.lower_block(block),
+    fn lower_expression(&mut self, expr: &Spanned<uhir::Expression>) -> hir::Expression {
+        match &expr.value {
+            uhir::Expression::Block(block) => self.lower_block(block),
 
-            a::Expression::Literal(lit) => match lit {
-                a::Literal::String(s) => self.add(
-                    s.span(),
+            uhir::Expression::Literal(lit) => match lit {
+                uhir::Literal::String(s) => self.add(
+                    s.span,
                     hir::ExpressionData::Literal {
-                        data: hir::LiteralData::String(**s),
+                        data: hir::LiteralData::String(s.value),
                     },
                 ),
             },
-            a::Expression::Call(call) => {
-                let a::Callee::Identifier(ref identifier) = call.callee;
+            uhir::Expression::Call(call) => {
+                let uhir::Callee::Identifier(ref identifier) = call.callee;
 
                 let function = self.lower_identifier_place(identifier);
 
@@ -198,28 +203,26 @@ where
                 let arguments = hir::List::from_iterator(&mut self.fn_body_tables, args);
 
                 self.add(
-                    call.span(),
+                    call.span,
                     hir::ExpressionData::Call {
                         function,
                         arguments,
                     },
                 )
             }
-            a::Expression::Interpolation(..) | a::Expression::ConstructStruct(_) => {
-                self.unimplemented(expr.span())
-            }
+            uhir::Expression::ConstructStruct(_) => self.unimplemented(expr.span),
 
-            a::Expression::Binary(spanned_op, lhs_expr, rhs_expr) => {
-                let left = self.lower_expression(lhs_expr);
-                let right = self.lower_expression(rhs_expr);
-                let operator = match **spanned_op {
-                    parser::parser::ast::Op::Add => hir::BinaryOperator::Add,
-                    parser::parser::ast::Op::Sub => hir::BinaryOperator::Subtract,
-                    parser::parser::ast::Op::Mul => hir::BinaryOperator::Multiply,
-                    parser::parser::ast::Op::Div => hir::BinaryOperator::Divide,
+            uhir::Expression::Binary(spanned_op, lhs_expr, rhs_expr) => {
+                let left = self.lower_expression(&lhs_expr);
+                let right = self.lower_expression(&rhs_expr);
+                let operator = match spanned_op.value {
+                    uhir::Op::Add => hir::BinaryOperator::Add,
+                    uhir::Op::Sub => hir::BinaryOperator::Subtract,
+                    uhir::Op::Mul => hir::BinaryOperator::Multiply,
+                    uhir::Op::Div => hir::BinaryOperator::Divide,
                 };
                 self.add(
-                    spanned_op.span(),
+                    spanned_op.span,
                     hir::ExpressionData::Binary {
                         operator,
                         left,
@@ -228,7 +231,7 @@ where
                 )
             }
 
-            a::Expression::Ref(_) => {
+            uhir::Expression::Ref(_) => {
                 let place = self.lower_place(expr);
                 let span = self.span(place);
                 let perm = self.add(span, hir::PermData::Default);
@@ -244,38 +247,34 @@ where
         self.add(span, hir::ExpressionData::Error { error })
     }
 
-    fn lower_identifier_place(&mut self, identifier: &a::Identifier) -> hir::Place {
-        if let Some(&variable) = self.variables.get(identifier.node()) {
-            return self.add(identifier.span(), hir::PlaceData::Variable(variable));
+    fn lower_identifier_place(&mut self, identifier: &uhir::Identifier) -> hir::Place {
+        if let Some(&variable) = self.variables.get(&identifier.value) {
+            return self.add(identifier.span, hir::PlaceData::Variable(variable));
         }
 
-        if let Some(entity) = self.db.resolve_name(self.item_entity, *identifier.node()) {
-            return self.add(identifier.span(), hir::PlaceData::Entity(entity));
+        if let Some(entity) = self.db.resolve_name(self.item_entity, identifier.value) {
+            return self.add(identifier.span, hir::PlaceData::Entity(entity));
         }
 
         let error_expression = self.report_error_expression(
-            identifier.span(),
+            identifier.span,
             hir::ErrorData::UnknownIdentifier {
-                text: *identifier.node(),
+                text: identifier.value,
             },
         );
 
-        self.add(
-            identifier.span(),
-            hir::PlaceData::Temporary(error_expression),
-        )
+        self.add(identifier.span, hir::PlaceData::Temporary(error_expression))
     }
 
-    fn lower_place(&mut self, expr: &a::Expression) -> hir::Place {
-        match expr {
-            a::Expression::Ref(identifier) => self.lower_identifier_place(identifier),
+    fn lower_place(&mut self, expr: &Spanned<uhir::Expression>) -> hir::Place {
+        match expr.value {
+            uhir::Expression::Ref(identifier) => self.lower_identifier_place(&identifier),
 
-            a::Expression::Block(_)
-            | a::Expression::ConstructStruct(_)
-            | a::Expression::Call(_)
-            | a::Expression::Binary(..)
-            | a::Expression::Interpolation(..)
-            | a::Expression::Literal(..) => {
+            uhir::Expression::Block(_)
+            | uhir::Expression::ConstructStruct(_)
+            | uhir::Expression::Call(_)
+            | uhir::Expression::Binary(..)
+            | uhir::Expression::Literal(..) => {
                 let expression = self.lower_expression(expr);
                 let span = self.span(expression);
                 self.add(span, hir::PlaceData::Temporary(expression))
@@ -288,7 +287,7 @@ where
             hir::ErrorData::Misc => "error".to_string(),
             hir::ErrorData::Unimplemented => "unimplemented".to_string(),
             hir::ErrorData::UnknownIdentifier { text } => {
-                format!("unknown identifier `{}`", self.db.untern_string(text))
+                format!("unknown identifier `{}`", text.untern(self.db))
             }
         };
 

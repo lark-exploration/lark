@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 ast = { path = "../ast" }
-codespan = "0.2.0"
 debug = { path = "../debug" }
 intern = { path = "../intern" }
 languageserver-types = "0.51.0"
@@ -14,6 +13,7 @@ lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
 lark-parser = { path = "../lark-parser" }
+lark-span = { path = "../lark-span" }
 lark-string = { path = "../lark-string" }
 lark-task-manager = { path = "../lark-task-manager" }
 lark-ty = { path = "../lark-ty" }

@@ -9,12 +9,14 @@
 
 use crate::lexer::token::LexToken;
 
+use intern::Intern;
 use lark_debug_derive::DebugWith;
 use lark_entity::{Entity, EntityTables};
 use lark_error::{Diagnostic, WithError};
 use lark_seq::Seq;
-use lark_span::{FileName, Span, Spanned};
+use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
 use lark_string::{GlobalIdentifierTables, Text};
+use std::sync::Arc;
 
 pub mod current_file;
 mod ir;
@@ -43,6 +45,21 @@ salsa::query_group! {
             storage input;
         }
 
+        fn line_offsets(id: FileName) -> Arc<Vec<usize>> {
+            type LineOffsetsQuery;
+            use fn query_definitions::line_offsets;
+        }
+
+        fn location(id: FileName, index: ByteIndex) -> Location {
+            type LocationQuery;
+            use fn query_definitions::location;
+        }
+
+        fn byte_index(id: FileName, position: (u64, u64)) -> ByteIndex {
+            type ByteIndexQuery;
+            use fn query_definitions::byte_index;
+        }
+
         // FIXME: In general, this is wasteful of space, and not
         // esp. incremental friendly. It would be better store
         // e.g. the length of each token only, so that we can adjust
@@ -54,7 +71,7 @@ salsa::query_group! {
         }
 
         fn parsed_file(id: FileName) -> WithError<ParsedFile> {
-            type RootEntitiesQuery;
+            type ParsedFileQuery;
             use fn query_definitions::parsed_file;
         }
 
@@ -77,6 +94,42 @@ salsa::query_group! {
             type UhirOfEntityQuery;
             use fn query_definitions::uhir_of_entity;
         }
+
+        fn uhir_of_field(entity: Entity) -> WithError<uhir::Field> {
+            type UhirOfFieldQuery;
+            use fn query_definitions::uhir_of_field;
+        }
+    }
+}
+
+pub trait IntoFileName {
+    fn into_file_name(&self, db: &impl ParserDatabase) -> FileName;
+}
+
+impl IntoFileName for FileName {
+    fn into_file_name(&self, _db: &impl ParserDatabase) -> FileName {
+        *self
+    }
+}
+
+impl IntoFileName for &str {
+    fn into_file_name(&self, db: &impl ParserDatabase) -> FileName {
+        FileName {
+            id: self.intern(db),
+        }
+    }
+}
+
+pub trait ParserDatabaseExt: ParserDatabase {
+    fn add_file(&mut self, path: impl IntoFileName, contents: impl Into<Text>) {
+        let file_name = path.into_file_name(self);
+
+        let mut file_names = self.file_names();
+        file_names.extend(Some(file_name));
+
+        self.query_mut(FileNamesQuery).set((), file_names);
+        self.query_mut(FileTextQuery)
+            .set(file_name, contents.into());
     }
 }
 
