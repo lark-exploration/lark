@@ -101,6 +101,11 @@ impl AsMut<FnBytecodeTables> for FnBytecodeTables {
 //Lark MIR representation of a single function
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct FnBytecode {
+    /// List of arguments to the function. The type of each argument
+    /// is given by the function signature (which can be separately queried).
+    pub arguments: List<Variable>,
+
+    /// The code of the function body, split into basic blocks
     pub basic_blocks: List<BasicBlock>,
 
     pub tables: FnBytecodeTables,
@@ -136,7 +141,6 @@ pub enum StatementKind {
     StorageDead(Variable),
 
     Expression(Rvalue),
-    DebugPrint(Place),
 }
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]

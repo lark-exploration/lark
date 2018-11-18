@@ -5,6 +5,8 @@ use lark_entity::Entity;
 use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_string::global::GlobalIdentifier;
+use map::FxIndexMap;
 use parser::pos::{Span, Spanned};
 use std::sync::Arc;
 
@@ -13,7 +15,7 @@ crate fn fn_bytecode(
     item_entity: Entity,
 ) -> WithError<Arc<crate::FnBytecode>> {
     let mut errors = vec![];
-    let fn_bytecode = MirLower::new(db, item_entity, &mut errors).lower_typecheck_of_item();
+    let fn_bytecode = MirLower::new(db, item_entity, &mut errors).lower_to_bytecode();
     WithError {
         value: Arc::new(fn_bytecode),
         errors,
@@ -24,7 +26,7 @@ struct MirLower<'me, DB: MirDatabase> {
     db: &'me DB,
     item_entity: Entity,
     fn_bytecode_tables: mir::FnBytecodeTables,
-    //variables: FxIndexMap<GlobalIdentifier, hir::Variable>,
+    variables: FxIndexMap<GlobalIdentifier, mir::Variable>,
     errors: &'me mut Vec<Diagnostic>,
     next_temporary_id: usize,
 }
@@ -39,7 +41,7 @@ where
             errors,
             item_entity,
             fn_bytecode_tables: Default::default(),
-            //variables: Default::default(),
+            variables: Default::default(),
             next_temporary_id: 0,
         }
     }
@@ -48,23 +50,25 @@ where
         D::index_vec_mut(&mut self.fn_bytecode_tables).push(Spanned(node, span))
     }
 
+    fn save_scope(&self) -> FxIndexMap<GlobalIdentifier, mir::Variable> {
+        self.variables.clone()
+    }
+
+    fn restore_scope(&mut self, scope: FxIndexMap<GlobalIdentifier, mir::Variable>) {
+        self.variables = scope;
+    }
+
+    /// Brings a variable into scope, returning anything that was shadowed.
+    fn bring_into_scope(&mut self, variable: mir::Variable) {
+        let name = self[variable].name;
+        self.variables.insert(self[name].text, variable);
+    }
+
     /*
     fn span(&self, index: impl mir::SpanIndex) -> Span {
         index.span_from(&self.fn_bytecode_tables)
     }
     */
-
-    fn lower_identifier(
-        &mut self,
-        fn_body: &hir::FnBody,
-        identifier: hir::Identifier,
-    ) -> mir::Identifier {
-        match fn_body.tables[identifier] {
-            hir::IdentifierData { text } => {
-                self.add(fn_body.span(identifier), mir::IdentifierData { text })
-            }
-        }
-    }
 
     fn create_temporary(&mut self, span: Span) -> mir::Variable {
         let temp_variable_name = format!("_tmp{}", self.next_temporary_id).intern(&mut self.db);
@@ -85,15 +89,23 @@ where
 
     fn lower_variable(&mut self, fn_body: &hir::FnBody, variable: hir::Variable) -> mir::Variable {
         match fn_body.tables[variable] {
-            hir::VariableData { name } => {
-                let mir_identifier = self.lower_identifier(fn_body, name);
-                self.add(
-                    fn_body.span(variable),
-                    mir::VariableData {
-                        name: mir_identifier,
-                    },
-                )
-            }
+            hir::VariableData { name } => match fn_body.tables[name] {
+                hir::IdentifierData { text } => {
+                    if let Some(&variable) = self.variables.get(&text) {
+                        variable
+                    } else {
+                        let mir_identifier =
+                            self.add(fn_body.span(variable), mir::IdentifierData { text });
+
+                        self.add(
+                            fn_body.span(variable),
+                            mir::VariableData {
+                                name: mir_identifier,
+                            },
+                        )
+                    }
+                }
+            },
         }
     }
 
@@ -277,6 +289,8 @@ where
                 initializer,
                 body,
             } => {
+                let saved_scope = self.save_scope();
+
                 let mir_variable = self.lower_variable(fn_body, variable);
                 // Start the variable scope
                 let statement = self.add(
@@ -309,8 +323,12 @@ where
                     None => {}
                 }
 
+                self.bring_into_scope(mir_variable);
+
                 // Body of the let
                 self.lower_statement(fn_body, body, statements);
+
+                self.restore_scope(saved_scope);
 
                 // End the variable scope
                 let statement = self.add(
@@ -345,23 +363,51 @@ where
         )
     }
 
-    fn lower_typecheck_of_item(mut self) -> mir::FnBytecode {
+    fn lower_arguments(&mut self, fn_body: &hir::FnBody) -> Vec<mir::Variable> {
+        let mut args = vec![];
+        for argument in fn_body.arguments.iter(fn_body) {
+            args.push(self.lower_variable(fn_body, argument));
+        }
+
+        args
+    }
+
+    fn lower_to_bytecode(mut self) -> mir::FnBytecode {
+        /*
         let _ = self
             .db
             .base_type_check(self.item_entity)
             .accumulate_errors_into(&mut self.errors);
-        let fn_body = self
-            .db
-            .fn_body(self.item_entity)
-            .accumulate_errors_into(&mut self.errors);
+        */
+        let fn_body = self.db.fn_body(self.item_entity).value;
 
-        let basic_block = self.lower_basic_block(&fn_body, fn_body.root_expression);
+        let arguments = self.lower_arguments(&fn_body);
 
-        let basic_blocks = vec![basic_block];
+        for argument in &arguments {
+            self.bring_into_scope(*argument);
+        }
+
+        let basic_blocks = vec![self.lower_basic_block(&fn_body, fn_body.root_expression)];
+
+        let mir_basic_blocks = mir::List::from_iterator(&mut self.fn_bytecode_tables, basic_blocks);
+        let mir_arguments = mir::List::from_iterator(&mut self.fn_bytecode_tables, arguments);
 
         mir::FnBytecode {
-            basic_blocks: mir::List::from_iterator(&mut self.fn_bytecode_tables, basic_blocks),
+            basic_blocks: mir_basic_blocks,
             tables: self.fn_bytecode_tables,
+            arguments: mir_arguments,
         }
+    }
+}
+
+impl<'me, DB, I> std::ops::Index<I> for MirLower<'me, DB>
+where
+    DB: MirDatabase,
+    I: mir::MirIndex,
+{
+    type Output = I::Data;
+
+    fn index(&self, index: I) -> &I::Data {
+        &self.fn_bytecode_tables[index]
     }
 }

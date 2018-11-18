@@ -211,25 +211,24 @@ pub fn codegen_function(
     let mut output = String::new();
     let mut errors: Vec<Diagnostic> = vec![];
 
-    let mir_bytecode = db.fn_bytecode(entity).accumulate_errors_into(&mut errors);
+    let fn_bytecode = db.fn_bytecode(entity).accumulate_errors_into(&mut errors);
     let signature = db
         .signature(entity)
         .accumulate_errors_into(&mut errors)
         .unwrap();
-    let fn_body = db.fn_body(entity).accumulate_errors_into(&mut errors);
 
     let name = id.untern(db);
 
     output.push_str(&format!("fn {}(", name));
 
     let mut first = true;
-    for (argument, argument_type) in fn_body
+    for (argument, argument_type) in fn_bytecode
         .arguments
-        .iter(&fn_body)
+        .iter(&fn_bytecode)
         .zip(signature.inputs.iter())
     {
-        let variable_data = fn_body.tables[argument];
-        let identifier = fn_body.tables[variable_data.name];
+        let variable_data = fn_bytecode.tables[argument];
+        let identifier = fn_bytecode.tables[variable_data.name];
 
         let argument_name = identifier.text.untern(db);
 
@@ -246,8 +245,8 @@ pub fn codegen_function(
     output.push_str(") -> ");
     output.push_str(&format!("{}", build_type(db, &signature.output)));
     output.push_str(" {\n");
-    for basic_block in mir_bytecode.basic_blocks.iter(&mir_bytecode) {
-        codegen_basic_block(db, &mir_bytecode, basic_block, &mut output);
+    for basic_block in fn_bytecode.basic_blocks.iter(&fn_bytecode) {
+        codegen_basic_block(db, &fn_bytecode, basic_block, &mut output);
     }
     output.push_str("}\n");
 

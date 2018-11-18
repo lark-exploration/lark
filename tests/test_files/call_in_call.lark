@@ -1,7 +1,7 @@
-def return_true(x: bool,) -> bool {
-    true
+def id(x: bool,) -> bool {
+    x
 }
 
 def main() {
-    debug(return_true(false))
+    debug(id(false))
 }
