@@ -3,7 +3,7 @@ use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, ItemKind, LangItem};
 use lark_error::{Diagnostic, WithError};
 use lark_hir::HirDatabase;
-use lark_mir2::{
+use lark_mir::{
     BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
     RvalueData, Statement, StatementKind,
 };
@@ -38,7 +38,7 @@ pub fn build_type(db: &mut LarkDatabase, ty: &Ty<lark_ty::declaration::Declarati
 fn build_variable_name(
     db: &mut LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
-    variable: lark_mir2::Variable,
+    variable: lark_mir::Variable,
 ) -> String {
     let variable_data = fn_bytecode.tables[variable];
     let identifier = fn_bytecode.tables[variable_data.name];

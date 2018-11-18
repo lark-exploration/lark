@@ -24,5 +24,5 @@ pub fn run(filename: &str) {
     let mut db = LarkDatabase::default();
     let _ = db.add_file(filename, contents.to_string());
 
-    lark_eval2::eval(&mut db, &mut lark_eval2::IOHandler::new(false));
+    lark_eval::eval(&mut db, &mut lark_eval::IOHandler::new(false));
 }

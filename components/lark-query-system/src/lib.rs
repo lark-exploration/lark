@@ -1,7 +1,7 @@
 use codespan::{CodeMap, FileMap};
 use lark_entity::EntityTables;
 use lark_hir as hir;
-use lark_mir2 as mir;
+use lark_mir as mir;
 use lark_string::global::GlobalIdentifierTables;
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use map::FxIndexMap;
