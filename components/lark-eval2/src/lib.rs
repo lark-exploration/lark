@@ -1,14 +1,11 @@
 use ast::AstDatabase;
 use intern::{Intern, Untern};
-use lark_entity::{Entity, EntityData, ItemKind, LangItem};
-use lark_error::{Diagnostic, WithError};
-use lark_hir::HirDatabase;
+use lark_entity::{EntityData, ItemKind, LangItem};
 use lark_mir2::{
     BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
     RvalueData, Statement, StatementKind, Variable,
 };
 use lark_query_system::LarkDatabase;
-use lark_ty::Ty;
 use parser::ReaderDatabase;
 use std::collections::HashMap;
 use std::fmt;
@@ -70,7 +67,6 @@ pub fn eval_place(
     fn_bytecode: &FnBytecode,
     place: Place,
     variables: &mut HashMap<Variable, Vec<Value>>,
-    io_handler: &mut IOHandler,
 ) -> Value {
     let place_data = &fn_bytecode.tables[place];
 
@@ -93,13 +89,12 @@ pub fn eval_operand(
     fn_bytecode: &FnBytecode,
     operand: Operand,
     variables: &mut HashMap<Variable, Vec<Value>>,
-    io_handler: &mut IOHandler,
 ) -> Value {
     let operand_data = &fn_bytecode.tables[operand];
 
     match operand_data {
         OperandData::Copy(place) | OperandData::Move(place) => {
-            eval_place(db, fn_bytecode, *place, variables, io_handler)
+            eval_place(db, fn_bytecode, *place, variables)
         }
         _ => unimplemented!("Operand not yet supported"),
     }
@@ -115,11 +110,11 @@ pub fn eval_rvalue(
     let rvalue_data = &fn_bytecode.tables[rvalue];
 
     match rvalue_data {
-        RvalueData::Use(operand) => eval_operand(db, fn_bytecode, *operand, variables, io_handler),
+        RvalueData::Use(operand) => eval_operand(db, fn_bytecode, *operand, variables),
         RvalueData::Call(entity, operands) => match entity.untern(db) {
             EntityData::LangItem(LangItem::Debug) => {
                 for operand in operands.iter(fn_bytecode) {
-                    let result = eval_operand(db, fn_bytecode, operand, variables, io_handler);
+                    let result = eval_operand(db, fn_bytecode, operand, variables);
                     io_handler.println(format!("{}", result));
                 }
 
@@ -132,7 +127,7 @@ pub fn eval_rvalue(
                     .iter(fn_bytecode)
                     .zip(bytecode.arguments.iter(&bytecode))
                 {
-                    let arg_value = eval_operand(db, fn_bytecode, arg, variables, io_handler);
+                    let arg_value = eval_operand(db, fn_bytecode, arg, variables);
                     create_variable(variables, param);
                     assign_to_variable(variables, param, arg_value);
                 }
@@ -242,7 +237,7 @@ pub fn eval_function(
 
 pub fn eval(db: &mut LarkDatabase, io_handler: &mut IOHandler) {
     let input_files = db.paths();
-    let mut errors: Vec<Diagnostic> = vec![];
+    //let mut errors: Vec<Diagnostic> = vec![];
 
     let mut variables: HashMap<Variable, Vec<Value>> = HashMap::new();
     let main_name = "main".intern(&db);

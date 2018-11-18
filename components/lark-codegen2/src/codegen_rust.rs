@@ -5,7 +5,7 @@ use lark_error::{Diagnostic, WithError};
 use lark_hir::HirDatabase;
 use lark_mir2::{
     BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
-    RvalueData, Statement, StatementKind, Variable,
+    RvalueData, Statement, StatementKind,
 };
 use lark_query_system::LarkDatabase;
 use lark_ty::Ty;
@@ -47,7 +47,7 @@ fn build_variable_name(
 
 fn build_entity_name(
     db: &mut LarkDatabase,
-    fn_bytecode: &std::sync::Arc<FnBytecode>,
+    _fn_bytecode: &std::sync::Arc<FnBytecode>,
     entity: Entity,
 ) -> String {
     let entity_data = entity.untern(db);
@@ -179,7 +179,6 @@ pub fn codegen_statement(
         StatementKind::StorageDead(_) => {
             output.push_str("\n}\n");
         }
-        _ => unimplemented!("Unsupported statement kind"),
     }
 }
 

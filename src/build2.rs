@@ -42,41 +42,65 @@ pub(crate) fn build(filename: &str) {
     }
 
     let mut db = LarkDatabase::default();
-    let _ = db.add_file(filename, contents.to_string());
+    let file = db.add_file(filename, contents.to_string());
 
-    let file_path = if cfg!(windows) {
-        std::path::Path::new(filename).with_extension("exe")
-    } else {
-        std::path::Path::new(filename).with_extension("")
-    };
+    match db.errors_for_project() {
+        Ok(errors) => {
+            let mut first = true;
 
-    let source_file = lark_codegen2::codegen(&mut db, lark_codegen2::CodegenType::Rust);
+            if errors.len() > 0 {
+                for (_filename, ranged_diagnostics) in errors {
+                    for ranged_diagnostic in ranged_diagnostics {
+                        if !std::mem::replace(&mut first, false) {
+                            eprintln!("");
+                        }
 
-    if source_file.errors.len() > 0 {
-        for error in source_file.errors {
-            /*
-            let writer = StandardStream::stderr(ColorChoice::Auto);
-            emit(
-                &mut writer.lock(),
-                &db.code_map().read(),
-                &error,
-                &language_reporting::DefaultConfig,
-            )
-            .unwrap();
-            */
-            println!("Error: {:#?}", error);
+                        let range = ranged_diagnostic.range;
+                        let error = Diagnostic::new(Severity::Error, ranged_diagnostic.label);
+
+                        let span = codespan::Span::new(
+                            file.byte_index(range.start.line, range.start.character)
+                                .unwrap(),
+                            file.byte_index(range.end.line, range.end.character)
+                                .unwrap(),
+                        );
+
+                        let error = error.with_label(Label::new_primary(span));
+
+                        let writer = StandardStream::stderr(ColorChoice::Auto);
+
+                        emit(
+                            &mut writer.lock(),
+                            &db.code_map().read(),
+                            &error,
+                            &language_reporting::DefaultConfig,
+                        )
+                        .unwrap();
+                    }
+                }
+            } else {
+                let file_path = if cfg!(windows) {
+                    std::path::Path::new(filename).with_extension("exe")
+                } else {
+                    std::path::Path::new(filename).with_extension("")
+                };
+
+                let source_file = lark_codegen2::codegen(&mut db, lark_codegen2::CodegenType::Rust);
+
+                let out_filename = file_path.file_name().unwrap().to_str().unwrap();
+
+                println!("Output: {}", out_filename);
+                println!("{}", source_file.value);
+                lark_codegen2::build(
+                    out_filename,
+                    &source_file.value,
+                    lark_codegen2::CodegenType::Rust,
+                )
+                .unwrap();
+            }
         }
-    } else {
-        let out_filename = file_path.file_name().unwrap().to_str().unwrap();
 
-        println!("Output: {}", out_filename);
-        println!("{}", source_file.value);
-        lark_codegen2::build(
-            out_filename,
-            &source_file.value,
-            lark_codegen2::CodegenType::Rust,
-        )
-        .unwrap();
+        Err(Cancelled) => unreachable!("cancellation?"),
     }
 }
 

@@ -27,7 +27,7 @@ struct MirLower<'me, DB: MirDatabase> {
     item_entity: Entity,
     fn_bytecode_tables: mir::FnBytecodeTables,
     variables: FxIndexMap<GlobalIdentifier, mir::Variable>,
-    errors: &'me mut Vec<Diagnostic>,
+    //errors: &'me mut Vec<Diagnostic>,
     next_temporary_id: usize,
 }
 
@@ -38,7 +38,7 @@ where
     fn new(db: &'me DB, item_entity: Entity, errors: &'me mut Vec<Diagnostic>) -> Self {
         MirLower {
             db,
-            errors,
+            //errors,
             item_entity,
             fn_bytecode_tables: Default::default(),
             variables: Default::default(),
@@ -373,14 +373,7 @@ where
     }
 
     fn lower_to_bytecode(mut self) -> mir::FnBytecode {
-        /*
-        let _ = self
-            .db
-            .base_type_check(self.item_entity)
-            .accumulate_errors_into(&mut self.errors);
-        */
         let fn_body = self.db.fn_body(self.item_entity).value;
-
         let arguments = self.lower_arguments(&fn_body);
 
         for argument in &arguments {
