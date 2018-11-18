@@ -42,8 +42,9 @@ ast = { path = "components/ast" }
 debug = { path = "components/debug" }
 indices = { path = "components/indices" }
 intern = { path = "components/intern" }
-lark-codegen = { path = "components/lark-codegen" }
+lark-build = { path = "components/lark-build" }
 lark-debug-derive = { path = "components/lark-debug-derive" }
+lark-entity = { path = "components/lark-entity" }
 lark-eval = { path = "components/lark-eval" }
 lark-hir = { path = "components/lark-hir" }
 lark-language-server = { path = "components/lark-language-server" }

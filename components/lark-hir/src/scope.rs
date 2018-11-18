@@ -32,14 +32,21 @@ crate fn resolve_name(
                     let int_id = db.intern_string("int");
                     let uint_id = db.intern_string("uint");
                     let string_id = db.intern_string("String");
+                    let false_id = db.intern_string("false");
+                    let true_id = db.intern_string("true");
+                    let debug_id = db.intern_string("debug");
                     if name == bool_id {
                         Some(EntityData::LangItem(LangItem::Boolean).intern(db))
                     } else if name == int_id {
                         Some(EntityData::LangItem(LangItem::Int).intern(db))
                     } else if name == uint_id {
                         Some(EntityData::LangItem(LangItem::Uint).intern(db))
-                    } else if name == string_id {
-                        Some(EntityData::LangItem(LangItem::String).intern(db))
+                    } else if name == false_id {
+                        Some(EntityData::LangItem(LangItem::False).intern(db))
+                    } else if name == true_id {
+                        Some(EntityData::LangItem(LangItem::True).intern(db))
+                    } else if name == debug_id {
+                        Some(EntityData::LangItem(LangItem::Debug).intern(db))
                     } else {
                         None
                     }

@@ -5,3 +5,17 @@ authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+salsa = "0.8"
+
+debug = { path = "../debug" }
+indices = { path = "../indices" }
+intern = { path = "../intern" }
+lark-debug-derive = { path = "../lark-debug-derive" }
+lark-entity = { path = "../lark-entity" }
+lark-error = { path = "../lark-error" }
+lark-hir = { path = "../lark-hir" }
+lark-type-check = { path = "../lark-type-check" }
+map = { path = "../map" }
+parser = { path = "../parser" }
+lark-ty = { path = "../lark-ty" }
+lark-string = {path = "../lark-string" }

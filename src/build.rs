@@ -1,8 +1,12 @@
+use ast::AstDatabase;
 use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use flexi_logger::{opt_format, Logger};
+use intern::{Intern, Untern};
 use language_reporting::{emit, Diagnostic, Label, Severity};
 use languageserver_types::Position;
+use lark_entity::{EntityData, ItemKind, MemberKind};
 use lark_language_server::{lsp_serve, LspResponder};
+use lark_mir::MirDatabase;
 use lark_query_system::ls_ops::Cancelled;
 use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::LarkDatabase;
@@ -12,13 +16,14 @@ use parser::pos::Span;
 use parser::{HasParserState, HasReaderState, ReaderDatabase};
 use salsa::Database;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::sync::Arc;
 use std::{env, io};
 use termcolor::{ColorChoice, StandardStream};
 
-pub(crate) fn build(filename: &str) {
+pub(crate) fn build(filename: &str, output_filename: Option<&str>) {
     let mut file = match File::open(filename) {
         Ok(f) => f,
         Err(err) => {
@@ -42,8 +47,11 @@ pub(crate) fn build(filename: &str) {
     match db.errors_for_project() {
         Ok(errors) => {
             let mut first = true;
+            let mut error_count = 0;
+
             for (_filename, ranged_diagnostics) in errors {
                 for ranged_diagnostic in ranged_diagnostics {
+                    error_count += 1;
                     if !std::mem::replace(&mut first, false) {
                         eprintln!("");
                     }
@@ -70,6 +78,29 @@ pub(crate) fn build(filename: &str) {
                     )
                     .unwrap();
                 }
+            }
+
+            if error_count == 0 {
+                let out_filename = if let Some(path) = output_filename {
+                    path.to_string()
+                } else {
+                    let file_path = if cfg!(windows) {
+                        std::path::Path::new(filename).with_extension("exe")
+                    } else {
+                        std::path::Path::new(filename).with_extension("")
+                    };
+
+                    file_path.file_name().unwrap().to_str().unwrap().to_string()
+                };
+
+                let source_file = lark_build::codegen(&mut db, lark_build::CodegenType::Rust);
+
+                lark_build::build(
+                    &out_filename,
+                    &source_file.value,
+                    lark_build::CodegenType::Rust,
+                )
+                .unwrap();
             }
         }
 

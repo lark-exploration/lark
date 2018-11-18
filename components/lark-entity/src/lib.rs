@@ -89,6 +89,9 @@ impl EntityData {
                 kind: MemberKind::Field,
                 ..
             }
+            | EntityData::LangItem(LangItem::True)
+            | EntityData::LangItem(LangItem::False)
+            | EntityData::LangItem(LangItem::Debug)
             | EntityData::Error(_) => true,
         }
     }
@@ -105,6 +108,9 @@ pub enum LangItem {
     Uint,
     Tuple(usize),
     String,
+    True,
+    False,
+    Debug,
 }
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]

@@ -42,7 +42,10 @@ crate fn generic_declarations(
         EntityData::LangItem(LangItem::Boolean)
         | EntityData::LangItem(LangItem::String)
         | EntityData::LangItem(LangItem::Int)
-        | EntityData::LangItem(LangItem::Uint) => WithError::ok(Ok(empty_declarations(None))),
+        | EntityData::LangItem(LangItem::Uint)
+        | EntityData::LangItem(LangItem::False)
+        | EntityData::LangItem(LangItem::True)
+        | EntityData::LangItem(LangItem::Debug) => WithError::ok(Ok(empty_declarations(None))),
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {
             if arity != 0 {
@@ -87,8 +90,14 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<Ty<Declaration>>
         EntityData::LangItem(LangItem::Boolean)
         | EntityData::LangItem(LangItem::String)
         | EntityData::LangItem(LangItem::Int)
-        | EntityData::LangItem(LangItem::Uint) => {
+        | EntityData::LangItem(LangItem::Uint)
+        | EntityData::LangItem(LangItem::Debug) => {
             WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
+        }
+
+        EntityData::LangItem(LangItem::False) | EntityData::LangItem(LangItem::True) => {
+            let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(db);
+            ty(db, boolean_entity)
         }
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {

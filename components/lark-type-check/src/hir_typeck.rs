@@ -254,6 +254,11 @@ where
                         // You can call this
                     }
 
+                    EntityData::LangItem(LangItem::Debug) => {
+                        // You can call into the debug function
+                        return self.check_arguments_in_case_of_error(arguments);
+                    }
+
                     _ => {
                         self.record_error("cannot call value of this type".into(), expression);
                         return self.check_arguments_in_case_of_error(arguments);

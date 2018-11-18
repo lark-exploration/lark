@@ -22,8 +22,7 @@ use lark_task_manager::Actor;
 use std::{env, io};
 
 mod build;
-
-fn run(_filename: &str) {}
+mod run;
 
 fn repl() {}
 
@@ -47,17 +46,20 @@ fn main() {
 
     let mut args = std::env::args();
 
-    match (args.next(), args.next(), args.next()) {
-        (_, Some(ref cmd), Some(ref x)) if cmd == "build" => build::build(x),
-        (_, Some(ref cmd), Some(ref x)) if cmd == "run" => run(x),
-        (_, Some(ref cmd), None) if cmd == "repl" => repl(),
-        (_, Some(ref cmd), None) if cmd == "ide" => ide(),
+    match (args.next(), args.next(), args.next(), args.next()) {
+        (_, Some(ref cmd), Some(ref x), Some(ref out)) if cmd == "build" => {
+            build::build(x, Some(out))
+        }
+        (_, Some(ref cmd), Some(ref x), None) if cmd == "build" => build::build(x, None),
+        (_, Some(ref cmd), Some(ref x), None) if cmd == "run" => run::run(x),
+        (_, Some(ref cmd), None, None) if cmd == "repl" => repl(),
+        (_, Some(ref cmd), None, None) if cmd == "ide" => ide(),
         _ => {
             println!("Usage:");
-            println!("  lark build <file> - compiles the given file");
-            println!("  lark run <file>   - runs the given file");
-            println!("  lark repl         - REPL/interactive mode");
-            println!("  lark ide          - run the Lark languge server/IDE support");
+            println!("  lark build <file> [<output>] - compiles the given file");
+            println!("  lark run <file>              - runs the given file");
+            println!("  lark repl                    - REPL/interactive mode");
+            println!("  lark ide                     - run the Lark languge server/IDE support");
         }
     }
 }
