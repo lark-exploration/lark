@@ -44,6 +44,7 @@ pub fn repl() {
     let mut variables: HashMap<Variable, Vec<Value>> = HashMap::new();
     let mut num_to_skip = 0;
 
+    println!("Lark repl (:? - command help)");
     loop {
         let mut input = String::new();
 
@@ -64,6 +65,13 @@ pub fn repl() {
         }
         if input == ":v" {
             println!("{:#?}", variables);
+            continue;
+        }
+        if input == ":?" {
+            println!("Commands available:");
+            println!("  :q - quit");
+            println!("  :p - view currently accepted source lines");
+            println!("  :v - view variables");
             continue;
         }
 
