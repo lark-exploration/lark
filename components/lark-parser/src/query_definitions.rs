@@ -149,6 +149,7 @@ crate fn line_offsets(db: &impl ParserDatabase, id: FileName) -> Seq<usize> {
             }
             line_start
         })
+        .chain(std::iter::once(text.len()))
         .collect()
 }
 

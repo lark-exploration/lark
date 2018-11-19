@@ -3,7 +3,7 @@ use language_reporting as l_r;
 use lark_entity::EntityTables;
 use lark_hir as hir;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
-use lark_span::{FileName, Span};
+use lark_span::{ByteIndex, FileName, Span};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use salsa::{Database, ParallelDatabase, Snapshot};
@@ -142,16 +142,26 @@ impl l_r::ReportingFiles for &LarkDatabase {
         l_r::FileName::Verbatim(text.to_string())
     }
 
-    fn byte_index(&self, _file: Self::FileId, _line: usize, _column: usize) -> Option<usize> {
-        unimplemented!()
+    fn byte_index(&self, file: Self::FileId, line: usize, column: usize) -> Option<usize> {
+        let b_i = ParserDatabase::byte_index(*self, file, line as u64, column as u64);
+        Some(b_i.to_usize())
     }
 
-    fn location(&self, _file: Self::FileId, _byte_index: usize) -> Option<l_r::Location> {
-        unimplemented!()
+    fn location(&self, file: Self::FileId, byte_index: usize) -> Option<l_r::Location> {
+        let location = ParserDatabase::location(*self, file, ByteIndex::from(byte_index));
+        Some(l_r::Location {
+            line: location.line,
+            column: location.column,
+        })
     }
 
-    fn line_span(&self, _file: Self::FileId, _lineno: usize) -> Option<Self::Span> {
-        unimplemented!()
+    fn line_span(&self, file: Self::FileId, lineno: usize) -> Option<Self::Span> {
+        let line_offsets = self.line_offsets(file);
+        let line_start = line_offsets[lineno];
+        let next_line_start = line_offsets[lineno + 1];
+
+        // This includes the `\n` from `lineno`, is that ok?
+        Some(Span::new(file, line_start, next_line_start))
     }
 
     fn source(&self, span: Self::Span) -> Option<String> {
