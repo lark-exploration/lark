@@ -139,7 +139,7 @@ mod tests {
         assert_eq!(result.id, 100);
 
         // Open the document
-        child_session.send_open("samples/minimal.lark")?;
+        child_session.send_open("tests/test_files/error_type_mismatch.lark")?;
 
         let result = child_session.receive::<JsonRPCNotification<PublishDiagnosticsParams>>()?;
         assert_eq!(result.method, "textDocument/publishDiagnostics",);
