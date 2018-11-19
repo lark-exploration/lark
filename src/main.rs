@@ -22,9 +22,8 @@ use lark_task_manager::Actor;
 use std::{env, io};
 
 mod build;
+mod repl;
 mod run;
-
-fn repl() {}
 
 fn ide() {
     let query_system = QuerySystem::new();
@@ -52,7 +51,7 @@ fn main() {
         }
         (_, Some(ref cmd), Some(ref x), None) if cmd == "build" => build::build(x, None),
         (_, Some(ref cmd), Some(ref x), None) if cmd == "run" => run::run(x),
-        (_, Some(ref cmd), None, None) if cmd == "repl" => repl(),
+        (_, Some(ref cmd), None, None) if cmd == "repl" => repl::repl(),
         (_, Some(ref cmd), None, None) if cmd == "ide" => ide(),
         _ => {
             println!("Usage:");
