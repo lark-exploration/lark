@@ -44,8 +44,10 @@ salsa::query_group! {
             storage input;
         }
 
-        /// Returns, for each line in the given file, the start
-        /// index. So for the input "a\nb\r\nc" you would get `[0, 2, 5]`.
+        /// Returns, for each line in the given file, the start index
+        /// -- the final element is the length of the file (there is
+        /// kind of a "pseudo-empty line" at the end, so to speak). So
+        /// for the input "a\nb\r\nc" you would get `[0, 2, 5, 6]`.
         fn line_offsets(id: FileName) -> Seq<usize> {
             type LineOffsetsQuery;
             use fn query_definitions::line_offsets;
