@@ -15,7 +15,6 @@ use lark_entity::{Entity, EntityData};
 use lark_error::WithError;
 use lark_seq::Seq;
 use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
-use std::sync::Arc;
 
 crate fn file_tokens(
     db: &impl ParserDatabase,
@@ -136,16 +135,44 @@ crate fn child_entities(db: &impl ParserDatabase, entity: Entity) -> Seq<Entity>
         .collect()
 }
 
-crate fn line_offsets(_db: &impl ParserDatabase, _id: FileName) -> Arc<Vec<usize>> {
-    unimplemented!()
+crate fn line_offsets(db: &impl ParserDatabase, id: FileName) -> Seq<usize> {
+    let text: &str = &db.file_text(id);
+    let mut accumulator = 0;
+    text.lines()
+        .map(|line_text| {
+            let line_start = accumulator;
+            accumulator += line_text.len();
+            if text[accumulator..].starts_with("\r\n") {
+                accumulator += 1;
+            } else if text[accumulator..].starts_with("\n") {
+                accumulator += 1;
+            }
+            line_start
+        })
+        .collect()
 }
 
-crate fn location(_db: &impl ParserDatabase, _id: FileName, _index: ByteIndex) -> Location {
-    unimplemented!()
+crate fn location(db: &impl ParserDatabase, id: FileName, index: ByteIndex) -> Location {
+    let line_offsets = db.line_offsets(id);
+    let line = match line_offsets.binary_search(&index.to_usize()) {
+        Ok(index) | Err(index) => index,
+    };
+
+    let line_start = line_offsets[line];
+    let text: &str = &db.file_text(id);
+
+    // count utf-8 characters to find column
+    let column = text[line_start..index.to_usize()].chars().count();
+
+    Location::new(line, column, index)
 }
 
-crate fn byte_index(_db: &impl ParserDatabase, _id: FileName, _position: (u64, u64)) -> ByteIndex {
-    unimplemented!()
+crate fn byte_index(db: &impl ParserDatabase, id: FileName, line: u64, column: u64) -> ByteIndex {
+    let line = line as usize;
+    let column = column as usize;
+    let line_offsets = db.line_offsets(id);
+    let line_start = line_offsets[line];
+    ByteIndex::from(line_start + column)
 }
 
 crate fn uhir_of_entity(_db: &impl ParserDatabase, _entity: Entity) -> WithError<uhir::Entity> {

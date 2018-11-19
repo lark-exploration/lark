@@ -3,8 +3,13 @@ use derive_new::new;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Location {
+    /// 0-based line number
     line: usize,
+
+    /// 0-based column number, in utf-8 characters
     column: usize,
+
+    /// byte index into file text
     byte: ByteIndex,
 }
 

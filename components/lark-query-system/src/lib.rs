@@ -265,14 +265,18 @@ impl QuerySystem {
 
                 for change in changes {
                     let start_position = change.0.start;
-                    let start_offset = self
-                        .lark_db
-                        .byte_index(file_name, (start_position.line, start_position.character));
+                    let start_offset = self.lark_db.byte_index(
+                        file_name,
+                        start_position.line,
+                        start_position.character,
+                    );
 
                     let end_position = change.0.end;
-                    let end_offset = self
-                        .lark_db
-                        .byte_index(file_name, (end_position.line, end_position.character));
+                    let end_offset = self.lark_db.byte_index(
+                        file_name,
+                        end_position.line,
+                        end_position.character,
+                    );
 
                     unsafe {
                         let vec = current_contents.as_mut_vec();

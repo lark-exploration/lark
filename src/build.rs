@@ -53,8 +53,8 @@ pub(crate) fn build(file_name: &str) {
 
                     let span = Span::new(
                         file_name,
-                        db.byte_index(file_id, (range.start.line, range.start.character)),
-                        db.byte_index(file_id, (range.end.line, range.end.character)),
+                        db.byte_index(file_id, range.start.line, range.start.character),
+                        db.byte_index(file_id, range.end.line, range.end.character),
                     );
 
                     let error = error.with_label(Label::new_primary(span));

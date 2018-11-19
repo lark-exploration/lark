@@ -16,7 +16,6 @@ use lark_error::{Diagnostic, WithError};
 use lark_seq::Seq;
 use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
 use lark_string::{GlobalIdentifierTables, Text};
-use std::sync::Arc;
 
 pub mod current_file;
 mod ir;
@@ -45,7 +44,9 @@ salsa::query_group! {
             storage input;
         }
 
-        fn line_offsets(id: FileName) -> Arc<Vec<usize>> {
+        /// Returns, for each line in the given file, the start
+        /// index. So for the input "a\nb\r\nc" you would get `[0, 2, 5]`.
+        fn line_offsets(id: FileName) -> Seq<usize> {
             type LineOffsetsQuery;
             use fn query_definitions::line_offsets;
         }
@@ -55,7 +56,9 @@ salsa::query_group! {
             use fn query_definitions::location;
         }
 
-        fn byte_index(id: FileName, position: (u64, u64)) -> ByteIndex {
+        /// Given a (zero-based) line number `line` and column within
+        /// the line, gives a byte-index into the file's text.
+        fn byte_index(id: FileName, line: u64, column: u64) -> ByteIndex {
             type ByteIndexQuery;
             use fn query_definitions::byte_index;
         }

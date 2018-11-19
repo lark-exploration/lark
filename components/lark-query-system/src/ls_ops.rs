@@ -175,7 +175,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
 
     fn position_to_byte_index(&self, url: &str, position: Position) -> ByteIndex {
         let url_id = url.intern(self);
-        self.byte_index(FileName { id: url_id }, (position.line, position.character))
+        self.byte_index(FileName { id: url_id }, position.line, position.character)
     }
 
     /// Return a "stack" of entity-ids in position, from outermost to
