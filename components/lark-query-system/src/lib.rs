@@ -1,8 +1,9 @@
 use intern::{Intern, Untern};
+use language_reporting as l_r;
 use lark_entity::EntityTables;
 use lark_hir as hir;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
-use lark_span::FileName;
+use lark_span::{FileName, Span};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use salsa::{Database, ParallelDatabase, Snapshot};
@@ -20,6 +21,12 @@ pub struct LarkDatabase {
     global_id_tables: Arc<GlobalIdentifierTables>,
     declaration_tables: Arc<lark_ty::declaration::DeclarationTables>,
     base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
+}
+
+impl std::fmt::Debug for LarkDatabase {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_struct("LarkDatabase").finish()
+    }
 }
 
 impl ParserDatabaseExt for LarkDatabase {}
@@ -110,6 +117,46 @@ impl AsRef<lark_ty::declaration::DeclarationTables> for LarkDatabase {
 impl AsRef<lark_ty::base_inferred::BaseInferredTables> for LarkDatabase {
     fn as_ref(&self) -> &lark_ty::base_inferred::BaseInferredTables {
         &self.base_inferred_tables
+    }
+}
+
+impl l_r::ReportingFiles for &LarkDatabase {
+    type Span = Span<FileName>;
+    type FileId = FileName;
+
+    fn byte_span(
+        &self,
+        file: Self::FileId,
+        from_index: usize,
+        to_index: usize,
+    ) -> Option<Self::Span> {
+        Some(Span::new(file, from_index, to_index))
+    }
+
+    fn file_id(&self, span: Self::Span) -> Self::FileId {
+        span.file()
+    }
+
+    fn file_name(&self, file: Self::FileId) -> l_r::FileName {
+        let text = file.id.untern(self);
+        l_r::FileName::Verbatim(text.to_string())
+    }
+
+    fn byte_index(&self, _file: Self::FileId, _line: usize, _column: usize) -> Option<usize> {
+        unimplemented!()
+    }
+
+    fn location(&self, _file: Self::FileId, _byte_index: usize) -> Option<l_r::Location> {
+        unimplemented!()
+    }
+
+    fn line_span(&self, _file: Self::FileId, _lineno: usize) -> Option<Self::Span> {
+        unimplemented!()
+    }
+
+    fn source(&self, span: Self::Span) -> Option<String> {
+        let file = span.file();
+        Some(self.file_text(file)[span].to_string())
     }
 }
 

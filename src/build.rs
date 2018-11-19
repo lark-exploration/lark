@@ -5,7 +5,7 @@ use lark_language_server::{lsp_serve, LspResponder};
 use lark_parser::{IntoFileName, ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::{Cancelled, LsDatabase};
 use lark_query_system::{LarkDatabase, QuerySystem};
-use lark_span::{ByteIndex, Span};
+use lark_span::{ByteIndex, FileName, Span};
 use lark_task_manager::Actor;
 use salsa::Database;
 use std::borrow::Cow;
@@ -34,6 +34,7 @@ pub(crate) fn build(file_name: &str) {
     }
 
     let mut db = LarkDatabase::default();
+    let file_name: FileName = file_name.into_file_name(&db);
     db.add_file(file_name, contents);
 
     let file_id = file_name.into_file_name(&db);
@@ -62,7 +63,7 @@ pub(crate) fn build(file_name: &str) {
 
                     emit(
                         &mut writer.lock(),
-                        &db.code_map().read(),
+                        &&db,
                         &error,
                         &language_reporting::DefaultConfig,
                     )

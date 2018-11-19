@@ -9,6 +9,7 @@ ast = { path = "../ast" }
 debug = { path = "../debug" }
 intern = { path = "../intern" }
 languageserver-types = "0.51.0"
+language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }

@@ -1,5 +1,6 @@
 use crate::{FileName, Location, OutOfBounds, SpanFile};
 
+use language_reporting as l_r;
 use lark_debug_derive::DebugWith;
 use lark_string::Text;
 use std::ops::Index;
@@ -76,6 +77,10 @@ impl<File: SpanFile> Span<File> {
         Span::new(self.file, self.start, other_span.end)
     }
 
+    pub fn file(&self) -> File {
+        self.file
+    }
+
     pub fn start(&self) -> ByteIndex {
         self.start
     }
@@ -116,5 +121,29 @@ impl<File: SpanFile> Span<File> {
         let right = Location::from_index(s, self.end)?.as_position();
 
         Ok(languageserver_types::Range::new(left, right))
+    }
+}
+
+impl<F: SpanFile> l_r::ReportingSpan for Span<F> {
+    fn with_start(&self, start: usize) -> Self {
+        Self {
+            start: ByteIndex::from(start),
+            ..*self
+        }
+    }
+
+    fn with_end(&self, end: usize) -> Self {
+        Self {
+            end: ByteIndex::from(end),
+            ..*self
+        }
+    }
+
+    fn start(&self) -> usize {
+        self.start.to_usize()
+    }
+
+    fn end(&self) -> usize {
+        self.end.to_usize()
     }
 }

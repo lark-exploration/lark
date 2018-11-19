@@ -52,7 +52,8 @@ lark-string = { path = "components/lark-string" }
 lark-task-manager = { path = "components/lark-task-manager" }
 lark-parser = { path = "components/lark-parser" }
 map = { path = "components/map" }
-language-reporting = "0.2.0"
+language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
+
 termcolor = "1.0.4"
 lark-ty = { path = "components/lark-ty" }
 lark-type-check = { path = "components/lark-type-check" }
