@@ -45,6 +45,7 @@ intern = { path = "components/intern" }
 lark-build = { path = "components/lark-build" }
 lark-debug-derive = { path = "components/lark-debug-derive" }
 lark-entity = { path = "components/lark-entity" }
+lark-error = { path = "components/lark-error" }
 lark-eval = { path = "components/lark-eval" }
 lark-hir = { path = "components/lark-hir" }
 lark-language-server = { path = "components/lark-language-server" }
@@ -52,13 +53,13 @@ lark-mir = { path = "components/lark-mir" }
 lark-query-system = { path = "components/lark-query-system" }
 lark-string = { path = "components/lark-string" } 
 lark-task-manager = { path = "components/lark-task-manager" }
+lark-ty = { path = "components/lark-ty" }
+lark-type-check = { path = "components/lark-type-check" }
+lark-unify = { path = "components/lark-unify" }
 map = { path = "components/map" }
 parser = { path = "components/parser" }
 language-reporting = "0.2.0"
 termcolor = "1.0.4"
-lark-ty = { path = "components/lark-ty" }
-lark-type-check = { path = "components/lark-type-check" }
-lark-unify = { path = "components/lark-unify" }
 
 [dev-dependencies]
 unindent = "0.1.3"
