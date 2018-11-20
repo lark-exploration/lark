@@ -249,7 +249,7 @@ fn macro_definitions(
         db(db),
         macros(
             "struct" => macros::struct_declaration::StructDeclaration,
-            "fn" => macros::function_declaration::FunctionDeclaration,
+            "def" => macros::function_declaration::FunctionDeclaration,
         ),
     )
 }

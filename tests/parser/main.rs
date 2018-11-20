@@ -396,7 +396,7 @@ fn eof_extra_sigil() {
 fn some_function() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
-        fn foo() {
+        def foo() {
         }
         ",
     ));
@@ -424,7 +424,7 @@ fn function_variations() {
     let base_tree = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo() { }
+            def foo() { }
             ",
         ));
         EntityTree::from_file(&db, file_name)
@@ -433,7 +433,7 @@ fn function_variations() {
     let other_tree = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo(x: uint) { }
+            def foo(x: uint) { }
             ",
         ));
         EntityTree::from_file(&db, file_name)
@@ -443,7 +443,7 @@ fn function_variations() {
     let other_tree = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo(
+            def foo(
                 x: uint,
             ) -> uint {
             }
@@ -475,7 +475,7 @@ impl AsRef<hir::FnBodyTables> for FnBodyContext<'_> {
 fn parse_fn_body() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
-            fn foo() {
+            def foo() {
               let bar = 22
               let baz = 44
               bar + baz * baz + bar
@@ -579,7 +579,7 @@ fn parse_fn_body_variations() {
     let debug1 = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo() {
+            def foo() {
               let bar = 22
               let baz = 44
               bar + baz * baz + bar
@@ -600,7 +600,7 @@ fn parse_fn_body_variations() {
     let debug2 = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo() {
+            def foo() {
               let bar =
               22
               let baz =
