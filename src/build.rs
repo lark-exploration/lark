@@ -1,5 +1,3 @@
-use ast::AstDatabase;
-use codespan::{ByteIndex, CodeMap, ColumnIndex, FileMap, FileName, LineIndex};
 use flexi_logger::{opt_format, Logger};
 use intern::{Intern, Untern};
 use language_reporting::{emit, Diagnostic, Label, Severity};
@@ -7,13 +5,13 @@ use languageserver_types::Position;
 use lark_entity::{EntityData, ItemKind, MemberKind};
 use lark_language_server::{lsp_serve, LspResponder};
 use lark_mir::MirDatabase;
+use lark_parser::{IntoFileName, ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::Cancelled;
 use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::LarkDatabase;
 use lark_query_system::QuerySystem;
+use lark_span::{ByteIndex, FileName, Span};
 use lark_task_manager::Actor;
-use parser::pos::Span;
-use parser::{HasParserState, HasReaderState, ReaderDatabase};
 use salsa::Database;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -23,11 +21,11 @@ use std::sync::Arc;
 use std::{env, io};
 use termcolor::{ColorChoice, StandardStream};
 
-pub(crate) fn build(filename: &str, output_filename: Option<&str>) {
-    let mut file = match File::open(filename) {
+pub(crate) fn build(file_name: &str, output_file_name: Option<&str>) {
+    let mut file = match File::open(file_name) {
         Ok(f) => f,
         Err(err) => {
-            eprintln!("failed to open `{}`: {}", filename, err);
+            eprintln!("failed to open `{}`: {}", file_name, err);
             return;
         }
     };
@@ -36,13 +34,15 @@ pub(crate) fn build(filename: &str, output_filename: Option<&str>) {
     match file.read_to_string(&mut contents) {
         Ok(_bytes_read) => {}
         Err(err) => {
-            eprintln!("failed to read `{}`: {}", filename, err);
+            eprintln!("failed to read `{}`: {}", file_name, err);
             return;
         }
     }
 
     let mut db = LarkDatabase::default();
-    let file = db.add_file(filename, contents.to_string());
+
+    let file_id: FileName = file_name.into_file_name(&db);
+    db.add_file(file_id, contents);
 
     match db.errors_for_project() {
         Ok(errors) => {
@@ -59,11 +59,10 @@ pub(crate) fn build(filename: &str, output_filename: Option<&str>) {
                     let range = ranged_diagnostic.range;
                     let error = Diagnostic::new(Severity::Error, ranged_diagnostic.label);
 
-                    let span = codespan::Span::new(
-                        file.byte_index(range.start.line, range.start.character)
-                            .unwrap(),
-                        file.byte_index(range.end.line, range.end.character)
-                            .unwrap(),
+                    let span = Span::new(
+                        file_id,
+                        db.byte_index(file_id, range.start.line, range.start.character),
+                        db.byte_index(file_id, range.end.line, range.end.character),
                     );
 
                     let error = error.with_label(Label::new_primary(span));
@@ -72,7 +71,7 @@ pub(crate) fn build(filename: &str, output_filename: Option<&str>) {
 
                     emit(
                         &mut writer.lock(),
-                        &db.code_map().read(),
+                        &&db,
                         &error,
                         &language_reporting::DefaultConfig,
                     )
@@ -81,13 +80,13 @@ pub(crate) fn build(filename: &str, output_filename: Option<&str>) {
             }
 
             if error_count == 0 {
-                let out_filename = if let Some(path) = output_filename {
+                let out_file_name = if let Some(path) = output_file_name {
                     path.to_string()
                 } else {
                     let file_path = if cfg!(windows) {
-                        std::path::Path::new(filename).with_extension("exe")
+                        std::path::Path::new(file_name).with_extension("exe")
                     } else {
-                        std::path::Path::new(filename).with_extension("")
+                        std::path::Path::new(file_name).with_extension("")
                     };
 
                     file_path.file_name().unwrap().to_str().unwrap().to_string()
@@ -96,7 +95,7 @@ pub(crate) fn build(filename: &str, output_filename: Option<&str>) {
                 let source_file = lark_build::codegen(&mut db, lark_build::CodegenType::Rust);
 
                 lark_build::build(
-                    &out_filename,
+                    &out_file_name,
                     &source_file.value,
                     lark_build::CodegenType::Rust,
                 )
@@ -105,17 +104,5 @@ pub(crate) fn build(filename: &str, output_filename: Option<&str>) {
         }
 
         Err(Cancelled) => unreachable!("cancellation?"),
-    }
-}
-
-trait FileMapExt {
-    fn byte_index_for_position(&self, position: Position) -> ByteIndex;
-}
-
-impl FileMapExt for FileMap {
-    fn byte_index_for_position(&self, position: Position) -> ByteIndex {
-        let line = LineIndex::from(position.line as u32);
-        let column = ColumnIndex::from(position.character as u32);
-        self.byte_index(line, column).unwrap()
     }
 }

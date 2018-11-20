@@ -29,7 +29,7 @@ use lark_error::ErrorReported;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_seq::Seq;
-use lark_span::CurrentFile;
+use lark_span::FileName;
 use lark_span::Span;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
@@ -122,9 +122,9 @@ crate fn parse_fn_body(
     item_entity: Entity,
     db: &dyn LazyParsedEntityDatabase,
     entity_macro_definitions: &FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
-    input: &Text,                              // complete Text of file
-    tokens: &Seq<Spanned<LexToken>>,           // subset of Token corresponding to this expression
-    arguments: Seq<Spanned<GlobalIdentifier>>, // names of the arguments
+    input: &Text,                                        // complete Text of file
+    tokens: &Seq<Spanned<LexToken, FileName>>, // subset of Token corresponding to this expression
+    arguments: Seq<Spanned<GlobalIdentifier, FileName>>, // names of the arguments
 ) -> WithError<hir::FnBody> {
     let mut scope = ExpressionScope {
         db,
@@ -149,14 +149,14 @@ crate fn parse_fn_body(
         .collect();
     let arguments = hir::List::from_iterator(&mut scope.fn_body_tables, arguments);
 
-    let mut parser = Parser::new(db, entity_macro_definitions, input, tokens, 0);
+    let file_name = item_entity.input_file(db).unwrap();
+    let mut parser = Parser::new(file_name, db, entity_macro_definitions, input, tokens, 0);
 
     let root_expression = match parser.expect(HirExpression::new(&mut scope)) {
         Ok(e) => e,
         Err(err) => {
-            let span = scope.convert_to_new_span(err.span());
-            let error = scope.add(span, hir::ErrorData::Misc);
-            scope.add(span, hir::ExpressionData::Error { error })
+            let error = scope.add(err.span(), hir::ErrorData::Misc);
+            scope.add(err.span(), hir::ExpressionData::Error { error })
         }
     };
 
@@ -165,7 +165,7 @@ crate fn parse_fn_body(
     }
 
     parser.into_with_error(hir::FnBody {
-        arguments,
+        arguments: Ok(arguments),
         root_expression,
         tables: scope.fn_body_tables,
     })
@@ -203,7 +203,7 @@ impl ParsedExpression {
 #[derive(Copy, Clone)]
 enum ParsedStatement {
     Expression(hir::Expression),
-    Let(Span<CurrentFile>, hir::Variable, Option<hir::Expression>),
+    Let(Span<FileName>, hir::Variable, Option<hir::Expression>),
 }
 
 struct ExpressionScope<'parse> {
@@ -220,12 +220,8 @@ struct ExpressionScope<'parse> {
 }
 
 impl ExpressionScope<'parse> {
-    fn span(&self, node: impl hir::HirIndex) -> Span<CurrentFile> {
-        self.convert_to_new_span(self.fn_body_tables.span(node))
-    }
-
-    fn convert_to_new_span(&self, _span: parser::pos::Span) -> Span<CurrentFile> {
-        Span::initial(CurrentFile)
+    fn span(&self, node: impl hir::HirIndex) -> Span<FileName> {
+        self.fn_body_tables.span(node)
     }
 
     fn save_scope(&self) -> Rc<FxIndexMap<GlobalIdentifier, hir::Variable>> {
@@ -252,20 +248,14 @@ impl ExpressionScope<'parse> {
         Rc::make_mut(&mut self.variables).insert(text, variable);
     }
 
-    fn add<D: hir::HirIndexData>(&mut self, span: Span<CurrentFile>, node: D) -> D::Index {
-        use parser::pos;
-
-        // FIXME -- bridge spans
-        drop(span);
-        let span = pos::Span::Synthetic;
-
-        D::index_vec_mut(&mut self.fn_body_tables).push(pos::Spanned(node, span))
+    fn add<D: hir::HirIndexData>(&mut self, span: Span<FileName>, value: D) -> D::Index {
+        D::index_vec_mut(&mut self.fn_body_tables).push(Spanned { value, span })
     }
 
     fn report_error_expression(
         &mut self,
         parser: &mut Parser<'parser>,
-        span: Span<CurrentFile>,
+        span: Span<FileName>,
         data: hir::ErrorData,
     ) -> hir::Expression {
         let message = match data {
@@ -286,14 +276,14 @@ impl ExpressionScope<'parse> {
 
     fn already_reported_error_expression(
         &mut self,
-        span: Span<CurrentFile>,
+        span: Span<FileName>,
         data: hir::ErrorData,
     ) -> hir::Expression {
         let error = self.add(span, data);
         self.add(span, hir::ExpressionData::Error { error })
     }
 
-    fn unit_expression(&mut self, span: Span<CurrentFile>) -> hir::Expression {
+    fn unit_expression(&mut self, span: Span<FileName>) -> hir::Expression {
         self.add(span, hir::ExpressionData::Unit {})
     }
 }
@@ -610,7 +600,7 @@ impl Syntax<'parse> for Expression2<'me, 'parse> {
 struct UnaryOperator;
 
 impl Syntax<'parse> for UnaryOperator {
-    type Data = Spanned<hir::UnaryOperator>;
+    type Data = Spanned<hir::UnaryOperator, FileName>;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.test(ExclamationPoint)
@@ -913,11 +903,8 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
                 return Ok(ParsedExpression::Place(place));
             }
 
-            if let Some(entity) = self
-                .scope
-                .db
-                .resolve_name(self.scope.item_entity, text.value)
-            {
+            let id = text.value.intern(self.scope.db);
+            if let Some(entity) = self.scope.db.resolve_name(self.scope.item_entity, id) {
                 let place = self.scope.add(text.span, hir::PlaceData::Entity(entity));
                 return Ok(ParsedExpression::Place(place));
             }

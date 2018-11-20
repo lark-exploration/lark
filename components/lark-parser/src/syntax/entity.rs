@@ -3,21 +3,25 @@ use crate::parser::Parser;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
-use crate::FileName;
 use crate::ParserDatabase;
 use debug::DebugWith;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_seq::Seq;
-use lark_span::CurrentFile;
+use lark_span::FileName;
 use lark_span::Span;
 use lark_span::Spanned;
-use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;
+use lark_string::GlobalIdentifier;
+use lark_string::GlobalIdentifierTables;
+use lark_ty as ty;
+use lark_ty::declaration::Declaration;
+use lark_ty::declaration::DeclarationTables;
 use std::sync::Arc;
 
 #[derive(DebugWith)]
@@ -72,13 +76,13 @@ pub struct ParsedEntity {
     pub entity: Entity,
 
     /// The span of the entire entity.
-    pub full_span: Span<CurrentFile>,
+    pub full_span: Span<FileName>,
 
     /// A (sometimes) shorter span that can be used to highlight this
     /// entity in error messages. For example, for a method, it might
     /// be the method name -- this helps to avoid multi-line error
     /// messages, which are kind of a pain.
-    pub characteristic_span: Span<CurrentFile>,
+    pub characteristic_span: Span<FileName>,
 
     /// Thunk to extract contents
     pub thunk: ParsedEntityThunk,
@@ -87,8 +91,8 @@ pub struct ParsedEntity {
 impl ParsedEntity {
     crate fn new(
         entity: Entity,
-        full_span: Span<CurrentFile>,
-        characteristic_span: Span<CurrentFile>,
+        full_span: Span<FileName>,
+        characteristic_span: Span<FileName>,
         thunk: ParsedEntityThunk,
     ) -> Self {
         Self {
@@ -118,6 +122,7 @@ impl ParsedEntityThunk {
         }
     }
 
+    /// See [`LazyParsedEntity::parse_children`]
     crate fn parse_children(
         &self,
         entity: Entity,
@@ -126,6 +131,34 @@ impl ParsedEntityThunk {
         self.object.parse_children(entity, db)
     }
 
+    /// See [`LazyParsedEntity::parse_generic_declarations`]
+    crate fn parse_generic_declarations(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+        self.object.parse_generic_declarations(entity, db)
+    }
+
+    /// See [`LazyParsedEntity::parse_type`]
+    crate fn parse_type(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<ty::Ty<Declaration>> {
+        self.object.parse_type(entity, db)
+    }
+
+    /// See [`LazyParsedEntity::parse_signature`]
+    crate fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        self.object.parse_signature(entity, db)
+    }
+
+    /// See [`LazyParsedEntity::parse_fn_body`]
     crate fn parse_fn_body(
         &self,
         entity: Entity,
@@ -164,6 +197,32 @@ pub trait LazyParsedEntity {
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>>;
 
+    /// What "generic declarations" are on this entity? e.g., for
+    /// `struct Foo<T> { .. }`, this would return the declaration for
+    /// `T`.
+    fn parse_generic_declarations(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>>;
+
+    /// What is the "declared type" of this entity? If the entity has
+    /// generic types, this type will include bound types referring to
+    /// those generics. e.g., for `struct Foo<T> { .. }`, the result
+    /// would be effectively `Foo<T>`.
+    fn parse_type(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<ty::Ty<Declaration>>;
+
+    /// What is the "signature" of this entity?
+    fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>>;
+
     /// Parses the fn body associated with this entity,
     /// panicking if there is none.
     ///
@@ -178,7 +237,9 @@ pub trait LazyParsedEntity {
     ) -> WithError<hir::FnBody>;
 }
 
-crate struct ErrorParsedEntity;
+crate struct ErrorParsedEntity {
+    crate err: ErrorReported,
+}
 
 impl LazyParsedEntity for ErrorParsedEntity {
     fn parse_children(
@@ -189,12 +250,36 @@ impl LazyParsedEntity for ErrorParsedEntity {
         WithError::ok(vec![])
     }
 
+    fn parse_generic_declarations(
+        &self,
+        _entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+        WithError::ok(ErrorSentinel::error_sentinel(db, self.err))
+    }
+
+    fn parse_type(
+        &self,
+        _entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<ty::Ty<Declaration>> {
+        WithError::ok(ErrorSentinel::error_sentinel(&db, self.err))
+    }
+
+    fn parse_signature(
+        &self,
+        _entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        WithError::ok(ErrorSentinel::error_sentinel(&db, self.err))
+    }
+
     fn parse_fn_body(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<hir::FnBody> {
-        unimplemented!()
+        WithError::ok(ErrorSentinel::error_sentinel(&db, self.err))
     }
 }
 
@@ -209,7 +294,40 @@ impl LazyParsedEntity for InvalidParsedEntity {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>> {
-        panic!("cannot parse children of {:?}", entity.debug_with(db))
+        panic!(
+            "cannot invoke `parse_children` on {:?}",
+            entity.debug_with(db)
+        )
+    }
+
+    fn parse_generic_declarations(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+        panic!(
+            "cannot invoke `parse_generic_declarations` on {:?}",
+            entity.debug_with(db)
+        )
+    }
+
+    fn parse_type(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<ty::Ty<Declaration>> {
+        panic!("cannot invoke `parse_type` on {:?}", entity.debug_with(db))
+    }
+
+    fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        panic!(
+            "cannot invoke `parse_signature` on {:?}",
+            entity.debug_with(db)
+        )
     }
 
     fn parse_fn_body(
@@ -217,21 +335,32 @@ impl LazyParsedEntity for InvalidParsedEntity {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<hir::FnBody> {
-        panic!("cannot parse fn body of {:?}", entity.debug_with(db))
+        panic!(
+            "cannot invoke `parse_fn_body` on {:?}",
+            entity.debug_with(db)
+        )
     }
 }
 
 /// The trait given to the [`LazyParsedEntity`] methods. It is a "dyn
 /// capable" variant of `ParserDatabase`.
-pub trait LazyParsedEntityDatabase: AsRef<GlobalIdentifierTables> + AsRef<EntityTables> {
+pub trait LazyParsedEntityDatabase:
+    AsRef<GlobalIdentifierTables> + AsRef<EntityTables> + AsRef<DeclarationTables>
+{
     /// Looks up a name `name` to see if it matches any entities in the scope of `item_entity`.
-    fn resolve_name(&self, item_entity: Entity, name: &str) -> Option<Entity>;
+    fn resolve_name(&self, item_entity: Entity, name: GlobalIdentifier) -> Option<Entity>;
 
     /// The `file_text` query
     fn file_text(&self, id: FileName) -> Text;
 
     /// The `file_tokens` query
-    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken>>>;
+    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>>;
+
+    /// The `generic_declarations` query
+    fn generic_declarations(
+        &self,
+        entity: Entity,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>>;
 }
 
 impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
@@ -239,11 +368,18 @@ impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
         ParserDatabase::file_text(self, id)
     }
 
-    fn resolve_name(&self, _item_entity: Entity, _name: &str) -> Option<Entity> {
-        unimplemented!()
+    fn resolve_name(&self, item_entity: Entity, name: GlobalIdentifier) -> Option<Entity> {
+        ParserDatabase::resolve_name(self, item_entity, name)
     }
 
-    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken>>> {
+    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>> {
         ParserDatabase::file_tokens(self, id)
+    }
+
+    fn generic_declarations(
+        &self,
+        entity: Entity,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+        ParserDatabase::generic_declarations(self, entity)
     }
 }

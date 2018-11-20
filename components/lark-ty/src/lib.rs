@@ -18,12 +18,15 @@ use lark_unify::InferVar;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
 use std::iter::IntoIterator;
+use std::sync::Arc;
 
 pub mod base_inferred;
 pub mod base_only;
 pub mod declaration;
 pub mod identity;
 pub mod map_family;
+
+pub use self::declaration::Declaration;
 
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
     type InternTables: AsRef<Self::InternTables>;
@@ -312,6 +315,19 @@ impl<F: TypeFamily> Signature<F> {
 pub struct GenericDeclarations {
     pub parent_item: Option<Entity>,
     pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
+}
+
+impl GenericDeclarations {
+    pub fn empty(parent_item: Option<Entity>) -> Arc<Self> {
+        Arc::new(GenericDeclarations {
+            parent_item,
+            declarations: IndexVec::default(),
+        })
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.declarations.is_empty() && self.parent_item.is_none()
+    }
 }
 
 /// Declaration of an individual generic type parameter.

@@ -1,5 +1,5 @@
+use lark_parser::ParserDatabaseExt;
 use lark_query_system::LarkDatabase;
-use parser::{HasParserState, HasReaderState, ReaderDatabase};
 use std::fs::File;
 use std::io::Read;
 

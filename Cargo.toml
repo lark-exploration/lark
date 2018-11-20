@@ -15,8 +15,6 @@ opt-level = 1
 members = ["components/lark-parser", "components/lark-span"]
 
 [dependencies]
-codespan = "0.2.0"
-codespan-reporting = "0.2.0"
 derive-new = "0.5.5"
 derive_more = "0.12.0"
 lazy_static = "1.1.0"
@@ -38,7 +36,6 @@ serde = "1.0"
 serde_derive = "1.0"
 url = "1.7"
 
-ast = { path = "components/ast" }
 debug = { path = "components/debug" }
 indices = { path = "components/indices" }
 intern = { path = "components/intern" }
@@ -50,15 +47,17 @@ lark-eval = { path = "components/lark-eval" }
 lark-hir = { path = "components/lark-hir" }
 lark-language-server = { path = "components/lark-language-server" }
 lark-mir = { path = "components/lark-mir" }
+lark-parser = { path = "components/lark-parser" }
 lark-query-system = { path = "components/lark-query-system" }
+lark-span = { path = "components/lark-span" }
 lark-string = { path = "components/lark-string" } 
 lark-task-manager = { path = "components/lark-task-manager" }
 lark-ty = { path = "components/lark-ty" }
 lark-type-check = { path = "components/lark-type-check" }
 lark-unify = { path = "components/lark-unify" }
 map = { path = "components/map" }
-parser = { path = "components/parser" }
-language-reporting = "0.2.0"
+language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
+
 termcolor = "1.0.4"
 
 [dev-dependencies]

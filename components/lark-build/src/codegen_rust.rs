@@ -1,15 +1,13 @@
-use ast::AstDatabase;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, ItemKind, LangItem};
 use lark_error::{Diagnostic, WithError};
-use lark_hir::HirDatabase;
 use lark_mir::{
     BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
     RvalueData, Statement, StatementKind,
 };
+use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::LarkDatabase;
 use lark_ty::Ty;
-use parser::ReaderDatabase;
 
 pub fn build_type(db: &mut LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>) -> String {
     let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(db);
@@ -258,11 +256,11 @@ pub fn codegen_function(
 /// Converts the MIR context of definitions into Rust source
 pub fn codegen_rust(db: &mut LarkDatabase) -> WithError<String> {
     let mut output = String::new();
-    let input_files = db.paths();
+    let input_files = db.file_names();
     let mut errors: Vec<Diagnostic> = vec![];
 
     for &input_file in &*input_files {
-        let entities = db.items_in_file(input_file);
+        let entities = db.entities_in_file(input_file);
 
         for &entity in &*entities {
             match entity.untern(&db) {

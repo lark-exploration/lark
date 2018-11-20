@@ -5,14 +5,14 @@ use crate::syntax::{NonEmptySyntax, Syntax};
 use intern::Intern;
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
-use lark_span::Spanned;
+use lark_span::{FileName, Spanned};
 use lark_string::global::GlobalIdentifier;
 
 #[derive(DebugWith)]
 pub struct SpannedGlobalIdentifier;
 
 impl Syntax<'parse> for SpannedGlobalIdentifier {
-    type Data = Spanned<GlobalIdentifier>;
+    type Data = Spanned<GlobalIdentifier, FileName>;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
         SpannedLocalIdentifier.test(parser)
@@ -33,7 +33,7 @@ impl NonEmptySyntax<'parse> for SpannedGlobalIdentifier {}
 pub struct SpannedLocalIdentifier;
 
 impl Syntax<'parse> for SpannedLocalIdentifier {
-    type Data = Spanned<&'parse str>;
+    type Data = Spanned<&'parse str, FileName>;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.is(LexToken::Identifier)

@@ -5,9 +5,9 @@ use lark_entity::Entity;
 use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_span::{FileName, Span, Spanned};
 use lark_string::global::GlobalIdentifier;
 use map::FxIndexMap;
-use parser::pos::{Span, Spanned};
 use std::sync::Arc;
 
 crate fn fn_bytecode(
@@ -35,7 +35,7 @@ impl<'me, DB> MirLower<'me, DB>
 where
     DB: MirDatabase,
 {
-    fn new(db: &'me DB, item_entity: Entity, errors: &'me mut Vec<Diagnostic>) -> Self {
+    fn new(db: &'me DB, item_entity: Entity, _errors: &'me mut Vec<Diagnostic>) -> Self {
         MirLower {
             db,
             //errors,
@@ -46,8 +46,8 @@ where
         }
     }
 
-    fn add<D: mir::MirIndexData>(&mut self, span: Span, node: D) -> D::Index {
-        D::index_vec_mut(&mut self.fn_bytecode_tables).push(Spanned(node, span))
+    fn add<D: mir::MirIndexData>(&mut self, span: Span<FileName>, node: D) -> D::Index {
+        D::index_vec_mut(&mut self.fn_bytecode_tables).push(Spanned::new(node, span))
     }
 
     fn save_scope(&self) -> FxIndexMap<GlobalIdentifier, mir::Variable> {
@@ -65,12 +65,12 @@ where
     }
 
     /*
-    fn span(&self, index: impl mir::SpanIndex) -> Span {
+    fn span(&self, index: impl mir::SpanIndex) -> Span<FileName> {
         index.span_from(&self.fn_bytecode_tables)
     }
     */
 
-    fn create_temporary(&mut self, span: Span) -> mir::Variable {
+    fn create_temporary(&mut self, span: Span<FileName>) -> mir::Variable {
         let temp_variable_name = format!("_tmp{}", self.next_temporary_id).intern(&mut self.db);
         let temp_identifier = self.add(
             span,
@@ -245,7 +245,7 @@ where
 
     fn drain_temp_variables(
         &mut self,
-        span: Span,
+        span: Span<FileName>,
         temp_vars: Vec<mir::Variable>,
         statements: &mut Vec<mir::Statement>,
     ) {
@@ -365,10 +365,11 @@ where
 
     fn lower_arguments(&mut self, fn_body: &hir::FnBody) -> Vec<mir::Variable> {
         let mut args = vec![];
-        for argument in fn_body.arguments.iter(fn_body) {
-            args.push(self.lower_variable(fn_body, argument));
+        if let Ok(arguments) = fn_body.arguments {
+            for argument in arguments.iter(fn_body) {
+                args.push(self.lower_variable(fn_body, argument));
+            }
         }
-
         args
     }
 

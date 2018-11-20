@@ -12,15 +12,11 @@ use crate::syntax::fn_body;
 use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
-use crate::syntax::matched::Matched;
-use crate::syntax::matched::ParsedMatch;
-use crate::syntax::sigil::Curlies;
-use crate::syntax::sigil::Parentheses;
-use crate::syntax::sigil::RightArrow;
+use crate::syntax::matched::{Matched, ParsedMatch};
+use crate::syntax::sigil::{Curlies, Parentheses, RightArrow};
 use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::type_reference::ParsedTypeReference;
 use crate::syntax::type_reference::TypeReference;
-use crate::FileName;
 use debug::DebugWith;
 use intern::Intern;
 use intern::Untern;
@@ -28,12 +24,18 @@ use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::ItemKind;
 use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_error::ResultExt;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_seq::Seq;
+use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
+use lark_ty as ty;
+use lark_ty::declaration::Declaration;
+use lark_ty::GenericDeclarations;
+use std::sync::Arc;
 
 /// ```ignore
 /// `def` <id> `(` <id> `:` <ty> `)` [ `->` <ty> ] <block>
@@ -46,7 +48,7 @@ impl EntityMacroDefinition for FunctionDeclaration {
         &self,
         parser: &mut Parser<'_>,
         base: Entity,
-        macro_name: Spanned<GlobalIdentifier>,
+        macro_name: Spanned<GlobalIdentifier, FileName>,
     ) -> Result<ParsedEntity, ErrorReported> {
         log::trace!(
             "FunctionDeclaration::parse(base={}, macro_name={})",
@@ -93,9 +95,9 @@ impl EntityMacroDefinition for FunctionDeclaration {
 }
 
 struct ParsedFunctionDeclaration {
-    parameters: Seq<Spanned<ParsedField>>,
+    parameters: Seq<Spanned<ParsedField, FileName>>,
     return_type: ParsedTypeReference,
-    body: Result<Spanned<ParsedMatch>, ErrorReported>,
+    body: Result<Spanned<ParsedMatch, FileName>, ErrorReported>,
 }
 
 impl LazyParsedEntity for ParsedFunctionDeclaration {
@@ -107,13 +109,70 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         WithError::ok(vec![])
     }
 
+    fn parse_generic_declarations(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+        // FIXME -- no support for generics yet
+        WithError::ok(Ok(GenericDeclarations::empty(None)))
+    }
+
+    fn parse_type(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<ty::Ty<Declaration>> {
+        // For each function `foo`, create a unique type `foo` as in
+        // Rust.
+        match db.generic_declarations(entity).into_value() {
+            Ok(generic_declarations) => {
+                assert!(generic_declarations.is_empty());
+                let ty = crate::type_conversion::declaration_ty_named(
+                    &db,
+                    entity,
+                    ty::Generics::empty(),
+                );
+                WithError::ok(ty)
+            }
+            Err(err) => WithError::error_sentinel(&db, err),
+        }
+    }
+
+    fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        let mut errors = vec![];
+
+        let inputs: Seq<_> = self
+            .parameters
+            .iter()
+            .map(|p| {
+                p.ty.parse_type(entity, db)
+                    .accumulate_errors_into(&mut errors)
+            })
+            .collect();
+
+        let output = self
+            .return_type
+            .parse_type(entity, db)
+            .accumulate_errors_into(&mut errors);
+
+        WithError {
+            value: Ok(ty::Signature { inputs, output }),
+            errors,
+        }
+    }
+
     fn parse_fn_body(
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<hir::FnBody> {
         match self.body {
-            Err(_) => ErrorParsedEntity.parse_fn_body(entity, db),
+            Err(err) => ErrorParsedEntity { err }.parse_fn_body(entity, db),
 
             Ok(Spanned {
                 span: _,

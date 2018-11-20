@@ -44,7 +44,7 @@ where
     }
 
     fn add<D: hir::HirIndexData>(&mut self, span: Span, node: D) -> D::Index {
-        D::index_vec_mut(&mut self.fn_body_tables).push(Spanned(node, span))
+        self.fn_body_tables.add(span, node)
     }
 
     fn span(&self, index: impl hir::SpanIndex) -> Span {

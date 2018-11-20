@@ -1,12 +1,11 @@
-use ast::AstDatabase;
 use intern::{Intern, Untern};
 use lark_entity::{EntityData, ItemKind, LangItem};
 use lark_mir::{
     BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
     RvalueData, Statement, StatementKind, Variable,
 };
+use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::LarkDatabase;
-use parser::ReaderDatabase;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -236,14 +235,14 @@ pub fn eval_function(
 }
 
 pub fn eval(db: &mut LarkDatabase, io_handler: &mut IOHandler) {
-    let input_files = db.paths();
+    let input_files = db.file_names();
     //let mut errors: Vec<Diagnostic> = vec![];
 
     let mut variables: HashMap<Variable, Vec<Value>> = HashMap::new();
     let main_name = "main".intern(&db);
 
     for &input_file in &*input_files {
-        let entities = db.items_in_file(input_file);
+        let entities = db.entities_in_file(input_file);
 
         for &entity in &*entities {
             match entity.untern(&db) {
