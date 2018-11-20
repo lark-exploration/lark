@@ -98,7 +98,7 @@ impl NamedTypeReference {
                 WithError::ok(ty)
             }
             None => {
-                let msg = format!("unknown type: `{}`", self.identifier.untern(db));
+                let msg = format!("unknown type: `{}`", self.identifier.untern(&db));
                 WithError::report_error(&db, msg, self.identifier.span)
             }
         }

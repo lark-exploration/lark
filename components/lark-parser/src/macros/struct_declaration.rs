@@ -96,7 +96,7 @@ impl LazyParsedEntity for ParsedStructDeclaration {
                         kind: MemberKind::Field,
                         id: field.name.value,
                     }
-                    .intern(db);
+                    .intern(&db);
 
                     ParsedEntity::new(
                         field_entity,

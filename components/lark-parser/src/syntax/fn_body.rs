@@ -149,7 +149,7 @@ crate fn parse_fn_body(
         .collect();
     let arguments = hir::List::from_iterator(&mut scope.fn_body_tables, arguments);
 
-    let file_name = item_entity.input_file(db).unwrap();
+    let file_name = item_entity.input_file(&db).unwrap();
     let mut parser = Parser::new(file_name, db, entity_macro_definitions, input, tokens, 0);
 
     let root_expression = match parser.expect(HirExpression::new(&mut scope)) {
@@ -236,7 +236,7 @@ impl ExpressionScope<'parse> {
     fn lookup_variable(&self, text: &str) -> Option<hir::Variable> {
         // FIXME -- we should not need to intern this; see
         // definition of `variables` field above for details
-        let global_id = text.intern(self.db);
+        let global_id = text.intern(&self.db);
 
         self.variables.get(&global_id).cloned()
     }
@@ -265,7 +265,7 @@ impl ExpressionScope<'parse> {
                 "can only supply named arguments when constructing structs".to_string()
             }
             hir::ErrorData::UnknownIdentifier { text } => {
-                format!("unknown identifier `{}`", text.untern(self.db))
+                format!("unknown identifier `{}`", text.untern(&self.db))
             }
         };
 
@@ -903,7 +903,7 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
                 return Ok(ParsedExpression::Place(place));
             }
 
-            let id = text.value.intern(self.scope.db);
+            let id = text.value.intern(&self.scope.db);
             if let Some(entity) = self.scope.db.resolve_name(self.scope.item_entity, id) {
                 let place = self.scope.add(text.span, hir::PlaceData::Entity(entity));
                 return Ok(ParsedExpression::Place(place));
@@ -913,7 +913,7 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
                 parser,
                 text.span,
                 hir::ErrorData::UnknownIdentifier {
-                    text: text.value.intern(self.scope.db),
+                    text: text.value.intern(&self.scope.db),
                 },
             );
 

@@ -38,7 +38,7 @@ pub enum EntityData {
 }
 
 impl EntityData {
-    pub fn file_name(&self, db: &(impl AsRef<EntityTables> + ?Sized)) -> Option<GlobalIdentifier> {
+    pub fn file_name(&self, db: &dyn AsRef<EntityTables>) -> Option<GlobalIdentifier> {
         match self {
             EntityData::Error(_) => None, // FIXME
             EntityData::LangItem(_) => None,
@@ -147,7 +147,7 @@ where
 
 impl Entity {
     /// The input file in which an entity appears (if any).
-    pub fn input_file(self, db: &(impl AsRef<EntityTables> + ?Sized)) -> Option<FileName> {
+    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<FileName> {
         match self.untern(db) {
             EntityData::LangItem(_) => None,
             EntityData::InputFile { file } => Some(FileName { id: file }),
