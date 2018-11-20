@@ -13,7 +13,6 @@ use url::Url;
 pub mod ls_ops;
 use self::ls_ops::{Cancelled, LsDatabase};
 
-#[derive(Default)]
 pub struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
     item_id_tables: Arc<EntityTables>,
@@ -37,6 +36,20 @@ impl LarkDatabase {
 
     pub fn untern_string(&self, id: GlobalIdentifier) -> Text {
         id.untern(self)
+    }
+}
+
+impl Default for LarkDatabase {
+    fn default() -> Self {
+        let mut db = LarkDatabase {
+            runtime: Default::default(),
+            item_id_tables: Default::default(),
+            global_id_tables: Default::default(),
+            declaration_tables: Default::default(),
+            base_inferred_tables: Default::default(),
+        };
+        db.init_parser_db();
+        db
     }
 }
 

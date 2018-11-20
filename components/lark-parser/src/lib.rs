@@ -179,6 +179,10 @@ impl IntoFileName for &str {
 }
 
 pub trait ParserDatabaseExt: ParserDatabase {
+    fn init_parser_db(&mut self) {
+        self.query_mut(FileNamesQuery).set((), Default::default());
+    }
+
     fn add_file(&mut self, path: impl IntoFileName, contents: impl Into<Text>) {
         let file_name = path.into_file_name(self);
 
