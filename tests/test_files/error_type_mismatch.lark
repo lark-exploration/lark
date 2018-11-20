@@ -1,6 +1,1 @@
-struct Diagnostic {
-  msg: own bool,
-  level: bool,
-}
-
 def foo(x: bool, y: uint) -> bool { y }

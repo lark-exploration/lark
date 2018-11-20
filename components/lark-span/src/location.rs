@@ -19,8 +19,8 @@ pub struct OutOfBounds;
 impl Location {
     pub fn from_index(s: &str, i: ByteIndex) -> Result<Location, OutOfBounds> {
         let target = i.0;
-        println!("s_len={}", s.len());
-        println!("target={}", target);
+        //println!("s_len={}", s.len());
+        //println!("target={}", target);
 
         let mut seen_lines = 0;
         let mut last = 0;
@@ -32,6 +32,7 @@ impl Location {
         for (pos, _) in s.match_indices('\n') {
             let pos = pos + 1;
 
+            /*
             println!(
                 "pos={} last={} seen_lines={} text={:?}",
                 pos,
@@ -39,6 +40,7 @@ impl Location {
                 seen_lines,
                 &s[..pos]
             );
+            */
 
             if pos == target {
                 return Ok(Location {

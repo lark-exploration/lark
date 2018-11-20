@@ -129,7 +129,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore("FIXME")]
     fn find_expected_error_message() -> Result<(), Box<std::error::Error>> {
         let mut child_session = ChildSession::spawn();
 
@@ -137,12 +136,14 @@ mod tests {
         child_session.send_init(100)?;
 
         let result = child_session.receive::<JsonRPCResponse<InitializeResult>>()?;
+
         assert_eq!(result.id, 100);
 
         // Open the document
         child_session.send_open("tests/test_files/error_type_mismatch.lark")?;
 
         let result = child_session.receive::<JsonRPCNotification<PublishDiagnosticsParams>>()?;
+
         assert_eq!(result.method, "textDocument/publishDiagnostics",);
         assert_eq!(result.params.diagnostics.len(), 1,);
         assert_eq!(result.params.diagnostics[0].message, "Mismatched types",);
