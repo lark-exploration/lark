@@ -19,10 +19,15 @@ pub struct OutOfBounds;
 impl Location {
     pub fn from_index(s: &str, i: ByteIndex) -> Result<Location, OutOfBounds> {
         let target = i.0;
+        println!("s_len={}", s.len());
         println!("target={}", target);
 
         let mut seen_lines = 0;
         let mut last = 0;
+
+        if target > s.len() {
+            return Err(OutOfBounds);
+        }
 
         for (pos, _) in s.match_indices('\n') {
             let pos = pos + 1;
@@ -53,7 +58,11 @@ impl Location {
             }
         }
 
-        Err(OutOfBounds)
+        Ok(Location {
+            line: 0,
+            column: target,
+            byte: i,
+        })
     }
 
     pub fn as_position(&self) -> languageserver_types::Position {
