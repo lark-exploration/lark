@@ -9,14 +9,12 @@ log = "0.4.5"
 parking_lot = "0.6.4"
 salsa = "0.8"
 
-ast = { path = "../ast" }
 debug = { path = "../debug" }
 indices = { path = "../indices" }
 intern = { path = "../intern" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
-lark-parser = { path = "../lark-parser" }
 lark-span = { path = "../lark-span" }
 lark-string = { path = "../lark-string" }
 lark-seq = { path = "../lark-seq" }

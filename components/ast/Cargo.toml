@@ -13,7 +13,6 @@ debug = { path = "../debug" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
-lark-parser = { path = "../lark-parser" }
 lark-string = { path = "../lark-string" }
 lark-seq = { path = "../lark-seq" }
 lark-span = { path = "../lark-span" }

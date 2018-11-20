@@ -1,7 +1,6 @@
 use intern::{Intern, Untern};
 use language_reporting as l_r;
 use lark_entity::EntityTables;
-use lark_hir as hir;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_span::{ByteIndex, FileName, Span};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
@@ -74,21 +73,15 @@ salsa::database_storage! {
             fn child_parsed_entities() for lark_parser::ChildParsedEntitiesQuery;
             fn parsed_entity() for lark_parser::ParsedEntityQuery;
             fn child_entities() for lark_parser::ChildEntitiesQuery;
-            fn uhir_of_entity() for lark_parser::UhirOfEntityQuery;
-            fn uhir_of_field() for lark_parser::UhirOfFieldQuery;
-        }
-        impl ast::AstDatabase {
-            fn entity_span() for ast::EntitySpanQuery;
-        }
-        impl hir::HirDatabase {
-            fn fn_body() for hir::FnBodyQuery;
-            fn members() for hir::MembersQuery;
-            fn member_entity() for hir::MemberEntityQuery;
-            fn subentities() for hir::SubentitiesQuery;
-            fn ty() for hir::TyQuery;
-            fn signature() for hir::SignatureQuery;
-            fn generic_declarations() for hir::GenericDeclarationsQuery;
-            fn resolve_name() for hir::ResolveNameQuery;
+            fn fn_body() for lark_parser::FnBodyQuery;
+            fn members() for lark_parser::MembersQuery;
+            fn member_entity() for lark_parser::MemberEntityQuery;
+            fn descendant_entities() for lark_parser::DescendantEntitiesQuery;
+            fn entity_span() for lark_parser::EntitySpanQuery;
+            fn ty() for lark_parser::TyQuery;
+            fn signature() for lark_parser::SignatureQuery;
+            fn generic_declarations() for lark_parser::GenericDeclarationsQuery;
+            fn resolve_name() for lark_parser::ResolveNameQuery;
         }
         impl lark_type_check::TypeCheckDatabase {
             fn base_type_check() for lark_type_check::BaseTypeCheckQuery;

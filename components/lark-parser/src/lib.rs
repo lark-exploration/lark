@@ -11,19 +11,27 @@ use crate::lexer::token::LexToken;
 
 use intern::Intern;
 use lark_debug_derive::DebugWith;
-use lark_entity::{Entity, EntityTables};
-use lark_error::{Diagnostic, WithError};
+use lark_entity::{Entity, EntityTables, MemberKind};
+use lark_error::{Diagnostic, ErrorReported, WithError};
+use lark_hir::FnBody;
+use lark_hir::Member;
 use lark_seq::Seq;
 use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
-use lark_string::{GlobalIdentifierTables, Text};
+use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
+use lark_ty as ty;
+use lark_ty::declaration::{Declaration, DeclarationTables};
+use std::sync::Arc;
 
 pub mod current_file;
+mod fn_body;
 mod ir;
 mod lexer;
 mod macros;
 mod parser;
 mod query_definitions;
+mod scope;
 pub mod syntax;
+mod type_conversion;
 
 pub use self::ir::ParsedFile;
 pub use self::syntax::entity::ParsedEntity;
@@ -32,6 +40,7 @@ pub use self::syntax::uhir;
 salsa::query_group! {
     pub trait ParserDatabase: AsRef<GlobalIdentifierTables>
         + AsRef<EntityTables>
+        + AsRef<DeclarationTables>
         + salsa::Database
     {
         fn file_names() -> Seq<FileName> {
@@ -42,6 +51,11 @@ salsa::query_group! {
         fn file_text(id: FileName) -> Text {
             type FileTextQuery;
             storage input;
+        }
+
+        fn entity_span(entity: Entity) -> Span<FileName> {
+            type EntitySpanQuery;
+            use fn query_definitions::entity_span;
         }
 
         /// Returns, for each line in the given file, the start index
@@ -90,19 +104,58 @@ salsa::query_group! {
             use fn query_definitions::parsed_entity;
         }
 
+        /// Returns the immediate children of `entity` in the entity tree.
         fn child_entities(entity: Entity) -> Seq<Entity> {
             type ChildEntitiesQuery;
             use fn query_definitions::child_entities;
         }
 
-        fn uhir_of_entity(entity: Entity) -> WithError<uhir::Entity> {
-            type UhirOfEntityQuery;
-            use fn query_definitions::uhir_of_entity;
+        /// Transitive closure of `child_entities`.
+        fn descendant_entities(entity: Entity) -> Seq<Entity> {
+            type DescendantEntitiesQuery;
+            use fn query_definitions::descendant_entities;
         }
 
-        fn uhir_of_field(entity: Entity) -> WithError<uhir::Field> {
-            type UhirOfFieldQuery;
-            use fn query_definitions::uhir_of_field;
+        /// Get the fn-body for a given def-id.
+        fn fn_body(key: Entity) -> WithError<Arc<FnBody>> {
+            type FnBodyQuery;
+            use fn fn_body::fn_body;
+        }
+
+        /// Get the list of member names and their def-ids for a given struct.
+        fn members(key: Entity) -> Result<Seq<Member>, ErrorReported> {
+            type MembersQuery;
+            use fn query_definitions::members;
+        }
+
+        /// Gets the def-id for a field of a given class.
+        fn member_entity(entity: Entity, kind: MemberKind, id: GlobalIdentifier) -> Option<Entity> {
+            type MemberEntityQuery;
+            use fn query_definitions::member_entity;
+        }
+
+        /// Get the type of something.
+        fn ty(key: Entity) -> WithError<ty::Ty<Declaration>> {
+            type TyQuery;
+            use fn type_conversion::ty;
+        }
+
+        /// Get the signature of a function.
+        fn signature(key: Entity) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+            type SignatureQuery;
+            use fn type_conversion::signature;
+        }
+
+        /// Get the generic declarations from a particular item.
+        fn generic_declarations(key: Entity) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+            type GenericDeclarationsQuery;
+            use fn type_conversion::generic_declarations;
+        }
+
+        /// Resolve a type name that appears in the given entity.
+        fn resolve_name(scope: Entity, name: GlobalIdentifier) -> Option<Entity> {
+            type ResolveNameQuery;
+            use fn scope::resolve_name;
         }
     }
 }

@@ -5,7 +5,6 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-ast = { path = "../ast" }
 debug = { path = "../debug" }
 diff = "0.1.0"
 env_logger = "0.5.13"

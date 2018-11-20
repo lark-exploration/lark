@@ -56,7 +56,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                 file: input_file.id,
             }
             .intern(self);
-            for &entity in self.subentities(file_entity).iter() {
+            for &entity in self.descendant_entities(file_entity).iter() {
                 self.accumulate_errors_for_entity(entity, &mut errors)?;
             }
 
@@ -190,7 +190,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         let file_entity = EntityData::InputFile { file: path }.intern(self);
 
         let mut entities: Vec<_> = self
-            .subentities(file_entity)
+            .descendant_entities(file_entity)
             .iter()
             .filter_map(|&entity| {
                 let span = self.entity_span(entity);

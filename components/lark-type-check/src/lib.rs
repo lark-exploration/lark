@@ -8,6 +8,7 @@ use indices::IndexVec;
 use lark_entity::{Entity, EntityTables};
 use lark_error::{Diagnostic, WithError};
 use lark_hir as hir;
+use lark_parser::ParserDatabase;
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
@@ -33,7 +34,7 @@ mod resolve_to_base_inferred;
 mod substitute;
 
 salsa::query_group! {
-    pub trait TypeCheckDatabase: hir::HirDatabase + AsRef<BaseInferredTables> {
+    pub trait TypeCheckDatabase: ParserDatabase + AsRef<BaseInferredTables> {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {

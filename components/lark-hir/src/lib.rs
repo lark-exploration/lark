@@ -8,77 +8,15 @@
 #![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 
-use ast::AstDatabase;
 use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::MemberKind;
-use lark_error::ErrorReported;
-use lark_error::WithError;
-use lark_seq::Seq;
 use lark_span::{FileName, Span, Spanned as GenericSpanned};
 use lark_string::global::GlobalIdentifier;
-use lark_ty as ty;
-use lark_ty::declaration::{Declaration, DeclarationTables};
 use std::sync::Arc;
 
-mod fn_body;
-mod query_definitions;
-mod scope;
-mod type_conversion;
-
 type Spanned<T> = GenericSpanned<T, FileName>;
-
-salsa::query_group! {
-    pub trait HirDatabase: AstDatabase + AsRef<DeclarationTables> {
-        /// Get the fn-body for a given def-id.
-        fn fn_body(key: Entity) -> WithError<Arc<FnBody>> {
-            type FnBodyQuery;
-            use fn fn_body::fn_body;
-        }
-
-        /// Get the list of member names and their def-ids for a given struct.
-        fn members(key: Entity) -> Result<Seq<Member>, ErrorReported> {
-            type MembersQuery;
-            use fn query_definitions::members;
-        }
-
-        /// Gets the def-id for a field of a given class.
-        fn member_entity(entity: Entity, kind: MemberKind, id: GlobalIdentifier) -> Option<Entity> {
-            type MemberEntityQuery;
-            use fn query_definitions::member_entity;
-        }
-
-        fn subentities(entity: Entity) -> Seq<Entity> {
-            type SubentitiesQuery;
-            use fn query_definitions::subentities;
-        }
-
-        /// Get the type of something.
-        fn ty(key: Entity) -> WithError<ty::Ty<Declaration>> {
-            type TyQuery;
-            use fn type_conversion::ty;
-        }
-
-        /// Get the signature of a function.
-        fn signature(key: Entity) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
-            type SignatureQuery;
-            use fn type_conversion::signature;
-        }
-
-        /// Get the generic declarations from a particular item.
-        fn generic_declarations(key: Entity) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
-            type GenericDeclarationsQuery;
-            use fn type_conversion::generic_declarations;
-        }
-
-        /// Resolve a type name that appears in the given entity.
-        fn resolve_name(scope: Entity, name: GlobalIdentifier) -> Option<Entity> {
-            type ResolveNameQuery;
-            use fn scope::resolve_name;
-        }
-    }
-}
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Member {

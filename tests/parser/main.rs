@@ -339,6 +339,7 @@ fn two_structs_whitespace() {
 }
 
 #[test]
+#[should_panic]
 fn eof_extra_sigil() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "

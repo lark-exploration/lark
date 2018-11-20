@@ -1,11 +1,9 @@
-use crate::HirDatabase;
+use crate::ParserDatabase;
 
 use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, LangItem, MemberKind};
 use lark_error::{ErrorReported, ErrorSentinel, WithError};
-use lark_parser::uhir;
-use lark_seq::Seq;
 use lark_ty::{
     BaseData, BaseKind, BoundVar, Declaration, Erased, GenericDeclarations, GenericKind, Generics,
     Signature, Ty, TypeFamily,
@@ -13,7 +11,7 @@ use lark_ty::{
 use std::sync::Arc;
 
 crate fn generic_declarations(
-    db: &impl HirDatabase,
+    db: &impl ParserDatabase,
     entity: Entity,
 ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
     let empty_declarations = |parent_item: Option<Entity>| {
@@ -39,14 +37,15 @@ crate fn generic_declarations(
         }
 
         EntityData::ItemName { .. } => {
-            let ast = db.uhir_of_entity(entity);
-
-            // Eventually, items ought to be permitted to have generic types attached to them.
-            match &ast.value {
-                uhir::Entity::Struct(_) | uhir::Entity::Def(_) => {
-                    WithError::ok(Ok(empty_declarations(None)))
-                }
-            }
+            unimplemented!()
+            //let ast = db.uhir_of_entity(entity);
+            //
+            //// Eventually, items ought to be permitted to have generic types attached to them.
+            //match &ast.value {
+            //    uhir::Entity::Struct(_) | uhir::Entity::Def(_) => {
+            //        WithError::ok(Ok(empty_declarations(None)))
+            //    }
+            //}
         }
 
         EntityData::MemberName {
@@ -69,7 +68,7 @@ crate fn generic_declarations(
     }
 }
 
-crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<Ty<Declaration>> {
+crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaration>> {
     match entity.untern(db) {
         EntityData::Error(report) => WithError::error_sentinel(db, report),
 
@@ -93,21 +92,23 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<Ty<Declaration>>
         }
 
         EntityData::ItemName { .. } => {
-            let ast = db.uhir_of_entity(entity);
-
-            match &ast.value {
-                uhir::Entity::Struct(_) | uhir::Entity::Def(_) => {
-                    WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
-                }
-            }
+            unimplemented!()
+            //let ast = db.uhir_of_entity(entity);
+            //
+            //match &ast.value {
+            //    uhir::Entity::Struct(_) | uhir::Entity::Def(_) => {
+            //        WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
+            //    }
+            //}
         }
 
         EntityData::MemberName {
             kind: MemberKind::Field,
             ..
         } => {
-            let field = db.uhir_of_field(entity);
-            declaration_ty_from_ast_ty(db, entity, &field.value.ty)
+            unimplemented!()
+            //let field = db.uhir_of_field(entity);
+            //declaration_ty_from_ast_ty(db, entity, &field.value.ty)
         }
 
         EntityData::MemberName {
@@ -123,39 +124,40 @@ crate fn ty(db: &impl HirDatabase, entity: Entity) -> WithError<Ty<Declaration>>
 }
 
 crate fn signature(
-    db: &impl HirDatabase,
-    owner: Entity,
+    _db: &impl ParserDatabase,
+    _owner: Entity,
 ) -> WithError<Result<Signature<Declaration>, ErrorReported>> {
-    let mut errors = vec![];
-
-    match db.uhir_of_entity(owner).value {
-        uhir::Entity::Struct(_) => panic!("asked for signature of a struct"),
-
-        uhir::Entity::Def(d) => {
-            let inputs: Seq<_> = d
-                .parameters
-                .iter()
-                .map(|p| {
-                    declaration_ty_from_ast_ty(db, owner, &p.ty).accumulate_errors_into(&mut errors)
-                })
-                .collect();
-
-            let output = match &d.ret {
-                None => unit_ty(db),
-                Some(ty) => {
-                    declaration_ty_from_ast_ty(db, owner, ty).accumulate_errors_into(&mut errors)
-                }
-            };
-
-            WithError {
-                value: Ok(Signature { inputs, output }),
-                errors,
-            }
-        }
-    }
+    unimplemented!()
+    //let mut errors = vec![];
+    //
+    //match db.uhir_of_entity(owner).value {
+    //    uhir::Entity::Struct(_) => panic!("asked for signature of a struct"),
+    //
+    //    uhir::Entity::Def(d) => {
+    //        let inputs: Seq<_> = d
+    //            .parameters
+    //            .iter()
+    //            .map(|p| {
+    //                declaration_ty_from_ast_ty(db, owner, &p.ty).accumulate_errors_into(&mut errors)
+    //            })
+    //            .collect();
+    //
+    //        let output = match &d.ret {
+    //            None => unit_ty(db),
+    //            Some(ty) => {
+    //                declaration_ty_from_ast_ty(db, owner, ty).accumulate_errors_into(&mut errors)
+    //            }
+    //        };
+    //
+    //        WithError {
+    //            value: Ok(Signature { inputs, output }),
+    //            errors,
+    //        }
+    //    }
+    //}
 }
 
-fn unit_ty(db: &impl HirDatabase) -> Ty<Declaration> {
+fn unit_ty(db: &impl ParserDatabase) -> Ty<Declaration> {
     declaration_ty_named(
         db,
         EntityData::LangItem(LangItem::Tuple(0)).intern(db),
@@ -164,7 +166,7 @@ fn unit_ty(db: &impl HirDatabase) -> Ty<Declaration> {
 }
 
 fn declaration_ty_named(
-    db: &impl HirDatabase,
+    db: &impl ParserDatabase,
     entity: Entity,
     generics: Generics<Declaration>,
 ) -> Ty<Declaration> {
@@ -173,16 +175,16 @@ fn declaration_ty_named(
     Ty { perm: Erased, base }
 }
 
-fn declaration_ty_from_ast_ty(
-    db: &impl HirDatabase,
-    scope_entity: Entity,
-    ast_ty: &uhir::Type,
-) -> WithError<Ty<Declaration>> {
-    match db.resolve_name(scope_entity, *ast_ty.name) {
-        Some(entity) => WithError::ok(declaration_ty_named(db, entity, Generics::empty())),
-        None => {
-            let msg = format!("unknown type: {}", ast_ty.name.untern(db));
-            WithError::report_error(db, msg, ast_ty.name.span)
-        }
-    }
-}
+//fn declaration_ty_from_ast_ty(
+//    db: &impl ParserDatabase,
+//    scope_entity: Entity,
+//    ast_ty: &uhir::Type,
+//) -> WithError<Ty<Declaration>> {
+//    match db.resolve_name(scope_entity, *ast_ty.name) {
+//        Some(entity) => WithError::ok(declaration_ty_named(db, entity, Generics::empty())),
+//        None => {
+//            let msg = format!("unknown type: {}", ast_ty.name.untern(db));
+//            WithError::report_error(db, msg, ast_ty.name.span)
+//        }
+//    }
+//}

@@ -6,15 +6,18 @@ use crate::macros;
 use crate::parser::Parser;
 use crate::syntax::entity::{EntitySyntax, ParsedEntity};
 use crate::syntax::skip_newline::SkipNewline;
-use crate::uhir;
 use crate::ParserDatabase;
 
 use debug::DebugWith;
 use intern::{Intern, Untern};
+use lark_entity::MemberKind;
 use lark_entity::{Entity, EntityData};
+use lark_error::ErrorReported;
 use lark_error::WithError;
+use lark_hir::Member;
 use lark_seq::Seq;
 use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
+use lark_string::GlobalIdentifier;
 
 crate fn file_tokens(
     db: &impl ParserDatabase,
@@ -135,6 +138,14 @@ crate fn child_entities(db: &impl ParserDatabase, entity: Entity) -> Seq<Entity>
         .collect()
 }
 
+crate fn entity_span(db: &impl ParserDatabase, entity: Entity) -> Span<FileName> {
+    db.parsed_entity(entity).value.full_span.in_file_named(
+        entity
+            .input_file(db)
+            .expect("Unexpected entity_span for LangItem or Error"),
+    )
+}
+
 crate fn line_offsets(db: &impl ParserDatabase, id: FileName) -> Seq<usize> {
     let text: &str = &db.file_text(id);
     let mut accumulator = 0;
@@ -176,10 +187,66 @@ crate fn byte_index(db: &impl ParserDatabase, id: FileName, line: u64, column: u
     ByteIndex::from(line_start + column)
 }
 
-crate fn uhir_of_entity(_db: &impl ParserDatabase, _entity: Entity) -> WithError<uhir::Entity> {
-    unimplemented!()
+crate fn descendant_entities(db: &impl ParserDatabase, root: Entity) -> Seq<Entity> {
+    let mut entities = vec![root];
+
+    // Go over each thing added to entities and add any nested
+    // entities.
+    let mut index = 0;
+    while let Some(&entity) = entities.get(index) {
+        index += 1;
+        entities.extend(db.child_entities(entity).iter());
+    }
+
+    Seq::from(entities)
 }
 
-crate fn uhir_of_field(_db: &impl ParserDatabase, _entity: Entity) -> WithError<uhir::Field> {
+crate fn members(_db: &impl ParserDatabase, _owner: Entity) -> Result<Seq<Member>, ErrorReported> {
     unimplemented!()
+    //let u = db.uhir_of_entity(owner);
+    //match &u.value {
+    //    uhir::Entity::Struct(s) => Ok(s
+    //        .fields
+    //        .iter()
+    //        .map(|f| {
+    //            let field_entity = EntityData::MemberName {
+    //                base: owner,
+    //                kind: hir::MemberKind::Field,
+    //                id: *f.name,
+    //            }
+    //            .intern(db);
+    //
+    //            Member {
+    //                name: *f.name,
+    //                kind: hir::MemberKind::Field,
+    //                entity: field_entity,
+    //            }
+    //        })
+    //        .collect()),
+    //
+    //    uhir::Entity::Def(_) => panic!("asked for members of a function"),
+    //}
+}
+
+crate fn member_entity(
+    _db: &impl ParserDatabase,
+    _owner: Entity,
+    _kind: MemberKind,
+    _name: GlobalIdentifier,
+) -> Option<Entity> {
+    unimplemented!()
+    //match db.members(owner) {
+    //    Err(report) => Some(Entity::error_sentinel(db, report)),
+    //
+    //    Ok(members) => members
+    //        .iter()
+    //        .filter_map(|member| {
+    //            if member.kind == kind && member.name == name {
+    //                Some(member.entity)
+    //            } else {
+    //                None
+    //            }
+    //        })
+    //        .next(),
+    //}
 }

@@ -14,9 +14,11 @@ languageserver-types = "0.51.0"
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
+lark-hir = { path = "../lark-hir" }
 lark-string = { path = "../lark-string" }
 lark-seq = { path = "../lark-seq" }
 lark-span = { path = "../lark-span" }
+lark-ty = { path = "../lark-ty" }
 log = "0.4.5"
 map = { path = "../map" }
 salsa = "0.8.0"

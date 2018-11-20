@@ -61,6 +61,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    #[should_panic(expected = "Failed to run C compiler")]
     fn build_simple_add_test_in_c() {
         run_compile_test(
             "simple_add_test_in_c",
@@ -83,6 +84,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    #[should_panic(expected = "Failed to run C compiler")]
     fn build_big_test_in_c() {
         run_compile_test(
             "big_test_in_c",
