@@ -174,7 +174,7 @@ fn is_sigil_char(c: char) -> bool {
 
 fn is_delimiter_sigil_char(c: char) -> bool {
     match c {
-        '{' | '}' | '(' | ')' | '>' | '<' => true,
+        '{' | '}' | '(' | ')' => true,
         _ => false,
     }
 }
