@@ -188,10 +188,12 @@ pub trait ParserDatabaseExt: ParserDatabase {
             .set(file_name, contents.into());
     }
 
-    fn entities_in_file(&self, file: impl IntoFileName) -> Seq<Entity> {
+    /// Returns the "top-level" entities defined in the given file --
+    /// does not descend to visit the children of those entities etc.
+    fn top_level_entities_in_file(&self, file: impl IntoFileName) -> Seq<Entity> {
         let file = file.into_file_name(self);
         let file_entity = EntityData::InputFile { file }.intern(self);
-        self.descendant_entities(file_entity)
+        self.child_entities(file_entity)
     }
 }
 

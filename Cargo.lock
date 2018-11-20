@@ -358,6 +358,7 @@ dependencies = [
  "lark-mir 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
+ "lark-span 0.1.0",
  "lark-string 0.1.0",
  "lark-ty 0.1.0",
  "lark-type-check 0.1.0",
