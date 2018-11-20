@@ -9,7 +9,6 @@ use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::sigil::Curlies;
 use crate::syntax::skip_newline::SkipNewline;
-
 use debug::DebugWith;
 use intern::Intern;
 use lark_entity::Entity;
@@ -23,6 +22,8 @@ use lark_seq::Seq;
 use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::GlobalIdentifier;
+use lark_ty::GenericDeclarations;
+use std::sync::Arc;
 
 /// ```ignore
 /// struct <id> {
@@ -103,6 +104,15 @@ impl LazyParsedEntity for ParsedStructDeclaration {
                 })
                 .collect(),
         )
+    }
+
+    fn parse_generic_declarations(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+        // FIXME -- no support for generics yet
+        WithError::ok(Ok(GenericDeclarations::empty(None)))
     }
 
     fn parse_fn_body(

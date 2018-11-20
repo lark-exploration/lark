@@ -17,6 +17,7 @@ use lark_span::Span;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifierTables;
 use lark_string::text::Text;
+use lark_ty::GenericDeclarations;
 use std::sync::Arc;
 
 #[derive(DebugWith)]
@@ -125,6 +126,14 @@ impl ParsedEntityThunk {
         self.object.parse_children(entity, db)
     }
 
+    crate fn parse_generic_declarations(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+        self.object.parse_generic_declarations(entity, db)
+    }
+
     crate fn parse_fn_body(
         &self,
         entity: Entity,
@@ -163,6 +172,12 @@ pub trait LazyParsedEntity {
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>>;
 
+    fn parse_generic_declarations(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>>;
+
     /// Parses the fn body associated with this entity,
     /// panicking if there is none.
     ///
@@ -177,7 +192,9 @@ pub trait LazyParsedEntity {
     ) -> WithError<hir::FnBody>;
 }
 
-crate struct ErrorParsedEntity;
+crate struct ErrorParsedEntity {
+    crate err: ErrorReported,
+}
 
 impl LazyParsedEntity for ErrorParsedEntity {
     fn parse_children(
@@ -186,6 +203,14 @@ impl LazyParsedEntity for ErrorParsedEntity {
         _db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>> {
         WithError::ok(vec![])
+    }
+
+    fn parse_generic_declarations(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+        WithError::ok(Err(self.err))
     }
 
     fn parse_fn_body(
@@ -208,7 +233,21 @@ impl LazyParsedEntity for InvalidParsedEntity {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>> {
-        panic!("cannot parse children of {:?}", entity.debug_with(db))
+        panic!(
+            "cannot invoke `parse_children` on {:?}",
+            entity.debug_with(db)
+        )
+    }
+
+    fn parse_generic_declarations(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+        panic!(
+            "cannot invoke `parse_generic_declarations` on {:?}",
+            entity.debug_with(db)
+        )
     }
 
     fn parse_fn_body(
@@ -216,7 +255,10 @@ impl LazyParsedEntity for InvalidParsedEntity {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<hir::FnBody> {
-        panic!("cannot parse fn body of {:?}", entity.debug_with(db))
+        panic!(
+            "cannot invoke `parse_fn_body` on {:?}",
+            entity.debug_with(db)
+        )
     }
 }
 

@@ -18,6 +18,7 @@ use lark_unify::InferVar;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
 use std::iter::IntoIterator;
+use std::sync::Arc;
 
 pub mod base_inferred;
 pub mod base_only;
@@ -314,6 +315,15 @@ impl<F: TypeFamily> Signature<F> {
 pub struct GenericDeclarations {
     pub parent_item: Option<Entity>,
     pub declarations: IndexVec<BoundVar, GenericKind<GenericTyDeclaration>>,
+}
+
+impl GenericDeclarations {
+    pub fn empty(parent_item: Option<Entity>) -> Arc<Self> {
+        Arc::new(GenericDeclarations {
+            parent_item,
+            declarations: IndexVec::default(),
+        })
+    }
 }
 
 /// Declaration of an individual generic type parameter.

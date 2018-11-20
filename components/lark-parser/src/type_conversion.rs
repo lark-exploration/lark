@@ -14,13 +14,6 @@ crate fn generic_declarations(
     db: &impl ParserDatabase,
     entity: Entity,
 ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
-    let empty_declarations = |parent_item: Option<Entity>| {
-        Arc::new(GenericDeclarations {
-            parent_item,
-            declarations: Default::default(),
-        })
-    };
-
     match entity.untern(db) {
         EntityData::Error(report) => WithError::error_sentinel(db, report),
 
@@ -30,39 +23,21 @@ crate fn generic_declarations(
         | EntityData::LangItem(LangItem::Uint)
         | EntityData::LangItem(LangItem::False)
         | EntityData::LangItem(LangItem::True)
-        | EntityData::LangItem(LangItem::Debug) => WithError::ok(Ok(empty_declarations(None))),
+        | EntityData::LangItem(LangItem::Debug) => {
+            WithError::ok(Ok(GenericDeclarations::empty(None)))
+        }
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {
             if arity != 0 {
                 unimplemented!("non-zero arity tuples");
             }
-            WithError::ok(Ok(empty_declarations(None)))
+            WithError::ok(Ok(GenericDeclarations::empty(None)))
         }
 
-        EntityData::ItemName { .. } => {
-            unimplemented!()
-            //let ast = db.uhir_of_entity(entity);
-            //
-            //// Eventually, items ought to be permitted to have generic types attached to them.
-            //match &ast.value {
-            //    uhir::Entity::Struct(_) | uhir::Entity::Def(_) => {
-            //        WithError::ok(Ok(empty_declarations(None)))
-            //    }
-            //}
-        }
-
-        EntityData::MemberName {
-            base,
-            kind: MemberKind::Field,
-            id: _,
-        } => WithError::ok(Ok(empty_declarations(Some(base)))),
-
-        // Eventually, methods ought to be permitted to have generic types attached to them.
-        EntityData::MemberName {
-            base,
-            kind: MemberKind::Method,
-            id: _,
-        } => WithError::ok(Ok(empty_declarations(Some(base)))),
+        EntityData::ItemName { .. } | EntityData::MemberName { .. } => db
+            .parsed_entity(entity)
+            .thunk
+            .parse_generic_declarations(entity, db),
 
         EntityData::InputFile { .. } => panic!(
             "cannot get generics of entity with data {:?}",

@@ -18,6 +18,8 @@ use lark_hir as hir;
 use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
+use lark_ty::GenericDeclarations;
+use std::sync::Arc;
 
 #[derive(DebugWith)]
 pub struct Field;
@@ -59,6 +61,14 @@ impl LazyParsedEntity for ParsedField {
         _db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Vec<ParsedEntity>> {
         WithError::ok(vec![])
+    }
+
+    fn parse_generic_declarations(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+        WithError::ok(Ok(GenericDeclarations::empty(None)))
     }
 
     fn parse_fn_body(

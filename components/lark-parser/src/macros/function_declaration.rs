@@ -31,6 +31,8 @@ use lark_seq::Seq;
 use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
+use lark_ty::GenericDeclarations;
+use std::sync::Arc;
 
 /// ```ignore
 /// `def` <id> `(` <id> `:` <ty> `)` [ `->` <ty> ] <block>
@@ -104,13 +106,22 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         WithError::ok(vec![])
     }
 
+    fn parse_generic_declarations(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+        // FIXME -- no support for generics yet
+        WithError::ok(Ok(GenericDeclarations::empty(None)))
+    }
+
     fn parse_fn_body(
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<hir::FnBody> {
         match self.body {
-            Err(_) => ErrorParsedEntity.parse_fn_body(entity, db),
+            Err(err) => ErrorParsedEntity { err }.parse_fn_body(entity, db),
 
             Ok(Spanned {
                 span: _,
