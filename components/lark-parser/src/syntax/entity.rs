@@ -334,8 +334,8 @@ impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
         ParserDatabase::file_text(self, id)
     }
 
-    fn resolve_name(&self, _item_entity: Entity, _name: GlobalIdentifier) -> Option<Entity> {
-        unimplemented!()
+    fn resolve_name(&self, item_entity: Entity, name: GlobalIdentifier) -> Option<Entity> {
+        ParserDatabase::resolve_name(self, item_entity, name)
     }
 
     fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>> {
