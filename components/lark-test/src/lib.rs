@@ -1,10 +1,11 @@
 use debug::DebugWith;
 use intern::Intern;
-use lark_parser::{IntoFileName, ParserDatabase, ParserDatabaseExt};
+use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::{Cancelled, LsDatabase, RangedDiagnostic};
 use lark_query_system::LarkDatabase;
 use lark_seq::seq;
 use lark_span::FileName;
+use lark_span::IntoFileName;
 use lark_string::Text;
 use salsa::Database;
 use std::fmt::Debug;

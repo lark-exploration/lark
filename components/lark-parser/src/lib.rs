@@ -23,6 +23,7 @@ use lark_hir as hir;
 use lark_seq::Seq;
 use lark_span::ByteIndex;
 use lark_span::FileName;
+use lark_span::IntoFileName;
 use lark_span::Location;
 use lark_span::Span;
 use lark_span::Spanned;
@@ -168,30 +169,6 @@ salsa::query_group! {
             type ResolveNameQuery;
             use fn scope::resolve_name;
         }
-    }
-}
-
-pub trait IntoFileName {
-    fn into_file_name(&self, db: &impl ParserDatabase) -> FileName;
-}
-
-impl IntoFileName for FileName {
-    fn into_file_name(&self, _db: &impl ParserDatabase) -> FileName {
-        *self
-    }
-}
-
-impl IntoFileName for &str {
-    fn into_file_name(&self, db: &impl ParserDatabase) -> FileName {
-        FileName {
-            id: self.intern(db),
-        }
-    }
-}
-
-impl IntoFileName for GlobalIdentifier {
-    fn into_file_name(&self, _db: &impl ParserDatabase) -> FileName {
-        FileName { id: *self }
     }
 }
 

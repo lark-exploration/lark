@@ -9,7 +9,7 @@ use intern::{Intern, Untern};
 use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
-use lark_span::{ByteIndex, FileName};
+use lark_span::{ByteIndex, FileName, IntoFileName};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -131,10 +131,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     /// any).
     fn hover_text_at_position(&self, url: &str, position: Position) -> Cancelable<Option<String>> {
         let byte_index = self.position_to_byte_index(url, position);
-        let interned_path = FileName {
-            id: url.intern(self),
-        };
-        let entity_ids = self.entity_ids_at_position(interned_path, byte_index)?;
+        let entity_ids = self.entity_ids_at_position(url, byte_index)?;
         self.check_for_cancellation()?;
         let entity = *entity_ids.last().unwrap();
         match entity.untern(self) {
@@ -178,7 +175,13 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
 
     /// Return a "stack" of entity-ids in position, from outermost to
     /// innermost.  Always returns a non-empty vector.
-    fn entity_ids_at_position(&self, file: FileName, index: ByteIndex) -> Cancelable<Vec<Entity>> {
+    fn entity_ids_at_position(
+        &self,
+        file: impl IntoFileName,
+        index: ByteIndex,
+    ) -> Cancelable<Vec<Entity>> {
+        let file = file.into_file_name(self);
+
         self.check_for_cancellation()?;
 
         let file_entity = EntityData::InputFile { file }.intern(self);

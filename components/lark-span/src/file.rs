@@ -1,5 +1,5 @@
 use crate::Span;
-use intern::Untern;
+use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use std::fmt::Debug;
@@ -24,5 +24,29 @@ pub struct FileName {
 impl FileName {
     pub fn untern(self, db: &dyn AsRef<GlobalIdentifierTables>) -> Text {
         self.id.untern(db)
+    }
+}
+
+pub trait IntoFileName {
+    fn into_file_name(&self, db: &dyn AsRef<GlobalIdentifierTables>) -> FileName;
+}
+
+impl IntoFileName for FileName {
+    fn into_file_name(&self, _db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
+        *self
+    }
+}
+
+impl IntoFileName for &str {
+    fn into_file_name(&self, db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
+        FileName {
+            id: self.intern(db),
+        }
+    }
+}
+
+impl IntoFileName for GlobalIdentifier {
+    fn into_file_name(&self, _db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
+        FileName { id: *self }
     }
 }
