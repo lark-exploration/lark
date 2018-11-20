@@ -358,6 +358,7 @@ dependencies = [
  "lark-mir 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
+ "lark-span 0.1.0",
  "lark-string 0.1.0",
  "lark-ty 0.1.0",
  "lark-type-check 0.1.0",
@@ -479,6 +480,7 @@ version = "0.1.0"
 dependencies = [
  "debug 0.1.0",
  "derive-new 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "intern 0.1.0",
  "language-reporting 0.2.0 (git+https://github.com/nikomatsakis/language-reporting?branch=remove-codespan-dep)",
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-debug-derive 0.1.0",

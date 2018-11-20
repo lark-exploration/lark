@@ -15,7 +15,7 @@ pub fn get_bytecode(
 ) -> lark_error::WithError<std::sync::Arc<lark_mir::FnBytecode>> {
     let main_name = "main".intern(&db);
     let repl_filename = REPL_FILENAME.intern(&db);
-    let entities = db.entities_in_file(repl_filename);
+    let entities = db.top_level_entities_in_file(repl_filename);
 
     for &entity in &*entities {
         match entity.untern(&db) {

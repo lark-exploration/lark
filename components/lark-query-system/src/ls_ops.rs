@@ -9,8 +9,7 @@ use intern::{Intern, Untern};
 use languageserver_types::{Position, Range};
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
-use lark_span::{ByteIndex, FileName};
-use lark_string::global::GlobalIdentifier;
+use lark_span::{ByteIndex, FileName, IntoFileName};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -52,10 +51,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                 .accumulate_errors_into(&mut errors);
 
             // Next, check entities in file for type-safety
-            let file_entity = EntityData::InputFile {
-                file: input_file.id,
-            }
-            .intern(self);
+            let file_entity = EntityData::InputFile { file: input_file }.intern(self);
             for &entity in self.descendant_entities(file_entity).iter() {
                 self.accumulate_errors_for_entity(entity, &mut errors)?;
             }
@@ -135,8 +131,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     /// any).
     fn hover_text_at_position(&self, url: &str, position: Position) -> Cancelable<Option<String>> {
         let byte_index = self.position_to_byte_index(url, position);
-        let interned_path = url.intern(self);
-        let entity_ids = self.entity_ids_at_position(interned_path, byte_index)?;
+        let entity_ids = self.entity_ids_at_position(url, byte_index)?;
         self.check_for_cancellation()?;
         let entity = *entity_ids.last().unwrap();
         match entity.untern(self) {
@@ -182,12 +177,14 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     /// innermost.  Always returns a non-empty vector.
     fn entity_ids_at_position(
         &self,
-        path: GlobalIdentifier,
+        file: impl IntoFileName,
         index: ByteIndex,
     ) -> Cancelable<Vec<Entity>> {
+        let file = file.into_file_name(self);
+
         self.check_for_cancellation()?;
 
-        let file_entity = EntityData::InputFile { file: path }.intern(self);
+        let file_entity = EntityData::InputFile { file }.intern(self);
 
         let mut entities: Vec<_> = self
             .descendant_entities(file_entity)

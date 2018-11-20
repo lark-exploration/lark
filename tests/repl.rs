@@ -1,11 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use languageserver_types::{
-        ClientCapabilities, DidOpenTextDocumentParams, InitializeParams, InitializeResult,
-        PublishDiagnosticsParams, TextDocumentItem,
-    };
-    use lark_language_server::{JsonRPCNotification, JsonRPCResponse, LSPCommand};
-    use serde::{Deserialize, Serialize};
     use std::io::{Read, Write};
     use std::panic;
     use std::process::{Command, Stdio};
@@ -80,10 +74,10 @@ mod tests {
 
         let _ = child_session.receive();
 
-        child_session.send("let x = true\n");
-        let result = child_session.receive();
+        child_session.send("let x = true\n").unwrap();
+        let _result = child_session.receive().unwrap();
 
-        child_session.send("debug(x)\n");
+        child_session.send("debug(x)\n").unwrap();
         let result = child_session.receive().unwrap();
 
         assert_eq!(result, " true\n>");

@@ -182,9 +182,7 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
                         end_token,
                     },
             }) => {
-                let file_name = FileName {
-                    id: entity.untern(&db).file_name(&db).unwrap(),
-                };
+                let file_name = entity.untern(&db).file_name(&db).unwrap();
                 let input = db.file_text(file_name);
                 let tokens = db
                     .file_tokens(file_name)

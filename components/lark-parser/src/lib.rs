@@ -23,6 +23,7 @@ use lark_hir as hir;
 use lark_seq::Seq;
 use lark_span::ByteIndex;
 use lark_span::FileName;
+use lark_span::IntoFileName;
 use lark_span::Location;
 use lark_span::Span;
 use lark_span::Spanned;
@@ -171,30 +172,6 @@ salsa::query_group! {
     }
 }
 
-pub trait IntoFileName {
-    fn into_file_name(&self, db: &impl ParserDatabase) -> FileName;
-}
-
-impl IntoFileName for FileName {
-    fn into_file_name(&self, _db: &impl ParserDatabase) -> FileName {
-        *self
-    }
-}
-
-impl IntoFileName for &str {
-    fn into_file_name(&self, db: &impl ParserDatabase) -> FileName {
-        FileName {
-            id: self.intern(db),
-        }
-    }
-}
-
-impl IntoFileName for GlobalIdentifier {
-    fn into_file_name(&self, _db: &impl ParserDatabase) -> FileName {
-        FileName { id: *self }
-    }
-}
-
 pub trait ParserDatabaseExt: ParserDatabase {
     fn init_parser_db(&mut self) {
         self.query_mut(FileNamesQuery).set((), Default::default());
@@ -211,10 +188,12 @@ pub trait ParserDatabaseExt: ParserDatabase {
             .set(file_name, contents.into());
     }
 
-    fn entities_in_file(&self, file: impl IntoFileName) -> Seq<Entity> {
+    /// Returns the "top-level" entities defined in the given file --
+    /// does not descend to visit the children of those entities etc.
+    fn top_level_entities_in_file(&self, file: impl IntoFileName) -> Seq<Entity> {
         let file = file.into_file_name(self);
-        let file_entity = EntityData::InputFile { file: file.id }.intern(self);
-        self.descendant_entities(file_entity)
+        let file_entity = EntityData::InputFile { file }.intern(self);
+        self.child_entities(file_entity)
     }
 }
 

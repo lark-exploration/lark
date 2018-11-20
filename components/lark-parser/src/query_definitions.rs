@@ -49,7 +49,7 @@ crate fn file_tokens(
 crate fn parsed_file(db: &impl ParserDatabase, file_name: FileName) -> WithError<ParsedFile> {
     log::debug!("parsed_file({})", file_name.debug_with(db));
 
-    let file_entity = EntityData::InputFile { file: file_name.id }.intern(db);
+    let file_entity = EntityData::InputFile { file: file_name }.intern(db);
     let entity_macro_definitions = crate::macro_definitions(&db, file_entity);
     let input = &db.file_text(file_name);
     let tokens = &db.file_tokens(file_name).into_value();
@@ -66,10 +66,7 @@ crate fn child_parsed_entities(
     log::debug!("child_parsed_entities({})", entity.debug_with(db));
 
     match entity.untern(db) {
-        EntityData::InputFile { file } => {
-            let file_name = FileName { id: file };
-            WithError::ok(db.parsed_file(file_name).into_value().entities)
-        }
+        EntityData::InputFile { file } => WithError::ok(db.parsed_file(file).into_value().entities),
 
         EntityData::ItemName { .. } => db
             .parsed_entity(entity)

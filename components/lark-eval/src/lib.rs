@@ -242,7 +242,7 @@ pub fn eval(db: &mut LarkDatabase, io_handler: &mut IOHandler) {
     let main_name = "main".intern(&db);
 
     for &input_file in &*input_files {
-        let entities = db.entities_in_file(input_file);
+        let entities = db.top_level_entities_in_file(input_file);
 
         for &entity in &*entities {
             match entity.untern(&db) {
