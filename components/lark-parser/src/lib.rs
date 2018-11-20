@@ -226,7 +226,7 @@ fn diagnostic(message: impl Into<String>, span: Span<FileName>) -> Diagnostic {
 /// always the default set. This function really just exists as a
 /// placeholder for us to change later.
 fn macro_definitions(
-    db: &(impl AsRef<GlobalIdentifierTables> + ?Sized),
+    db: &dyn AsRef<GlobalIdentifierTables>,
     _entity: Entity,
 ) -> FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> {
     macro_rules! declare_macro {

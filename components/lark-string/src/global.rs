@@ -25,7 +25,7 @@ intern::intern_tables! {
 impl Intern<GlobalIdentifierTables> for &str {
     type Key = GlobalIdentifier;
 
-    fn intern(self, interner: &(impl AsRef<GlobalIdentifierTables> + ?Sized)) -> Self::Key {
+    fn intern(self, interner: &dyn AsRef<GlobalIdentifierTables>) -> Self::Key {
         intern::intern_impl(self, interner, |d| &d[..], |d| Text::from(d))
     }
 }
@@ -33,7 +33,7 @@ impl Intern<GlobalIdentifierTables> for &str {
 impl Intern<GlobalIdentifierTables> for String {
     type Key = GlobalIdentifier;
 
-    fn intern(self, interner: &(impl AsRef<GlobalIdentifierTables> + ?Sized)) -> Self::Key {
+    fn intern(self, interner: &dyn AsRef<GlobalIdentifierTables>) -> Self::Key {
         intern::intern_impl(self, interner, |d| &d[..], |d| Text::from(d))
     }
 }

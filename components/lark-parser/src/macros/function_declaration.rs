@@ -183,14 +183,14 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
                     },
             }) => {
                 let file_name = FileName {
-                    id: entity.untern(db).file_name(db).unwrap(),
+                    id: entity.untern(&db).file_name(&db).unwrap(),
                 };
                 let input = db.file_text(file_name);
                 let tokens = db
                     .file_tokens(file_name)
                     .into_value()
                     .extract(start_token..end_token);
-                let entity_macro_definitions = crate::macro_definitions(db, entity);
+                let entity_macro_definitions = crate::macro_definitions(&db, entity);
                 let arguments: Seq<_> = self.parameters.iter().map(|f| f.value.name).collect();
                 fn_body::parse_fn_body(
                     entity,
