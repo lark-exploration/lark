@@ -47,16 +47,8 @@ crate fn file_tokens(
 }
 
 crate fn parsed_file(db: &impl ParserDatabase, file_name: FileName) -> WithError<ParsedFile> {
-    log::debug!("root_entities({})", file_name.debug_with(db));
+    log::debug!("parsed_file({})", file_name.debug_with(db));
 
-    parse_file(db, file_name)
-        .map(|(entities, len)| ParsedFile::new(file_name, entities, Span::new(file_name, 0, len)))
-}
-
-fn parse_file(
-    db: &impl ParserDatabase,
-    file_name: FileName,
-) -> WithError<(Seq<ParsedEntity>, usize)> {
     let file_entity = EntityData::InputFile { file: file_name.id }.intern(db);
     let entity_macro_definitions = crate::macro_definitions(&db, file_entity);
     let input = &db.file_text(file_name);
@@ -64,7 +56,7 @@ fn parse_file(
     let parser = Parser::new(file_name, db, &entity_macro_definitions, input, tokens, 0);
     parser
         .parse_until_eof(SkipNewline(EntitySyntax::new(file_entity)))
-        .map(|entities| (entities, input.len()))
+        .map(|entities| ParsedFile::new(file_name, entities, Span::new(file_name, 0, input.len())))
 }
 
 crate fn child_parsed_entities(
@@ -76,7 +68,7 @@ crate fn child_parsed_entities(
     match entity.untern(db) {
         EntityData::InputFile { file } => {
             let file_name = FileName { id: file };
-            parse_file(db, file_name).map(|(entities, _)| entities)
+            WithError::ok(db.parsed_file(file_name).into_value().entities)
         }
 
         EntityData::ItemName { .. } => db

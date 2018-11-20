@@ -7,9 +7,9 @@ use lark_span::{FileName, Span};
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, new)]
 pub struct ParsedFile {
-    file_name: FileName,
-    entities: Seq<ParsedEntity>,
-    span: Span<FileName>,
+    pub file_name: FileName,
+    pub entities: Seq<ParsedEntity>,
+    pub span: Span<FileName>,
 }
 
 impl ParsedFile {
