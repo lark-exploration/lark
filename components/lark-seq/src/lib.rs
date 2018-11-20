@@ -1,3 +1,5 @@
+#![feature(in_band_lifetimes)]
+
 use debug::DebugWith;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
@@ -192,6 +194,24 @@ impl<T> FromIterator<T> for Seq<T> {
     {
         let vec: Vec<T> = iter.into_iter().collect();
         Seq::from(vec)
+    }
+}
+
+impl<T> IntoIterator for &'seq Seq<T> {
+    type IntoIter = <&'seq [T] as IntoIterator>::IntoIter;
+    type Item = <&'seq [T] as IntoIterator>::Item;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<T: Clone> IntoIterator for &'seq mut Seq<T> {
+    type IntoIter = <&'seq mut [T] as IntoIterator>::IntoIter;
+    type Item = <&'seq mut [T] as IntoIterator>::Item;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }
 

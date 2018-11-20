@@ -13,28 +13,29 @@ use lark_error::ErrorReported;
 pub struct Guard<G, V>(pub G, pub V);
 
 impl<G, V> Guard<G, V> {
-    fn guard(&self) -> &G {
-        &self.0
+    fn guard(&mut self) -> &mut G {
+        &mut self.0
     }
 
-    fn value(&self) -> &V {
-        &self.1
+    fn value(&mut self) -> &mut V {
+        &mut self.1
     }
 }
 
-impl<G, V> Syntax for Guard<G, V>
+impl<G, V> Syntax<'parse> for Guard<G, V>
 where
-    G: NonEmptySyntax,
-    V: Syntax,
+    G: NonEmptySyntax<'parse>,
+    V: Syntax<'parse>,
 {
     type Data = V::Data;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.test(self.guard())
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
-        parser.expect(self.guard())?;
-        parser.expect(self.value())
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let Guard(guard, value) = self;
+        parser.expect(guard)?;
+        parser.expect(value)
     }
 }

@@ -8,25 +8,38 @@
 #![allow(dead_code)]
 
 use crate::lexer::token::LexToken;
-
+use crate::macros::EntityMacroDefinition;
+use crate::syntax::entity::ParsedEntity;
 use intern::Intern;
 use lark_debug_derive::DebugWith;
-use lark_entity::{Entity, EntityTables, MemberKind};
-use lark_error::{Diagnostic, ErrorReported, WithError};
-use lark_hir::FnBody;
-use lark_hir::Member;
+use lark_entity::Entity;
+use lark_entity::EntityData;
+use lark_entity::EntityTables;
+use lark_entity::MemberKind;
+use lark_error::Diagnostic;
+use lark_error::ErrorReported;
+use lark_error::WithError;
+use lark_hir as hir;
 use lark_seq::Seq;
-use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
-use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
+use lark_span::ByteIndex;
+use lark_span::FileName;
+use lark_span::Location;
+use lark_span::Span;
+use lark_span::Spanned;
+use lark_string::global::GlobalIdentifier;
+use lark_string::global::GlobalIdentifierTables;
+use lark_string::text::Text;
 use lark_ty as ty;
-use lark_ty::declaration::{Declaration, DeclarationTables};
+use lark_ty::declaration::Declaration;
+use lark_ty::declaration::DeclarationTables;
+use map::FxIndexMap;
 use std::sync::Arc;
 
 pub mod current_file;
 mod fn_body;
 mod ir;
 mod lexer;
-mod macros;
+pub mod macros;
 mod parser;
 mod query_definitions;
 mod scope;
@@ -34,8 +47,6 @@ pub mod syntax;
 mod type_conversion;
 
 pub use self::ir::ParsedFile;
-pub use self::syntax::entity::ParsedEntity;
-pub use self::syntax::uhir;
 
 salsa::query_group! {
     pub trait ParserDatabase: AsRef<GlobalIdentifierTables>
@@ -99,7 +110,7 @@ salsa::query_group! {
             use fn query_definitions::child_parsed_entities;
         }
 
-        fn parsed_entity(entity: Entity) -> WithError<ParsedEntity> {
+        fn parsed_entity(entity: Entity) -> ParsedEntity {
             type ParsedEntityQuery;
             use fn query_definitions::parsed_entity;
         }
@@ -117,13 +128,13 @@ salsa::query_group! {
         }
 
         /// Get the fn-body for a given def-id.
-        fn fn_body(key: Entity) -> WithError<Arc<FnBody>> {
+        fn fn_body(key: Entity) -> WithError<Arc<hir::FnBody>> {
             type FnBodyQuery;
-            use fn fn_body::fn_body;
+            use fn query_definitions::fn_body;
         }
 
         /// Get the list of member names and their def-ids for a given struct.
-        fn members(key: Entity) -> Result<Seq<Member>, ErrorReported> {
+        fn members(key: Entity) -> Result<Seq<hir::Member>, ErrorReported> {
             type MembersQuery;
             use fn query_definitions::members;
         }
@@ -178,6 +189,12 @@ impl IntoFileName for &str {
     }
 }
 
+impl IntoFileName for GlobalIdentifier {
+    fn into_file_name(&self, _db: &impl ParserDatabase) -> FileName {
+        FileName { id: *self }
+    }
+}
+
 pub trait ParserDatabaseExt: ParserDatabase {
     fn init_parser_db(&mut self) {
         self.query_mut(FileNamesQuery).set((), Default::default());
@@ -193,8 +210,46 @@ pub trait ParserDatabaseExt: ParserDatabase {
         self.query_mut(FileTextQuery)
             .set(file_name, contents.into());
     }
+
+    fn entities_in_file(&self, file: impl IntoFileName) -> Seq<Entity> {
+        let file = file.into_file_name(self);
+        let file_entity = EntityData::InputFile { file: file.id }.intern(self);
+        self.descendant_entities(file_entity)
+    }
 }
 
 fn diagnostic(message: impl Into<String>, span: Span<FileName>) -> Diagnostic {
     Diagnostic::new(message.into(), span)
+}
+
+/// Set of macro definitions in scope for `entity`. For now, this is
+/// always the default set. This function really just exists as a
+/// placeholder for us to change later.
+fn macro_definitions(
+    db: &(impl AsRef<GlobalIdentifierTables> + ?Sized),
+    _entity: Entity,
+) -> FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> {
+    macro_rules! declare_macro {
+        (
+            db($db:expr),
+            macros($($name:expr => $macro_definition:ty,)*),
+        ) => {
+            {
+                let mut map: FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>> = FxIndexMap::default();
+                $(
+                    let name = $name.intern($db);
+                    map.insert(name, std::sync::Arc::new(<$macro_definition>::default()));
+                )*
+                    map
+            }
+        }
+    }
+
+    declare_macro!(
+        db(db),
+        macros(
+            "struct" => macros::struct_declaration::StructDeclaration,
+            "fn" => macros::function_declaration::FunctionDeclaration,
+        ),
+    )
 }

@@ -2,7 +2,6 @@ use crate::ir::ParsedFile;
 use crate::lexer::definition::LexerState;
 use crate::lexer::token::LexToken;
 use crate::lexer::tools::Tokenizer;
-use crate::macros;
 use crate::parser::Parser;
 use crate::syntax::entity::{EntitySyntax, ParsedEntity};
 use crate::syntax::skip_newline::SkipNewline;
@@ -14,10 +13,11 @@ use lark_entity::MemberKind;
 use lark_entity::{Entity, EntityData};
 use lark_error::ErrorReported;
 use lark_error::WithError;
-use lark_hir::Member;
+use lark_hir as hir;
 use lark_seq::Seq;
 use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
 use lark_string::GlobalIdentifier;
+use std::sync::Arc;
 
 crate fn file_tokens(
     db: &impl ParserDatabase,
@@ -57,11 +57,11 @@ fn parse_file(
     db: &impl ParserDatabase,
     file_name: FileName,
 ) -> WithError<(Seq<ParsedEntity>, usize)> {
-    let entity_macro_definitions = &macros::default_entity_macros(db);
+    let file_entity = EntityData::InputFile { file: file_name.id }.intern(db);
+    let entity_macro_definitions = crate::macro_definitions(&db, file_entity);
     let input = &db.file_text(file_name);
     let tokens = &db.file_tokens(file_name).into_value();
-    let parser = Parser::new(file_name, db, entity_macro_definitions, input, tokens, 0);
-    let file_entity = EntityData::InputFile { file: file_name.id }.intern(db);
+    let parser = Parser::new(file_name, db, &entity_macro_definitions, input, tokens, 0);
     parser
         .parse_until_eof(SkipNewline(EntitySyntax::new(file_entity)))
         .map(|entities| (entities, input.len()))
@@ -81,7 +81,6 @@ crate fn child_parsed_entities(
 
         EntityData::ItemName { .. } => db
             .parsed_entity(entity)
-            .value
             .thunk
             .parse_children(entity, db)
             .map(Seq::from),
@@ -92,15 +91,12 @@ crate fn child_parsed_entities(
     }
 }
 
-crate fn parsed_entity(db: &impl ParserDatabase, entity: Entity) -> WithError<ParsedEntity> {
+crate fn parsed_entity(db: &impl ParserDatabase, entity: Entity) -> ParsedEntity {
     match entity.untern(db) {
         EntityData::ItemName { base, .. } => {
-            let WithError {
-                value: siblings,
-                errors,
-            } = db.child_parsed_entities(base);
+            let siblings = db.child_parsed_entities(base).into_value();
 
-            let siblings = siblings
+            siblings
                 .iter()
                 .find(|p| p.entity == entity)
                 .unwrap_or_else(|| {
@@ -110,12 +106,7 @@ crate fn parsed_entity(db: &impl ParserDatabase, entity: Entity) -> WithError<Pa
                         siblings.debug_with(db),
                     )
                 })
-                .clone();
-
-            WithError {
-                value: siblings,
-                errors,
-            }
+                .clone()
         }
 
         EntityData::Error { .. }
@@ -138,8 +129,15 @@ crate fn child_entities(db: &impl ParserDatabase, entity: Entity) -> Seq<Entity>
         .collect()
 }
 
+crate fn fn_body(db: &impl ParserDatabase, entity: Entity) -> WithError<Arc<hir::FnBody>> {
+    db.parsed_entity(entity)
+        .thunk
+        .parse_fn_body(entity, db)
+        .map(Arc::new)
+}
+
 crate fn entity_span(db: &impl ParserDatabase, entity: Entity) -> Span<FileName> {
-    db.parsed_entity(entity).value.full_span.in_file_named(
+    db.parsed_entity(entity).full_span.in_file_named(
         entity
             .input_file(db)
             .expect("Unexpected entity_span for LangItem or Error"),
@@ -201,7 +199,10 @@ crate fn descendant_entities(db: &impl ParserDatabase, root: Entity) -> Seq<Enti
     Seq::from(entities)
 }
 
-crate fn members(_db: &impl ParserDatabase, _owner: Entity) -> Result<Seq<Member>, ErrorReported> {
+crate fn members(
+    _db: &impl ParserDatabase,
+    _owner: Entity,
+) -> Result<Seq<hir::Member>, ErrorReported> {
     unimplemented!()
     //let u = db.uhir_of_entity(owner);
     //match &u.value {

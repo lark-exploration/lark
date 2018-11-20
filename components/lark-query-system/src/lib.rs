@@ -1,6 +1,7 @@
 use intern::{Intern, Untern};
 use language_reporting as l_r;
 use lark_entity::EntityTables;
+use lark_mir as mir;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_span::{ByteIndex, FileName, Span};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
@@ -98,6 +99,9 @@ salsa::database_storage! {
         }
         impl lark_type_check::TypeCheckDatabase {
             fn base_type_check() for lark_type_check::BaseTypeCheckQuery;
+        }
+        impl mir::MirDatabase {
+            fn fn_bytecode() for mir::FnBytecodeQuery;
         }
     }
 }

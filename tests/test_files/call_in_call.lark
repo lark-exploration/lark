@@ -1,0 +1,7 @@
+def id(x: bool,) -> bool {
+    x
+}
+
+def main() {
+    debug(id(false))
+}

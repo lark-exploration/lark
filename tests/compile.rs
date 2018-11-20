@@ -1,6 +1,5 @@
-mod common;
-
 #[cfg(test)]
+#[cfg(FIXME)]
 mod tests {
     use lark_codegen::{build, codegen, CodegenType};
     use lark_mir::{Context, DefId};

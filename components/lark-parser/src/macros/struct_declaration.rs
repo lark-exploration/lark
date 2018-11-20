@@ -5,16 +5,23 @@ use crate::syntax::entity::{
     LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity, ParsedEntityThunk,
 };
 use crate::syntax::field::{Field, ParsedField};
+use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::sigil::Curlies;
 use crate::syntax::skip_newline::SkipNewline;
 
 use debug::DebugWith;
 use intern::Intern;
-use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
-use lark_error::{ErrorReported, WithError};
+use lark_entity::Entity;
+use lark_entity::EntityData;
+use lark_entity::ItemKind;
+use lark_entity::MemberKind;
+use lark_error::ErrorReported;
+use lark_error::WithError;
+use lark_hir as hir;
 use lark_seq::Seq;
-use lark_span::{FileName, Spanned, SpannedGlobalIdentifier};
+use lark_span::FileName;
+use lark_span::Spanned;
 use lark_string::GlobalIdentifier;
 
 /// ```ignore
@@ -95,6 +102,17 @@ impl LazyParsedEntity for ParsedStructDeclaration {
                     )
                 })
                 .collect(),
+        )
+    }
+
+    fn parse_fn_body(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<hir::FnBody> {
+        panic!(
+            "cannot parse fn body of a struct: {:?}",
+            entity.debug_with(db)
         )
     }
 }

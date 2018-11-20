@@ -19,37 +19,38 @@ impl<D> Matched<D> {
 
 /// Returns the token range of the matched block (including
 /// the delimiters).
+#[derive(DebugWith)]
 pub struct ParsedMatch {
     /// Index of the first token to be included
-    start_token: usize,
+    pub start_token: usize,
 
     /// Index *after* the final token
-    end_token: usize,
+    pub end_token: usize,
 }
 
-impl<D> Syntax for Matched<D>
+impl<D> Syntax<'parse> for Matched<D>
 where
-    D: Delimiter,
+    D: Delimiter<'parse>,
 {
     type Data = Spanned<ParsedMatch, FileName>;
 
-    fn test(&self, parser: &Parser<'_>) -> bool {
+    fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.test(self.delimiters().open_syntax())
     }
 
-    fn expect(&self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
-        let open_syntax = self.delimiters().open_syntax();
-        let close_syntax = self.delimiters().close_syntax();
+    fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
+        let mut open_syntax = self.delimiters().open_syntax();
+        let mut close_syntax = self.delimiters().close_syntax();
 
         let start_token = parser.peek_index();
         let start_span = parser.peek_span();
-        parser.expect(&open_syntax)?;
+        parser.expect(&mut open_syntax)?;
 
         let mut counter = 1;
         loop {
-            if let Some(_) = parser.parse_if_present(&open_syntax) {
+            if let Some(_) = parser.parse_if_present(&mut open_syntax) {
                 counter += 1;
-            } else if let Some(_) = parser.parse_if_present(&close_syntax) {
+            } else if let Some(_) = parser.parse_if_present(&mut close_syntax) {
                 counter -= 1;
                 if counter == 0 {
                     break;
@@ -69,4 +70,4 @@ where
     }
 }
 
-impl<D> NonEmptySyntax for Matched<D> where D: Delimiter {}
+impl<D> NonEmptySyntax<'parse> for Matched<D> where D: Delimiter<'parse> {}

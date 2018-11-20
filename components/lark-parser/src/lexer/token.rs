@@ -8,6 +8,7 @@ use lark_error::ErrorSentinel;
 pub enum LexToken {
     Whitespace,
     Identifier,
+    Integer,
     Sigil,
     Comment,
     String,

@@ -12,6 +12,7 @@ language-reporting = { git = "https://github.com/nikomatsakis/language-reporting
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
+lark-mir = { path = "../lark-mir" }
 lark-parser = { path = "../lark-parser" }
 lark-span = { path = "../lark-span" }
 lark-string = { path = "../lark-string" }

@@ -133,8 +133,9 @@ where
                 self.least_upper_bound(expression, true_ty, false_ty)
             }
 
-            hir::ExpressionData::Literal { data } => match data {
-                hir::LiteralData::String(_) => self.string_type(),
+            hir::ExpressionData::Literal { data } => match data.kind {
+                hir::LiteralKind::String => self.string_type(),
+                hir::LiteralKind::UnsignedInteger => self.uint_type(),
             },
 
             hir::ExpressionData::Unit {} => self.unit_type(),
@@ -251,6 +252,11 @@ where
                         ..
                     } => {
                         // You can call this
+                    }
+
+                    EntityData::LangItem(LangItem::Debug) => {
+                        // You can call into the debug function
+                        return self.check_arguments_in_case_of_error(arguments);
                     }
 
                     _ => {
