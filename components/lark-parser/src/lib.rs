@@ -213,7 +213,7 @@ pub trait ParserDatabaseExt: ParserDatabase {
 
     fn entities_in_file(&self, file: impl IntoFileName) -> Seq<Entity> {
         let file = file.into_file_name(self);
-        let file_entity = EntityData::InputFile { file: file.id }.intern(self);
+        let file_entity = EntityData::InputFile { file }.intern(self);
         self.descendant_entities(file_entity)
     }
 }

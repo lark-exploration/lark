@@ -1,7 +1,7 @@
 use crate::Span;
-
+use intern::Untern;
 use lark_debug_derive::DebugWith;
-use lark_string::{GlobalIdentifier, Text};
+use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use std::fmt::Debug;
 
 pub trait SpanFile: Copy + Debug + Eq + Ord {}
@@ -19,4 +19,10 @@ impl<File: SpanFile> std::ops::Index<Span<File>> for Text {
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct FileName {
     pub id: GlobalIdentifier,
+}
+
+impl FileName {
+    pub fn untern(self, db: &dyn AsRef<GlobalIdentifierTables>) -> Text {
+        self.id.untern(db)
+    }
 }

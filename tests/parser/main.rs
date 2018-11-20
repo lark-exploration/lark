@@ -19,7 +19,7 @@ struct EntityTree {
 
 impl EntityTree {
     fn from_file(db: &impl ParserDatabase, file: FileName) -> Self {
-        let entity = EntityData::InputFile { file: file.id }.intern(db);
+        let entity = EntityData::InputFile { file: file }.intern(db);
         Self::from_entity(db, entity)
     }
 
@@ -36,7 +36,7 @@ impl EntityTree {
 }
 
 fn select_entity(db: &impl ParserDatabase, file: FileName, index: usize) -> Entity {
-    let file_entity = EntityData::InputFile { file: file.id }.intern(db);
+    let file_entity = EntityData::InputFile { file: file }.intern(db);
     db.child_entities(file_entity)[index]
 }
 
@@ -364,7 +364,7 @@ fn eof_extra_sigil() {
 
     // These errors are (a) too numerous and (b) poor quality :(
 
-    let entity = EntityData::InputFile { file: file_name.id }.intern(&db);
+    let entity = EntityData::InputFile { file: file_name }.intern(&db);
     assert_expected_debug(
         &db,
         &unindent::unindent(

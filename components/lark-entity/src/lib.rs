@@ -23,7 +23,7 @@ pub enum EntityData {
     LangItem(LangItem),
 
     InputFile {
-        file: GlobalIdentifier,
+        file: FileName,
     },
     ItemName {
         base: Entity,
@@ -38,7 +38,7 @@ pub enum EntityData {
 }
 
 impl EntityData {
-    pub fn file_name(&self, db: &dyn AsRef<EntityTables>) -> Option<GlobalIdentifier> {
+    pub fn file_name(&self, db: &dyn AsRef<EntityTables>) -> Option<FileName> {
         match self {
             EntityData::Error(_) => None, // FIXME
             EntityData::LangItem(_) => None,
@@ -150,7 +150,7 @@ impl Entity {
     pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<FileName> {
         match self.untern(db) {
             EntityData::LangItem(_) => None,
-            EntityData::InputFile { file } => Some(FileName { id: file }),
+            EntityData::InputFile { file } => Some(file),
             EntityData::ItemName { base, .. } => base.input_file(db),
             EntityData::MemberName { base, .. } => base.input_file(db),
             EntityData::Error(_span) => {
