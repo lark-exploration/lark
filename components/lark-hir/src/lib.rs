@@ -13,6 +13,8 @@ use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::MemberKind;
+use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_span::{FileName, Span, Spanned as GenericSpanned};
 use lark_string::global::GlobalIdentifier;
 use std::sync::Arc;
@@ -30,7 +32,7 @@ pub struct Member {
 pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
-    pub arguments: List<Variable>,
+    pub arguments: Result<List<Variable>, ErrorReported>,
 
     /// Index of the root expression in the function body. Its result
     /// will be returned.
@@ -49,6 +51,22 @@ impl debug::DebugWith for FnBody {
             .field("arguments", &self.arguments.debug_with(cx))
             .field("root_expression", &self.root_expression.debug_with(cx))
             .finish()
+    }
+}
+
+impl<DB> ErrorSentinel<&DB> for FnBody
+where
+    DB: ?Sized,
+{
+    fn error_sentinel(_db: &DB, err: ErrorReported) -> Self {
+        let mut tables = FnBodyTables::default();
+        let error = tables.add(err.span(), ErrorData::Misc);
+        let error_expr = tables.add(err.span(), ExpressionData::Error { error });
+        FnBody {
+            arguments: Err(err),
+            root_expression: error_expr,
+            tables,
+        }
     }
 }
 
@@ -83,6 +101,12 @@ pub struct FnBodyTables {
     /// -- the actual `List<I>` remembers the index type `I` for its
     /// own values and does the casting back and forth.
     pub list_entries: Vec<u32>,
+}
+
+impl FnBodyTables {
+    pub fn add<D: HirIndexData>(&mut self, span: Span<FileName>, node: D) -> D::Index {
+        D::index_vec_mut(self).push(Spanned::new(node, span))
+    }
 }
 
 impl AsMut<FnBodyTables> for FnBodyTables {

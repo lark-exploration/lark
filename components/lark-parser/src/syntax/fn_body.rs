@@ -165,7 +165,7 @@ crate fn parse_fn_body(
     }
 
     parser.into_with_error(hir::FnBody {
-        arguments,
+        arguments: Ok(arguments),
         root_expression,
         tables: scope.fn_body_tables,
     })

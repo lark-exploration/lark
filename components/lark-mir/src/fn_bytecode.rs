@@ -365,10 +365,11 @@ where
 
     fn lower_arguments(&mut self, fn_body: &hir::FnBody) -> Vec<mir::Variable> {
         let mut args = vec![];
-        for argument in fn_body.arguments.iter(fn_body) {
-            args.push(self.lower_variable(fn_body, argument));
+        if let Ok(arguments) = fn_body.arguments {
+            for argument in arguments.iter(fn_body) {
+                args.push(self.lower_variable(fn_body, argument));
+            }
         }
-
         args
     }
 

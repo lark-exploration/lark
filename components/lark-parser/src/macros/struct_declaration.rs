@@ -2,7 +2,8 @@ use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::{
-    LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity, ParsedEntityThunk,
+    InvalidParsedEntity, LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity,
+    ParsedEntityThunk,
 };
 use crate::syntax::field::{Field, ParsedField};
 use crate::syntax::identifier::SpannedGlobalIdentifier;
@@ -115,6 +116,14 @@ impl LazyParsedEntity for ParsedStructDeclaration {
     ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         // FIXME -- no support for generics yet
         WithError::ok(Ok(ty::GenericDeclarations::empty(None)))
+    }
+
+    fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        InvalidParsedEntity.parse_signature(entity, db)
     }
 
     fn parse_type(

@@ -139,6 +139,33 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         }
     }
 
+    fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        let mut errors = vec![];
+
+        let inputs: Seq<_> = self
+            .parameters
+            .iter()
+            .map(|p| {
+                p.ty.parse_type(entity, db)
+                    .accumulate_errors_into(&mut errors)
+            })
+            .collect();
+
+        let output = self
+            .return_type
+            .parse_type(entity, db)
+            .accumulate_errors_into(&mut errors);
+
+        WithError {
+            value: Ok(ty::Signature { inputs, output }),
+            errors,
+        }
+    }
+
     fn parse_fn_body(
         &self,
         entity: Entity,

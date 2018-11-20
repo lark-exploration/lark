@@ -88,37 +88,29 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaratio
 }
 
 crate fn signature(
-    _db: &impl ParserDatabase,
-    _owner: Entity,
+    db: &impl ParserDatabase,
+    entity: Entity,
 ) -> WithError<Result<Signature<Declaration>, ErrorReported>> {
-    unimplemented!()
-    //let mut errors = vec![];
-    //
-    //match db.uhir_of_entity(owner).value {
-    //    uhir::Entity::Struct(_) => panic!("asked for signature of a struct"),
-    //
-    //    uhir::Entity::Def(d) => {
-    //        let inputs: Seq<_> = d
-    //            .parameters
-    //            .iter()
-    //            .map(|p| {
-    //                declaration_ty_from_ast_ty(db, owner, &p.ty).accumulate_errors_into(&mut errors)
-    //            })
-    //            .collect();
-    //
-    //        let output = match &d.ret {
-    //            None => unit_ty(db),
-    //            Some(ty) => {
-    //                declaration_ty_from_ast_ty(db, owner, ty).accumulate_errors_into(&mut errors)
-    //            }
-    //        };
-    //
-    //        WithError {
-    //            value: Ok(Signature { inputs, output }),
-    //            errors,
-    //        }
-    //    }
-    //}
+    match entity.untern(db) {
+        EntityData::Error(report) => WithError::error_sentinel(db, report),
+
+        EntityData::LangItem(LangItem::Boolean)
+        | EntityData::LangItem(LangItem::String)
+        | EntityData::LangItem(LangItem::Int)
+        | EntityData::LangItem(LangItem::Uint)
+        | EntityData::LangItem(LangItem::False)
+        | EntityData::LangItem(LangItem::Tuple(_))
+        | EntityData::LangItem(LangItem::Debug)
+        | EntityData::LangItem(LangItem::True) => {
+            panic!("cannot invoke `signature` of `{:?}`", entity.untern(db))
+        }
+
+        EntityData::ItemName { .. } | EntityData::MemberName { .. } => {
+            db.parsed_entity(entity).thunk.parse_signature(entity, db)
+        }
+
+        EntityData::InputFile { .. } => panic!(),
+    }
 }
 
 fn unit_ty(db: &impl ParserDatabase) -> Ty<Declaration> {

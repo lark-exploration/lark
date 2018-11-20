@@ -19,10 +19,9 @@ use lark_span::Spanned;
 use lark_string::text::Text;
 use lark_string::GlobalIdentifier;
 use lark_string::GlobalIdentifierTables;
+use lark_ty as ty;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
-use lark_ty::GenericDeclarations;
-use lark_ty::Ty;
 use std::sync::Arc;
 
 #[derive(DebugWith)]
@@ -137,7 +136,7 @@ impl ParsedEntityThunk {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         self.object.parse_generic_declarations(entity, db)
     }
 
@@ -146,8 +145,17 @@ impl ParsedEntityThunk {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Ty<Declaration>> {
+    ) -> WithError<ty::Ty<Declaration>> {
         self.object.parse_type(entity, db)
+    }
+
+    /// See [`LazyParsedEntity::parse_signature`]
+    crate fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        self.object.parse_signature(entity, db)
     }
 
     /// See [`LazyParsedEntity::parse_fn_body`]
@@ -196,7 +204,7 @@ pub trait LazyParsedEntity {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>>;
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>>;
 
     /// What is the "declared type" of this entity? If the entity has
     /// generic types, this type will include bound types referring to
@@ -206,7 +214,14 @@ pub trait LazyParsedEntity {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Ty<Declaration>>;
+    ) -> WithError<ty::Ty<Declaration>>;
+
+    /// What is the "signature" of this entity?
+    fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>>;
 
     /// Parses the fn body associated with this entity,
     /// panicking if there is none.
@@ -239,7 +254,7 @@ impl LazyParsedEntity for ErrorParsedEntity {
         &self,
         _entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         WithError::ok(ErrorSentinel::error_sentinel(db, self.err))
     }
 
@@ -247,16 +262,24 @@ impl LazyParsedEntity for ErrorParsedEntity {
         &self,
         _entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Ty<Declaration>> {
+    ) -> WithError<ty::Ty<Declaration>> {
+        WithError::ok(ErrorSentinel::error_sentinel(&db, self.err))
+    }
+
+    fn parse_signature(
+        &self,
+        _entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
         WithError::ok(ErrorSentinel::error_sentinel(&db, self.err))
     }
 
     fn parse_fn_body(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<hir::FnBody> {
-        unimplemented!()
+        WithError::ok(ErrorSentinel::error_sentinel(&db, self.err))
     }
 }
 
@@ -281,7 +304,7 @@ impl LazyParsedEntity for InvalidParsedEntity {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         panic!(
             "cannot invoke `parse_generic_declarations` on {:?}",
             entity.debug_with(db)
@@ -292,8 +315,19 @@ impl LazyParsedEntity for InvalidParsedEntity {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Ty<Declaration>> {
+    ) -> WithError<ty::Ty<Declaration>> {
         panic!("cannot invoke `parse_type` on {:?}", entity.debug_with(db))
+    }
+
+    fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        panic!(
+            "cannot invoke `parse_signature` on {:?}",
+            entity.debug_with(db)
+        )
     }
 
     fn parse_fn_body(
@@ -326,7 +360,7 @@ pub trait LazyParsedEntityDatabase:
     fn generic_declarations(
         &self,
         entity: Entity,
-    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>>;
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>>;
 }
 
 impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
@@ -345,7 +379,7 @@ impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
     fn generic_declarations(
         &self,
         entity: Entity,
-    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         ParserDatabase::generic_declarations(self, entity)
     }
 }
