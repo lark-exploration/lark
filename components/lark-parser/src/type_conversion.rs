@@ -2,8 +2,9 @@ use crate::ParserDatabase;
 
 use debug::DebugWith;
 use intern::{Intern, Untern};
-use lark_entity::{Entity, EntityData, LangItem, MemberKind};
+use lark_entity::{Entity, EntityData, LangItem};
 use lark_error::{ErrorReported, ErrorSentinel, WithError};
+use lark_ty::declaration::DeclarationTables;
 use lark_ty::{
     BaseData, BaseKind, BoundVar, Declaration, Erased, GenericDeclarations, GenericKind, Generics,
     Signature, Ty, TypeFamily,
@@ -75,30 +76,9 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaratio
             WithError::ok(declaration_ty_named(db, entity, generics))
         }
 
-        EntityData::ItemName { .. } => {
-            unimplemented!()
-            //let ast = db.uhir_of_entity(entity);
-            //
-            //match &ast.value {
-            //    uhir::Entity::Struct(_) | uhir::Entity::Def(_) => {
-            //        WithError::ok(declaration_ty_named(db, entity, Generics::empty()))
-            //    }
-            //}
+        EntityData::ItemName { .. } | EntityData::MemberName { .. } => {
+            db.parsed_entity(entity).thunk.parse_type(entity, db)
         }
-
-        EntityData::MemberName {
-            kind: MemberKind::Field,
-            ..
-        } => {
-            unimplemented!()
-            //let field = db.uhir_of_field(entity);
-            //declaration_ty_from_ast_ty(db, entity, &field.value.ty)
-        }
-
-        EntityData::MemberName {
-            kind: MemberKind::Method,
-            ..
-        } => WithError::ok(declaration_ty_named(db, entity, Generics::empty())),
 
         EntityData::InputFile { .. } => panic!(
             "cannot get type of entity with data {:?}",
@@ -149,8 +129,8 @@ fn unit_ty(db: &impl ParserDatabase) -> Ty<Declaration> {
     )
 }
 
-fn declaration_ty_named(
-    db: &impl ParserDatabase,
+crate fn declaration_ty_named(
+    db: &dyn AsRef<DeclarationTables>,
     entity: Entity,
     generics: Generics<Declaration>,
 ) -> Ty<Declaration> {

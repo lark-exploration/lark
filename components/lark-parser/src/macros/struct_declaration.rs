@@ -16,13 +16,15 @@ use lark_entity::EntityData;
 use lark_entity::ItemKind;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_seq::Seq;
 use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::GlobalIdentifier;
-use lark_ty::GenericDeclarations;
+use lark_ty as ty;
+use lark_ty::declaration::Declaration;
 use std::sync::Arc;
 
 /// ```ignore
@@ -110,9 +112,29 @@ impl LazyParsedEntity for ParsedStructDeclaration {
         &self,
         _entity: Entity,
         _db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         // FIXME -- no support for generics yet
-        WithError::ok(Ok(GenericDeclarations::empty(None)))
+        WithError::ok(Ok(ty::GenericDeclarations::empty(None)))
+    }
+
+    fn parse_type(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<ty::Ty<Declaration>> {
+        // For each struct `Foo`, the "type" is just `Foo`
+        match db.generic_declarations(entity).into_value() {
+            Ok(generic_declarations) => {
+                assert!(generic_declarations.is_empty());
+                let ty = crate::type_conversion::declaration_ty_named(
+                    &db,
+                    entity,
+                    ty::Generics::empty(),
+                );
+                WithError::ok(ty)
+            }
+            Err(err) => WithError::error_sentinel(&db, err),
+        }
     }
 
     fn parse_fn_body(

@@ -24,6 +24,7 @@ use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::ItemKind;
 use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_error::ResultExt;
 use lark_error::WithError;
 use lark_hir as hir;
@@ -31,6 +32,8 @@ use lark_seq::Seq;
 use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
+use lark_ty as ty;
+use lark_ty::declaration::Declaration;
 use lark_ty::GenericDeclarations;
 use std::sync::Arc;
 
@@ -113,6 +116,27 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
     ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
         // FIXME -- no support for generics yet
         WithError::ok(Ok(GenericDeclarations::empty(None)))
+    }
+
+    fn parse_type(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<ty::Ty<Declaration>> {
+        // For each function `foo`, create a unique type `foo` as in
+        // Rust.
+        match db.generic_declarations(entity).into_value() {
+            Ok(generic_declarations) => {
+                assert!(generic_declarations.is_empty());
+                let ty = crate::type_conversion::declaration_ty_named(
+                    &db,
+                    entity,
+                    ty::Generics::empty(),
+                );
+                WithError::ok(ty)
+            }
+            Err(err) => WithError::error_sentinel(&db, err),
+        }
     }
 
     fn parse_fn_body(

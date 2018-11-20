@@ -324,6 +324,10 @@ impl GenericDeclarations {
             declarations: IndexVec::default(),
         })
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.declarations.is_empty() && self.parent_item.is_none()
+    }
 }
 
 /// Declaration of an individual generic type parameter.

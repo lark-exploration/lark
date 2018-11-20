@@ -903,11 +903,8 @@ impl Syntax<'parse> for Expression0<'me, 'parse> {
                 return Ok(ParsedExpression::Place(place));
             }
 
-            if let Some(entity) = self
-                .scope
-                .db
-                .resolve_name(self.scope.item_entity, text.value)
-            {
+            let id = text.value.intern(self.scope.db);
+            if let Some(entity) = self.scope.db.resolve_name(self.scope.item_entity, id) {
                 let place = self.scope.add(text.span, hir::PlaceData::Entity(entity));
                 return Ok(ParsedExpression::Place(place));
             }
