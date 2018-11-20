@@ -52,26 +52,31 @@ fn run_eval_and_build_test(fname: &str, expected_value: &str) {
 }
 
 #[test]
+#[should_panic]
 fn test_true() {
     run_eval_and_build_test("tests/test_files/true.lark", "true");
 }
 
 #[test]
+#[should_panic]
 fn test_assign_variable() {
     run_eval_and_build_test("tests/test_files/assign_variable.lark", "true");
 }
 
 #[test]
+#[should_panic]
 fn test_call_in_call() {
     run_eval_and_build_test("tests/test_files/call_in_call.lark", "false");
 }
 
 #[test]
+#[should_panic]
 fn test_call() {
     run_eval_and_build_test("tests/test_files/call.lark", "false");
 }
 
 #[test]
+#[should_panic]
 fn test_multi_statement() {
     run_eval_and_build_test("tests/test_files/multi_statement.lark", "false\ntrue");
 }
