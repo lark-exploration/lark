@@ -14,7 +14,6 @@ pub enum LexerNext<Delegate: LexerDelegateTrait> {
     Transition(LexerAccumulate<Delegate>, Delegate),
     PushState(LexerAccumulate<Delegate>, Delegate),
     PopState(LexerAccumulate<Delegate>),
-    Error(Option<char>),
 }
 
 impl<Delegate: LexerDelegateTrait> LexerNext<Delegate> {
@@ -200,12 +199,12 @@ pub fn reconsume() -> LexerAction {
     LexerAction::Reconsume
 }
 
-pub fn consume() -> LexerAction {
-    LexerAction::Consume(1)
+pub fn consume(c: char) -> LexerAction {
+    LexerAction::Consume(c.len_utf8())
 }
 
-pub fn consume_n(size: usize) -> LexerAction {
-    LexerAction::Consume(size)
+pub fn consume_str(s: &str) -> LexerAction {
+    LexerAction::Consume(s.len())
 }
 
 pub fn begin<Delegate: LexerDelegateTrait>() -> LexerAccumulate<Delegate> {
@@ -219,11 +218,7 @@ pub fn eof<Delegate: LexerDelegateTrait>() -> LexerNext<Delegate> {
 pub trait LexerDelegateTrait: fmt::Debug + Clone + Copy + Sized {
     type Token: fmt::Debug + DebugWith + Copy;
 
-    fn next(
-        &self,
-        c: Option<char>,
-        rest: &'input str,
-    ) -> Result<LexerNext<Self>, Span<CurrentFile>>;
+    fn next(&self, c: Option<char>, rest: &'input str) -> LexerNext<Self>;
 
     fn top() -> Self;
 }
@@ -285,14 +280,6 @@ impl<Delegate: LexerDelegateTrait + Debug> Iterator for Tokenizer<'table, Delega
             };
 
             self.trace("start");
-
-            let next = match next {
-                // If the delegate returned an error, it's an error
-                Err(e) => return Some(Err(e)),
-
-                // Otherwise, process the action
-                Ok(n) => n,
-            };
 
             match self.step(next) {
                 LoopCompletion::Return(v) => return self.emit(v),
@@ -379,8 +366,6 @@ impl<Delegate: LexerDelegateTrait + Debug> Tokenizer<'table, Delegate> {
 
                 ret
             }
-
-            LexerNext::Error(c) => LoopCompletion::Return(Some(Err(self.error(c)))),
         }
     }
 
