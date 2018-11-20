@@ -2,7 +2,6 @@ use lark_test::*;
 
 #[test]
 fn bad_identifier() {
-    env_logger::init();
     run_test(
         "def new(msg: bool,) -> bool { msg1 }",
         "                              ~~~~",
