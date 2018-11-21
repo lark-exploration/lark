@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod tests {
     use languageserver_types::{
-        ClientCapabilities, DidOpenTextDocumentParams, InitializeParams, InitializeResult,
-        PublishDiagnosticsParams, TextDocumentItem,
+        ClientCapabilities, DidOpenTextDocumentParams, Hover, HoverContents, InitializeParams,
+        InitializeResult, MarkedString, Position, PublishDiagnosticsParams, TextDocumentIdentifier,
+        TextDocumentItem, TextDocumentPositionParams,
     };
     use lark_language_server::{JsonRPCNotification, JsonRPCResponse, LSPCommand};
     use serde::{Deserialize, Serialize};
@@ -126,6 +127,30 @@ mod tests {
                 },
             })
         }
+
+        fn send_hover(
+            &mut self,
+            filepath: &str,
+            line: u64,
+            character: u64,
+        ) -> Result<(), Box<std::error::Error>> {
+            let path = std::path::Path::new(filepath).canonicalize()?;
+            self.send(LSPCommand::hover {
+                id: 900,
+                params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier {
+                        uri: url::Url::parse(&format!(
+                            "file:///{}",
+                            path.to_str().ok_or(std::io::Error::new(
+                                std::io::ErrorKind::InvalidData,
+                                "Bad filepath"
+                            ))?
+                        ))?,
+                    },
+                    position: Position { line, character },
+                },
+            })
+        }
     }
 
     #[test]
@@ -147,6 +172,42 @@ mod tests {
         assert_eq!(result.method, "textDocument/publishDiagnostics",);
         assert_eq!(result.params.diagnostics.len(), 1,);
         assert_eq!(result.params.diagnostics[0].message, "Mismatched types",);
+
+        Ok(())
+    }
+
+    #[test]
+    fn hover_for_type() -> Result<(), Box<std::error::Error>> {
+        let mut child_session = ChildSession::spawn();
+
+        // Child that we are initialized
+        child_session.send_init(101)?;
+
+        let result = child_session.receive::<JsonRPCResponse<InitializeResult>>()?;
+
+        assert_eq!(result.id, 101);
+
+        // Open the document
+        child_session.send_open("tests/test_files/call.lark")?;
+
+        let result = child_session.receive::<JsonRPCNotification<PublishDiagnosticsParams>>()?;
+
+        assert_eq!(result.method, "textDocument/publishDiagnostics");
+        assert_eq!(result.params.diagnostics.len(), 0);
+
+        // Hover to get the type
+        /*
+        child_session.send_hover("tests/test_files/call.lark", 1, 7)?;
+        
+        let result = child_session.receive::<JsonRPCNotification<Hover>>()?;
+        
+        match result.params.contents {
+            HoverContents::Scalar(MarkedString::String(s)) => {
+                assert_eq!(s, "fn(bool)->void");
+            }
+            x => panic!("Unexpected string type: {:?}", x),
+        }
+        */
 
         Ok(())
     }
