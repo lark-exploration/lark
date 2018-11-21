@@ -196,7 +196,6 @@ mod tests {
         assert_eq!(result.params.diagnostics.len(), 0);
 
         // Hover to get the type
-        /*
         child_session.send_hover("tests/test_files/call.lark", 1, 7)?;
         
         let result = child_session.receive::<JsonRPCNotification<Hover>>()?;
@@ -207,7 +206,6 @@ mod tests {
             }
             x => panic!("Unexpected string type: {:?}", x),
         }
-        */
 
         Ok(())
     }
