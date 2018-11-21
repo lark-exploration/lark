@@ -12,6 +12,7 @@ use intern::{Intern, Untern};
 use lark_entity::MemberKind;
 use lark_entity::{Entity, EntityData};
 use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_seq::Seq;
@@ -82,7 +83,7 @@ crate fn child_parsed_entities(
 
 crate fn parsed_entity(db: &impl ParserDatabase, entity: Entity) -> ParsedEntity {
     match entity.untern(db) {
-        EntityData::ItemName { base, .. } => {
+        EntityData::ItemName { base, .. } | EntityData::MemberName { base, .. } => {
             let siblings = db.child_parsed_entities(base).into_value();
 
             siblings
@@ -98,10 +99,7 @@ crate fn parsed_entity(db: &impl ParserDatabase, entity: Entity) -> ParsedEntity
                 .clone()
         }
 
-        EntityData::Error { .. }
-        | EntityData::InputFile { .. }
-        | EntityData::MemberName { .. }
-        | EntityData::LangItem(_) => {
+        EntityData::Error { .. } | EntityData::InputFile { .. } | EntityData::LangItem(_) => {
             panic!(
                 "cannot compute: `parsed_entity({:?})`",
                 entity.debug_with(db),
@@ -189,54 +187,48 @@ crate fn descendant_entities(db: &impl ParserDatabase, root: Entity) -> Seq<Enti
 }
 
 crate fn members(
-    _db: &impl ParserDatabase,
-    _owner: Entity,
+    db: &impl ParserDatabase,
+    owner: Entity,
 ) -> Result<Seq<hir::Member>, ErrorReported> {
-    unimplemented!()
-    //let u = db.uhir_of_entity(owner);
-    //match &u.value {
-    //    uhir::Entity::Struct(s) => Ok(s
-    //        .fields
-    //        .iter()
-    //        .map(|f| {
-    //            let field_entity = EntityData::MemberName {
-    //                base: owner,
-    //                kind: hir::MemberKind::Field,
-    //                id: *f.name,
-    //            }
-    //            .intern(db);
-    //
-    //            Member {
-    //                name: *f.name,
-    //                kind: hir::MemberKind::Field,
-    //                entity: field_entity,
-    //            }
-    //        })
-    //        .collect()),
-    //
-    //    uhir::Entity::Def(_) => panic!("asked for members of a function"),
-    //}
+    // Really this query should perhaps go away, or else maybe be
+    // redirected to the `ParsedEntity` -- e.g., one goal was to allow
+    // us to know when there were errors in the field list (i.e., by
+    // returning `Err`) to suppress derived errors.  This setup won't
+    // permit that.
+    Ok(db
+        .child_entities(owner)
+        .iter()
+        .cloned()
+        .filter_map(|child_entity| match child_entity.untern(db) {
+            EntityData::MemberName { id, kind, .. } => Some(hir::Member {
+                name: id,
+                kind,
+                entity: child_entity,
+            }),
+
+            _ => None,
+        })
+        .collect())
 }
 
 crate fn member_entity(
-    _db: &impl ParserDatabase,
-    _owner: Entity,
-    _kind: MemberKind,
-    _name: GlobalIdentifier,
+    db: &impl ParserDatabase,
+    owner: Entity,
+    kind: MemberKind,
+    name: GlobalIdentifier,
 ) -> Option<Entity> {
-    unimplemented!()
-    //match db.members(owner) {
-    //    Err(report) => Some(Entity::error_sentinel(db, report)),
-    //
-    //    Ok(members) => members
-    //        .iter()
-    //        .filter_map(|member| {
-    //            if member.kind == kind && member.name == name {
-    //                Some(member.entity)
-    //            } else {
-    //                None
-    //            }
-    //        })
-    //        .next(),
-    //}
+    match db.members(owner) {
+        Err(report) => Some(Entity::error_sentinel(db, report)),
+
+        Ok(members) => members
+            .iter()
+            .filter_map(|member| {
+                if member.kind == kind && member.name == name {
+                    Some(member.entity)
+                } else {
+                    None
+                }
+            })
+            .next(),
+    }
 }
