@@ -86,7 +86,7 @@ impl LazyParsedEntity for ParsedStructDeclaration {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Vec<ParsedEntity>> {
+    ) -> WithError<Seq<ParsedEntity>> {
         WithError::ok(
             self.fields
                 .iter()

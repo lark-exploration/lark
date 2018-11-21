@@ -15,6 +15,7 @@ use lark_error::ErrorReported;
 use lark_error::ResultExt;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_seq::Seq;
 use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
@@ -60,8 +61,8 @@ impl LazyParsedEntity for ParsedField {
         &self,
         _entity: Entity,
         _db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Vec<ParsedEntity>> {
-        WithError::ok(vec![])
+    ) -> WithError<Seq<ParsedEntity>> {
+        WithError::ok(Seq::default())
     }
 
     fn parse_generic_declarations(

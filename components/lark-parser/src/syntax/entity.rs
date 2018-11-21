@@ -127,7 +127,7 @@ impl ParsedEntityThunk {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Vec<ParsedEntity>> {
+    ) -> WithError<Seq<ParsedEntity>> {
         self.object.parse_children(entity, db)
     }
 
@@ -195,7 +195,7 @@ pub trait LazyParsedEntity {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Vec<ParsedEntity>>;
+    ) -> WithError<Seq<ParsedEntity>>;
 
     /// What "generic declarations" are on this entity? e.g., for
     /// `struct Foo<T> { .. }`, this would return the declaration for
@@ -237,6 +237,48 @@ pub trait LazyParsedEntity {
     ) -> WithError<hir::FnBody>;
 }
 
+/// The trait given to the [`LazyParsedEntity`] methods. It is a "dyn
+/// capable" variant of `ParserDatabase`.
+pub trait LazyParsedEntityDatabase:
+    AsRef<GlobalIdentifierTables> + AsRef<EntityTables> + AsRef<DeclarationTables>
+{
+    /// Looks up a name `name` to see if it matches any entities in the scope of `item_entity`.
+    fn resolve_name(&self, item_entity: Entity, name: GlobalIdentifier) -> Option<Entity>;
+
+    /// The `file_text` query
+    fn file_text(&self, id: FileName) -> Text;
+
+    /// The `file_tokens` query
+    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>>;
+
+    /// The `generic_declarations` query
+    fn generic_declarations(
+        &self,
+        entity: Entity,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>>;
+}
+
+impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
+    fn file_text(&self, id: FileName) -> Text {
+        ParserDatabase::file_text(self, id)
+    }
+
+    fn resolve_name(&self, item_entity: Entity, name: GlobalIdentifier) -> Option<Entity> {
+        ParserDatabase::resolve_name(self, item_entity, name)
+    }
+
+    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>> {
+        ParserDatabase::file_tokens(self, id)
+    }
+
+    fn generic_declarations(
+        &self,
+        entity: Entity,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+        ParserDatabase::generic_declarations(self, entity)
+    }
+}
+
 crate struct ErrorParsedEntity {
     crate err: ErrorReported,
 }
@@ -246,8 +288,8 @@ impl LazyParsedEntity for ErrorParsedEntity {
         &self,
         _entity: Entity,
         _db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Vec<ParsedEntity>> {
-        WithError::ok(vec![])
+    ) -> WithError<Seq<ParsedEntity>> {
+        WithError::ok(Seq::default())
     }
 
     fn parse_generic_declarations(
@@ -293,7 +335,7 @@ impl LazyParsedEntity for InvalidParsedEntity {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Vec<ParsedEntity>> {
+    ) -> WithError<Seq<ParsedEntity>> {
         panic!(
             "cannot invoke `parse_children` on {:?}",
             entity.debug_with(db)
@@ -339,47 +381,5 @@ impl LazyParsedEntity for InvalidParsedEntity {
             "cannot invoke `parse_fn_body` on {:?}",
             entity.debug_with(db)
         )
-    }
-}
-
-/// The trait given to the [`LazyParsedEntity`] methods. It is a "dyn
-/// capable" variant of `ParserDatabase`.
-pub trait LazyParsedEntityDatabase:
-    AsRef<GlobalIdentifierTables> + AsRef<EntityTables> + AsRef<DeclarationTables>
-{
-    /// Looks up a name `name` to see if it matches any entities in the scope of `item_entity`.
-    fn resolve_name(&self, item_entity: Entity, name: GlobalIdentifier) -> Option<Entity>;
-
-    /// The `file_text` query
-    fn file_text(&self, id: FileName) -> Text;
-
-    /// The `file_tokens` query
-    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>>;
-
-    /// The `generic_declarations` query
-    fn generic_declarations(
-        &self,
-        entity: Entity,
-    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>>;
-}
-
-impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
-    fn file_text(&self, id: FileName) -> Text {
-        ParserDatabase::file_text(self, id)
-    }
-
-    fn resolve_name(&self, item_entity: Entity, name: GlobalIdentifier) -> Option<Entity> {
-        ParserDatabase::resolve_name(self, item_entity, name)
-    }
-
-    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>> {
-        ParserDatabase::file_tokens(self, id)
-    }
-
-    fn generic_declarations(
-        &self,
-        entity: Entity,
-    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
-        ParserDatabase::generic_declarations(self, entity)
     }
 }
