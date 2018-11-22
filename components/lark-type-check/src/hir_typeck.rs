@@ -17,7 +17,7 @@ use map::FxIndexSet;
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckerFamily,
+    F: TypeCheckerFamily<DB>,
     Self: AsRef<F::InternTables>,
 {
     crate fn check_fn_body(&mut self) {

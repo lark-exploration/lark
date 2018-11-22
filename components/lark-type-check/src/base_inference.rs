@@ -13,10 +13,13 @@ use lark_ty::Ty;
 use lark_ty::{BaseData, BaseKind};
 use lark_ty::{GenericKind, Generics};
 
-impl TypeCheckerFamily for BaseInference {
+impl<DB> TypeCheckerFamily<DB> for BaseInference
+where
+    DB: TypeCheckDatabase,
+{
     type TcBase = Base;
 
-    fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self> {
+    fn new_infer_ty(this: &mut impl TypeCheckerFields<DB, Self>) -> Ty<Self> {
         Ty {
             repr: Erased,
             perm: Erased,
@@ -25,7 +28,7 @@ impl TypeCheckerFamily for BaseInference {
     }
 
     fn equate_types(
-        this: &mut impl TypeCheckerFields<Self>,
+        this: &mut impl TypeCheckerFields<DB, Self>,
         cause: hir::MetaIndex,
         ty1: Ty<BaseInference>,
         ty2: Ty<BaseInference>,
@@ -74,7 +77,7 @@ impl TypeCheckerFamily for BaseInference {
     }
 
     fn apply_user_perm(
-        _this: &mut impl TypeCheckerFields<Self>,
+        _this: &mut impl TypeCheckerFields<DB, Self>,
         _perm: hir::Perm,
         place_ty: Ty<BaseInference>,
     ) -> Ty<BaseInference> {
@@ -83,7 +86,7 @@ impl TypeCheckerFamily for BaseInference {
     }
 
     fn require_assignable(
-        this: &mut impl TypeCheckerFields<Self>,
+        this: &mut impl TypeCheckerFields<DB, Self>,
         expression: hir::Expression,
         value_ty: Ty<BaseInference>,
         place_ty: Ty<BaseInference>,
@@ -92,7 +95,7 @@ impl TypeCheckerFamily for BaseInference {
     }
 
     fn least_upper_bound(
-        this: &mut impl TypeCheckerFields<Self>,
+        this: &mut impl TypeCheckerFields<DB, Self>,
         if_expression: hir::Expression,
         true_ty: Ty<BaseInference>,
         false_ty: Ty<BaseInference>,
@@ -102,7 +105,7 @@ impl TypeCheckerFamily for BaseInference {
     }
 
     fn substitute<M>(
-        this: &mut impl TypeCheckerFields<Self>,
+        this: &mut impl TypeCheckerFields<DB, Self>,
         _location: hir::MetaIndex,
         generics: &Generics<Self>,
         value: M,
@@ -114,7 +117,7 @@ impl TypeCheckerFamily for BaseInference {
     }
 
     fn apply_owner_perm<M>(
-        this: &mut impl TypeCheckerFields<Self>,
+        this: &mut impl TypeCheckerFields<DB, Self>,
         _location: impl Into<hir::MetaIndex>,
         _owner_perm: Erased,
         value: M,
@@ -126,8 +129,8 @@ impl TypeCheckerFamily for BaseInference {
     }
 }
 
-fn propagate_error<F: TypeCheckerFamily>(
-    this: &mut impl TypeCheckerFields<F>,
+fn propagate_error<DB: TypeCheckDatabase, F: TypeCheckerFamily<DB>>(
+    this: &mut impl TypeCheckerFields<DB, F>,
     cause: hir::MetaIndex,
     data: BaseData<F>,
 ) {
