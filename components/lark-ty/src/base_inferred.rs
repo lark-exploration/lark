@@ -38,8 +38,6 @@ impl TypeFamily for BaseInferred {
     }
 }
 
-pub type BaseTy = crate::Ty<BaseInferred>;
-
 indices::index_type! {
     pub struct Base { .. }
 }

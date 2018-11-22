@@ -7,7 +7,7 @@ use intern::Intern;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
 use lark_hir as hir;
-use lark_ty::base_inference::{Base, BaseInference, BaseInferenceTables, BaseTy};
+use lark_ty::base_inference::{Base, BaseInference, BaseInferenceTables};
 use lark_ty::declaration::Declaration;
 use lark_ty::identity::Identity;
 use lark_ty::map_family::Map;
@@ -77,23 +77,23 @@ impl TypeCheckFamily for BaseInference {
         }
     }
 
-    fn boolean_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+    fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<BaseInference> {
         primitive_type(this, LangItem::Boolean)
     }
 
-    fn int_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+    fn int_type(this: &impl TypeCheckerFields<Self>) -> Ty<BaseInference> {
         primitive_type(this, LangItem::Int)
     }
 
-    fn uint_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+    fn uint_type(this: &impl TypeCheckerFields<Self>) -> Ty<BaseInference> {
         primitive_type(this, LangItem::Uint)
     }
 
-    fn unit_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+    fn unit_type(this: &impl TypeCheckerFields<Self>) -> Ty<BaseInference> {
         primitive_type(this, LangItem::Tuple(0))
     }
 
-    fn string_type(this: &impl TypeCheckerFields<Self>) -> BaseTy {
+    fn string_type(this: &impl TypeCheckerFields<Self>) -> Ty<BaseInference> {
         primitive_type(this, LangItem::String)
     }
 
@@ -175,7 +175,10 @@ where
     }
 }
 
-fn primitive_type(this: &impl TypeCheckerFields<BaseInference>, item: LangItem) -> BaseTy {
+fn primitive_type(
+    this: &impl TypeCheckerFields<BaseInference>,
+    item: LangItem,
+) -> Ty<BaseInference> {
     let entity = EntityData::LangItem(item).intern(this);
     Ty {
         repr: Erased,
