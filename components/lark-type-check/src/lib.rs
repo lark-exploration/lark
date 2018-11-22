@@ -219,6 +219,9 @@ pub struct TypeCheckResults<F: TypeFamily> {
     /// other things that have a type.
     types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
 
+    /// For references to entities, the generics applied.
+    generics: std::collections::BTreeMap<hir::MetaIndex, Generics<F>>,
+
     /// For "type-relative" identifiers, stores the entity that we resolved
     /// to. Examples:
     ///
@@ -241,6 +244,12 @@ impl<F: TypeFamily> TypeCheckResults<F> {
         self.types.insert(index.into(), ty);
     }
 
+    /// Record the generics for a given element of the HIR
+    /// (typically an expression).
+    fn record_generics(&mut self, index: impl Into<hir::MetaIndex>, g: &Generics<F>) {
+        self.generics.insert(index.into(), g.clone());
+    }
+
     /// Access the type stored for the given `index`, usually the
     /// index of an expression.
     pub fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
@@ -252,6 +261,7 @@ impl<F: TypeFamily> Default for TypeCheckResults<F> {
     fn default() -> Self {
         Self {
             types: Default::default(),
+            generics: Default::default(),
             entities: Default::default(),
         }
     }
@@ -265,9 +275,14 @@ where
     type Output = TypeCheckResults<T>;
 
     fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
-        let TypeCheckResults { types, entities } = self;
+        let TypeCheckResults {
+            types,
+            generics,
+            entities,
+        } = self;
         TypeCheckResults {
             types: types.map(mapper),
+            generics: generics.map(mapper),
             entities: entities.map(mapper),
         }
     }

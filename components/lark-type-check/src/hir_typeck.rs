@@ -174,6 +174,7 @@ where
 
                 let entity_ty = self.db.ty(entity).into_value();
                 let generics = self.inference_variables_for(entity);
+                self.results.record_generics(place, &generics);
                 self.substitute(place, &generics, entity_ty)
             }
 
@@ -428,6 +429,7 @@ where
         };
 
         let generics = self.inference_variables_for(entity);
+        self.results.record_generics(expression, &generics);
 
         // Get a vector of **all** the fields.
         let mut missing_members: FxIndexSet<Entity> =
