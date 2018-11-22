@@ -22,11 +22,11 @@ use lark_unify::Inferable;
 use std::sync::Arc;
 
 #[derive(Copy, Clone, Debug)]
-pub(super) struct OpIndex {
+crate struct OpIndex {
     index: generational_arena::Index,
 }
 
-pub(super) trait BoxedTypeCheckerOp<TypeCheck> {
+crate trait BoxedTypeCheckerOp<TypeCheck> {
     fn execute(self: Box<Self>, typeck: &mut TypeCheck);
 }
 
@@ -49,35 +49,35 @@ where
     F: TypeCheckFamily,
     Self: AsRef<F::InternTables>,
 {
-    pub(super) fn new_infer_ty(&mut self) -> Ty<F> {
+    crate fn new_infer_ty(&mut self) -> Ty<F> {
         F::new_infer_ty(self)
     }
 
-    pub(super) fn equate_types(&mut self, cause: hir::MetaIndex, ty1: Ty<F>, ty2: Ty<F>) {
+    crate fn equate_types(&mut self, cause: hir::MetaIndex, ty1: Ty<F>, ty2: Ty<F>) {
         F::equate_types(self, cause, ty1, ty2)
     }
 
-    pub(super) fn boolean_type(&self) -> Ty<F> {
+    crate fn boolean_type(&self) -> Ty<F> {
         self.primitive_type(LangItem::Boolean)
     }
 
-    pub(super) fn int_type(&self) -> Ty<F> {
+    crate fn int_type(&self) -> Ty<F> {
         self.primitive_type(LangItem::Int)
     }
 
-    pub(super) fn uint_type(&self) -> Ty<F> {
+    crate fn uint_type(&self) -> Ty<F> {
         self.primitive_type(LangItem::Uint)
     }
 
-    pub(super) fn string_type(&self) -> Ty<F> {
+    crate fn string_type(&self) -> Ty<F> {
         self.primitive_type(LangItem::String)
     }
 
-    pub(super) fn unit_type(&self) -> Ty<F> {
+    crate fn unit_type(&self) -> Ty<F> {
         self.primitive_type(LangItem::Tuple(0))
     }
 
-    pub(super) fn error_type(&self) -> Ty<F> {
+    crate fn error_type(&self) -> Ty<F> {
         F::error_type(self)
     }
 
@@ -97,12 +97,12 @@ where
     }
 
     /// Record that an error occurred at the given location.
-    pub(super) fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>) {
+    crate fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>) {
         let span = self.hir.span(location.into());
         self.errors.push(Diagnostic::new(label, span));
     }
 
-    pub(super) fn substitute<M>(
+    crate fn substitute<M>(
         &mut self,
         location: impl Into<hir::MetaIndex>,
         generics: &Generics<F>,
@@ -114,7 +114,7 @@ where
         F::substitute(self, location.into(), generics, value)
     }
 
-    pub(super) fn apply_owner_perm<M>(
+    crate fn apply_owner_perm<M>(
         &mut self,
         location: impl Into<hir::MetaIndex>,
         owner_perm: F::Perm,
@@ -126,7 +126,7 @@ where
         F::apply_owner_perm(self, location, owner_perm, value)
     }
 
-    pub(super) fn require_assignable(
+    crate fn require_assignable(
         &mut self,
         expression: hir::Expression,
         value_ty: Ty<F>,
@@ -135,19 +135,19 @@ where
         F::require_assignable(self, expression, value_ty, place_ty)
     }
 
-    pub(super) fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F> {
+    crate fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F> {
         F::apply_user_perm(self, perm, place_ty)
     }
 
-    pub(super) fn own_perm(&mut self) -> F::Perm {
+    crate fn own_perm(&mut self) -> F::Perm {
         F::own_perm(self)
     }
 
-    pub(super) fn direct_repr(&mut self) -> F::Repr {
+    crate fn direct_repr(&mut self) -> F::Repr {
         F::direct_repr(self)
     }
 
-    pub(super) fn least_upper_bound(
+    crate fn least_upper_bound(
         &mut self,
         if_expression: hir::Expression,
         true_ty: Ty<F>,
@@ -156,7 +156,7 @@ where
         F::least_upper_bound(self, if_expression, true_ty, false_ty)
     }
 
-    pub(super) fn placeholders_for(&mut self, def_id: Entity) -> Generics<F> {
+    crate fn placeholders_for(&mut self, def_id: Entity) -> Generics<F> {
         let GenericDeclarations {
             parent_item,
             declarations,
@@ -193,7 +193,7 @@ where
         generics
     }
 
-    pub(super) fn inference_variables_for(&mut self, def_id: Entity) -> Generics<F> {
+    crate fn inference_variables_for(&mut self, def_id: Entity) -> Generics<F> {
         let GenericDeclarations {
             parent_item,
             declarations,
@@ -231,7 +231,7 @@ where
     /// Otherwise, creates a type variable and returns that;
     /// once `base` can be mapped, the closure `op` will be
     /// invoked and the type variable will be unified.
-    pub(super) fn with_base_data(
+    crate fn with_base_data(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
         base: F::TcBase,
@@ -270,7 +270,7 @@ where
 
     /// Enqueues a closure to execute when any of the
     /// variables in `values` are unified.
-    pub(super) fn enqueue_op(
+    crate fn enqueue_op(
         &mut self,
         values: impl IntoIterator<Item = impl Inferable<F::InternTables>>,
         closure: impl FnOnce(&mut Self) + 'static,
@@ -296,7 +296,7 @@ where
     }
 
     /// Executes any closures that are blocked on `var`.
-    pub(super) fn trigger_ops(&mut self, var: InferVar) {
+    crate fn trigger_ops(&mut self, var: InferVar) {
         let blocked_ops = self.ops_blocked.remove(&var).unwrap_or(vec![]);
         for OpIndex { index } in blocked_ops {
             match self.ops_arena.remove(index) {
@@ -316,7 +316,7 @@ where
     /// Records any inference variables that are have
     /// not-yet-triggered operations. These must all be currently
     /// unresolved.
-    pub(super) fn untriggered_ops(&mut self, output: &mut Vec<InferVar>) {
+    crate fn untriggered_ops(&mut self, output: &mut Vec<InferVar>) {
         'var_loop: for (&var, blocked_ops) in &self.ops_blocked {
             assert!(!self.unify.var_is_known(var));
             for &OpIndex { index } in blocked_ops {

@@ -20,7 +20,7 @@ where
     F: TypeCheckFamily,
     Self: AsRef<F::InternTables>,
 {
-    pub(super) fn check_fn_body(&mut self) {
+    crate fn check_fn_body(&mut self) {
         let hir_arguments_len = self.hir.arguments.map(|l| l.len()).unwrap_or(0);
         let declaration_signature = self
             .db
