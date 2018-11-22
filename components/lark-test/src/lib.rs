@@ -1,14 +1,15 @@
-use debug::DebugWith;
 use intern::Intern;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::{Cancelled, LsDatabase, RangedDiagnostic};
 use lark_query_system::LarkDatabase;
 use lark_seq::seq;
 use lark_span::FileName;
-use lark_span::IntoFileName;
 use lark_string::Text;
 use salsa::Database;
 use std::fmt::Debug;
+
+pub use debug::DebugWith;
+pub use lark_span::IntoFileName;
 
 pub trait ErrorSpec {
     fn check_errors(&self, errors: &[RangedDiagnostic]);
@@ -59,14 +60,16 @@ impl ErrorSpec for &str {
     }
 }
 
-pub fn run_test(text: &str, error_spec: impl ErrorSpec) {
+pub fn db_with_test(file_name: impl IntoFileName, text: &str) -> LarkDatabase {
     let mut db = LarkDatabase::default();
-    let path1_str = "path1";
-    let file_name = "path1".into_file_name(&db);
+    db.add_file(file_name, text);
+    db
+}
 
-    db.add_file(path1_str, text);
-
-    let parsed = db.parsed_file(file_name);
+pub fn run_test(text: &str, error_spec: impl ErrorSpec) {
+    let file_name_str = "input.lark";
+    let db = db_with_test(file_name_str, text);
+    let parsed = db.parsed_file(file_name_str.into_file_name(&db));
     assert!(parsed.value.entities().len() >= 1, "input with no items");
 
     match db.errors_for_project() {
@@ -74,7 +77,7 @@ pub fn run_test(text: &str, error_spec: impl ErrorSpec) {
             let flat_errors: Vec<_> = errors
                 .into_iter()
                 .flat_map(|(file_name, errors)| {
-                    assert_eq!(file_name, path1_str);
+                    assert_eq!(file_name, file_name_str);
                     errors
                 })
                 .collect();

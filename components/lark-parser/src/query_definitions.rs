@@ -151,17 +151,24 @@ crate fn line_offsets(db: &impl ParserDatabase, id: FileName) -> Seq<usize> {
 
 crate fn location(db: &impl ParserDatabase, id: FileName, index: ByteIndex) -> Location {
     let line_offsets = db.line_offsets(id);
-    let line = match line_offsets.binary_search(&index.to_usize()) {
-        Ok(index) | Err(index) => index,
-    };
+    match line_offsets.binary_search(&index.to_usize()) {
+        Ok(line) => {
+            // Found the start of a line directly:
+            return Location::new(line, 0, index);
+        }
+        Err(next_line) => {
+            let line = next_line - 1;
 
-    let line_start = line_offsets[line];
-    let text: &str = &db.file_text(id);
+            // Found something in the middle.
+            let line_start = line_offsets[line];
 
-    // count utf-8 characters to find column
-    let column = text[line_start..index.to_usize()].chars().count();
+            // count utf-8 characters to find column
+            let text: &str = &db.file_text(id);
+            let column = text[line_start..index.to_usize()].chars().count();
 
-    Location::new(line, column, index)
+            Location::new(line, column, index)
+        }
+    }
 }
 
 crate fn byte_index(db: &impl ParserDatabase, id: FileName, line: u64, column: u64) -> ByteIndex {
