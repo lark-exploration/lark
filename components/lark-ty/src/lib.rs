@@ -13,7 +13,7 @@ use lark_entity::Entity;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_seq::Seq;
-use lark_string::global::GlobalIdentifier;
+use lark_string::GlobalIdentifier;
 use lark_unify::InferVar;
 use std::fmt::{self, Debug};
 use std::hash::Hash;

@@ -11,7 +11,7 @@ use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::WithError;
 use lark_span::{FileName, Span, Spanned};
-use lark_string::global::GlobalIdentifier;
+use lark_string::GlobalIdentifier;
 use lark_ty::declaration::DeclarationTables;
 use lark_type_check as typecheck;
 use std::sync::Arc;

@@ -97,7 +97,7 @@ fn build_operand(
 pub fn codegen_struct(
     db: &mut LarkDatabase,
     entity: Entity,
-    id: lark_string::global::GlobalIdentifier,
+    id: lark_string::GlobalIdentifier,
 ) -> WithError<String> {
     let name = id.untern(db);
     let members = db.members(entity).unwrap();
@@ -230,7 +230,7 @@ pub fn codegen_basic_block(
 pub fn codegen_function(
     db: &mut LarkDatabase,
     entity: Entity,
-    id: lark_string::global::GlobalIdentifier,
+    id: lark_string::GlobalIdentifier,
 ) -> WithError<String> {
     let mut output = String::new();
     let mut errors: Vec<Diagnostic> = vec![];

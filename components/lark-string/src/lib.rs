@@ -3,8 +3,8 @@
 #![feature(const_let)]
 #![feature(specialization)]
 
-pub mod global;
-pub mod text;
+mod global;
+mod text;
 
 pub use self::global::{GlobalIdentifier, GlobalIdentifierTables};
 pub use self::text::Text;
