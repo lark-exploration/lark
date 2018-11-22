@@ -1,5 +1,5 @@
-use crate::TypeCheckFamily;
 use crate::TypeChecker;
+use crate::TypeCheckerFamily;
 use crate::UniverseBinder;
 use intern::Intern;
 use lark_entity::Entity;
@@ -46,7 +46,7 @@ where
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: crate::TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckerFamily,
     Self: AsRef<F::InternTables>,
 {
     crate fn new_infer_ty(&mut self) -> Ty<F> {

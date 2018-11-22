@@ -1,6 +1,6 @@
 use crate::TypeCheckDatabase;
-use crate::TypeCheckFamily;
 use crate::TypeChecker;
+use crate::TypeCheckerFamily;
 use crate::TypeCheckerFields;
 use debug::DebugWith;
 use intern::Untern;
@@ -17,7 +17,7 @@ use map::FxIndexSet;
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckerFamily,
     Self: AsRef<F::InternTables>,
 {
     crate fn check_fn_body(&mut self) {

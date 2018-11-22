@@ -44,7 +44,7 @@ salsa::query_group! {
     }
 }
 
-struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckFamily> {
+struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily> {
     /// Salsa database.
     db: &'me DB,
 
@@ -88,7 +88,7 @@ enum UniverseBinder {
 /// An extension of the `TypeFamily` trait, describing a family of
 /// types that can be used in the type-checker. This family must
 /// support inference.
-trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
+trait TypeCheckerFamily: TypeFamily<Placeholder = Placeholder> {
     /// The "base type" for this family -- this is always the same as
     /// `Self::Base`, hence the `From` and `Into` requirements, but it
     /// allows us to add the extra information that it is
@@ -166,8 +166,8 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
 }
 
 /// Trait implemented by `TypeChecker` to allow access to a few useful
-/// fields. This is used in the implementations of `TypeCheckFamily`.
-trait TypeCheckerFields<F: TypeCheckFamily>:
+/// fields. This is used in the implementations of `TypeCheckerFamily`.
+trait TypeCheckerFields<F: TypeCheckerFamily>:
     AsRef<F::InternTables> + AsRef<DeclarationTables> + AsRef<BaseInferredTables> + AsRef<EntityTables>
 {
     type DB: TypeCheckDatabase;
@@ -181,7 +181,7 @@ trait TypeCheckerFields<F: TypeCheckFamily>:
 impl<'me, DB, F> TypeCheckerFields<F> for TypeChecker<'me, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckerFamily,
     Self: AsRef<F::InternTables>,
 {
     type DB = DB;
@@ -281,7 +281,7 @@ where
 impl<DB, F> AsRef<DeclarationTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &DeclarationTables {
         self.db.as_ref()
@@ -291,7 +291,7 @@ where
 impl<DB, F> AsRef<BaseInferredTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &BaseInferredTables {
         self.db.as_ref()
@@ -301,7 +301,7 @@ where
 impl<DB, F> AsRef<EntityTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckFamily,
+    F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &EntityTables {
         self.db.as_ref()

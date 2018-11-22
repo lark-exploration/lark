@@ -1,7 +1,7 @@
 use crate::substitute::Substitution;
 use crate::TypeCheckDatabase;
-use crate::TypeCheckFamily;
 use crate::TypeChecker;
+use crate::TypeCheckerFamily;
 use crate::TypeCheckerFields;
 use lark_hir as hir;
 use lark_ty::base_inference::{Base, BaseInference, BaseInferenceTables};
@@ -13,7 +13,7 @@ use lark_ty::Ty;
 use lark_ty::{BaseData, BaseKind};
 use lark_ty::{GenericKind, Generics};
 
-impl TypeCheckFamily for BaseInference {
+impl TypeCheckerFamily for BaseInference {
     type TcBase = Base;
 
     fn new_infer_ty(this: &mut impl TypeCheckerFields<Self>) -> Ty<Self> {
@@ -126,7 +126,7 @@ impl TypeCheckFamily for BaseInference {
     }
 }
 
-fn propagate_error<F: TypeCheckFamily>(
+fn propagate_error<F: TypeCheckerFamily>(
     this: &mut impl TypeCheckerFields<F>,
     cause: hir::MetaIndex,
     data: BaseData<F>,
