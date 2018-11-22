@@ -130,13 +130,14 @@ mod tests {
 
         fn send_hover(
             &mut self,
+            id: usize,
             filepath: &str,
             line: u64,
             character: u64,
         ) -> Result<(), Box<std::error::Error>> {
             let path = std::path::Path::new(filepath).canonicalize()?;
             self.send(LSPCommand::hover {
-                id: 900,
+                id,
                 params: TextDocumentPositionParams {
                     text_document: TextDocumentIdentifier {
                         uri: url::Url::parse(&format!(
@@ -196,13 +197,14 @@ mod tests {
         assert_eq!(result.params.diagnostics.len(), 0);
 
         // Hover to get the type
-        child_session.send_hover("tests/test_files/call.lark", 1, 7)?;
-        
-        let result = child_session.receive::<JsonRPCNotification<Hover>>()?;
-        
-        match result.params.contents {
+        child_session.send_hover(900, "tests/test_files/call.lark", 1, 7)?;
+
+        let result = child_session.receive::<JsonRPCResponse<Hover>>()?;
+        assert_eq!(result.id, 900);
+        match result.result.contents {
             HoverContents::Scalar(MarkedString::String(s)) => {
-                assert_eq!(s, "fn(bool)->void");
+                // currently, we send back an empty string for hovers on a `def`
+                assert_eq!(s, "");
             }
             x => panic!("Unexpected string type: {:?}", x),
         }
