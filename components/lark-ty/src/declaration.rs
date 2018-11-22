@@ -47,8 +47,6 @@ impl Declaration {
     }
 }
 
-pub type DeclarationTy = crate::Ty<Declaration>;
-
 indices::index_type! {
     pub struct Base { .. }
 }
