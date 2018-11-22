@@ -77,7 +77,6 @@ mod tests {
                     break;
                 }
             }
-
             let num_bytes: usize = digits.trim().parse()?;
             let mut buffer = vec![0u8; num_bytes];
             let _ = child_stdout.read_exact(&mut buffer);
@@ -189,7 +188,7 @@ mod tests {
         assert_eq!(result.id, 101);
 
         // Open the document
-        child_session.send_open("tests/test_files/call.lark")?;
+        child_session.send_open("tests/test_files/struct.lark")?;
 
         let result = child_session.receive::<JsonRPCNotification<PublishDiagnosticsParams>>()?;
 
@@ -197,14 +196,14 @@ mod tests {
         assert_eq!(result.params.diagnostics.len(), 0);
 
         // Hover to get the type
-        child_session.send_hover(900, "tests/test_files/call.lark", 1, 7)?;
+        child_session.send_hover(900, "tests/test_files/struct.lark", 1, 5)?;
 
         let result = child_session.receive::<JsonRPCResponse<Hover>>()?;
         assert_eq!(result.id, 900);
         match result.result.contents {
             HoverContents::Scalar(MarkedString::String(s)) => {
                 // currently, we send back an empty string for hovers on a `def`
-                assert_eq!(s, "");
+                assert!(s.contains("Boolean"));
             }
             x => panic!("Unexpected string type: {:?}", x),
         }
