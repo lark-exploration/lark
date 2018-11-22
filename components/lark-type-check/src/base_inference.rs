@@ -2,7 +2,6 @@ use crate::substitute::Substitution;
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
-use crate::TypeCheckerFields;
 use lark_hir as hir;
 use lark_ty::base_inference::{Base, BaseInference, BaseInferenceTables};
 use lark_ty::declaration::Declaration;
@@ -19,16 +18,16 @@ where
 {
     type TcBase = Base;
 
-    fn new_infer_ty(this: &mut impl TypeCheckerFields<DB, Self>) -> Ty<Self> {
+    fn new_infer_ty(this: &mut TypeChecker<'_, DB, Self>) -> Ty<Self> {
         Ty {
             repr: Erased,
             perm: Erased,
-            base: this.unify().new_inferable(),
+            base: this.unify.new_inferable(),
         }
     }
 
     fn equate_types(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         cause: hir::MetaIndex,
         ty1: Ty<BaseInference>,
         ty2: Ty<BaseInference>,
@@ -44,7 +43,7 @@ where
             base: base2,
         } = ty2;
 
-        match this.unify().unify(cause, base1, base2) {
+        match this.unify.unify(cause, base1, base2) {
             Ok(()) => {}
 
             Err((data1, data2)) => {
@@ -77,7 +76,7 @@ where
     }
 
     fn apply_user_perm(
-        _this: &mut impl TypeCheckerFields<DB, Self>,
+        _this: &mut TypeChecker<'_, DB, Self>,
         _perm: hir::Perm,
         place_ty: Ty<BaseInference>,
     ) -> Ty<BaseInference> {
@@ -86,7 +85,7 @@ where
     }
 
     fn require_assignable(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         expression: hir::Expression,
         value_ty: Ty<BaseInference>,
         place_ty: Ty<BaseInference>,
@@ -95,7 +94,7 @@ where
     }
 
     fn least_upper_bound(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         if_expression: hir::Expression,
         true_ty: Ty<BaseInference>,
         false_ty: Ty<BaseInference>,
@@ -105,7 +104,7 @@ where
     }
 
     fn substitute<M>(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         _location: hir::MetaIndex,
         generics: &Generics<Self>,
         value: M,
@@ -117,7 +116,7 @@ where
     }
 
     fn apply_owner_perm<M>(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         _location: impl Into<hir::MetaIndex>,
         _owner_perm: Erased,
         value: M,
@@ -130,13 +129,13 @@ where
 }
 
 fn propagate_error<DB: TypeCheckDatabase, F: TypeCheckerFamily<DB>>(
-    this: &mut impl TypeCheckerFields<DB, F>,
+    this: &mut TypeChecker<'_, DB, F>,
     cause: hir::MetaIndex,
     data: BaseData<F>,
 ) {
     let BaseData { kind: _, generics } = data;
 
-    let error_type = F::error_type(this);
+    let error_type = F::error_type(&this.f_tables);
 
     for generic in generics.iter() {
         match generic {

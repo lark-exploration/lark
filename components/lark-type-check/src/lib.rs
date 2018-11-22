@@ -100,12 +100,12 @@ trait TypeCheckerFamily<DB: TypeCheckDatabase>: TypeFamily<Placeholder = Placeho
         + Inferable<Self::InternTables, KnownData = BaseData<Self>>;
 
     /// Creates a new type with fresh inference variables.
-    fn new_infer_ty(this: &mut impl TypeCheckerFields<DB, Self>) -> Ty<Self>;
+    fn new_infer_ty(this: &mut TypeChecker<'_, DB, Self>) -> Ty<Self>;
 
     /// Equates two types (producing an error if they are not
     /// equatable).
     fn equate_types(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         cause: hir::MetaIndex,
         ty1: Ty<Self>,
         ty2: Ty<Self>,
@@ -116,7 +116,7 @@ trait TypeCheckerFamily<DB: TypeCheckDatabase>: TypeFamily<Placeholder = Placeho
     /// is the location that is requiring this type to be assignable
     /// (used in case of error).
     fn require_assignable(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         expression: hir::Expression,
         value_ty: Ty<Self>,
         place_ty: Ty<Self>,
@@ -126,7 +126,7 @@ trait TypeCheckerFamily<DB: TypeCheckDatabase>: TypeFamily<Placeholder = Placeho
     /// type of the place `place_ty` that was accessed to produce the
     /// resulting type.
     fn apply_user_perm(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         perm: hir::Perm,
         place_ty: Ty<Self>,
     ) -> Ty<Self>;
@@ -135,7 +135,7 @@ trait TypeCheckerFamily<DB: TypeCheckDatabase>: TypeFamily<Placeholder = Placeho
     /// the types have no LUB, then reports an error at
     /// `if_expression`.
     fn least_upper_bound(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         if_expression: hir::Expression,
         true_ty: Ty<Self>,
         false_ty: Ty<Self>,
@@ -145,7 +145,7 @@ trait TypeCheckerFamily<DB: TypeCheckDatabase>: TypeFamily<Placeholder = Placeho
     /// be something in the `Declaration` type family (e.g., the type
     /// of a field).
     fn substitute<M>(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         location: hir::MetaIndex,
         generics: &Generics<Self>,
         value: M,
@@ -157,47 +157,13 @@ trait TypeCheckerFamily<DB: TypeCheckDatabase>: TypeFamily<Placeholder = Placeho
     /// projected from an owned with the given permissions
     /// `owner_perm` (e.g., when accessing a field).
     fn apply_owner_perm<M>(
-        this: &mut impl TypeCheckerFields<DB, Self>,
+        this: &mut TypeChecker<'_, DB, Self>,
         location: impl Into<hir::MetaIndex>,
         owner_perm: Self::Perm,
         value: M,
     ) -> M::Output
     where
         M: Map<Self, Self>;
-}
-
-/// Trait implemented by `TypeChecker` to allow access to a few useful
-/// fields. This is used in the implementations of `TypeCheckerFamily`.
-trait TypeCheckerFields<DB: TypeCheckDatabase, F: TypeCheckerFamily<DB>>:
-    AsRef<F::InternTables> + AsRef<DeclarationTables> + AsRef<BaseInferredTables> + AsRef<EntityTables>
-{
-    fn db(&self) -> &DB;
-    fn unify(&mut self) -> &mut UnificationTable<F::InternTables, hir::MetaIndex>;
-    fn results(&mut self) -> &mut TypeCheckResults<F>;
-    fn record_error(&mut self, label: impl Into<String>, location: impl Into<hir::MetaIndex>);
-}
-
-impl<'me, DB, F> TypeCheckerFields<DB, F> for TypeChecker<'me, DB, F>
-where
-    DB: TypeCheckDatabase,
-    F: TypeCheckerFamily<DB>,
-    Self: AsRef<F::InternTables>,
-{
-    fn db(&self) -> &DB {
-        &self.db
-    }
-
-    fn unify(&mut self) -> &mut UnificationTable<F::InternTables, hir::MetaIndex> {
-        &mut self.unify
-    }
-
-    fn results(&mut self) -> &mut TypeCheckResults<F> {
-        &mut self.results
-    }
-
-    fn record_error(&mut self, label: impl Into<String>, location: impl Into<hir::MetaIndex>) {
-        self.record_error(label, location);
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
