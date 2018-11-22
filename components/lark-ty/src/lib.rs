@@ -26,8 +26,6 @@ pub mod declaration;
 pub mod identity;
 pub mod map_family;
 
-pub use self::declaration::Declaration;
-
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
     type InternTables: AsRef<Self::InternTables>;
 

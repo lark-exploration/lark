@@ -4,17 +4,16 @@ use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, LangItem};
 use lark_error::{ErrorReported, ErrorSentinel, WithError};
+use lark_ty as ty;
+use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
-use lark_ty::{
-    BaseData, BaseKind, BoundVar, Declaration, Erased, GenericDeclarations, GenericKind, Generics,
-    ReprKind, Signature, Ty, TypeFamily,
-};
+use lark_ty::TypeFamily;
 use std::sync::Arc;
 
 crate fn generic_declarations(
     db: &impl ParserDatabase,
     entity: Entity,
-) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
+) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
     match entity.untern(db) {
         EntityData::Error(report) => WithError::error_sentinel(db, report),
 
@@ -25,14 +24,14 @@ crate fn generic_declarations(
         | EntityData::LangItem(LangItem::False)
         | EntityData::LangItem(LangItem::True)
         | EntityData::LangItem(LangItem::Debug) => {
-            WithError::ok(Ok(GenericDeclarations::empty(None)))
+            WithError::ok(Ok(ty::GenericDeclarations::empty(None)))
         }
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {
             if arity != 0 {
                 unimplemented!("non-zero arity tuples");
             }
-            WithError::ok(Ok(GenericDeclarations::empty(None)))
+            WithError::ok(Ok(ty::GenericDeclarations::empty(None)))
         }
 
         EntityData::ItemName { .. } | EntityData::MemberName { .. } => db
@@ -47,7 +46,7 @@ crate fn generic_declarations(
     }
 }
 
-crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaration>> {
+crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<ty::Ty<Declaration>> {
     match entity.untern(db) {
         EntityData::Error(report) => WithError::error_sentinel(db, report),
 
@@ -58,8 +57,8 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaratio
         | EntityData::LangItem(LangItem::Debug) => WithError::ok(declaration_ty_named(
             db,
             entity,
-            ReprKind::Direct,
-            Generics::empty(),
+            ty::ReprKind::Direct,
+            ty::Generics::empty(),
         )),
 
         EntityData::LangItem(LangItem::False) | EntityData::LangItem(LangItem::True) => {
@@ -68,16 +67,21 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaratio
         }
 
         EntityData::LangItem(LangItem::Tuple(arity)) => {
-            let generics: Generics<Declaration> = (0..arity)
-                .map(|i| BoundVar::new(i))
-                .map(|bv| Ty {
+            let generics: ty::Generics<Declaration> = (0..arity)
+                .map(|i| ty::BoundVar::new(i))
+                .map(|bv| ty::Ty {
                     base: Declaration::intern_bound_var(db, bv),
-                    repr: ReprKind::Direct,
+                    repr: ty::ReprKind::Direct,
                     perm: Declaration::own_perm(db),
                 })
-                .map(|ty| GenericKind::Ty(ty))
+                .map(|ty| ty::GenericKind::Ty(ty))
                 .collect();
-            WithError::ok(declaration_ty_named(db, entity, ReprKind::Direct, generics))
+            WithError::ok(declaration_ty_named(
+                db,
+                entity,
+                ty::ReprKind::Direct,
+                generics,
+            ))
         }
 
         EntityData::ItemName { .. } | EntityData::MemberName { .. } => {
@@ -94,7 +98,7 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<Ty<Declaratio
 crate fn signature(
     db: &impl ParserDatabase,
     entity: Entity,
-) -> WithError<Result<Signature<Declaration>, ErrorReported>> {
+) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
     match entity.untern(db) {
         EntityData::Error(report) => WithError::error_sentinel(db, report),
 
@@ -117,25 +121,25 @@ crate fn signature(
     }
 }
 
-crate fn unit_ty(db: &dyn LazyParsedEntityDatabase) -> Ty<Declaration> {
+crate fn unit_ty(db: &dyn LazyParsedEntityDatabase) -> ty::Ty<Declaration> {
     declaration_ty_named(
         &db,
         EntityData::LangItem(LangItem::Tuple(0)).intern(&db),
-        ReprKind::Direct,
-        Generics::empty(),
+        ty::ReprKind::Direct,
+        ty::Generics::empty(),
     )
 }
 
 crate fn declaration_ty_named(
     db: &dyn AsRef<DeclarationTables>,
     entity: Entity,
-    repr: ReprKind,
-    generics: Generics<Declaration>,
-) -> Ty<Declaration> {
-    let kind = BaseKind::Named(entity);
-    let base = Declaration::intern_base_data(db, BaseData { kind, generics });
-    Ty {
-        perm: Erased,
+    repr: ty::ReprKind,
+    generics: ty::Generics<Declaration>,
+) -> ty::Ty<Declaration> {
+    let kind = ty::BaseKind::Named(entity);
+    let base = Declaration::intern_base_data(db, ty::BaseData { kind, generics });
+    ty::Ty {
+        perm: ty::Erased,
         repr,
         base,
     }
