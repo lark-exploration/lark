@@ -89,6 +89,11 @@ enum UniverseBinder {
 /// types that can be used in the type-checker. This family must
 /// support inference.
 trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
+    /// The "base type" for this family -- this is always the same as
+    /// `Self::Base`, hence the `From` and `Into` requirements, but it
+    /// allows us to add the extra information that it is
+    /// inferable. Kind of a hack, should be a nicer way to encode
+    /// this.
     type TcBase: From<Self::Base>
         + Into<Self::Base>
         + Inferable<Self::InternTables, KnownData = BaseData<Self>>;
