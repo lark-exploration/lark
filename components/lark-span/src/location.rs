@@ -1,7 +1,8 @@
 use crate::ByteIndex;
 use derive_new::new;
+use lark_debug_derive::DebugWith;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
+#[derive(Debug, DebugWith, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, new)]
 pub struct Location {
     /// 0-based line number
     pub line: usize,
