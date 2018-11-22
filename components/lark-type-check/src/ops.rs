@@ -97,9 +97,13 @@ where
     }
 
     /// Record that an error occurred at the given location.
-    crate fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>) {
+    crate fn record_error(
+        &mut self,
+        label: impl Into<String>,
+        location: impl Into<hir::MetaIndex>,
+    ) {
         let span = self.hir.span(location.into());
-        self.errors.push(Diagnostic::new(label, span));
+        self.errors.push(Diagnostic::new(label.into(), span));
     }
 
     crate fn substitute<M>(
@@ -234,9 +238,10 @@ where
     crate fn with_base_data(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
-        base: F::TcBase,
+        base: F::Base,
         op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
     ) -> Ty<F> {
+        let base: F::TcBase = base.into();
         let cause = cause.into();
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => op(self, data),

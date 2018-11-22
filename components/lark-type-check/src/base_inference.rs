@@ -58,7 +58,7 @@ impl TypeCheckFamily for BaseInference {
                 }
 
                 if data1.kind != data2.kind {
-                    this.record_error("Mismatched types".into(), cause);
+                    this.record_error("Mismatched types", cause);
                     return;
                 }
 

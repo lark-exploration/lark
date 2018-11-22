@@ -168,7 +168,7 @@ where
 
             hir::PlaceData::Entity(entity) => {
                 if !entity.untern(self).is_value() {
-                    self.record_error("cannot access as a value".into(), place);
+                    self.record_error("cannot access as a value", place);
                     return self.error_type();
                 }
 
@@ -183,7 +183,7 @@ where
             hir::PlaceData::Field { owner, name } => {
                 let text = self.hir[name].text;
                 let owner_ty = self.check_place(owner);
-                self.with_base_data(place, owner_ty.base.into(), move |this, base_data| {
+                self.with_base_data(place, owner_ty.base, move |this, base_data| {
                     let BaseData { kind, generics } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
@@ -197,7 +197,7 @@ where
                                 }
 
                                 None => {
-                                    this.record_error("field not found".into(), name);
+                                    this.record_error("field not found", name);
                                     this.error_type()
                                 }
                             }
@@ -205,10 +205,7 @@ where
 
                         BaseKind::Placeholder(_placeholder) => {
                             // Cannot presently access fields from generic types.
-                            this.record_error(
-                                "cannot access fields from generic types(yet)".into(),
-                                name,
-                            );
+                            this.record_error("cannot access fields from generic types(yet)", name);
                             this.error_type()
                         }
 
@@ -226,13 +223,9 @@ where
         function_ty: Ty<F>,
         arguments: hir::List<hir::Expression>,
     ) -> Ty<F> {
-        self.with_base_data(
-            expression,
-            function_ty.base.into(),
-            move |this, base_data| {
-                this.check_fn_call(expression, function_ty, arguments, base_data)
-            },
-        )
+        self.with_base_data(expression, function_ty.base, move |this, base_data| {
+            this.check_fn_call(expression, function_ty, arguments, base_data)
+        })
     }
 
     fn check_fn_call(
@@ -259,7 +252,7 @@ where
                     }
 
                     _ => {
-                        self.record_error("cannot call value of this type".into(), expression);
+                        self.record_error("cannot call value of this type", expression);
                         return self.check_arguments_in_case_of_error(arguments);
                     }
                 }
@@ -282,7 +275,7 @@ where
 
             BaseKind::Placeholder(_placeholder) => {
                 // Cannot presently invoke generic types.
-                self.record_error("cannot call a generic type (yet)".into(), expression);
+                self.record_error("cannot call a generic type (yet)", expression);
                 return self.check_arguments_in_case_of_error(arguments);
             }
 
@@ -298,7 +291,7 @@ where
         method_name: hir::Identifier,
         arguments: hir::List<hir::Expression>,
     ) -> Ty<F> {
-        self.with_base_data(expression, owner_ty.base.into(), move |this, base_data| {
+        self.with_base_data(expression, owner_ty.base, move |this, base_data| {
             this.check_method_call(expression, owner_ty, method_name, arguments, base_data)
         })
     }
@@ -319,7 +312,7 @@ where
                 {
                     Some(def_id) => def_id,
                     None => {
-                        self.record_error("method not found".into(), expression);
+                        self.record_error("method not found", expression);
                         return self.error_type();
                     }
                 };
@@ -347,10 +340,7 @@ where
 
             BaseKind::Placeholder(_placeholder) => {
                 // Cannot presently invoke methods on generic types.
-                self.record_error(
-                    "cannot invoke methods on generic types(yet)".into(),
-                    method_name,
-                );
+                self.record_error("cannot invoke methods on generic types(yet)", method_name);
                 return self.check_arguments_in_case_of_error(arguments);
             }
 
@@ -372,7 +362,7 @@ where
             arguments.debug_with(self),
         );
         if inputs.len() != arguments.len() {
-            self.record_error("mismatched argument count".into(), error_location);
+            self.record_error("mismatched argument count", error_location);
             return self.check_arguments_in_case_of_error(arguments);
         }
 
@@ -423,7 +413,7 @@ where
 
             // Something like `def foo() { .. } foo { .. }` is just not legal.
             _ => {
-                self.record_error("disallowed expression type".into(), expression);
+                self.record_error("disallowed expression type", expression);
                 return self.error_type();
             }
         };
@@ -453,7 +443,7 @@ where
                 }
 
                 None => {
-                    self.record_error("unknown field".into(), field_data.identifier);
+                    self.record_error("unknown field", field_data.identifier);
                     self.error_type()
                 }
             };
@@ -467,7 +457,7 @@ where
 
         // If we are missing any members, that's an error.
         for _missing_member in missing_members {
-            self.record_error("missing member".into(), expression);
+            self.record_error("missing member", expression);
         }
 
         // The final type is the type of the entity with the given
@@ -489,24 +479,17 @@ where
         // known.
         let left_ty = self.check_expression(left);
         let right_ty = self.check_expression(right);
-        let result_ty = self.with_base_data(
-            expression,
-            left_ty.base.into(),
-            move |this, left_base_data| {
-                this.with_base_data(
-                    expression,
-                    right_ty.base.into(),
-                    move |this, right_base_data| {
-                        this.check_binary_with_both_inputs_known(
-                            expression,
-                            operator,
-                            left_base_data,
-                            right_base_data,
-                        )
-                    },
-                )
-            },
-        );
+        let result_ty =
+            self.with_base_data(expression, left_ty.base, move |this, left_base_data| {
+                this.with_base_data(expression, right_ty.base, move |this, right_base_data| {
+                    this.check_binary_with_both_inputs_known(
+                        expression,
+                        operator,
+                        left_base_data,
+                        right_base_data,
+                    )
+                })
+            });
 
         match operator {
             hir::BinaryOperator::Equals | hir::BinaryOperator::NotEquals => {
@@ -567,7 +550,7 @@ where
                 (BaseKind::Error, _) | (_, BaseKind::Error) => self.error_type(),
 
                 (BaseKind::Named(_), _) | (BaseKind::Placeholder(_), _) => {
-                    self.record_error("mismatched types".into(), expression);
+                    self.record_error("mismatched types", expression);
                     self.error_type()
                 }
             },
@@ -576,7 +559,7 @@ where
                 // Unclear what rule will eventually be... for now, require
                 // that the two types are the same?
                 if left_base_data != right_base_data {
-                    self.record_error("mismatched types".into(), expression);
+                    self.record_error("mismatched types", expression);
                 }
 
                 // Either way, yields a boolean
@@ -595,13 +578,9 @@ where
         // the type of the expression before we determine the type of
         // the output.
         let value_ty = self.check_expression(value);
-        self.with_base_data(
-            expression,
-            value_ty.base.into(),
-            move |this, value_base_data| {
-                this.check_unary_with_input_known(expression, operator, value_base_data)
-            },
-        )
+        self.with_base_data(expression, value_ty.base, move |this, value_base_data| {
+            this.check_unary_with_input_known(expression, operator, value_base_data)
+        })
     }
 
     fn check_unary_with_input_known(
@@ -618,10 +597,7 @@ where
                     EntityData::Error(_) => self.error_type(),
 
                     _ => {
-                        self.record_error(
-                            "incompatible type for 'not' operator".into(),
-                            expression,
-                        );
+                        self.record_error("incompatible type for 'not' operator", expression);
                         self.error_type()
                     }
                 },
@@ -629,7 +605,7 @@ where
                 BaseKind::Error => self.error_type(),
 
                 BaseKind::Placeholder(_) => {
-                    self.record_error("unknown expression for operator".into(), expression);
+                    self.record_error("unknown expression for operator", expression);
                     self.error_type()
                 }
             },

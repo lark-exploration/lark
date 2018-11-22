@@ -170,7 +170,7 @@ trait TypeCheckerFields<F: TypeCheckFamily>:
     fn db(&self) -> &Self::DB;
     fn unify(&mut self) -> &mut UnificationTable<F::InternTables, hir::MetaIndex>;
     fn results(&mut self) -> &mut TypeCheckResults<F>;
-    fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>);
+    fn record_error(&mut self, label: impl Into<String>, location: impl Into<hir::MetaIndex>);
 }
 
 impl<'me, DB, F> TypeCheckerFields<F> for TypeChecker<'me, DB, F>
@@ -193,7 +193,7 @@ where
         &mut self.results
     }
 
-    fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>) {
+    fn record_error(&mut self, label: impl Into<String>, location: impl Into<hir::MetaIndex>) {
         self.record_error(label, location);
     }
 }
