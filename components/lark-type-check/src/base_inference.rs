@@ -7,10 +7,11 @@ use lark_ty::base_inference::{Base, BaseInference, BaseInferenceTables};
 use lark_ty::declaration::Declaration;
 use lark_ty::identity::Identity;
 use lark_ty::map_family::Map;
+use lark_ty::BaseKind;
 use lark_ty::Erased;
+use lark_ty::GenericKind;
+use lark_ty::Generics;
 use lark_ty::Ty;
-use lark_ty::{BaseData, BaseKind};
-use lark_ty::{GenericKind, Generics};
 
 impl<DB> TypeCheckerFamily<DB> for BaseInference
 where
@@ -49,11 +50,11 @@ where
             Err((data1, data2)) => {
                 match (data1.kind, data2.kind) {
                     (BaseKind::Error, _) => {
-                        propagate_error(this, cause, data2);
+                        this.propagate_error(cause, data2);
                         return;
                     }
                     (_, BaseKind::Error) => {
-                        propagate_error(this, cause, data1);
+                        this.propagate_error(cause, data1);
                         return;
                     }
                     _ => {}
@@ -125,22 +126,6 @@ where
         M: Map<Self, Self>,
     {
         value.map(&mut Identity::new(this))
-    }
-}
-
-fn propagate_error<DB: TypeCheckDatabase, F: TypeCheckerFamily<DB>>(
-    this: &mut TypeChecker<'_, DB, F>,
-    cause: hir::MetaIndex,
-    data: BaseData<F>,
-) {
-    let BaseData { kind: _, generics } = data;
-
-    let error_type = F::error_type(&this.f_tables);
-
-    for generic in generics.iter() {
-        match generic {
-            GenericKind::Ty(ty) => F::equate_types(this, cause, error_type, ty),
-        }
     }
 }
 

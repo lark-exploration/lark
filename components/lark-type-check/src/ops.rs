@@ -160,6 +160,20 @@ where
         F::least_upper_bound(self, if_expression, true_ty, false_ty)
     }
 
+    /// Unifies all of the generic arguments from `data` with the
+    /// error type.
+    crate fn propagate_error(&mut self, cause: hir::MetaIndex, data: BaseData<F>) {
+        let BaseData { kind: _, generics } = data;
+
+        let error_type = self.error_type();
+
+        for generic in generics.iter() {
+            match generic {
+                GenericKind::Ty(ty) => self.equate_types(cause, error_type, ty),
+            }
+        }
+    }
+
     crate fn placeholders_for(&mut self, def_id: Entity) -> Generics<F> {
         let GenericDeclarations {
             parent_item,
