@@ -105,8 +105,8 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         &self,
         _entity: Entity,
         _db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Vec<ParsedEntity>> {
-        WithError::ok(vec![])
+    ) -> WithError<Seq<ParsedEntity>> {
+        WithError::ok(Seq::default())
     }
 
     fn parse_generic_declarations(

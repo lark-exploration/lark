@@ -102,7 +102,7 @@ impl<File: SpanFile> Span<File> {
     }
 
     pub fn contains_index(self, index: ByteIndex) -> bool {
-        self.start >= index && self.end < index
+        self.start <= index && index < self.end
     }
 
     pub fn len(&self) -> ByteSize {

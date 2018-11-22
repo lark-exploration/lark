@@ -263,6 +263,7 @@ impl QuerySystem {
     }
 
     fn process_message(&mut self, message: QueryRequest) {
+        let _killme = KillTheProcess;
         log::info!("process_message(message={:#?})", message);
 
         match message {
@@ -314,6 +315,8 @@ impl QuerySystem {
                     let db = self.lark_db.snapshot();
                     let send_channel = self.send_channel.clone_send_channel();
                     move || {
+                        let _killme = KillTheProcess;
+
                         match db.hover_text_at_position(url.as_str(), position) {
                             Ok(Some(v)) => {
                                 send_channel.send(QueryResponse::Type(task_id, v.to_string()));
@@ -334,6 +337,19 @@ impl QuerySystem {
         }
 
         log::info!("receive_message: awaiting next message");
+    }
+}
+
+/// A little struct which -- when dropped -- will abort the process if
+/// we have panicked. This is a temporary band-aid to have us die on
+/// panic and prevent tests from hanging.
+struct KillTheProcess;
+
+impl Drop for KillTheProcess {
+    fn drop(&mut self) {
+        if std::thread::panicking() {
+            std::process::abort();
+        }
     }
 }
 

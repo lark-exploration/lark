@@ -3,7 +3,7 @@ use crate::lexer::definition::LexerState;
 use crate::lexer::token::LexToken;
 use crate::lexer::tools::Tokenizer;
 use crate::parser::Parser;
-use crate::syntax::entity::{EntitySyntax, ParsedEntity};
+use crate::syntax::entity::{EntitySyntax, ParsedEntity, ParsedEntityThunk};
 use crate::syntax::skip_newline::SkipNewline;
 use crate::ParserDatabase;
 
@@ -83,6 +83,16 @@ crate fn child_parsed_entities(
 
 crate fn parsed_entity(db: &impl ParserDatabase, entity: Entity) -> ParsedEntity {
     match entity.untern(db) {
+        EntityData::InputFile { file } => {
+            let parsed_file = db.parsed_file(file).into_value();
+            ParsedEntity {
+                entity: entity,
+                full_span: parsed_file.span,
+                characteristic_span: parsed_file.span,
+                thunk: ParsedEntityThunk::new(parsed_file),
+            }
+        }
+
         EntityData::ItemName { base, .. } | EntityData::MemberName { base, .. } => {
             let siblings = db.child_parsed_entities(base).into_value();
 
@@ -99,7 +109,7 @@ crate fn parsed_entity(db: &impl ParserDatabase, entity: Entity) -> ParsedEntity
                 .clone()
         }
 
-        EntityData::Error { .. } | EntityData::InputFile { .. } | EntityData::LangItem(_) => {
+        EntityData::Error { .. } | EntityData::LangItem(_) => {
             panic!(
                 "cannot compute: `parsed_entity({:?})`",
                 entity.debug_with(db),
