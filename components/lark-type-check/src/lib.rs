@@ -105,21 +105,6 @@ trait TypeCheckFamily: TypeFamily<Placeholder = Placeholder> {
         ty2: Ty<Self>,
     );
 
-    /// Returns the type for booleans.
-    fn boolean_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
-
-    /// Returns the type for signed integers.
-    fn int_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
-
-    /// Returns the type for unsigned integers.
-    fn uint_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
-
-    /// Returns the type for `()`.
-    fn unit_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
-
-    /// Returns the type for strings.
-    fn string_type(this: &impl TypeCheckerFields<Self>) -> Ty<Self>;
-
     /// Generates the constraint that a value with type `value_ty` is
     /// assignable to a place with the type `place_ty`; `expression`
     /// is the location that is requiring this type to be assignable

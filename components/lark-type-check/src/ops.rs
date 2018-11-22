@@ -1,12 +1,16 @@
 use crate::TypeCheckFamily;
 use crate::TypeChecker;
 use crate::UniverseBinder;
+use intern::Intern;
 use lark_entity::Entity;
+use lark_entity::EntityData;
+use lark_entity::LangItem;
 use lark_error::{Diagnostic, ErrorReported};
 use lark_hir as hir;
 use lark_ty::declaration::Declaration;
 use lark_ty::map_family::Map;
 use lark_ty::BaseData;
+use lark_ty::BaseKind;
 use lark_ty::GenericDeclarations;
 use lark_ty::GenericKind;
 use lark_ty::Generics;
@@ -54,27 +58,42 @@ where
     }
 
     pub(super) fn boolean_type(&self) -> Ty<F> {
-        F::boolean_type(self)
+        self.primitive_type(LangItem::Boolean)
     }
 
     pub(super) fn int_type(&self) -> Ty<F> {
-        F::int_type(self)
+        self.primitive_type(LangItem::Int)
     }
 
     pub(super) fn uint_type(&self) -> Ty<F> {
-        F::uint_type(self)
+        self.primitive_type(LangItem::Uint)
     }
 
     pub(super) fn string_type(&self) -> Ty<F> {
-        F::string_type(self)
+        self.primitive_type(LangItem::String)
     }
 
     pub(super) fn unit_type(&self) -> Ty<F> {
-        F::unit_type(self)
+        self.primitive_type(LangItem::Tuple(0))
     }
 
     pub(super) fn error_type(&self) -> Ty<F> {
         F::error_type(self)
+    }
+
+    fn primitive_type(&self, item: LangItem) -> Ty<F> {
+        let entity = EntityData::LangItem(item).intern(self);
+        Ty {
+            repr: F::direct_repr(self),
+            perm: F::own_perm(self),
+            base: F::intern_base_data(
+                self,
+                BaseData {
+                    kind: BaseKind::Named(entity),
+                    generics: Generics::empty(),
+                },
+            ),
+        }
     }
 
     /// Record that an error occurred at the given location.
