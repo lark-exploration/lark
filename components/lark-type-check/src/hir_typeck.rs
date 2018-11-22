@@ -5,8 +5,8 @@ use crate::TypeCheckerFields;
 use debug::DebugWith;
 use intern::Untern;
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
-use lark_error::or_return_sentinel;
 use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_hir as hir;
 use lark_ty::declaration::Declaration;
 use lark_ty::Signature;
@@ -432,11 +432,10 @@ where
         self.results.record_generics(expression, &generics);
 
         // Get a vector of **all** the fields.
-        let mut missing_members: FxIndexSet<Entity> =
-            or_return_sentinel!(&*self, self.db.members(entity))
-                .iter()
-                .map(|m| m.entity)
-                .collect();
+        let mut missing_members: FxIndexSet<Entity> = match self.db.members(entity) {
+            Ok(members) => members.iter().map(|m| m.entity).collect(),
+            Err(err) => return Ty::error_sentinel(self, err),
+        };
 
         // Find the entity for each of the field names that the user gave us.
         let hir = &self.hir.clone();
