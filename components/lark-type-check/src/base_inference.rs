@@ -129,11 +129,11 @@ where
         value.map(&mut Identity::new(self))
     }
 
-    fn assign_variable_ty(&mut self, var: hir::Variable, ty: Ty<BaseInference>) {
+    fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<BaseInference>) {
         self.storage.record_ty(var, ty);
     }
 
-    fn assign_expression_ty(
+    fn record_expression_ty(
         &mut self,
         expr: hir::Expression,
         ty: Ty<BaseInference>,
@@ -142,7 +142,7 @@ where
         ty
     }
 
-    fn assign_place_ty(&mut self, place: hir::Place, ty: Ty<BaseInference>) -> Ty<BaseInference> {
+    fn record_place_ty(&mut self, place: hir::Place, ty: Ty<BaseInference>) -> Ty<BaseInference> {
         self.storage.record_ty(place, ty);
         ty
     }

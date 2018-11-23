@@ -155,19 +155,18 @@ where
 
     /// Requests the type for a given HIR variable. Upon the first
     /// request, the result may be a fresh inference variable.
-    fn assign_variable_ty(&mut self, var: hir::Variable, ty: Ty<F>);
-
-    /// Requests the type for a given HIR variable. Upon the first
-    /// request, the result may be a fresh inference variable.
-    fn assign_expression_ty(&mut self, expr: hir::Expression, ty: Ty<F>) -> Ty<F>;
-
-    /// Requests the type for a given HIR variable. Upon the first
-    /// request, the result may be a fresh inference variable.
-    fn assign_place_ty(&mut self, place: hir::Place, ty: Ty<F>) -> Ty<F>;
-
-    /// Requests the type for a given HIR variable. Upon the first
-    /// request, the result may be a fresh inference variable.
     fn request_variable_ty(&mut self, var: hir::Variable) -> Ty<F>;
+
+    /// Records that the type of the variable `var` is `ty`.
+    fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<F>);
+
+    /// Requests the type for a given HIR variable. Upon the first
+    /// request, the result may be a fresh inference variable.
+    fn record_expression_ty(&mut self, expr: hir::Expression, ty: Ty<F>) -> Ty<F>;
+
+    /// Requests the type for a given HIR variable. Upon the first
+    /// request, the result may be a fresh inference variable.
+    fn record_place_ty(&mut self, place: hir::Place, ty: Ty<F>) -> Ty<F>;
 
     /// Record the entity to which a particular identifier in the HIR resolved.
     /// Used for:

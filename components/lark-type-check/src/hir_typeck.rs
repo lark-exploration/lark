@@ -41,7 +41,7 @@ where
         if let Ok(hir_arguments) = self.hir.arguments {
             assert_eq!(signature.inputs.len(), hir_arguments.len());
             for (argument, &input) in hir_arguments.iter(&hir).zip(signature.inputs.iter()) {
-                self.assign_variable_ty(argument, input);
+                self.record_variable_ty(argument, input);
             }
         }
         self.check_expression_has_type(signature.output, self.hir.root_expression);
@@ -56,7 +56,7 @@ where
     /// an inference variable).
     fn check_expression(&mut self, expression: hir::Expression) -> Ty<F> {
         let ty = self.compute_expression_ty(expression);
-        self.assign_expression_ty(expression, ty)
+        self.record_expression_ty(expression, ty)
     }
 
     /// Helper for `check_expression`: compute the type of the given expression.
@@ -69,7 +69,7 @@ where
                 body,
             } => {
                 let initializer_ty = self.check_expression(initializer);
-                self.assign_variable_ty(variable, initializer_ty);
+                self.record_variable_ty(variable, initializer_ty);
                 self.check_expression(body)
             }
 
@@ -157,7 +157,7 @@ where
     /// an inference variable).
     fn check_place(&mut self, place: hir::Place) -> Ty<F> {
         let ty = self.compute_place_ty(place);
-        self.assign_place_ty(place, ty)
+        self.record_place_ty(place, ty)
     }
 
     /// Helper for `check_place`.
