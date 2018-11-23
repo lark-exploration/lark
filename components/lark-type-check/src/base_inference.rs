@@ -1,7 +1,9 @@
 use crate::substitute::Substitution;
 use crate::TypeCheckDatabase;
+use crate::TypeCheckResults;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
+use lark_entity::Entity;
 use lark_hir as hir;
 use lark_ty::base_inference::{BaseInference, BaseInferenceTables};
 use lark_ty::declaration::Declaration;
@@ -13,7 +15,8 @@ use lark_ty::GenericKind;
 use lark_ty::Generics;
 use lark_ty::Ty;
 
-impl<DB> TypeCheckerFamilyDependentExt<BaseInference> for TypeChecker<'me, DB, BaseInference>
+impl<DB> TypeCheckerFamilyDependentExt<BaseInference>
+    for TypeChecker<'me, DB, BaseInference, TypeCheckResults<BaseInference>>
 where
     DB: TypeCheckDatabase,
 {
@@ -48,11 +51,11 @@ where
             Err((data1, data2)) => {
                 match (data1.kind, data2.kind) {
                     (BaseKind::Error, _) => {
-                        self.propagate_error(cause, data2);
+                        self.propagate_error(cause, &data2.generics);
                         return;
                     }
                     (_, BaseKind::Error) => {
-                        self.propagate_error(cause, data1);
+                        self.propagate_error(cause, &data1.generics);
                         return;
                     }
                     _ => {}
@@ -125,9 +128,51 @@ where
     {
         value.map(&mut Identity::new(self))
     }
+
+    fn assign_variable_ty(&mut self, var: hir::Variable, ty: Ty<BaseInference>) {
+        self.storage.record_ty(var, ty);
+    }
+
+    fn assign_expression_ty(
+        &mut self,
+        expr: hir::Expression,
+        ty: Ty<BaseInference>,
+    ) -> Ty<BaseInference> {
+        self.storage.record_ty(expr, ty);
+        ty
+    }
+
+    fn assign_place_ty(&mut self, place: hir::Place, ty: Ty<BaseInference>) -> Ty<BaseInference> {
+        self.storage.record_ty(place, ty);
+        ty
+    }
+
+    fn request_variable_ty(&mut self, var: hir::Variable) -> Ty<BaseInference> {
+        self.storage.opt_ty(var).unwrap_or_else(|| {
+            let ty = self.new_infer_ty();
+            self.storage.record_ty(var, ty);
+            ty
+        })
+    }
+
+    fn record_entity(&mut self, index: hir::Identifier, entity: Entity) {
+        self.storage.record_entity(index, entity);
+    }
+
+    fn record_entity_and_get_generics(
+        &mut self,
+        index: impl Into<hir::MetaIndex>,
+        entity: Entity,
+    ) -> Generics<BaseInference> {
+        let index: hir::MetaIndex = index.into();
+        self.storage.record_entity(index, entity);
+        let generics = self.inference_variables_for(entity);
+        self.storage.record_generics(index, &generics);
+        generics
+    }
 }
 
-impl<DB> AsRef<BaseInferenceTables> for TypeChecker<'_, DB, BaseInference>
+impl<DB, S> AsRef<BaseInferenceTables> for TypeChecker<'_, DB, BaseInference, S>
 where
     DB: TypeCheckDatabase,
 {

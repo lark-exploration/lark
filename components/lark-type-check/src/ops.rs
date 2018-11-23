@@ -42,7 +42,7 @@ where
     }
 }
 
-impl<DB, F> TypeChecker<'_, DB, F>
+impl<DB, F, S> TypeChecker<'_, DB, F, S>
 where
     DB: crate::TypeCheckDatabase,
     F: TypeCheckerFamily,
@@ -108,11 +108,9 @@ where
 
     /// Unifies all of the generic arguments from `data` with the
     /// error type.
-    crate fn propagate_error(&mut self, cause: hir::MetaIndex, data: BaseData<F>) {
-        let BaseData { kind: _, generics } = data;
-
+    crate fn propagate_error(&mut self, cause: impl Into<hir::MetaIndex>, generics: &Generics<F>) {
+        let cause = cause.into();
         let error_type = self.error_type();
-
         for generic in generics.iter() {
             match generic {
                 GenericKind::Ty(ty) => self.equate_types(cause, error_type, ty),
@@ -157,21 +155,24 @@ where
         generics
     }
 
-    crate fn inference_variables_for(&mut self, def_id: Entity) -> Generics<F> {
+    crate fn inference_variables_for(&mut self, entity: Entity) -> Generics<F> {
         let GenericDeclarations {
             parent_item,
             declarations,
         } = &*self
             .db
-            .generic_declarations(def_id)
+            .generic_declarations(entity)
             .into_value()
             .unwrap_or_else(|ErrorReported(_)| Arc::new(GenericDeclarations::default()));
 
+        // If the generics for `entity` extend those of its parent,
+        // first create the parent's generics.
         let mut generics = match parent_item {
-            Some(def_id) => self.inference_variables_for(*def_id),
+            Some(entity) => self.inference_variables_for(*entity),
             None => Generics::empty(),
         };
 
+        // Now extend with our own.
         if !declarations.is_empty() {
             generics.extend(
                 declarations

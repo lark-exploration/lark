@@ -21,7 +21,7 @@ crate fn base_type_check(
 ) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
     let fn_body = db.fn_body(fn_entity).into_value();
     let interners = BaseInferenceTables::default();
-    let mut base_type_checker: TypeChecker<'_, _, BaseInference> = TypeChecker {
+    let mut base_type_checker: TypeChecker<'_, _, BaseInference, _> = TypeChecker {
         db,
         fn_entity,
         f_tables: interners.clone(),
@@ -29,7 +29,7 @@ crate fn base_type_check(
         ops_arena: Arena::new(),
         ops_blocked: FxIndexMap::default(),
         unify: UnificationTable::new(interners.clone()),
-        results: TypeCheckResults::default(),
+        storage: TypeCheckResults::default(),
         universe_binders: IndexVec::from(vec![UniverseBinder::Root]),
         errors: vec![],
     };
@@ -58,7 +58,7 @@ crate fn base_type_check(
     // Record the final results. If any unresolved type variables are
     // encountered, report an error.
     let inferred_results = base_type_checker
-        .results
+        .storage
         .map(&mut ResolveToBaseInferred::new(
             &mut base_type_checker.unify,
             db.as_ref(),

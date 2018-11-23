@@ -45,7 +45,7 @@ salsa::query_group! {
     }
 }
 
-struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily> {
+struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily, S> {
     /// Salsa database.
     db: &'me DB,
 
@@ -55,6 +55,9 @@ struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily> {
 
     /// Entity being type-checked.
     fn_entity: Entity,
+
+    /// Storage that depends on the type-checker family.
+    storage: S,
 
     /// HIR for the `fn_entity` being type-checked.
     hir: Arc<hir::FnBody>,
@@ -70,9 +73,6 @@ struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily> {
 
     /// Unification table for the type-check family.
     unify: UnificationTable<F::InternTables, hir::MetaIndex>,
-
-    /// Results that we are generating.
-    results: TypeCheckResults<F>,
 
     /// Information about each universe that we have created.
     universe_binders: IndexVec<Universe, UniverseBinder>,
@@ -152,6 +152,38 @@ where
     ) -> M::Output
     where
         M: Map<F, F>;
+
+    /// Requests the type for a given HIR variable. Upon the first
+    /// request, the result may be a fresh inference variable.
+    fn assign_variable_ty(&mut self, var: hir::Variable, ty: Ty<F>);
+
+    /// Requests the type for a given HIR variable. Upon the first
+    /// request, the result may be a fresh inference variable.
+    fn assign_expression_ty(&mut self, expr: hir::Expression, ty: Ty<F>) -> Ty<F>;
+
+    /// Requests the type for a given HIR variable. Upon the first
+    /// request, the result may be a fresh inference variable.
+    fn assign_place_ty(&mut self, place: hir::Place, ty: Ty<F>) -> Ty<F>;
+
+    /// Requests the type for a given HIR variable. Upon the first
+    /// request, the result may be a fresh inference variable.
+    fn request_variable_ty(&mut self, var: hir::Variable) -> Ty<F>;
+
+    /// Record the entity to which a particular identifier in the HIR resolved.
+    /// Used for:
+    ///
+    /// - field names, in places and aggregate expressions
+    /// - method names, in calls
+    fn record_entity(&mut self, index: hir::Identifier, entity: Entity);
+
+    /// Records that `index` refers to `entity` and returns the
+    /// generic parameters it uses to do so; may instantiate fresh
+    /// type variables.
+    fn record_entity_and_get_generics(
+        &mut self,
+        index: impl Into<hir::MetaIndex>,
+        entity: Entity,
+    ) -> Generics<F>;
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -169,32 +201,57 @@ pub struct TypeCheckResults<F: TypeFamily> {
     /// - `foo.bar` -- attached to the identifier `bar`, entity of the field
     /// - `foo.bar(..)` -- attached to the identifier `bar`, entity of the method
     /// - `Foo { a: b }` -- attached to the identifier `a`, entity of the field
-    entities: std::collections::BTreeMap<hir::Identifier, Entity>,
+    /// - `foo` -- when an identifier refers to an entity
+    entities: std::collections::BTreeMap<hir::MetaIndex, Entity>,
 }
 
 impl<F: TypeFamily> TypeCheckResults<F> {
     /// Record the entity assigned with a given element of the HIR
     /// (e.g. the identifier of a field).
-    fn record_entity(&mut self, index: hir::Identifier, entity: Entity) {
-        self.entities.insert(index.into(), entity);
+    fn record_entity(&mut self, index: impl Into<hir::MetaIndex>, entity: Entity) {
+        let index = index.into();
+        let old_entity = self.entities.insert(index, entity);
+        assert!(
+            old_entity.is_none(),
+            "index {:?} already had an entity",
+            index
+        );
     }
 
     /// Record the type assigned with a given element of the HIR
     /// (typically an expression).
     fn record_ty(&mut self, index: impl Into<hir::MetaIndex>, ty: Ty<F>) {
-        self.types.insert(index.into(), ty);
+        let index = index.into();
+        let old_ty = self.types.insert(index, ty);
+        assert!(old_ty.is_none(), "index {:?} already had a type", index);
     }
 
     /// Record the generics for a given element of the HIR
     /// (typically an expression).
     fn record_generics(&mut self, index: impl Into<hir::MetaIndex>, g: &Generics<F>) {
-        self.generics.insert(index.into(), g.clone());
+        let index = index.into();
+        let old_generics = self.generics.insert(index, g.clone());
+        assert!(
+            old_generics.is_none(),
+            "index {:?} already had generics",
+            index
+        );
     }
 
     /// Access the type stored for the given `index`, usually the
     /// index of an expression.
     pub fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
         self.types[&index.into()]
+    }
+
+    /// Load the type for `index`, if any is stored, else return `None`.
+    pub fn opt_ty(&self, index: impl Into<hir::MetaIndex>) -> Option<Ty<F>> {
+        self.types.get(&index.into()).cloned()
+    }
+
+    /// Check whether there is a type recorded for `index`.
+    pub fn has_recorded_ty(&self, index: impl Into<hir::MetaIndex>) -> bool {
+        self.types.contains_key(&index.into())
     }
 }
 
@@ -229,7 +286,7 @@ where
     }
 }
 
-impl<DB, F> AsRef<DeclarationTables> for TypeChecker<'_, DB, F>
+impl<DB, F, S> AsRef<DeclarationTables> for TypeChecker<'_, DB, F, S>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckerFamily,
@@ -239,7 +296,7 @@ where
     }
 }
 
-impl<DB, F> AsRef<BaseInferredTables> for TypeChecker<'_, DB, F>
+impl<DB, F, S> AsRef<BaseInferredTables> for TypeChecker<'_, DB, F, S>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckerFamily,
@@ -249,7 +306,7 @@ where
     }
 }
 
-impl<DB, F> AsRef<EntityTables> for TypeChecker<'_, DB, F>
+impl<DB, F, S> AsRef<EntityTables> for TypeChecker<'_, DB, F, S>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckerFamily,

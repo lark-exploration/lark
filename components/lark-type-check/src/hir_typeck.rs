@@ -15,7 +15,7 @@ use lark_ty::{BaseData, BaseKind};
 use lark_unify::Inferable;
 use map::FxIndexSet;
 
-impl<DB, F> TypeChecker<'_, DB, F>
+impl<DB, F, S> TypeChecker<'_, DB, F, S>
 where
     DB: TypeCheckDatabase,
     F: TypeCheckerFamily,
@@ -37,10 +37,11 @@ where
             &placeholders,
             declaration_signature,
         );
+        let hir = self.hir.clone();
         if let Ok(hir_arguments) = self.hir.arguments {
             assert_eq!(signature.inputs.len(), hir_arguments.len());
-            for (argument, &input) in hir_arguments.iter(&self.hir).zip(signature.inputs.iter()) {
-                self.results.record_ty(argument, input);
+            for (argument, &input) in hir_arguments.iter(&hir).zip(signature.inputs.iter()) {
+                self.assign_variable_ty(argument, input);
             }
         }
         self.check_expression_has_type(signature.output, self.hir.root_expression);
@@ -55,8 +56,7 @@ where
     /// an inference variable).
     fn check_expression(&mut self, expression: hir::Expression) -> Ty<F> {
         let ty = self.compute_expression_ty(expression);
-        self.results.record_ty(expression, ty);
-        ty
+        self.assign_expression_ty(expression, ty)
     }
 
     /// Helper for `check_expression`: compute the type of the given expression.
@@ -69,7 +69,7 @@ where
                 body,
             } => {
                 let initializer_ty = self.check_expression(initializer);
-                self.results.record_ty(variable, initializer_ty);
+                self.assign_variable_ty(variable, initializer_ty);
                 self.check_expression(body)
             }
 
@@ -78,8 +78,7 @@ where
                 initializer: None,
                 body,
             } => {
-                let ty = self.new_infer_ty();
-                self.results.record_ty(variable, ty);
+                self.request_variable_ty(variable);
                 self.check_expression(body)
             }
 
@@ -158,15 +157,14 @@ where
     /// an inference variable).
     fn check_place(&mut self, place: hir::Place) -> Ty<F> {
         let ty = self.compute_place_ty(place);
-        self.results.record_ty(place, ty);
-        ty
+        self.assign_place_ty(place, ty)
     }
 
     /// Helper for `check_place`.
     fn compute_place_ty(&mut self, place: hir::Place) -> Ty<F> {
         let place_data = self.hir[place];
         match place_data {
-            hir::PlaceData::Variable(var) => self.results.ty(var),
+            hir::PlaceData::Variable(var) => self.request_variable_ty(var),
 
             hir::PlaceData::Entity(entity) => {
                 if !entity.untern(self).is_value() {
@@ -175,8 +173,7 @@ where
                 }
 
                 let entity_ty = self.db.ty(entity).into_value();
-                let generics = self.inference_variables_for(entity);
-                self.results.record_generics(place, &generics);
+                let generics = self.record_entity_and_get_generics(place, entity);
                 self.substitute(place, &generics, entity_ty)
             }
 
@@ -191,7 +188,7 @@ where
                         BaseKind::Named(def_id) => {
                             match this.db.member_entity(def_id, MemberKind::Field, text) {
                                 Some(field_entity) => {
-                                    this.results.record_entity(name, field_entity);
+                                    this.record_entity(name, field_entity);
 
                                     let field_decl_ty = this.db.ty(field_entity).into_value();
                                     let field_ty = this.substitute(place, &generics, field_decl_ty);
@@ -318,7 +315,7 @@ where
                     }
                 };
 
-                self.results.record_entity(method_name, method_entity);
+                self.record_entity(method_name, method_entity);
 
                 let signature_decl = match self.db.signature(method_entity).into_value() {
                     Ok(s) => s,
@@ -389,6 +386,8 @@ where
         entity: Entity,
         fields: hir::List<hir::IdentifiedExpression>,
     ) -> Ty<F> {
+        let generics = self.record_entity_and_get_generics(expression, entity);
+
         match entity.untern(self) {
             EntityData::ItemName {
                 kind: ItemKind::Struct,
@@ -401,12 +400,15 @@ where
                 // If we can't resolve the type of the struct, then just
                 // check the inner expressions. Resolve all the identifiers
                 // to error.
+                assert!(
+                    generics.is_empty(),
+                    "generics should be empty, no need to propagate error"
+                );
                 let error_type = self.error_type();
                 let hir = &self.hir.clone();
                 for field in fields.iter(hir) {
                     let field_data = self.hir[field];
-                    self.results.record_entity(field_data.identifier, entity);
-                    self.results.record_ty(field, error_type);
+                    self.record_entity(field_data.identifier, entity);
                     self.check_expression_has_type(error_type, field_data.expression);
                 }
                 return error_type;
@@ -415,12 +417,10 @@ where
             // Something like `def foo() { .. } foo { .. }` is just not legal.
             _ => {
                 self.record_error("disallowed expression type", expression);
+                self.propagate_error(expression, &generics);
                 return self.error_type();
             }
         };
-
-        let generics = self.inference_variables_for(entity);
-        self.results.record_generics(expression, &generics);
 
         // Get a vector of **all** the fields.
         let mut missing_members: FxIndexSet<Entity> = match self.db.members(entity) {
@@ -430,12 +430,11 @@ where
 
         // Find the entity for each of the field names that the user gave us.
         let hir = &self.hir.clone();
-        for (field, field_data) in fields.iter_enumerated_data(hir) {
+        for field_data in fields.iter_data(hir) {
             let field_name = hir[field_data.identifier].text;
             let field_ty = match self.db.member_entity(entity, MemberKind::Field, field_name) {
                 Some(field_entity) => {
-                    self.results
-                        .record_entity(field_data.identifier, field_entity);
+                    self.record_entity(field_data.identifier, field_entity);
 
                     missing_members.remove(&field_entity);
 
@@ -449,16 +448,17 @@ where
                 }
             };
 
-            // Record the formal type of the field on the `IdentifiedExpression`.
-            self.results.record_ty(field, field_ty);
-
-            // Check the expression against this formal type.
+            // Check the expression against the formal type of this field.
             self.check_expression_has_type(field_ty, field_data.expression);
         }
 
         // If we are missing any members, that's an error.
         for _missing_member in missing_members {
             self.record_error("missing member", expression);
+
+            // Propagate this error to the generics, since they may be
+            // underconstrained as a result.
+            self.propagate_error(expression, &generics);
         }
 
         // The final type is the type of the entity with the given
