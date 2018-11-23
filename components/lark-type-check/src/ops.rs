@@ -1,5 +1,6 @@
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
+use crate::TypeCheckerFamilyDependentExt;
 use crate::UniverseBinder;
 use intern::Intern;
 use lark_entity::Entity;
@@ -7,8 +8,6 @@ use lark_entity::EntityData;
 use lark_entity::LangItem;
 use lark_error::{Diagnostic, ErrorReported};
 use lark_hir as hir;
-use lark_ty::declaration::Declaration;
-use lark_ty::map_family::Map;
 use lark_ty::BaseData;
 use lark_ty::BaseKind;
 use lark_ty::GenericDeclarations;
@@ -46,17 +45,10 @@ where
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: crate::TypeCheckDatabase,
-    F: TypeCheckerFamily<DB>,
-    Self: AsRef<F::InternTables>,
+    F: TypeCheckerFamily,
+    Self: TypeCheckerFamilyDependentExt<F>,
+    F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
-    crate fn new_infer_ty(&mut self) -> Ty<F> {
-        F::new_infer_ty(self)
-    }
-
-    crate fn equate_types(&mut self, cause: hir::MetaIndex, ty1: Ty<F>, ty2: Ty<F>) {
-        F::equate_types(self, cause, ty1, ty2)
-    }
-
     crate fn boolean_type(&self) -> Ty<F> {
         self.primitive_type(LangItem::Boolean)
     }
@@ -106,58 +98,12 @@ where
         self.errors.push(Diagnostic::new(label.into(), span));
     }
 
-    crate fn substitute<M>(
-        &mut self,
-        location: impl Into<hir::MetaIndex>,
-        generics: &Generics<F>,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<Declaration, F>,
-    {
-        F::substitute(self, location.into(), generics, value)
-    }
-
-    crate fn apply_owner_perm<M>(
-        &mut self,
-        location: impl Into<hir::MetaIndex>,
-        owner_perm: F::Perm,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<F, F>,
-    {
-        F::apply_owner_perm(self, location, owner_perm, value)
-    }
-
-    crate fn require_assignable(
-        &mut self,
-        expression: hir::Expression,
-        value_ty: Ty<F>,
-        place_ty: Ty<F>,
-    ) {
-        F::require_assignable(self, expression, value_ty, place_ty)
-    }
-
-    crate fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F> {
-        F::apply_user_perm(self, perm, place_ty)
-    }
-
     crate fn own_perm(&mut self) -> F::Perm {
         F::own_perm(self)
     }
 
     crate fn direct_repr(&mut self) -> F::Repr {
         F::direct_repr(self)
-    }
-
-    crate fn least_upper_bound(
-        &mut self,
-        if_expression: hir::Expression,
-        true_ty: Ty<F>,
-        false_ty: Ty<F>,
-    ) -> Ty<F> {
-        F::least_upper_bound(self, if_expression, true_ty, false_ty)
     }
 
     /// Unifies all of the generic arguments from `data` with the
@@ -255,7 +201,6 @@ where
         base: F::Base,
         op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
     ) -> Ty<F> {
-        let base: F::TcBase = base.into();
         let cause = cause.into();
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => op(self, data),
@@ -271,7 +216,7 @@ where
     fn with_base_data_unify_with(
         &mut self,
         cause: hir::MetaIndex,
-        base: F::TcBase,
+        base: F::Base,
         output_ty: Ty<F>,
         op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
     ) {

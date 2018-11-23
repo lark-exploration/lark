@@ -1,6 +1,7 @@
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
+use crate::TypeCheckerFamilyDependentExt;
 use debug::DebugWith;
 use intern::Untern;
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
@@ -11,13 +12,15 @@ use lark_ty::declaration::Declaration;
 use lark_ty::Signature;
 use lark_ty::Ty;
 use lark_ty::{BaseData, BaseKind};
+use lark_unify::Inferable;
 use map::FxIndexSet;
 
 impl<DB, F> TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckerFamily<DB>,
-    Self: AsRef<F::InternTables>,
+    F: TypeCheckerFamily,
+    Self: TypeCheckerFamilyDependentExt<F>,
+    F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
     crate fn check_fn_body(&mut self) {
         let hir_arguments_len = self.hir.arguments.map(|l| l.len()).unwrap_or(0);

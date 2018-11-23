@@ -2,6 +2,7 @@
 #![feature(never_type)]
 #![feature(self_in_typedefs)]
 #![feature(in_band_lifetimes)]
+#![feature(trait_alias)]
 
 use generational_arena::Arena;
 use indices::IndexVec;
@@ -44,7 +45,7 @@ salsa::query_group! {
     }
 }
 
-struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily<DB>> {
+struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily> {
     /// Salsa database.
     db: &'me DB,
 
@@ -85,85 +86,72 @@ enum UniverseBinder {
     FromItem(Entity),
 }
 
-/// An extension of the `TypeFamily` trait, describing a family of
-/// types that can be used in the type-checker. This family must
-/// support inference.
-trait TypeCheckerFamily<DB: TypeCheckDatabase>: TypeFamily<Placeholder = Placeholder> {
-    /// The "base type" for this family -- this is always the same as
-    /// `Self::Base`, hence the `From` and `Into` requirements, but it
-    /// allows us to add the extra information that it is
-    /// inferable. Kind of a hack, but absent implied bounds
-    /// (rust-lang/rust#44491) I've not found a nicer way to encode
-    /// this.
-    type TcBase: From<Self::Base>
-        + Into<Self::Base>
-        + Inferable<Self::InternTables, KnownData = BaseData<Self>>;
+/// A trait alias for a type family that has `Placeholder` mapped to
+/// `Placeholder`.  These are the kinds of type families the type
+/// checker can use.
+trait TypeCheckerFamily: TypeFamily<Placeholder = Placeholder> {}
+impl<T: TypeFamily<Placeholder = Placeholder>> TypeCheckerFamily for T {}
 
+/// An "extension trait" for the `TypeChecker` that defines the
+/// operations which differ depending on the active type-family.  You
+/// will find e.g. one implementation of this for the `BaseInference`
+/// type family and one for more complete inference (not yet
+/// implemented).
+trait TypeCheckerFamilyDependentExt<F: TypeCheckerFamily>: AsRef<F::InternTables>
+where
+    F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
+{
     /// Creates a new type with fresh inference variables.
-    fn new_infer_ty(this: &mut TypeChecker<'_, DB, Self>) -> Ty<Self>;
+    fn new_infer_ty(&mut self) -> Ty<F>;
 
     /// Equates two types (producing an error if they are not
     /// equatable).
-    fn equate_types(
-        this: &mut TypeChecker<'_, DB, Self>,
-        cause: hir::MetaIndex,
-        ty1: Ty<Self>,
-        ty2: Ty<Self>,
-    );
+    fn equate_types(&mut self, cause: hir::MetaIndex, ty1: Ty<F>, ty2: Ty<F>);
 
     /// Generates the constraint that a value with type `value_ty` is
     /// assignable to a place with the type `place_ty`; `expression`
     /// is the location that is requiring this type to be assignable
     /// (used in case of error).
-    fn require_assignable(
-        this: &mut TypeChecker<'_, DB, Self>,
-        expression: hir::Expression,
-        value_ty: Ty<Self>,
-        place_ty: Ty<Self>,
-    );
+    fn require_assignable(&mut self, expression: hir::Expression, value_ty: Ty<F>, place_ty: Ty<F>);
 
     /// Given a permission `perm` written by the user, apply it to the
     /// type of the place `place_ty` that was accessed to produce the
     /// resulting type.
-    fn apply_user_perm(
-        this: &mut TypeChecker<'_, DB, Self>,
-        perm: hir::Perm,
-        place_ty: Ty<Self>,
-    ) -> Ty<Self>;
+    fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F>;
 
     /// Computes and returns the least-upper-bound of two types. If
     /// the types have no LUB, then reports an error at
     /// `if_expression`.
     fn least_upper_bound(
-        this: &mut TypeChecker<'_, DB, Self>,
+        &mut self,
         if_expression: hir::Expression,
-        true_ty: Ty<Self>,
-        false_ty: Ty<Self>,
-    ) -> Ty<Self>;
+        true_ty: Ty<F>,
+        false_ty: Ty<F>,
+    ) -> Ty<F>;
 
     /// Substitute the given generics into the value `M`, which must
     /// be something in the `Declaration` type family (e.g., the type
     /// of a field).
     fn substitute<M>(
-        this: &mut TypeChecker<'_, DB, Self>,
-        location: hir::MetaIndex,
-        generics: &Generics<Self>,
+        &mut self,
+        location: impl Into<hir::MetaIndex>,
+        generics: &Generics<F>,
         value: M,
     ) -> M::Output
     where
-        M: Map<Declaration, Self>;
+        M: Map<Declaration, F>;
 
     /// Adjust the type of `value` to account for having been
     /// projected from an owned with the given permissions
     /// `owner_perm` (e.g., when accessing a field).
     fn apply_owner_perm<M>(
-        this: &mut TypeChecker<'_, DB, Self>,
+        &mut self,
         location: impl Into<hir::MetaIndex>,
-        owner_perm: Self::Perm,
+        owner_perm: F::Perm,
         value: M,
     ) -> M::Output
     where
-        M: Map<Self, Self>;
+        M: Map<F, F>;
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -244,7 +232,7 @@ where
 impl<DB, F> AsRef<DeclarationTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckerFamily<DB>,
+    F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &DeclarationTables {
         self.db.as_ref()
@@ -254,7 +242,7 @@ where
 impl<DB, F> AsRef<BaseInferredTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckerFamily<DB>,
+    F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &BaseInferredTables {
         self.db.as_ref()
@@ -264,7 +252,7 @@ where
 impl<DB, F> AsRef<EntityTables> for TypeChecker<'_, DB, F>
 where
     DB: TypeCheckDatabase,
-    F: TypeCheckerFamily<DB>,
+    F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &EntityTables {
         self.db.as_ref()
