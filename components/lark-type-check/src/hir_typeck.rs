@@ -65,20 +65,13 @@ where
         match expression_data {
             hir::ExpressionData::Let {
                 variable,
-                initializer: Some(initializer),
+                initializer,
                 body,
             } => {
-                let initializer_ty = self.check_expression(initializer);
-                self.record_variable_ty(variable, initializer_ty);
-                self.check_expression(body)
-            }
-
-            hir::ExpressionData::Let {
-                variable,
-                initializer: None,
-                body,
-            } => {
-                self.request_variable_ty(variable);
+                let variable_ty = self.request_variable_ty(variable);
+                if let Some(initializer) = initializer {
+                    self.check_expression_has_type(variable_ty, initializer);
+                }
                 self.check_expression(body)
             }
 
