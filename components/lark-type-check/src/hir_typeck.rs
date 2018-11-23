@@ -82,9 +82,8 @@ where
 
             hir::ExpressionData::Assignment { place, value } => {
                 let place_ty = self.check_place(place);
-                let value_ty = self.check_expression(value);
-                self.require_assignable(expression, value_ty, place_ty);
-                place_ty
+                self.check_expression_has_type(place_ty, value);
+                self.unit_type()
             }
 
             hir::ExpressionData::MethodCall {
@@ -109,7 +108,7 @@ where
             }
 
             hir::ExpressionData::Sequence { first, second } => {
-                let _ = self.check_expression(first);
+                self.check_expression_has_type(self.unit_type(), first);
                 self.check_expression(second)
             }
 
@@ -118,8 +117,7 @@ where
                 if_true,
                 if_false,
             } => {
-                let condition_ty = self.check_expression(condition);
-                self.require_assignable(expression, condition_ty, self.boolean_type());
+                self.check_expression_has_type(self.boolean_type(), condition);
                 let true_ty = self.check_expression(if_true);
                 let false_ty = self.check_expression(if_false);
                 self.least_upper_bound(expression, true_ty, false_ty)
@@ -368,7 +366,7 @@ where
     fn check_arguments_in_case_of_error(&mut self, arguments: hir::List<hir::Expression>) -> Ty<F> {
         let hir = &self.hir.clone();
         for argument_expr in arguments.iter(hir) {
-            self.check_expression(argument_expr);
+            self.check_expression_has_type(self.error_type(), argument_expr);
         }
         self.error_type()
     }
