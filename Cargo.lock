@@ -556,6 +556,7 @@ dependencies = [
  "generational-arena 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "indices 0.1.0",
  "intern 0.1.0",
+ "lark-debug-derive 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
  "lark-hir 0.1.0",

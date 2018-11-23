@@ -95,16 +95,6 @@ where
         self.equate_types(expression.into(), value_ty, place_ty)
     }
 
-    fn least_upper_bound(
-        &mut self,
-        if_expression: hir::Expression,
-        true_ty: Ty<BaseInference>,
-        false_ty: Ty<BaseInference>,
-    ) -> Ty<BaseInference> {
-        self.equate_types(if_expression.into(), true_ty, false_ty);
-        true_ty
-    }
-
     fn substitute<M>(
         &mut self,
         _location: impl Into<hir::MetaIndex>,

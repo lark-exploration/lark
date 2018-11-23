@@ -4,6 +4,7 @@ use crate::TypeCheckerFamily;
 use crate::TypeCheckerFamilyDependentExt;
 use debug::DebugWith;
 use intern::Untern;
+use lark_debug_derive::DebugWith;
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
@@ -14,6 +15,13 @@ use lark_ty::Ty;
 use lark_ty::{BaseData, BaseKind};
 use lark_unify::Inferable;
 use map::FxIndexSet;
+
+#[derive(Copy, Clone, Debug, DebugWith)]
+enum Mode<F: TypeCheckerFamily> {
+    Synthesize,
+    CheckType(Ty<F>),
+}
+use self::Mode::*;
 
 impl<DB, F, S> TypeChecker<'_, DB, F, S>
 where
@@ -44,23 +52,40 @@ where
                 self.record_variable_ty(argument, input);
             }
         }
-        self.check_expression_has_type(signature.output, self.hir.root_expression);
+        self.check_expression(CheckType(signature.output), self.hir.root_expression);
     }
 
-    fn check_expression_has_type(&mut self, expected_ty: Ty<F>, expression: hir::Expression) {
-        let actual_ty = self.check_expression(expression);
-        self.require_assignable(expression, actual_ty, expected_ty);
+    /// Type-check the expression `expression` in the given mode
+    /// (either "check", which specifies the type the expression must
+    /// have, or "synthesize").
+    fn check_expression(&mut self, mode: Mode<F>, expression: hir::Expression) -> Ty<F> {
+        let actual_ty = self.compute_expression_ty(mode, expression);
+        self.record_expression_ty(expression, actual_ty);
+        match mode {
+            Synthesize => actual_ty,
+            CheckType(expected_ty) => {
+                self.require_assignable(expression, actual_ty, expected_ty);
+                expected_ty
+            }
+        }
     }
 
-    /// Type-check `expression`, recording and returning the resulting type (which may be
-    /// an inference variable).
-    fn check_expression(&mut self, expression: hir::Expression) -> Ty<F> {
-        let ty = self.compute_expression_ty(expression);
-        self.record_expression_ty(expression, ty)
+    fn type_or_infer_variable(&mut self, mode: Mode<F>) -> Ty<F> {
+        match mode {
+            Synthesize => self.new_infer_ty(),
+            CheckType(expected_ty) => expected_ty,
+        }
     }
 
-    /// Helper for `check_expression`: compute the type of the given expression.
-    fn compute_expression_ty(&mut self, expression: hir::Expression) -> Ty<F> {
+    /// Common helper for checking and synthesizing the type of an expression.
+    ///
+    /// If `expected_ty` is `None`, this will synthesize. Otherwise, it will consider
+    /// `expected_ty` as a hint. Returns the type of the expression.
+    ///
+    /// **Note:** The expected type is only a hint. If this expression
+    /// does not produce a value of `expected_ty`, no error is
+    /// reported; that must be enforced by the caller.
+    fn compute_expression_ty(&mut self, mode: Mode<F>, expression: hir::Expression) -> Ty<F> {
         let expression_data = self.hir[expression].clone();
         match expression_data {
             hir::ExpressionData::Let {
@@ -70,9 +95,9 @@ where
             } => {
                 let variable_ty = self.request_variable_ty(variable);
                 if let Some(initializer) = initializer {
-                    self.check_expression_has_type(variable_ty, initializer);
+                    self.check_expression(CheckType(variable_ty), initializer);
                 }
-                self.check_expression(body)
+                self.check_expression(mode, body)
             }
 
             hir::ExpressionData::Place { perm, place } => {
@@ -82,7 +107,7 @@ where
 
             hir::ExpressionData::Assignment { place, value } => {
                 let place_ty = self.check_place(place);
-                self.check_expression_has_type(place_ty, value);
+                self.check_expression(CheckType(place_ty), value);
                 self.unit_type()
             }
 
@@ -108,8 +133,8 @@ where
             }
 
             hir::ExpressionData::Sequence { first, second } => {
-                self.check_expression_has_type(self.unit_type(), first);
-                self.check_expression(second)
+                self.check_expression(CheckType(self.unit_type()), first);
+                self.check_expression(mode, second)
             }
 
             hir::ExpressionData::If {
@@ -117,10 +142,13 @@ where
                 if_true,
                 if_false,
             } => {
-                self.check_expression_has_type(self.boolean_type(), condition);
-                let true_ty = self.check_expression(if_true);
-                let false_ty = self.check_expression(if_false);
-                self.least_upper_bound(expression, true_ty, false_ty)
+                self.check_expression(CheckType(self.boolean_type()), condition);
+
+                let ty = self.type_or_infer_variable(mode);
+                self.check_expression(CheckType(ty), if_true);
+                self.check_expression(CheckType(ty), if_false);
+
+                ty
             }
 
             hir::ExpressionData::Literal { data } => match data.kind {
@@ -168,7 +196,7 @@ where
                 self.substitute(place, &generics, entity_ty)
             }
 
-            hir::PlaceData::Temporary(expr) => self.check_expression(expr),
+            hir::PlaceData::Temporary(expr) => self.check_expression(Synthesize, expr),
 
             hir::PlaceData::Field { owner, name } => {
                 let text = self.hir[name].text;
@@ -357,7 +385,7 @@ where
 
         let hir = &self.hir.clone();
         for (&expected_ty, argument_expr) in inputs.iter().zip(arguments.iter(hir)) {
-            self.check_expression_has_type(expected_ty, argument_expr);
+            self.check_expression(CheckType(expected_ty), argument_expr);
         }
 
         output
@@ -366,7 +394,7 @@ where
     fn check_arguments_in_case_of_error(&mut self, arguments: hir::List<hir::Expression>) -> Ty<F> {
         let hir = &self.hir.clone();
         for argument_expr in arguments.iter(hir) {
-            self.check_expression_has_type(self.error_type(), argument_expr);
+            self.check_expression(CheckType(self.error_type()), argument_expr);
         }
         self.error_type()
     }
@@ -400,7 +428,7 @@ where
                 for field in fields.iter(hir) {
                     let field_data = self.hir[field];
                     self.record_entity(field_data.identifier, entity);
-                    self.check_expression_has_type(error_type, field_data.expression);
+                    self.check_expression(CheckType(error_type), field_data.expression);
                 }
                 return error_type;
             }
@@ -440,7 +468,7 @@ where
             };
 
             // Check the expression against the formal type of this field.
-            self.check_expression_has_type(field_ty, field_data.expression);
+            self.check_expression(CheckType(field_ty), field_data.expression);
         }
 
         // If we are missing any members, that's an error.
@@ -469,8 +497,8 @@ where
         // left + right before we can say anything about the result
         // type. So use `with_base_data` to get a callback once that is
         // known.
-        let left_ty = self.check_expression(left);
-        let right_ty = self.check_expression(right);
+        let left_ty = self.check_expression(Synthesize, left);
+        let right_ty = self.check_expression(Synthesize, right);
         let result_ty =
             self.with_base_data(expression, left_ty.base, move |this, left_base_data| {
                 this.with_base_data(expression, right_ty.base, move |this, right_base_data| {
@@ -569,7 +597,7 @@ where
         // We may want to add overloading later. So make sure we know
         // the type of the expression before we determine the type of
         // the output.
-        let value_ty = self.check_expression(value);
+        let value_ty = self.check_expression(Synthesize, value);
         self.with_base_data(expression, value_ty.base, move |this, value_base_data| {
             this.check_unary_with_input_known(expression, operator, value_base_data)
         })

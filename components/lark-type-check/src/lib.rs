@@ -119,16 +119,6 @@ where
     /// resulting type.
     fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F>;
 
-    /// Computes and returns the least-upper-bound of two types. If
-    /// the types have no LUB, then reports an error at
-    /// `if_expression`.
-    fn least_upper_bound(
-        &mut self,
-        if_expression: hir::Expression,
-        true_ty: Ty<F>,
-        false_ty: Ty<F>,
-    ) -> Ty<F>;
-
     /// Substitute the given generics into the value `M`, which must
     /// be something in the `Declaration` type family (e.g., the type
     /// of a field).
