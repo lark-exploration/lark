@@ -64,7 +64,7 @@ where
         match mode {
             Synthesize => actual_ty,
             CheckType(expected_ty) => {
-                self.require_assignable(expression, actual_ty, expected_ty);
+                self.require_assignable(expression, expected_ty);
                 expected_ty
             }
         }
@@ -308,14 +308,13 @@ where
         arguments: hir::List<hir::Expression>,
     ) -> Ty<F> {
         self.with_base_data(expression, owner_ty.base, move |this, base_data| {
-            this.check_method_call(expression, owner_ty, method_name, arguments, base_data)
+            this.check_method_call(expression, method_name, arguments, base_data)
         })
     }
 
     fn check_method_call(
         &mut self,
         expression: hir::Expression,
-        owner_ty: Ty<F>,
         method_name: hir::Identifier,
         arguments: hir::List<hir::Expression>,
         base_data: BaseData<F>,
@@ -343,7 +342,8 @@ where
                 let signature = self.substitute(expression, &generics, signature_decl);
 
                 // The 0th item in the signature is the self type, so check that
-                self.require_assignable(expression, owner_ty, signature.inputs[0]);
+                let owner_expression = arguments.first(&self.hir).unwrap();
+                self.require_assignable(owner_expression, signature.inputs[0]);
 
                 self.check_arguments_against_signature(
                     method_name,
@@ -513,12 +513,12 @@ where
 
         match operator {
             hir::BinaryOperator::Equals | hir::BinaryOperator::NotEquals => {
-                // One exception are the `==` and `!=` operators. They
-                // always yield boolean.
+                // For the `==` and `!=` operators, we know the result
+                // will be boolean, so even if `result_ty` is an
+                // inference variable, we can unify it *now* rather
+                // than wait until the input types are known.
                 let boolean_type = self.boolean_type();
-                if result_ty != boolean_type {
-                    self.require_assignable(expression, result_ty, boolean_type);
-                }
+                self.equate_types(expression, result_ty, boolean_type);
                 boolean_type
             }
 

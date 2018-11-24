@@ -106,13 +106,12 @@ where
 
     /// Equates two types (producing an error if they are not
     /// equatable).
-    fn equate_types(&mut self, cause: hir::MetaIndex, ty1: Ty<F>, ty2: Ty<F>);
+    fn equate_types(&mut self, cause: impl Into<hir::MetaIndex>, ty1: Ty<F>, ty2: Ty<F>);
 
-    /// Generates the constraint that a value with type `value_ty` is
-    /// assignable to a place with the type `place_ty`; `expression`
-    /// is the location that is requiring this type to be assignable
-    /// (used in case of error).
-    fn require_assignable(&mut self, expression: hir::Expression, value_ty: Ty<F>, place_ty: Ty<F>);
+    /// Generates the constraint that the type of `expression` be
+    /// assignable to a place with the type `place_ty`. This may
+    /// induce coercions.
+    fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<F>);
 
     /// Given a permission `perm` written by the user, apply it to the
     /// type of the place `place_ty` that was accessed to produce the

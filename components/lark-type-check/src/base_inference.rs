@@ -30,10 +30,12 @@ where
 
     fn equate_types(
         &mut self,
-        cause: hir::MetaIndex,
+        cause: impl Into<hir::MetaIndex>,
         ty1: Ty<BaseInference>,
         ty2: Ty<BaseInference>,
     ) {
+        let cause = cause.into();
+
         let Ty {
             repr: Erased,
             perm: Erased,
@@ -86,13 +88,9 @@ where
         place_ty
     }
 
-    fn require_assignable(
-        &mut self,
-        expression: hir::Expression,
-        value_ty: Ty<BaseInference>,
-        place_ty: Ty<BaseInference>,
-    ) {
-        self.equate_types(expression.into(), value_ty, place_ty)
+    fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<BaseInference>) {
+        let value_ty = self.storage.ty(expression);
+        self.equate_types(expression, value_ty, place_ty)
     }
 
     fn substitute<M>(
