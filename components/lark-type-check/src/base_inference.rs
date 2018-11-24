@@ -1,3 +1,7 @@
+//! Definition of a type family + type-checker methods for doing "base
+//! only" inference. This is inference where we ignore permissions and
+//! representations and focus only on the base types.
+
 use crate::substitute::Substitution;
 use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
@@ -24,6 +28,7 @@ use lark_ty::Ty;
 use lark_ty::TypeFamily;
 use lark_unify::{InferVar, Inferable};
 
+/// Type family for "base inference" -- inferring just the base types.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct BaseInference;
 
