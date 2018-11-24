@@ -403,7 +403,7 @@ pub enum ExpressionData {
         body: Expression,
     },
 
-    /// reference to a local variable `X`
+    /// reference to a local variable `X` or a path like `X.Y.Z`
     Place { perm: Perm, place: Place },
 
     /// `<place> = <value>`
