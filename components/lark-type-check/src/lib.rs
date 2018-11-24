@@ -1,7 +1,11 @@
+#![feature(const_fn)]
+#![feature(const_let)]
 #![feature(crate_visibility_modifier)]
-#![feature(never_type)]
-#![feature(self_in_typedefs)]
+#![feature(macro_at_most_once_rep)]
 #![feature(in_band_lifetimes)]
+#![feature(never_type)]
+#![feature(specialization)]
+#![feature(self_in_typedefs)]
 #![feature(trait_alias)]
 
 use generational_arena::Arena;

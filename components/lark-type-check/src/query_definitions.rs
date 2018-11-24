@@ -1,3 +1,4 @@
+use crate::base_inference::{BaseInference, BaseInferenceTables};
 use crate::resolve_to_base_inferred::ResolveToBaseInferred;
 use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
@@ -7,7 +8,6 @@ use generational_arena::Arena;
 use indices::IndexVec;
 use lark_entity::Entity;
 use lark_error::{Diagnostic, WithError};
-use lark_ty::base_inference::{BaseInference, BaseInferenceTables};
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::map_family::Map;
 use lark_unify::InferVar;

@@ -20,7 +20,6 @@ use std::hash::Hash;
 use std::iter::IntoIterator;
 use std::sync::Arc;
 
-pub mod base_inference;
 pub mod base_inferred;
 pub mod declaration;
 pub mod identity;
