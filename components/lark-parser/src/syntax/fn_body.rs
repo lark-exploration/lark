@@ -627,24 +627,6 @@ impl Syntax<'parse> for Expression1<'me, 'parse> {
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
         let mut expr = parser.expect(Expression0::new(self.scope))?;
 
-        // foo(a, b, c) -- call
-        if let Some(arguments) = parser.parse_if_present(CallArguments::new(self.scope)) {
-            let arguments = arguments?;
-            let function = expr.to_hir_place(self.scope);
-            let span = self
-                .scope
-                .span(function)
-                .extended_until_end_of(parser.last_span());
-            let expression = self.scope.add(
-                span,
-                hir::ExpressionData::Call {
-                    function,
-                    arguments,
-                },
-            );
-            return Ok(ParsedExpression::Expression(expression));
-        }
-
         // foo(f: a, g: b) -- struct construction
         //
         // FIXME -- we probably want to support `foo.bar.baz(f: a, g:
@@ -680,6 +662,26 @@ impl Syntax<'parse> for Expression1<'me, 'parse> {
                 );
                 return Ok(ParsedExpression::Expression(error_expression));
             }
+        }
+
+        // foo(a, b, c) -- call
+        //
+        // NB. This must be tested *after* the "identified" form.
+        if let Some(arguments) = parser.parse_if_present(CallArguments::new(self.scope)) {
+            let arguments = arguments?;
+            let function = expr.to_hir_place(self.scope);
+            let span = self
+                .scope
+                .span(function)
+                .extended_until_end_of(parser.last_span());
+            let expression = self.scope.add(
+                span,
+                hir::ExpressionData::Call {
+                    function,
+                    arguments,
+                },
+            );
+            return Ok(ParsedExpression::Expression(expression));
         }
 
         // foo.bar.baz
@@ -788,7 +790,12 @@ impl Syntax<'parse> for IdentifiedCallArguments<'me, 'parse> {
     type Data = hir::List<hir::IdentifiedExpression>;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(OpenParenthesis)
+        let mut parser = parser.checkpoint();
+        if let Some(_) = parser.parse_if_present(OpenParenthesis) {
+            parser.test(IdentifiedExpression::new(self.scope))
+        } else {
+            false
+        }
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
@@ -812,7 +819,12 @@ impl Syntax<'parse> for IdentifiedExpression<'me, 'parse> {
     type Data = hir::IdentifiedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
-        parser.test(HirIdentifier::new(self.scope))
+        let mut parser = parser.checkpoint();
+        if let Some(_) = parser.parse_if_present(HirIdentifier::new(self.scope)) {
+            parser.test(Colon)
+        } else {
+            false
+        }
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {

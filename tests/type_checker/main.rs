@@ -64,3 +64,19 @@ fn struct_field_uint_vs_uint() {
         NoErrors,
     );
 }
+
+#[test]
+fn struct_ctor_correct_arg_type() {
+    run_test(
+        "struct Foo { b: bool } def make() -> Foo { Foo(b: true) }",
+        NoErrors,
+    );
+}
+
+#[test]
+fn struct_ctor_wrong_arg_type() {
+    run_test(
+        "struct Foo { b: bool } def make() -> Foo { Foo(b: 22) }",
+        "                                                  ~~",
+    );
+}
