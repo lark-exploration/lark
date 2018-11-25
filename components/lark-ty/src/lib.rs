@@ -352,10 +352,19 @@ pub struct GenericTyDeclaration {
     pub name: GlobalIdentifier,
 }
 
-/// The two distinct kinds of representations you can have: direct
-/// (store the fields in place) and indirect (store a pointer).
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum PermKind {
+    Own,
+    Share,
+    Borrow,
+}
+
+/// Encodes whether we reach the data through pointer indirection or not.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum ReprKind {
+    /// Store the fields in place.
     Direct,
+
+    /// Store fields via a pointer.
     Indirect,
 }

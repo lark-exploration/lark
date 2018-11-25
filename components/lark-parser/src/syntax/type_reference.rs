@@ -77,9 +77,16 @@ impl NamedTypeReference {
     ) -> WithError<ty::Ty<Declaration>> {
         match db.resolve_name(entity, self.identifier.value) {
             Some(entity) => {
+                // FIXME(ndm) -- eventually, we will want some way to
+                // represent types with other permissions/reprs. We'll
+                // need fields on `NamedTypeReference`, and we'll need
+                // to have methods for helping us adjust them
+                // post-parse, or else distinct parsing combinators
+                // (the former might be more convenient).
                 let ty = crate::type_conversion::declaration_ty_named(
                     &db,
                     entity,
+                    ty::PermKind::Own,
                     ty::ReprKind::Direct,
                     ty::Generics::empty(),
                 );

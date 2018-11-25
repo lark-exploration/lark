@@ -5,7 +5,7 @@
 use crate::BaseData;
 use crate::BoundVar;
 use crate::BoundVarOr;
-use crate::Erased;
+use crate::PermKind;
 use crate::ReprKind;
 use crate::TypeFamily;
 use debug::{DebugWith, FmtWithSpecialized};
@@ -20,12 +20,12 @@ pub struct Declaration;
 impl TypeFamily for Declaration {
     type InternTables = DeclarationTables;
     type Repr = ReprKind;
-    type Perm = Erased; // Not Yet Implemented
+    type Perm = Perm;
     type Base = Base;
     type Placeholder = !;
 
-    fn own_perm(_tables: &dyn AsRef<DeclarationTables>) -> Erased {
-        Erased
+    fn own_perm(tables: &dyn AsRef<DeclarationTables>) -> Self::Perm {
+        PermKind::Own.intern(tables)
     }
 
     fn known_repr(_tables: &dyn AsRef<DeclarationTables>, repr_kind: ReprKind) -> ReprKind {
@@ -62,10 +62,34 @@ where
     }
 }
 
+indices::index_type! {
+    pub struct Perm { .. }
+}
+
+debug::debug_fallback_impl!(Perm);
+
+impl<Cx> FmtWithSpecialized<Cx> for Perm
+where
+    Cx: AsRef<DeclarationTables>,
+{
+    fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.untern(cx).fmt_with(cx, fmt)
+    }
+}
+
 intern::intern_tables! {
     pub struct DeclarationTables {
         struct DeclarationTablesData {
-            declaration_base: map(Base, BoundVarOr<BaseData<Declaration>>),
+            bases: map(Base, BoundVarOr<BaseData<Declaration>>),
+            perms: map(Perm, BoundVarOr<PermKind>),
         }
+    }
+}
+
+impl Intern<DeclarationTables> for PermKind {
+    type Key = Perm;
+
+    fn intern(self, interner: &dyn AsRef<DeclarationTables>) -> Self::Key {
+        BoundVarOr::Known(self).intern(interner)
     }
 }
