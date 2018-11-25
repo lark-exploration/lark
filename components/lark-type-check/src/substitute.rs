@@ -10,24 +10,24 @@ use lark_ty::Generic;
 use lark_ty::Ty;
 use lark_ty::TypeFamily;
 
-crate struct Substitution<'me, T, V>
+crate struct Substitution<'me, F, V>
 where
-    T: TypeFamily<Perm = Erased>,
-    V: std::ops::Index<BoundVar, Output = Generic<T>>,
+    F: TypeFamily<Perm = Erased>,
+    V: std::ops::Index<BoundVar, Output = Generic<F>>,
 {
     declaration_tables: &'me DeclarationTables,
-    output_tables: &'me T::InternTables,
+    output_tables: &'me F::InternTables,
     values: &'me V,
 }
 
-impl<T, V> Substitution<'me, T, V>
+impl<F, V> Substitution<'me, F, V>
 where
-    T: TypeFamily<Perm = Erased>,
-    V: std::ops::Index<BoundVar, Output = Generic<T>>,
+    F: TypeFamily<Perm = Erased>,
+    V: std::ops::Index<BoundVar, Output = Generic<F>>,
 {
     crate fn new(
         declaration_tables: &'me dyn AsRef<DeclarationTables>,
-        output_tables: &'me dyn AsRef<T::InternTables>,
+        output_tables: &'me dyn AsRef<F::InternTables>,
         values: &'me V,
     ) -> Self {
         Substitution {
@@ -38,22 +38,22 @@ where
     }
 }
 
-impl<T, V> AsRef<DeclarationTables> for Substitution<'me, T, V>
+impl<F, V> AsRef<DeclarationTables> for Substitution<'me, F, V>
 where
-    T: TypeFamily<Perm = Erased>,
-    V: std::ops::Index<BoundVar, Output = Generic<T>>,
+    F: TypeFamily<Perm = Erased>,
+    V: std::ops::Index<BoundVar, Output = Generic<F>>,
 {
     fn as_ref(&self) -> &DeclarationTables {
         &self.declaration_tables
     }
 }
 
-impl<T, V> FamilyMapper<Declaration, T> for Substitution<'me, T, V>
+impl<F, V> FamilyMapper<Declaration, F> for Substitution<'me, F, V>
 where
-    T: TypeFamily<Repr = Erased, Perm = Erased>,
-    V: std::ops::Index<BoundVar, Output = Generic<T>>,
+    F: TypeFamily<Repr = Erased, Perm = Erased>,
+    V: std::ops::Index<BoundVar, Output = Generic<F>>,
 {
-    fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<T> {
+    fn map_ty(&mut self, ty: Ty<Declaration>) -> Ty<F> {
         let Ty {
             repr: _, // not yet used
             perm: _, // not yet used
@@ -68,13 +68,13 @@ where
                 Ty {
                     repr: Erased,
                     perm: Erased,
-                    base: T::intern_base_data(self.output_tables, base_data1),
+                    base: F::intern_base_data(self.output_tables, base_data1),
                 }
             }
         }
     }
 
-    fn map_placeholder(&mut self, placeholder: !) -> T::Placeholder {
+    fn map_placeholder(&mut self, placeholder: !) -> F::Placeholder {
         placeholder
     }
 }
