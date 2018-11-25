@@ -183,8 +183,7 @@ impl ParsedExpression {
             ParsedExpression::Expression(e) => e,
             ParsedExpression::Place(place) => {
                 let span = scope.span(place);
-                let perm = scope.add(span, hir::PermData::Default);
-                scope.add(span, hir::ExpressionData::Place { perm, place })
+                scope.add(span, hir::ExpressionData::Place { place })
             }
         }
     }

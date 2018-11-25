@@ -168,15 +168,6 @@ where
         }
     }
 
-    fn apply_user_perm(
-        &mut self,
-        _perm: hir::Perm,
-        place_ty: Ty<BaseInference>,
-    ) -> Ty<BaseInference> {
-        // In the "erased type check", we don't care about permissions.
-        place_ty
-    }
-
     fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<BaseInference>) {
         let value_ty = self.storage.ty(expression);
         self.equate_types(expression, value_ty, place_ty)

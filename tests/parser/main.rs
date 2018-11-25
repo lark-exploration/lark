@@ -524,7 +524,6 @@ fn parse_binary_expressions_precedence() {
                 left: Binary {
                     operator: Add,
                     left: Place {
-                        perm: Default,
                         place: Variable(
                             VariableData {
                                 name: IdentifierData {
@@ -536,7 +535,6 @@ fn parse_binary_expressions_precedence() {
                     right: Binary {
                         operator: Multiply,
                         left: Place {
-                            perm: Default,
                             place: Variable(
                                 VariableData {
                                     name: IdentifierData {
@@ -546,7 +544,6 @@ fn parse_binary_expressions_precedence() {
                             )
                         },
                         right: Place {
-                            perm: Default,
                             place: Variable(
                                 VariableData {
                                     name: IdentifierData {
@@ -558,7 +555,6 @@ fn parse_binary_expressions_precedence() {
                     }
                 },
                 right: Place {
-                    perm: Default,
                     place: Variable(
                         VariableData {
                             name: IdentifierData {

@@ -117,11 +117,6 @@ where
     /// induce coercions.
     fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<F>);
 
-    /// Given a permission `perm` written by the user, apply it to the
-    /// type of the place `place_ty` that was accessed to produce the
-    /// resulting type.
-    fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F>;
-
     /// Substitute the given generics into the value `M`, which must
     /// be something in the `Declaration` type family (e.g., the type
     /// of a field).

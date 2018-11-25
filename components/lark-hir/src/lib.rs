@@ -81,9 +81,6 @@ pub struct FnBodyTables {
     /// Map each place index to its associated data.
     pub places: IndexVec<Place, PlaceData>,
 
-    /// Map each perm index to its associated data.
-    pub perms: IndexVec<Perm, PermData>,
-
     /// Map each variable index to its associated data.
     pub variables: IndexVec<Variable, VariableData>,
 
@@ -276,7 +273,6 @@ define_meta_index! {
     (Expression, ExpressionData, expressions),
     (IdentifiedExpression, IdentifiedExpressionData, identified_expressions),
     (Place, PlaceData, places),
-    (Perm, PermData, perms),
     (Variable, VariableData, variables),
     (Identifier, IdentifierData, identifiers),
     (Error, ErrorData, errors),
@@ -412,7 +408,7 @@ pub enum ExpressionData {
     },
 
     /// reference to a local variable `X` or a path like `X.Y.Z`
-    Place { perm: Perm, place: Place },
+    Place { place: Place },
 
     /// `<place> = <value>`
     Assignment { place: Place, value: Expression },
@@ -497,19 +493,6 @@ indices::index_type! {
 pub struct IdentifiedExpressionData {
     pub identifier: Identifier,
     pub expression: Expression,
-}
-
-indices::index_type! {
-    pub struct Perm { .. }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum PermData {
-    Share,
-    Borrow,
-    Own,
-    Other(Entity),
-    Default,
 }
 
 indices::index_type! {

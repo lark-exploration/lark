@@ -100,10 +100,7 @@ where
                 self.check_expression(mode, body)
             }
 
-            hir::ExpressionData::Place { perm, place } => {
-                let place_ty = self.check_place(place);
-                self.apply_user_perm(perm, place_ty)
-            }
+            hir::ExpressionData::Place { place } => self.check_place(place),
 
             hir::ExpressionData::Assignment { place, value } => {
                 let place_ty = self.check_place(place);
