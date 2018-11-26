@@ -75,3 +75,8 @@ fn test_call() {
 fn test_multi_statement() {
     run_eval_and_build_test("tests/test_files/multi_statement.lark", "false\ntrue");
 }
+
+#[test]
+fn test_struct_init() {
+    run_eval_and_build_test("tests/test_files/struct_init.lark", "true");
+}

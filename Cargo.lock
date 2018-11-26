@@ -301,6 +301,7 @@ name = "lark-build"
 version = "0.1.0"
 dependencies = [
  "cc 1.0.23 (registry+https://github.com/rust-lang/crates.io-index)",
+ "debug 0.1.0",
  "intern 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
@@ -351,6 +352,7 @@ dependencies = [
 name = "lark-eval"
 version = "0.1.0"
 dependencies = [
+ "debug 0.1.0",
  "intern 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",

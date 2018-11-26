@@ -27,27 +27,6 @@ salsa::query_group! {
     }
 }
 
-/*
-indices::index_type! {
-    pub struct Identifier { .. }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct IdentifierData {
-    pub text: GlobalIdentifier,
-}
-
-indices::index_type! {
-    pub struct Variable { .. }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct VariableData {
-    pub name: Identifier,
-}
-
-*/
-
 indices::index_type! {
     pub struct Error { .. }
 }
@@ -158,6 +137,7 @@ pub enum RvalueData {
     BinaryOp(BinOp, Variable, Variable),
     //FIXME: MIR has this as a TerminatorData, presumably because stack can unwind
     Call(Entity, List<Operand>),
+    Aggregate(Entity, List<Operand>),
 }
 
 indices::index_type! {

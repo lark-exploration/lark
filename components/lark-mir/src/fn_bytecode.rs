@@ -8,6 +8,7 @@ use lark_hir as hir;
 use lark_span::{FileName, Span, Spanned};
 use lark_string::global::GlobalIdentifier;
 use map::FxIndexMap;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 crate fn fn_bytecode(
@@ -226,6 +227,48 @@ where
 
                 (rvalue, temp_vars)
             }
+            hir::ExpressionData::Aggregate { entity, fields } => {
+                let mut mir_fields = HashMap::new();
+                let mut temp_vars = vec![];
+
+                for field in fields.iter(fn_body) {
+                    match fn_body.tables[field] {
+                        hir::IdentifiedExpressionData {
+                            identifier,
+                            expression,
+                        } => {
+                            let (mir_expression, mut field_temp_vars) =
+                                self.lower_operand(fn_body, expression, statements);
+
+                            match fn_body.tables[identifier] {
+                                hir::IdentifierData { text } => {
+                                    mir_fields.insert(text, mir_expression);
+                                }
+                            }
+
+                            temp_vars.append(&mut field_temp_vars);
+                        }
+                    }
+                }
+
+                let members = self.db.members(entity).unwrap();
+                let mut field_inits = vec![];
+
+                for member in members.iter() {
+                    if mir_fields.contains_key(&member.name) {
+                        field_inits.push(*mir_fields.get(&member.name).unwrap());
+                    }
+                }
+
+                let inits = mir::List::from_iterator(&mut self.fn_bytecode_tables, field_inits);
+
+                let rvalue = self.add(
+                    fn_body.span(expression),
+                    mir::RvalueData::Aggregate(entity, inits),
+                );
+
+                (rvalue, temp_vars)
+            }
             _ => unimplemented!("Unsupported expression for rvalues"),
         }
     }
@@ -238,6 +281,15 @@ where
             }
             hir::PlaceData::Entity(entity) => {
                 self.add(fn_body.span(place), mir::PlaceData::Entity(entity))
+            }
+            hir::PlaceData::Field { owner, name } => {
+                let owner = self.lower_place(fn_body, owner);
+                match fn_body.tables[name] {
+                    hir::IdentifierData { text } => {
+                        let name = self.add(fn_body.span(place), mir::IdentifierData { text });
+                        self.add(fn_body.span(place), mir::PlaceData::Field { owner, name })
+                    }
+                }
             }
             x => unimplemented!("Do not yet support lowering place: {:#?}", x),
         }
