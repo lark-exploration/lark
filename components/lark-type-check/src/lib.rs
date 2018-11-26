@@ -6,6 +6,7 @@
 #![feature(specialization)]
 #![feature(self_in_typedefs)]
 #![feature(trait_alias)]
+#![feature(uniform_paths)]
 
 use generational_arena::Arena;
 use indices::IndexVec;
@@ -31,6 +32,7 @@ use map::FxIndexMap;
 use std::sync::Arc;
 
 mod base_inference;
+mod full_inference;
 mod hir_typeck;
 mod ops;
 mod query_definitions;
