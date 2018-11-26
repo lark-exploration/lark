@@ -5,7 +5,6 @@
 use crate::BaseData;
 use crate::BoundVar;
 use crate::BoundVarOr;
-use crate::PermKind;
 use crate::ReprKind;
 use crate::TypeFamily;
 use debug::{DebugWith, FmtWithSpecialized};
@@ -25,7 +24,7 @@ impl TypeFamily for Declaration {
     type Placeholder = !;
 
     fn own_perm(tables: &dyn AsRef<DeclarationTables>) -> Self::Perm {
-        PermKind::Own.intern(tables)
+        DeclaredPermKind::Own.intern(tables)
     }
 
     fn known_repr(_tables: &dyn AsRef<DeclarationTables>, repr_kind: ReprKind) -> ReprKind {
@@ -77,19 +76,17 @@ where
     }
 }
 
+/// For now, we only support `own T` in declarations.
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum DeclaredPermKind {
+    Own,
+}
+
 intern::intern_tables! {
     pub struct DeclarationTables {
         struct DeclarationTablesData {
             bases: map(Base, BoundVarOr<BaseData<Declaration>>),
-            perms: map(Perm, BoundVarOr<PermKind>),
+            perms: map(Perm, DeclaredPermKind),
         }
-    }
-}
-
-impl Intern<DeclarationTables> for PermKind {
-    type Key = Perm;
-
-    fn intern(self, interner: &dyn AsRef<DeclarationTables>) -> Self::Key {
-        BoundVarOr::Known(self).intern(interner)
     }
 }

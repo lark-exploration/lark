@@ -86,7 +86,7 @@ impl NamedTypeReference {
                 let ty = crate::type_conversion::declaration_ty_named(
                     &db,
                     entity,
-                    ty::PermKind::Own,
+                    ty::declaration::DeclaredPermKind::Own,
                     ty::ReprKind::Direct,
                     ty::Generics::empty(),
                 );

@@ -24,8 +24,15 @@ crate trait SubstitutionDelegate<F: TypeFamily>: AsRef<DeclarationTables> {
     // FIXME(rust-lang/rust#56229) -- can't use `AsRef` supertrait here due to ICE
     fn as_f_tables(&self) -> &F::InternTables;
 
+    /// Map the repr/perm from a case where the "base type" was not
+    /// substituted; e.g. if the user declared `own String`, this
+    /// would map the `own` from that declaration into the family F.
     fn map_repr_perm(&mut self, repr: ReprKind, perm: declaration::Perm) -> (F::Repr, F::Perm);
 
+    /// Map the repr/perm from a case where the "base type" is
+    /// substituted to `ty`; e.g. if the user declared `own T`, and
+    /// `T` maps to `ty`, then this function applies the `own` from
+    /// that declaration to `ty`.
     fn apply_repr_perm(&mut self, repr: ReprKind, perm: declaration::Perm, ty: Ty<F>) -> Ty<F>;
 }
 

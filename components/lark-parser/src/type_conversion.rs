@@ -57,7 +57,7 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<ty::Ty<Declar
         | EntityData::LangItem(LangItem::Debug) => WithError::ok(declaration_ty_named(
             db,
             entity,
-            ty::PermKind::Own,
+            ty::declaration::DeclaredPermKind::Own,
             ty::ReprKind::Direct,
             ty::Generics::empty(),
         )),
@@ -80,7 +80,7 @@ crate fn ty(db: &impl ParserDatabase, entity: Entity) -> WithError<ty::Ty<Declar
             WithError::ok(declaration_ty_named(
                 db,
                 entity,
-                ty::PermKind::Own,
+                ty::declaration::DeclaredPermKind::Own,
                 ty::ReprKind::Direct,
                 generics,
             ))
@@ -127,7 +127,7 @@ crate fn unit_ty(db: &dyn LazyParsedEntityDatabase) -> ty::Ty<Declaration> {
     declaration_ty_named(
         &db,
         EntityData::LangItem(LangItem::Tuple(0)).intern(&db),
-        ty::PermKind::Own,
+        ty::declaration::DeclaredPermKind::Own,
         ty::ReprKind::Direct,
         ty::Generics::empty(),
     )
