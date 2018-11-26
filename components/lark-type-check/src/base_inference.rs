@@ -3,6 +3,7 @@
 //! representations and focus only on the base types.
 
 use crate::substitute::Substitution;
+use crate::substitute::SubstitutionDelegate;
 use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
 use crate::TypeChecker;
@@ -13,6 +14,7 @@ use intern::Untern;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_hir as hir;
+use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::identity::Identity;
 use lark_ty::map_family::Map;
@@ -105,7 +107,7 @@ intern::intern_tables! {
 }
 
 impl<DB> TypeCheckerFamilyDependentExt<BaseInference>
-    for TypeChecker<'me, DB, BaseInference, TypeCheckResults<BaseInference>>
+    for TypeChecker<'_, DB, BaseInference, TypeCheckResults<BaseInference>>
 where
     DB: TypeCheckDatabase,
 {
@@ -182,7 +184,7 @@ where
     where
         M: Map<Declaration, BaseInference>,
     {
-        value.map(&mut Substitution::new(self, self, generics))
+        value.map(&mut Substitution::new(self, generics))
     }
 
     fn apply_owner_perm<M>(
@@ -246,5 +248,28 @@ where
 {
     fn as_ref(&self) -> &BaseInferenceTables {
         &self.f_tables
+    }
+}
+
+impl<DB> SubstitutionDelegate<BaseInference>
+    for TypeChecker<'_, DB, BaseInference, TypeCheckResults<BaseInference>>
+where
+    DB: TypeCheckDatabase,
+{
+    fn as_f_tables(&self) -> &BaseInferenceTables {
+        self.as_ref()
+    }
+
+    fn map_repr_perm(&mut self, _repr: ReprKind, _perm: declaration::Perm) -> (Erased, Erased) {
+        (Erased, Erased)
+    }
+
+    fn apply_repr_perm(
+        &mut self,
+        _repr: ReprKind,
+        _perm: declaration::Perm,
+        ty: Ty<BaseInference>,
+    ) -> Ty<BaseInference> {
+        ty
     }
 }
