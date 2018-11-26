@@ -100,6 +100,8 @@ impl Parser<'parse> {
     {
         let mut entities = vec![];
         loop {
+            self.skip_newlines();
+
             if self.is(LexToken::EOF) {
                 break;
             }
