@@ -80,3 +80,8 @@ fn test_multi_statement() {
 fn test_struct_init() {
     run_eval_and_build_test("tests/test_files/struct_init.lark", "true");
 }
+
+#[test]
+fn test_trailing_carriage_return() {
+    run_eval_and_build_test("tests/test_files/trailing_carriage_return.lark", "true");
+}
