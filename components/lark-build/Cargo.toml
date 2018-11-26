@@ -16,4 +16,5 @@ lark-ty = { path = "../lark-ty" }
 lark-error = { path = "../lark-error" }
 tempfile = "2.0"
 intern = { path = "../intern" }
+debug = { path = "../debug" }
 cc = "1.0"

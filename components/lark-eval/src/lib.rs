@@ -1,8 +1,9 @@
+use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_entity::{EntityData, ItemKind, LangItem};
 use lark_mir::{
-    BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
-    RvalueData, Statement, StatementKind, Variable,
+    BasicBlock, FnBytecode, IdentifierData, MirDatabase, Operand, OperandData, Place, PlaceData,
+    Rvalue, RvalueData, Statement, StatementKind, Variable,
 };
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::LarkDatabase;
@@ -15,7 +16,7 @@ pub enum Value {
     Bool(bool),
     I32(i32),
     Str(String),
-    Struct(HashMap<String, Value>),
+    Struct(HashMap<lark_string::global::GlobalIdentifier, Value>),
     Reference(usize), // a reference into the value stack
 }
 
@@ -79,7 +80,15 @@ pub fn eval_place(
             let stack = variables.get(variable).unwrap();
             stack.last().unwrap().clone()
         }
-        x => unimplemented!("PlaceData not yet support in eval: {:#?}", x),
+        PlaceData::Field { owner, name } => {
+            let target = eval_place(db, fn_bytecode, *owner, variables);
+            match target {
+                Value::Struct(s) => match fn_bytecode.tables[*name] {
+                    IdentifierData { text } => s.get(&text).unwrap().clone(),
+                },
+                _ => panic!("Member access (.) into value that is not a struct"),
+            }
+        }
     }
 }
 
@@ -139,9 +148,23 @@ pub fn eval_rvalue(
 
                 return_value
             }
-            _ => unimplemented!("EntityData not yet supported in eval"),
+            x => unimplemented!(
+                "EntityData not yet supported in eval: {:#?}",
+                x.debug_with(db)
+            ),
         },
-        _ => unimplemented!("Rvalue not yet supported in eval"),
+        RvalueData::Aggregate(entity, args) => {
+            let members = db.members(*entity).unwrap();
+            let mut result_struct = HashMap::new();
+
+            for (member, arg) in members.iter().zip(args.iter(fn_bytecode)) {
+                let arg_result = eval_operand(db, fn_bytecode, arg, variables);
+                result_struct.insert(member.name, arg_result);
+            }
+
+            Value::Struct(result_struct)
+        }
+        x => unimplemented!("Rvalue not yet supported in eval: {:#?}", x.debug_with(db)),
     }
 }
 

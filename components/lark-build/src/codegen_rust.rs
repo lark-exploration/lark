@@ -1,3 +1,4 @@
+use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, ItemKind, LangItem};
 use lark_error::{Diagnostic, WithError};
@@ -66,7 +67,15 @@ pub fn build_place(
     match &fn_bytecode.tables[place] {
         PlaceData::Variable(variable) => build_variable_name(db, fn_bytecode, *variable),
         PlaceData::Entity(entity) => build_entity_name(db, fn_bytecode, *entity),
-        x => unimplemented!("Unsupported place data: {:#?}", x),
+        PlaceData::Field { owner, name } => {
+            let identifier = fn_bytecode.tables[*name];
+
+            format!(
+                "{}.{}",
+                build_place(db, fn_bytecode, *owner),
+                identifier.text.untern(db).to_string()
+            )
+        }
     }
 }
 
@@ -148,7 +157,25 @@ pub fn codegen_rvalue(
             }
             output.push_str(")");
         }
-        x => unimplemented!("Rvalue value not supported: {:?}", x),
+        RvalueData::Aggregate(entity, args) => {
+            output.push_str(&build_entity_name(db, fn_bytecode, *entity));
+            output.push_str("{");
+
+            let members = db.members(*entity).unwrap();
+
+            for (member, arg) in members.iter().zip(args.iter(fn_bytecode)) {
+                let member_name = member.name.untern(db);
+
+                output.push_str(&format!(
+                    "{}: {},",
+                    member_name,
+                    build_operand(db, fn_bytecode, arg)
+                ));
+            }
+
+            output.push_str("}");
+        }
+        x => unimplemented!("Rvalue value not supported: {:#?}", x.debug_with(db)),
     }
 }
 
@@ -288,7 +315,7 @@ pub fn codegen_rust(db: &mut LarkDatabase) -> WithError<String> {
                         output.push_str(&result.value);
                     }
                 }
-                x => unimplemented!("Can not codegen {:#?}", x),
+                x => unimplemented!("Can not codegen {:#?}", x.debug_with(db)),
             }
         }
     }

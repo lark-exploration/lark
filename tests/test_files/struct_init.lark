@@ -1,0 +1,8 @@
+struct Foo {
+    bar: bool
+}
+
+def main() {
+    let x = Foo(bar: true)
+    debug(x.bar)
+}
