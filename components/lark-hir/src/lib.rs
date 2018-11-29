@@ -15,7 +15,7 @@ use lark_entity::Entity;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
-use lark_span::{FileName, Span, Spanned as GenericSpanned};
+use lark_span::{FileName, Span};
 use lark_string::global::GlobalIdentifier;
 use map::FxIndexMap;
 use std::sync::Arc;
