@@ -17,6 +17,7 @@ use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_span::{FileName, Span, Spanned as GenericSpanned};
 use lark_string::global::GlobalIdentifier;
+use map::FxIndexMap;
 use std::sync::Arc;
 
 type Spanned<T> = GenericSpanned<T, FileName>;
@@ -40,6 +41,10 @@ pub struct FnBody {
 
     /// Contains all the data.
     pub tables: FnBodyTables,
+}
+
+pub struct FnBodySpans {
+    pub spans: FxIndexMap<MetaIndex, Span<FileName>>,
 }
 
 impl debug::DebugWith for FnBody {
@@ -74,25 +79,25 @@ where
 #[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
 pub struct FnBodyTables {
     /// Map each expression index to its associated data.
-    pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
+    pub expressions: IndexVec<Expression, ExpressionData>,
 
     /// A `a: b` pair.
-    pub identified_expressions: IndexVec<IdentifiedExpression, Spanned<IdentifiedExpressionData>>,
+    pub identified_expressions: IndexVec<IdentifiedExpression, IdentifiedExpressionData>,
 
     /// Map each place index to its associated data.
-    pub places: IndexVec<Place, Spanned<PlaceData>>,
+    pub places: IndexVec<Place, PlaceData>,
 
     /// Map each perm index to its associated data.
-    pub perms: IndexVec<Perm, Spanned<PermData>>,
+    pub perms: IndexVec<Perm, PermData>,
 
     /// Map each variable index to its associated data.
-    pub variables: IndexVec<Variable, Spanned<VariableData>>,
+    pub variables: IndexVec<Variable, VariableData>,
 
     /// Map each identifier index to its associated data.
-    pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
+    pub identifiers: IndexVec<Identifier, IdentifierData>,
 
     /// Errors we encountered constructing the hir
-    pub errors: IndexVec<Error, Spanned<ErrorData>>,
+    pub errors: IndexVec<Error, ErrorData>,
 
     /// The data values for any `List<I>` values that appear elsewhere
     /// in the HIR; the way this works is that all of the list value
