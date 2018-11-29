@@ -249,7 +249,11 @@ impl ExpressionScope<'parse> {
     }
 
     fn add<D: hir::HirIndexData>(&mut self, span: Span<FileName>, value: D) -> D::Index {
-        D::index_vec_mut(&mut self.fn_body_tables).push(Spanned { value, span })
+        let index = D::index_vec_mut(&mut self.fn_body_tables).push(value);
+        let meta_index: hir::MetaIndex = index.into();
+        self.fn_body_tables.spans.insert(meta_index, span);
+
+        index
     }
 
     fn report_error_expression(

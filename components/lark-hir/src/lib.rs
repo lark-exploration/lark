@@ -15,11 +15,10 @@ use lark_entity::Entity;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
-use lark_span::{FileName, Span, Spanned as GenericSpanned};
+use lark_span::{FileName, Span};
 use lark_string::global::GlobalIdentifier;
+use map::FxIndexMap;
 use std::sync::Arc;
-
-type Spanned<T> = GenericSpanned<T, FileName>;
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Member {
@@ -28,7 +27,7 @@ pub struct Member {
     pub entity: Entity,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
@@ -71,28 +70,31 @@ where
 }
 
 /// All the data for a fn-body is stored in these tables.a
-#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq)]
 pub struct FnBodyTables {
     /// Map each expression index to its associated data.
-    pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
+    pub expressions: IndexVec<Expression, ExpressionData>,
 
     /// A `a: b` pair.
-    pub identified_expressions: IndexVec<IdentifiedExpression, Spanned<IdentifiedExpressionData>>,
+    pub identified_expressions: IndexVec<IdentifiedExpression, IdentifiedExpressionData>,
 
     /// Map each place index to its associated data.
-    pub places: IndexVec<Place, Spanned<PlaceData>>,
+    pub places: IndexVec<Place, PlaceData>,
 
     /// Map each perm index to its associated data.
-    pub perms: IndexVec<Perm, Spanned<PermData>>,
+    pub perms: IndexVec<Perm, PermData>,
 
     /// Map each variable index to its associated data.
-    pub variables: IndexVec<Variable, Spanned<VariableData>>,
+    pub variables: IndexVec<Variable, VariableData>,
 
     /// Map each identifier index to its associated data.
-    pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
+    pub identifiers: IndexVec<Identifier, IdentifierData>,
 
     /// Errors we encountered constructing the hir
-    pub errors: IndexVec<Error, Spanned<ErrorData>>,
+    pub errors: IndexVec<Error, ErrorData>,
+
+    /// Spans corresponding to each index
+    pub spans: FxIndexMap<MetaIndex, Span<FileName>>,
 
     /// The data values for any `List<I>` values that appear elsewhere
     /// in the HIR; the way this works is that all of the list value
@@ -105,7 +107,13 @@ pub struct FnBodyTables {
 
 impl FnBodyTables {
     pub fn add<D: HirIndexData>(&mut self, span: Span<FileName>, node: D) -> D::Index {
-        D::index_vec_mut(self).push(Spanned::new(node, span))
+        let index = D::index_vec_mut(self).push(node);
+
+        let meta_index: MetaIndex = index.into();
+
+        self.spans.insert(meta_index, span);
+
+        index
     }
 }
 
@@ -120,18 +128,18 @@ impl AsMut<FnBodyTables> for FnBodyTables {
 pub trait HirIndex: U32Index + Into<MetaIndex> + DebugWith {
     type Data: Clone + DebugWith;
 
-    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>>;
-    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Self::Data>;
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Self::Data>;
 }
 
 pub trait HirIndexData: Sized + Clone + DebugWith {
     type Index: HirIndex<Data = Self>;
 
-    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Spanned<Self>> {
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Self> {
         <<Self as HirIndexData>::Index as HirIndex>::index_vec(hir)
     }
 
-    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Spanned<Self>> {
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Self> {
         <<Self as HirIndexData>::Index as HirIndex>::index_vec_mut(hir)
     }
 }
@@ -195,7 +203,9 @@ impl FnBodyTables {
 
 impl<I: HirIndex> SpanIndex for I {
     fn span_from(self, tables: &FnBodyTables) -> Span<FileName> {
-        I::index_vec(tables)[self].span
+        let meta_index: MetaIndex = self.into();
+        tables.spans[&meta_index]
+        //I::index_vec(tables)[self].span
     }
 }
 
@@ -207,13 +217,13 @@ macro_rules! define_meta_index {
             impl HirIndex for $index_ty {
                 type Data = $data_ty;
 
-                fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>> {
+                fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Self::Data> {
                     &hir.$field
                 }
 
                 fn index_vec_mut(
                     hir: &mut FnBodyTables,
-                ) -> &mut IndexVec<Self, Spanned<Self::Data>> {
+                ) -> &mut IndexVec<Self, Self::Data> {
                     &mut hir.$field
                 }
             }
