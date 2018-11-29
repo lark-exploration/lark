@@ -20,8 +20,6 @@ use lark_string::global::GlobalIdentifier;
 use map::FxIndexMap;
 use std::sync::Arc;
 
-type Spanned<T> = GenericSpanned<T, FileName>;
-
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Member {
     pub name: GlobalIdentifier,
@@ -29,7 +27,7 @@ pub struct Member {
     pub entity: Entity,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
@@ -41,10 +39,6 @@ pub struct FnBody {
 
     /// Contains all the data.
     pub tables: FnBodyTables,
-}
-
-pub struct FnBodySpans {
-    pub spans: FxIndexMap<MetaIndex, Span<FileName>>,
 }
 
 impl debug::DebugWith for FnBody {
@@ -76,7 +70,7 @@ where
 }
 
 /// All the data for a fn-body is stored in these tables.a
-#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq)]
 pub struct FnBodyTables {
     /// Map each expression index to its associated data.
     pub expressions: IndexVec<Expression, ExpressionData>,
@@ -99,6 +93,9 @@ pub struct FnBodyTables {
     /// Errors we encountered constructing the hir
     pub errors: IndexVec<Error, ErrorData>,
 
+    /// Spans corresponding to each index
+    pub spans: FxIndexMap<MetaIndex, Span<FileName>>,
+
     /// The data values for any `List<I>` values that appear elsewhere
     /// in the HIR; the way this works is that all of the list value
     /// are concatenated into one big vector, and each list just pulls
@@ -110,7 +107,13 @@ pub struct FnBodyTables {
 
 impl FnBodyTables {
     pub fn add<D: HirIndexData>(&mut self, span: Span<FileName>, node: D) -> D::Index {
-        D::index_vec_mut(self).push(Spanned::new(node, span))
+        let index = D::index_vec_mut(self).push(node);
+
+        let meta_index: MetaIndex = index.into();
+
+        self.spans.insert(meta_index, span);
+
+        index
     }
 }
 
@@ -125,18 +128,18 @@ impl AsMut<FnBodyTables> for FnBodyTables {
 pub trait HirIndex: U32Index + Into<MetaIndex> + DebugWith {
     type Data: Clone + DebugWith;
 
-    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>>;
-    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Self::Data>;
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Self::Data>;
 }
 
 pub trait HirIndexData: Sized + Clone + DebugWith {
     type Index: HirIndex<Data = Self>;
 
-    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Spanned<Self>> {
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Self> {
         <<Self as HirIndexData>::Index as HirIndex>::index_vec(hir)
     }
 
-    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Spanned<Self>> {
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Self> {
         <<Self as HirIndexData>::Index as HirIndex>::index_vec_mut(hir)
     }
 }
@@ -200,7 +203,9 @@ impl FnBodyTables {
 
 impl<I: HirIndex> SpanIndex for I {
     fn span_from(self, tables: &FnBodyTables) -> Span<FileName> {
-        I::index_vec(tables)[self].span
+        let meta_index: MetaIndex = self.into();
+        tables.spans[&meta_index]
+        //I::index_vec(tables)[self].span
     }
 }
 
@@ -212,13 +217,13 @@ macro_rules! define_meta_index {
             impl HirIndex for $index_ty {
                 type Data = $data_ty;
 
-                fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>> {
+                fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Self::Data> {
                     &hir.$field
                 }
 
                 fn index_vec_mut(
                     hir: &mut FnBodyTables,
-                ) -> &mut IndexVec<Self, Spanned<Self::Data>> {
+                ) -> &mut IndexVec<Self, Self::Data> {
                     &mut hir.$field
                 }
             }
