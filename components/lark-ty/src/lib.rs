@@ -1,5 +1,4 @@
 #![feature(in_band_lifetimes)]
-#![feature(macro_at_most_once_rep)]
 #![feature(never_type)]
 #![feature(specialization)]
 #![feature(const_fn)]
@@ -13,7 +12,7 @@ use lark_entity::Entity;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_seq::Seq;
-use lark_string::global::GlobalIdentifier;
+use lark_string::GlobalIdentifier;
 use lark_unify::InferVar;
 use std::fmt::{self, Debug};
 use std::hash::Hash;
@@ -21,16 +20,14 @@ use std::iter::IntoIterator;
 use std::sync::Arc;
 
 pub mod base_inferred;
-pub mod base_only;
 pub mod declaration;
 pub mod identity;
 pub mod map_family;
 
-pub use self::declaration::Declaration;
-
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
     type InternTables: AsRef<Self::InternTables>;
 
+    type Repr: Copy + Clone + Debug + DebugWith + Eq + Hash;
     type Perm: Copy + Clone + Debug + DebugWith + Eq + Hash;
     type Base: Copy + Clone + Debug + DebugWith + Eq + Hash;
 
@@ -43,8 +40,15 @@ pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
 
     fn own_perm(tables: &dyn AsRef<Self::InternTables>) -> Self::Perm;
 
+    fn direct_repr(tables: &dyn AsRef<Self::InternTables>) -> Self::Repr {
+        Self::known_repr(tables, ReprKind::Direct)
+    }
+
+    fn known_repr(tables: &dyn AsRef<Self::InternTables>, repr_kind: ReprKind) -> Self::Repr;
+
     fn error_type(tables: &dyn AsRef<Self::InternTables>) -> Ty<Self> {
         Ty {
+            repr: Self::direct_repr(tables),
             perm: Self::own_perm(tables),
             base: Self::error_base_data(tables),
         }
@@ -64,6 +68,7 @@ pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
 /// A type is the combination of a *permission* and a *base type*.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Ty<F: TypeFamily> {
+    pub repr: F::Repr,
     pub perm: F::Perm,
     pub base: F::Base,
 }
@@ -164,6 +169,15 @@ impl Universe {
 pub enum BoundVarOr<T> {
     BoundVar(BoundVar),
     Known(T),
+}
+
+impl<T> BoundVarOr<T> {
+    pub fn assert_known(self) -> T {
+        match self {
+            BoundVarOr::BoundVar(_) => panic!("`assert_known` invoked on bound var"),
+            BoundVarOr::Known(v) => v,
+        }
+    }
 }
 
 indices::index_type! {
@@ -335,4 +349,21 @@ impl GenericDeclarations {
 pub struct GenericTyDeclaration {
     pub def_id: Entity,
     pub name: GlobalIdentifier,
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum PermKind {
+    Own,
+    Share,
+    Borrow,
+}
+
+/// Encodes whether we reach the data through pointer indirection or not.
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
+pub enum ReprKind {
+    /// Store the fields in place.
+    Direct,
+
+    /// Store fields via a pointer.
+    Indirect,
 }

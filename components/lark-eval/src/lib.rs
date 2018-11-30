@@ -16,7 +16,7 @@ pub enum Value {
     Bool(bool),
     I32(i32),
     Str(String),
-    Struct(HashMap<lark_string::global::GlobalIdentifier, Value>),
+    Struct(HashMap<lark_string::GlobalIdentifier, Value>),
     Reference(usize), // a reference into the value stack
 }
 

@@ -6,7 +6,7 @@ use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_span::{FileName, Span, Spanned};
-use lark_string::global::GlobalIdentifier;
+use lark_string::GlobalIdentifier;
 use map::FxIndexMap;
 use std::collections::HashMap;
 use std::sync::Arc;

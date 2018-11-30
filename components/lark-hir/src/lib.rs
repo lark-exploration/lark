@@ -5,7 +5,6 @@
 #![feature(const_let)]
 #![feature(decl_macro)]
 #![feature(in_band_lifetimes)]
-#![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 
 use debug::DebugWith;
@@ -16,7 +15,7 @@ use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_span::{FileName, Span};
-use lark_string::global::GlobalIdentifier;
+use lark_string::GlobalIdentifier;
 use map::FxIndexMap;
 use std::sync::Arc;
 
@@ -80,9 +79,6 @@ pub struct FnBodyTables {
 
     /// Map each place index to its associated data.
     pub places: IndexVec<Place, PlaceData>,
-
-    /// Map each perm index to its associated data.
-    pub perms: IndexVec<Perm, PermData>,
 
     /// Map each variable index to its associated data.
     pub variables: IndexVec<Variable, VariableData>,
@@ -276,7 +272,6 @@ define_meta_index! {
     (Expression, ExpressionData, expressions),
     (IdentifiedExpression, IdentifiedExpressionData, identified_expressions),
     (Place, PlaceData, places),
-    (Perm, PermData, perms),
     (Variable, VariableData, variables),
     (Identifier, IdentifierData, identifiers),
     (Error, ErrorData, errors),
@@ -342,6 +337,14 @@ impl<I: HirIndex> List<I> {
         self.len as usize
     }
 
+    pub fn first(&self, fn_body: &impl AsRef<FnBodyTables>) -> Option<I> {
+        self.iter(fn_body).next()
+    }
+
+    pub fn first_data(&self, fn_body: &impl AsRef<FnBodyTables>) -> Option<I::Data> {
+        self.iter_data(fn_body).next()
+    }
+
     /// Iterate over the elements in the list.
     pub fn iter(&self, fn_body: &'f impl AsRef<FnBodyTables>) -> impl Iterator<Item = I> + 'f {
         let tables: &FnBodyTables = fn_body.as_ref();
@@ -403,15 +406,14 @@ pub enum ExpressionData {
         body: Expression,
     },
 
-    /// reference to a local variable `X`
-    Place { perm: Perm, place: Place },
+    /// reference to a local variable `X` or a path like `X.Y.Z`
+    Place { place: Place },
 
     /// `<place> = <value>`
     Assignment { place: Place, value: Expression },
 
-    /// `<place>.method(<args>)`
+    /// `<arg0>.method(<arg1..>)`
     MethodCall {
-        owner: Place,
         method: Identifier,
         arguments: List<Expression>,
     },
@@ -490,19 +492,6 @@ indices::index_type! {
 pub struct IdentifiedExpressionData {
     pub identifier: Identifier,
     pub expression: Expression,
-}
-
-indices::index_type! {
-    pub struct Perm { .. }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub enum PermData {
-    Share,
-    Borrow,
-    Own,
-    Other(Entity),
-    Default,
 }
 
 indices::index_type! {

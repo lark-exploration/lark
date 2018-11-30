@@ -80,3 +80,29 @@ fn struct_ctor_wrong_arg_type() {
         "                                                  ~~",
     );
 }
+
+#[test]
+fn binary_operator_plus_uint_uint_uint() {
+    run_test("def add(a: uint, b: uint) -> uint { a + b }", NoErrors);
+}
+
+#[test]
+fn binary_operator_plus_int_int_int() {
+    run_test("def add(a: int, b: int) -> int { a + b }", NoErrors);
+}
+
+#[test]
+fn binary_operator_plus_int_int_uint() {
+    run_test(
+        "def add(a: int, b: int) -> uint { a + b }",
+        "                                  ~~~~~",
+    );
+}
+
+#[test]
+fn binary_operator_int_eq_int_int() {
+    run_test(
+        "def add(a: int, b: int) -> int { a == b }",
+        "                                 ~~~~~~",
+    );
+}

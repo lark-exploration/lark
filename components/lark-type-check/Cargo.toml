@@ -10,6 +10,8 @@ generational-arena = "0.1.0"
 indices = { path = "../indices" }
 intern = { path = "../intern" }
 debug = { path = "../debug" }
+parking_lot = "0.6.4"
+lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 lark-hir = { path = "../lark-hir" }
