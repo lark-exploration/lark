@@ -3,7 +3,6 @@
 #![feature(const_let)]
 #![feature(decl_macro)]
 #![feature(in_band_lifetimes)]
-#![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 
 use indices::{IndexVec, U32Index};

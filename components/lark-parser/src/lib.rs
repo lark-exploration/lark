@@ -1,7 +1,6 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(crate_visibility_modifier)]
-#![feature(macro_at_most_once_rep)]
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 #![feature(try_blocks)]
@@ -11,7 +10,6 @@ use crate::lexer::token::LexToken;
 use crate::macros::EntityMacroDefinition;
 use crate::syntax::entity::ParsedEntity;
 use intern::Intern;
-use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::EntityTables;

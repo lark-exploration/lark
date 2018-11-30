@@ -1,4 +1,3 @@
-#![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 #![feature(const_fn)]
 #![feature(const_let)]

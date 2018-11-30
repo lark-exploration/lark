@@ -1,5 +1,4 @@
 #![feature(in_band_lifetimes)]
-#![feature(macro_at_most_once_rep)]
 #![feature(never_type)]
 #![feature(specialization)]
 #![feature(const_fn)]
