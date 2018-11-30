@@ -5,11 +5,10 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-debug = { path = "../debug" }
-lark-debug-derive = { path = "../lark-debug-derive" }
-intern = { path = "../intern" }
-indices = { path = "../indices" }
+lark-debug-with = { path = "../lark-debug-with" }
+lark-intern = { path = "../lark-intern" }
+lark-indices = { path = "../lark-indices" }
 parking_lot = "0.6.4"
 
 [dev-dependencies]
-map = { path = "../map" }
+lark-collections = { path = "../lark-collections" }

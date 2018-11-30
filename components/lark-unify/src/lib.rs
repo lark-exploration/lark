@@ -2,16 +2,16 @@
 #![feature(const_fn)]
 #![feature(specialization)]
 
-use indices::{IndexVec, U32Index};
+use lark_indices::{IndexVec, U32Index};
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct InferVar {
         debug_name["?"],
         ..
     }
 }
 
-debug::debug_fallback_impl!(InferVar);
+lark_debug_with::debug_fallback_impl!(InferVar);
 
 /// Each "inferable" value represents something which can be inferred.
 /// For example, the `crate::ty::Perm` and `crate::ty::Base` types implement

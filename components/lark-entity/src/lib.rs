@@ -2,14 +2,14 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 
-use debug::{DebugWith, FmtWithSpecialized};
-use intern::{Intern, Untern};
+use lark_intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
+use lark_debug_with::{DebugWith, FmtWithSpecialized};
 use lark_error::{ErrorReported, ErrorSentinel};
 use lark_span::FileName;
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables};
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Entity { .. }
 }
 
@@ -124,7 +124,7 @@ pub enum MemberKind {
     Method,
 }
 
-intern::intern_tables! {
+lark_intern::intern_tables! {
     pub struct EntityTables {
         struct EntityTablesData {
             item_ids: map(Entity, EntityData),
@@ -132,7 +132,7 @@ intern::intern_tables! {
     }
 }
 
-debug::debug_fallback_impl!(Entity);
+lark_debug_with::debug_fallback_impl!(Entity);
 
 impl<Cx> FmtWithSpecialized<Cx> for Entity
 where

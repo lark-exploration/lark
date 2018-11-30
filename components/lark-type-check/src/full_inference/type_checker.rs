@@ -11,11 +11,12 @@ use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
-use indices::IndexVec;
-use intern::Intern;
-use intern::Untern;
+use lark_collections::FxIndexSet;
 use lark_entity::Entity;
 use lark_hir as hir;
+use lark_indices::IndexVec;
+use lark_intern::Intern;
+use lark_intern::Untern;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclaredPermKind;
@@ -28,7 +29,6 @@ use lark_ty::Generics;
 use lark_ty::PermKind;
 use lark_ty::ReprKind;
 use lark_ty::Ty;
-use map::FxIndexSet;
 
 /// The full-inference-specific data stored in the type-checker when
 /// doing full inference.

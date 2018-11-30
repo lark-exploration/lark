@@ -5,15 +5,16 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-debug = { path = "../debug" }
 diff = "0.1.0"
 env_logger = "0.5.13"
+lark-debug-with = { path = "../lark-debug-with" }
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
+lark-intern = { path = "../lark-intern" }
 lark-query-system = { path = "../lark-query-system" }
 lark-parser = { path = "../lark-parser" }
+lark-seq = { path = "../lark-seq" }
 lark-span = { path = "../lark-span" }
 lark-string = { path = "../lark-string" }
-lark-seq = { path = "../lark-seq" }
-intern = { path = "../intern" }
+lark-collections = { path = "../lark-collections" }
 salsa = "0.8.0"

@@ -7,16 +7,16 @@
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 
-use debug::DebugWith;
-use indices::{IndexVec, U32Index};
+use lark_collections::FxIndexMap;
 use lark_debug_derive::DebugWith;
+use lark_debug_with::DebugWith;
 use lark_entity::Entity;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
+use lark_indices::{IndexVec, U32Index};
 use lark_span::{FileName, Span};
 use lark_string::GlobalIdentifier;
-use map::FxIndexMap;
 use std::sync::Arc;
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -40,7 +40,7 @@ pub struct FnBody {
     pub tables: FnBodyTables,
 }
 
-impl debug::DebugWith for FnBody {
+impl lark_debug_with::DebugWith for FnBody {
     fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Intentionally omit the `tables` implementation here; you
         // can use the `Debug` impl if you *really* want to see the
@@ -228,14 +228,14 @@ macro_rules! define_meta_index {
                 type Index = $index_ty;
             }
 
-            debug::debug_fallback_impl!($index_ty);
+            lark_debug_with::debug_fallback_impl!($index_ty);
 
-            impl<Cx> debug::FmtWithSpecialized<Cx> for $index_ty
+            impl<Cx> lark_debug_with::FmtWithSpecialized<Cx> for $index_ty
             where Cx: AsRef<FnBodyTables>
             {
                 fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                     let tables: &FnBodyTables = cx.as_ref();
-                    debug::DebugWith::fmt_with(&tables[*self], cx, fmt)
+                    lark_debug_with::DebugWith::fmt_with(&tables[*self], cx, fmt)
                 }
             }
 
@@ -379,9 +379,9 @@ impl<I: HirIndex> List<I> {
     }
 }
 
-debug::debug_fallback_impl!(for[I: HirIndex] List<I>);
+lark_debug_with::debug_fallback_impl!(for[I: HirIndex] List<I>);
 
-impl<Cx, I> debug::FmtWithSpecialized<Cx> for List<I>
+impl<Cx, I> lark_debug_with::FmtWithSpecialized<Cx> for List<I>
 where
     Cx: AsRef<FnBodyTables>,
     I: HirIndex,
@@ -393,7 +393,7 @@ where
     }
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Expression { .. }
 }
 
@@ -484,7 +484,7 @@ pub enum UnaryOperator {
     Not,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct IdentifiedExpression { .. }
 }
 
@@ -494,7 +494,7 @@ pub struct IdentifiedExpressionData {
     pub expression: Expression,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Place { .. }
 }
 
@@ -522,7 +522,7 @@ pub enum LiteralKind {
     String,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Variable { .. }
 }
 
@@ -531,7 +531,7 @@ pub struct VariableData {
     pub name: Identifier,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Identifier { .. }
 }
 
@@ -540,7 +540,7 @@ pub struct IdentifierData {
     pub text: GlobalIdentifier,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Error { .. }
 }
 

@@ -4,11 +4,11 @@
 //! (e.g. `&uri`) that wouldn't be possible otherwise, which is
 //! convenient.
 
-use debug::DebugWith;
-use intern::{Intern, Untern};
 use languageserver_types::{Position, Range};
+use lark_debug_with::DebugWith;
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
+use lark_intern::{Intern, Untern};
 use lark_span::{ByteIndex, FileName, IntoFileName};
 use std::collections::HashMap;
 

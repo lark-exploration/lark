@@ -8,12 +8,12 @@ use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
-use debug::DebugWith;
-use intern::Intern;
-use intern::Untern;
 use lark_debug_derive::DebugWith;
+use lark_debug_with::DebugWith;
 use lark_entity::Entity;
 use lark_hir as hir;
+use lark_intern::Intern;
+use lark_intern::Untern;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::identity::Identity;
@@ -57,7 +57,7 @@ impl TypeFamily for BaseInference {
     }
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Base { .. }
 }
 
@@ -87,9 +87,9 @@ impl Inferable<BaseInferenceTables> for Base {
     }
 }
 
-debug::debug_fallback_impl!(Base);
+lark_debug_with::debug_fallback_impl!(Base);
 
-impl<Cx> debug::FmtWithSpecialized<Cx> for Base
+impl<Cx> lark_debug_with::FmtWithSpecialized<Cx> for Base
 where
     Cx: AsRef<BaseInferenceTables>,
 {
@@ -98,7 +98,7 @@ where
     }
 }
 
-intern::intern_tables! {
+lark_intern::intern_tables! {
     pub struct BaseInferenceTables {
         struct BaseInferenceTablesData {
             base_inference_base: map(Base, InferVarOr<BaseData<BaseInference>>),

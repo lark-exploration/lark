@@ -36,15 +36,16 @@ serde = "1.0"
 serde_derive = "1.0"
 url = "1.7"
 
-debug = { path = "components/debug" }
-indices = { path = "components/indices" }
-intern = { path = "components/intern" }
 lark-build = { path = "components/lark-build" }
+lark-collections = { path = "components/lark-collections" }
 lark-debug-derive = { path = "components/lark-debug-derive" }
+lark-debug-with = { path = "components/lark-debug-with" }
 lark-entity = { path = "components/lark-entity" }
 lark-error = { path = "components/lark-error" }
 lark-eval = { path = "components/lark-eval" }
 lark-hir = { path = "components/lark-hir" }
+lark-indices = { path = "components/lark-indices" }
+lark-intern = { path = "components/lark-intern" }
 lark-language-server = { path = "components/lark-language-server" }
 lark-mir = { path = "components/lark-mir" }
 lark-parser = { path = "components/lark-parser" }
@@ -55,7 +56,6 @@ lark-task-manager = { path = "components/lark-task-manager" }
 lark-ty = { path = "components/lark-ty" }
 lark-type-check = { path = "components/lark-type-check" }
 lark-unify = { path = "components/lark-unify" }
-map = { path = "components/map" }
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
 
 termcolor = "1.0.4"
@@ -66,4 +66,3 @@ lark-test = { path = "components/lark-test" }
 lark-entity = { path = "components/lark-entity" }
 lark-parser = { path = "components/lark-parser" }
 env_logger = "0.5.13"
-lark-seq = { path = "components/lark-seq" }

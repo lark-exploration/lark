@@ -1,4 +1,4 @@
-use intern::Untern;
+use lark_intern::Untern;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;

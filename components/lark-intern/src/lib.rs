@@ -1,5 +1,5 @@
-use indices::U32Index;
-use map::{Equivalent, FxIndexMap};
+use lark_collections::{Equivalent, FxIndexMap};
+use lark_indices::U32Index;
 use parking_lot::{RwLock, RwLockUpgradableReadGuard};
 use std::hash::Hash;
 

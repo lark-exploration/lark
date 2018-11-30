@@ -23,7 +23,7 @@ pub fn derive_debug_with(input: proc_macro::TokenStream) -> proc_macro::TokenStr
 
     let expanded = quote! {
         // The generated impl.
-        impl #impl_generics ::debug::DebugWith for #name #ty_generics #where_clause {
+        impl #impl_generics ::lark_debug_with::DebugWith for #name #ty_generics #where_clause {
             fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 #debug_with
             }
@@ -45,7 +45,7 @@ fn add_trait_bounds(mut generics: syn::Generics) -> syn::Generics {
         if let syn::GenericParam::Type(ref mut type_param) = *param {
             type_param
                 .bounds
-                .push(syn::parse_quote!(::debug::DebugWith));
+                .push(syn::parse_quote!(::lark_debug_with::DebugWith));
         }
     }
 

@@ -5,17 +5,17 @@ use lark_ty::PermKind;
 use lark_ty::Placeholder;
 
 /// An intern'd permission.
-indices::index_type! {
+lark_indices::index_type! {
     crate struct Perm { .. }
 }
 
-debug::debug_fallback_impl!(Perm);
+lark_debug_with::debug_fallback_impl!(Perm);
 
-indices::index_type! {
+lark_indices::index_type! {
     crate struct PermVar { .. }
 }
 
-debug::debug_fallback_impl!(PermVar);
+lark_debug_with::debug_fallback_impl!(PermVar);
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 crate enum PermData {

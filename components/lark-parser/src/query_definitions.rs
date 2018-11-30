@@ -7,14 +7,14 @@ use crate::syntax::entity::{EntitySyntax, ParsedEntity, ParsedEntityThunk};
 use crate::syntax::skip_newline::SkipNewline;
 use crate::ParserDatabase;
 
-use debug::DebugWith;
-use intern::{Intern, Untern};
+use lark_debug_with::DebugWith;
 use lark_entity::MemberKind;
 use lark_entity::{Entity, EntityData};
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_intern::{Intern, Untern};
 use lark_seq::Seq;
 use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
 use lark_string::GlobalIdentifier;

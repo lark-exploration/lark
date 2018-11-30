@@ -1,13 +1,13 @@
 use crate as mir;
 use crate::MirDatabase;
-use intern::Intern;
+use lark_collections::FxIndexMap;
 use lark_entity::Entity;
 use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_intern::Intern;
 use lark_span::{FileName, Span, Spanned};
 use lark_string::GlobalIdentifier;
-use map::FxIndexMap;
 use std::collections::HashMap;
 use std::sync::Arc;
 

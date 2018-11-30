@@ -5,14 +5,14 @@ use crate::TypeCheckResults;
 use crate::TypeChecker;
 use crate::UniverseBinder;
 use generational_arena::Arena;
-use indices::IndexVec;
+use lark_collections::FxIndexMap;
 use lark_entity::Entity;
 use lark_error::{Diagnostic, WithError};
+use lark_indices::IndexVec;
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::map_family::Map;
 use lark_unify::InferVar;
 use lark_unify::UnificationTable;
-use map::FxIndexMap;
 use std::sync::Arc;
 
 crate fn base_type_check(

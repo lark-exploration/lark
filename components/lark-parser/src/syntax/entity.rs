@@ -4,8 +4,8 @@ use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
 use crate::ParserDatabase;
-use debug::DebugWith;
 use lark_debug_derive::DebugWith;
+use lark_debug_with::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityTables;
 use lark_error::ErrorReported;
@@ -182,7 +182,7 @@ impl std::cmp::PartialEq for ParsedEntityThunk {
 
 impl std::cmp::Eq for ParsedEntityThunk {}
 
-debug::debug_fallback_impl!(ParsedEntityThunk);
+lark_debug_with::debug_fallback_impl!(ParsedEntityThunk);
 
 pub trait LazyParsedEntity {
     /// Parse the children of this entity.

@@ -2,19 +2,19 @@ use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
 use crate::TypeCheckerFamilyDependentExt;
-use debug::DebugWith;
-use intern::Untern;
+use lark_collections::FxIndexSet;
 use lark_debug_derive::DebugWith;
+use lark_debug_with::DebugWith;
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_hir as hir;
+use lark_intern::Untern;
 use lark_ty::declaration::Declaration;
 use lark_ty::Signature;
 use lark_ty::Ty;
 use lark_ty::{BaseData, BaseKind};
 use lark_unify::Inferable;
-use map::FxIndexSet;
 
 #[derive(Copy, Clone, Debug, DebugWith)]
 enum Mode<F: TypeCheckerFamily> {

@@ -5,7 +5,8 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-debug = { path = "../debug" }
 lark-debug-derive = { path = "../lark-debug-derive" }
+lark-debug-with = { path = "../lark-debug-with" }
+lark-collections = { path = "../lark-collections" }
 lark-seq = { path = "../lark-seq" }
 lark-span = { path = "../lark-span" }

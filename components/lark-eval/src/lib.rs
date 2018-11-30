@@ -1,6 +1,6 @@
-use debug::DebugWith;
-use intern::{Intern, Untern};
+use lark_debug_with::DebugWith;
 use lark_entity::{EntityData, ItemKind, LangItem};
+use lark_intern::{Intern, Untern};
 use lark_mir::{
     BasicBlock, FnBytecode, IdentifierData, MirDatabase, Operand, OperandData, Place, PlaceData,
     Rvalue, RvalueData, Statement, StatementKind, Variable,

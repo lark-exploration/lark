@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::text::Text;
-use map::FxIndexSet;
+use lark_collections::FxIndexSet;
 
 #[test]
 fn extract() {

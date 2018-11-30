@@ -1,6 +1,6 @@
-use intern::{Intern, Untern};
 use lark_entity::{EntityData, ItemKind};
 use lark_eval::Value;
+use lark_intern::{Intern, Untern};
 use lark_mir::{FnBytecode, MirDatabase, StatementKind, Variable};
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::LsDatabase;

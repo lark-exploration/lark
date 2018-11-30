@@ -8,7 +8,7 @@
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 
-use map::FxIndexMap;
+use lark_indices as indices;
 
 /// A `Debug` trait that carries a context. Most types in Lark
 /// implement it, and you can use `derive(DebugWith)` to get
@@ -90,7 +90,7 @@ where
     }
 }
 
-impl<K, V> DebugWith for FxIndexMap<K, V>
+impl<K, V> DebugWith for lark_collections::FxIndexMap<K, V>
 where
     K: DebugWith + std::hash::Hash + Eq,
     V: DebugWith,

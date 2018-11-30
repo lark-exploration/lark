@@ -5,22 +5,22 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-debug = { path = "../debug" }
 derive-new = "0.5.5"
-indices = { path = "../indices" }
-intern = { path = "../intern" }
 itertools = "0.7.8"
 languageserver-types = "0.51.0"
+lark-collections = { path = "../lark-collections" }
 lark-debug-derive = { path = "../lark-debug-derive" }
+lark-debug-with = { path = "../lark-debug-with" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 lark-hir = { path = "../lark-hir" }
-lark-string = { path = "../lark-string" }
+lark-indices = { path = "../lark-indices" }
+lark-intern = { path = "../lark-intern" }
 lark-seq = { path = "../lark-seq" }
+lark-string = { path = "../lark-string" }
 lark-span = { path = "../lark-span" }
 lark-ty = { path = "../lark-ty" }
 log = "0.4.5"
-map = { path = "../map" }
 salsa = "0.8.0"
 parking_lot = "0.6.4"
 unicode-xid = "0.1.0"
