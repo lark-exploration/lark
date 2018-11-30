@@ -111,12 +111,9 @@ where
                 self.unit_type()
             }
 
-            hir::ExpressionData::MethodCall {
-                owner,
-                method,
-                arguments,
-            } => {
-                let owner_ty = self.check_place(owner);
+            hir::ExpressionData::MethodCall { method, arguments } => {
+                let owner_expression = arguments.first(&self.hir).unwrap();
+                let owner_ty = self.check_expression(Mode::Synthesize, owner_expression);
                 self.compute_method_call_ty(expression, owner_ty, method, arguments)
             }
 
@@ -288,6 +285,7 @@ where
                     &signature.inputs[..],
                     signature.output,
                     arguments,
+                    0,
                 )
             }
 
@@ -349,9 +347,10 @@ where
 
                 self.check_arguments_against_signature(
                     method_name,
-                    &signature.inputs[..],
+                    &signature.inputs,
                     signature.output,
                     arguments,
+                    1,
                 )
             }
 
@@ -371,6 +370,7 @@ where
         inputs: &[Ty<F>],
         output: Ty<F>,
         arguments: hir::List<hir::Expression>,
+        skip: usize,
     ) -> Ty<F> {
         log::debug!(
             "check_arguments_against_signature(inputs={:?}, output={:?}, arguments={:?})",
@@ -384,7 +384,7 @@ where
         }
 
         let hir = &self.hir.clone();
-        for (&expected_ty, argument_expr) in inputs.iter().zip(arguments.iter(hir)) {
+        for (&expected_ty, argument_expr) in inputs.iter().zip(arguments.iter(hir)).skip(skip) {
             self.check_expression(CheckType(expected_ty), argument_expr);
         }
 

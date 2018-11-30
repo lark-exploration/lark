@@ -171,7 +171,7 @@ crate fn parse_fn_body(
     })
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, DebugWith)]
 enum ParsedExpression {
     Place(hir::Place),
     Expression(hir::Expression),
@@ -200,6 +200,15 @@ impl ParsedExpression {
     }
 }
 
+impl hir::SpanIndex for ParsedExpression {
+    fn span_from(self, tables: &hir::FnBodyTables) -> Span<FileName> {
+        match self {
+            ParsedExpression::Place(p) => p.span_from(tables),
+            ParsedExpression::Expression(e) => e.span_from(tables),
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 enum ParsedStatement {
     Expression(hir::Expression),
@@ -220,8 +229,8 @@ struct ExpressionScope<'parse> {
 }
 
 impl ExpressionScope<'parse> {
-    fn span(&self, node: impl hir::HirIndex) -> Span<FileName> {
-        self.fn_body_tables.span(node)
+    fn span(&self, node: impl hir::SpanIndex) -> Span<FileName> {
+        node.span_from(&self.fn_body_tables)
     }
 
     fn save_scope(&self) -> Rc<FxIndexMap<GlobalIdentifier, hir::Variable>> {
@@ -671,7 +680,7 @@ impl Syntax<'parse> for Expression1<'me, 'parse> {
         // foo(a, b, c) -- call
         //
         // NB. This must be tested *after* the "identified" form.
-        if let Some(arguments) = parser.parse_if_present(CallArguments::new(self.scope)) {
+        if let Some(arguments) = parser.parse_if_present(CallArguments::new(None, self.scope)) {
             let arguments = arguments?;
             let function = expr.to_hir_place(self.scope);
             let span = self
@@ -690,33 +699,9 @@ impl Syntax<'parse> for Expression1<'me, 'parse> {
 
         // foo.bar.baz
         // foo.bar.baz(a, b, c)
-        while let Some(member_access) = parser.parse_if_present(MemberAccess::new(self.scope)) {
-            let member_access = member_access?;
-            let owner = expr.to_hir_place(self.scope);
-            let span = self
-                .scope
-                .span(owner)
-                .extended_until_end_of(parser.last_span());
-            match member_access {
-                ParsedMemberAccess::Field { member_name: name } => {
-                    expr = ParsedExpression::Place(
-                        self.scope.add(span, hir::PlaceData::Field { owner, name }),
-                    );
-                }
-                ParsedMemberAccess::Method {
-                    member_name: method,
-                    arguments,
-                } => {
-                    expr = ParsedExpression::Expression(self.scope.add(
-                        span,
-                        hir::ExpressionData::MethodCall {
-                            owner,
-                            method,
-                            arguments,
-                        },
-                    ));
-                }
-            }
+        while let Some(member_access) = parser.parse_if_present(MemberAccess::new(expr, self.scope))
+        {
+            expr = member_access?;
         }
 
         Ok(expr)
@@ -725,6 +710,7 @@ impl Syntax<'parse> for Expression1<'me, 'parse> {
 
 #[derive(new, DebugWith)]
 struct MemberAccess<'me, 'parse> {
+    owner: ParsedExpression,
     scope: &'me mut ExpressionScope<'parse>,
 }
 
@@ -739,7 +725,7 @@ enum ParsedMemberAccess {
 }
 
 impl Syntax<'parse> for MemberAccess<'me, 'parse> {
-    type Data = ParsedMemberAccess;
+    type Data = ParsedExpression;
 
     fn test(&mut self, parser: &Parser<'parse>) -> bool {
         parser.test(SkipNewline(Dot))
@@ -749,20 +735,41 @@ impl Syntax<'parse> for MemberAccess<'me, 'parse> {
         parser.expect(SkipNewline(Dot))?;
         let member_name = parser.expect(HirIdentifier::new(self.scope))?;
 
-        if let Some(arguments) = parser.parse_if_present(CallArguments::new(self.scope)) {
+        if let Some(arguments) =
+            parser.parse_if_present(CallArguments::new(Some(self.owner), self.scope))
+        {
             let arguments = arguments?;
-            Ok(ParsedMemberAccess::Method {
-                member_name,
-                arguments,
-            })
+            let span = self
+                .scope
+                .span(self.owner)
+                .extended_until_end_of(parser.last_span());
+            Ok(ParsedExpression::Expression(self.scope.add(
+                span,
+                hir::ExpressionData::MethodCall {
+                    method: member_name,
+                    arguments,
+                },
+            )))
         } else {
-            Ok(ParsedMemberAccess::Field { member_name })
+            let owner = self.owner.to_hir_place(self.scope);
+            let span = self
+                .scope
+                .span(owner)
+                .extended_until_end_of(parser.last_span());
+            Ok(ParsedExpression::Place(self.scope.add(
+                span,
+                hir::PlaceData::Field {
+                    owner,
+                    name: member_name,
+                },
+            )))
         }
     }
 }
 
 #[derive(new, DebugWith)]
 struct CallArguments<'me, 'parse> {
+    arg0: Option<ParsedExpression>,
     scope: &'me mut ExpressionScope<'parse>,
 }
 
@@ -778,9 +785,12 @@ impl Syntax<'parse> for CallArguments<'me, 'parse> {
             Parentheses,
             CommaList(HirExpression::new(self.scope)),
         ))?;
+
+        let arg0 = self.arg0.map(|p| p.to_hir_expression(self.scope));
+
         Ok(hir::List::from_iterator(
             &mut self.scope.fn_body_tables,
-            expressions.iter().cloned(),
+            arg0.into_iter().chain(expressions.iter().cloned()),
         ))
     }
 }

@@ -342,6 +342,14 @@ impl<I: HirIndex> List<I> {
         self.len as usize
     }
 
+    pub fn first(&self, fn_body: &impl AsRef<FnBodyTables>) -> Option<I> {
+        self.iter(fn_body).next()
+    }
+
+    pub fn first_data(&self, fn_body: &impl AsRef<FnBodyTables>) -> Option<I::Data> {
+        self.iter_data(fn_body).next()
+    }
+
     /// Iterate over the elements in the list.
     pub fn iter(&self, fn_body: &'f impl AsRef<FnBodyTables>) -> impl Iterator<Item = I> + 'f {
         let tables: &FnBodyTables = fn_body.as_ref();
@@ -409,9 +417,8 @@ pub enum ExpressionData {
     /// `<place> = <value>`
     Assignment { place: Place, value: Expression },
 
-    /// `<place>.method(<args>)`
+    /// `<arg0>.method(<arg1..>)`
     MethodCall {
-        owner: Place,
         method: Identifier,
         arguments: List<Expression>,
     },
