@@ -48,3 +48,35 @@ fn wrong_type_of_arguments() {
         "                         ~~~",
     );
 }
+
+#[test]
+fn struct_field_int_vs_uint() {
+    run_test(
+        "struct Foo { f: int } def get(a: Foo) -> uint { a.f }",
+        "                                                ~~~",
+    );
+}
+
+#[test]
+fn struct_field_uint_vs_uint() {
+    run_test(
+        "struct Foo { f: uint } def get(a: Foo) -> uint { a.f }",
+        NoErrors,
+    );
+}
+
+#[test]
+fn struct_ctor_correct_arg_type() {
+    run_test(
+        "struct Foo { b: bool } def make() -> Foo { Foo(b: true) }",
+        NoErrors,
+    );
+}
+
+#[test]
+fn struct_ctor_wrong_arg_type() {
+    run_test(
+        "struct Foo { b: bool } def make() -> Foo { Foo(b: 22) }",
+        "                                                  ~~",
+    );
+}

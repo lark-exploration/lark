@@ -7,8 +7,8 @@ use debug::{DebugWith, FmtWithSpecialized};
 use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
 use lark_error::{ErrorReported, ErrorSentinel};
-use lark_string::global::GlobalIdentifier;
-use lark_string::global::GlobalIdentifierTables;
+use lark_span::FileName;
+use lark_string::global::{GlobalIdentifier, GlobalIdentifierTables};
 
 indices::index_type! {
     pub struct Entity { .. }
@@ -23,7 +23,7 @@ pub enum EntityData {
     LangItem(LangItem),
 
     InputFile {
-        file: GlobalIdentifier,
+        file: FileName,
     },
     ItemName {
         base: Entity,
@@ -38,7 +38,7 @@ pub enum EntityData {
 }
 
 impl EntityData {
-    pub fn file_name(&self, db: &(impl AsRef<EntityTables> + ?Sized)) -> Option<GlobalIdentifier> {
+    pub fn file_name(&self, db: &dyn AsRef<EntityTables>) -> Option<FileName> {
         match self {
             EntityData::Error(_) => None, // FIXME
             EntityData::LangItem(_) => None,
@@ -147,7 +147,7 @@ where
 
 impl Entity {
     /// The input file in which an entity appears (if any).
-    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<GlobalIdentifier> {
+    pub fn input_file(self, db: &dyn AsRef<EntityTables>) -> Option<FileName> {
         match self.untern(db) {
             EntityData::LangItem(_) => None,
             EntityData::InputFile { file } => Some(file),

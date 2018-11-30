@@ -16,24 +16,12 @@
 #![allow(unused_imports)]
 
 use flexi_logger::{opt_format, Logger};
-use lark_language_server::{lsp_serve, LspResponder};
-use lark_query_system::QuerySystem;
-use lark_task_manager::Actor;
 use std::{env, io};
 
 mod build;
+mod ide;
 mod repl;
 mod run;
-
-fn ide() {
-    let query_system = QuerySystem::new();
-    let lsp_responder = LspResponder;
-
-    let task_manager = lark_task_manager::TaskManager::spawn(query_system, lsp_responder);
-
-    lsp_serve(task_manager.channel);
-    let _ = task_manager.join_handle.join();
-}
 
 fn main() {
     Logger::with_env_or_str("error,lark_query_system=info")
@@ -52,7 +40,7 @@ fn main() {
         (_, Some(ref cmd), Some(ref x), None) if cmd == "build" => build::build(x, None),
         (_, Some(ref cmd), Some(ref x), None) if cmd == "run" => run::run(x),
         (_, Some(ref cmd), None, None) if cmd == "repl" => repl::repl(),
-        (_, Some(ref cmd), None, None) if cmd == "ide" => ide(),
+        (_, Some(ref cmd), None, None) if cmd == "ide" => ide::ide(),
         _ => {
             println!("Usage:");
             println!("  lark build <file> [<output>] - compiles the given file");

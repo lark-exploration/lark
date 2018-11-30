@@ -21,12 +21,13 @@ where
     Self: AsRef<F::InternTables>,
 {
     pub(super) fn check_fn_body(&mut self) {
+        let hir_arguments_len = self.hir.arguments.map(|l| l.len()).unwrap_or(0);
         let declaration_signature = self
             .db
             .signature(self.fn_entity)
             .into_value()
             .unwrap_or_else(|ErrorReported(_)| {
-                <Signature<Declaration>>::error_sentinel(self, self.hir.arguments.len())
+                <Signature<Declaration>>::error_sentinel(self, hir_arguments_len)
             });
         let placeholders = self.placeholders_for(self.fn_entity);
         let signature = self.substitute(
@@ -34,14 +35,11 @@ where
             &placeholders,
             declaration_signature,
         );
-        assert_eq!(signature.inputs.len(), self.hir.arguments.len());
-        for (argument, &input) in self
-            .hir
-            .arguments
-            .iter(&self.hir)
-            .zip(signature.inputs.iter())
-        {
-            self.results.record_ty(argument, input);
+        if let Ok(hir_arguments) = self.hir.arguments {
+            assert_eq!(signature.inputs.len(), hir_arguments.len());
+            for (argument, &input) in hir_arguments.iter(&self.hir).zip(signature.inputs.iter()) {
+                self.results.record_ty(argument, input);
+            }
         }
         self.check_expression_has_type(signature.output, self.hir.root_expression);
     }

@@ -5,9 +5,10 @@ use lark_entity::Entity;
 use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_span::{FileName, Span, Spanned};
 use lark_string::global::GlobalIdentifier;
 use map::FxIndexMap;
-use parser::pos::{Span, Spanned};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 crate fn fn_bytecode(
@@ -35,7 +36,7 @@ impl<'me, DB> MirLower<'me, DB>
 where
     DB: MirDatabase,
 {
-    fn new(db: &'me DB, item_entity: Entity, errors: &'me mut Vec<Diagnostic>) -> Self {
+    fn new(db: &'me DB, item_entity: Entity, _errors: &'me mut Vec<Diagnostic>) -> Self {
         MirLower {
             db,
             //errors,
@@ -46,8 +47,8 @@ where
         }
     }
 
-    fn add<D: mir::MirIndexData>(&mut self, span: Span, node: D) -> D::Index {
-        D::index_vec_mut(&mut self.fn_bytecode_tables).push(Spanned(node, span))
+    fn add<D: mir::MirIndexData>(&mut self, span: Span<FileName>, node: D) -> D::Index {
+        D::index_vec_mut(&mut self.fn_bytecode_tables).push(Spanned::new(node, span))
     }
 
     fn save_scope(&self) -> FxIndexMap<GlobalIdentifier, mir::Variable> {
@@ -65,12 +66,12 @@ where
     }
 
     /*
-    fn span(&self, index: impl mir::SpanIndex) -> Span {
+    fn span(&self, index: impl mir::SpanIndex) -> Span<FileName> {
         index.span_from(&self.fn_bytecode_tables)
     }
     */
 
-    fn create_temporary(&mut self, span: Span) -> mir::Variable {
+    fn create_temporary(&mut self, span: Span<FileName>) -> mir::Variable {
         let temp_variable_name = format!("_tmp{}", self.next_temporary_id).intern(&mut self.db);
         let temp_identifier = self.add(
             span,
@@ -226,6 +227,48 @@ where
 
                 (rvalue, temp_vars)
             }
+            hir::ExpressionData::Aggregate { entity, fields } => {
+                let mut mir_fields = HashMap::new();
+                let mut temp_vars = vec![];
+
+                for field in fields.iter(fn_body) {
+                    match fn_body.tables[field] {
+                        hir::IdentifiedExpressionData {
+                            identifier,
+                            expression,
+                        } => {
+                            let (mir_expression, mut field_temp_vars) =
+                                self.lower_operand(fn_body, expression, statements);
+
+                            match fn_body.tables[identifier] {
+                                hir::IdentifierData { text } => {
+                                    mir_fields.insert(text, mir_expression);
+                                }
+                            }
+
+                            temp_vars.append(&mut field_temp_vars);
+                        }
+                    }
+                }
+
+                let members = self.db.members(entity).unwrap();
+                let mut field_inits = vec![];
+
+                for member in members.iter() {
+                    if mir_fields.contains_key(&member.name) {
+                        field_inits.push(*mir_fields.get(&member.name).unwrap());
+                    }
+                }
+
+                let inits = mir::List::from_iterator(&mut self.fn_bytecode_tables, field_inits);
+
+                let rvalue = self.add(
+                    fn_body.span(expression),
+                    mir::RvalueData::Aggregate(entity, inits),
+                );
+
+                (rvalue, temp_vars)
+            }
             _ => unimplemented!("Unsupported expression for rvalues"),
         }
     }
@@ -239,13 +282,22 @@ where
             hir::PlaceData::Entity(entity) => {
                 self.add(fn_body.span(place), mir::PlaceData::Entity(entity))
             }
+            hir::PlaceData::Field { owner, name } => {
+                let owner = self.lower_place(fn_body, owner);
+                match fn_body.tables[name] {
+                    hir::IdentifierData { text } => {
+                        let name = self.add(fn_body.span(place), mir::IdentifierData { text });
+                        self.add(fn_body.span(place), mir::PlaceData::Field { owner, name })
+                    }
+                }
+            }
             x => unimplemented!("Do not yet support lowering place: {:#?}", x),
         }
     }
 
     fn drain_temp_variables(
         &mut self,
-        span: Span,
+        span: Span<FileName>,
         temp_vars: Vec<mir::Variable>,
         statements: &mut Vec<mir::Statement>,
     ) {
@@ -365,10 +417,11 @@ where
 
     fn lower_arguments(&mut self, fn_body: &hir::FnBody) -> Vec<mir::Variable> {
         let mut args = vec![];
-        for argument in fn_body.arguments.iter(fn_body) {
-            args.push(self.lower_variable(fn_body, argument));
+        if let Ok(arguments) = fn_body.arguments {
+            for argument in arguments.iter(fn_body) {
+                args.push(self.lower_variable(fn_body, argument));
+            }
         }
-
         args
     }
 

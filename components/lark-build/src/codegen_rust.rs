@@ -1,15 +1,14 @@
-use ast::AstDatabase;
+use debug::DebugWith;
 use intern::{Intern, Untern};
 use lark_entity::{Entity, EntityData, ItemKind, LangItem};
 use lark_error::{Diagnostic, WithError};
-use lark_hir::HirDatabase;
 use lark_mir::{
     BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
     RvalueData, Statement, StatementKind,
 };
+use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::LarkDatabase;
 use lark_ty::Ty;
-use parser::ReaderDatabase;
 
 pub fn build_type(db: &mut LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>) -> String {
     let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(db);
@@ -68,7 +67,15 @@ pub fn build_place(
     match &fn_bytecode.tables[place] {
         PlaceData::Variable(variable) => build_variable_name(db, fn_bytecode, *variable),
         PlaceData::Entity(entity) => build_entity_name(db, fn_bytecode, *entity),
-        x => unimplemented!("Unsupported place data: {:#?}", x),
+        PlaceData::Field { owner, name } => {
+            let identifier = fn_bytecode.tables[*name];
+
+            format!(
+                "{}.{}",
+                build_place(db, fn_bytecode, *owner),
+                identifier.text.untern(db).to_string()
+            )
+        }
     }
 }
 
@@ -150,7 +157,25 @@ pub fn codegen_rvalue(
             }
             output.push_str(")");
         }
-        x => unimplemented!("Rvalue value not supported: {:?}", x),
+        RvalueData::Aggregate(entity, args) => {
+            output.push_str(&build_entity_name(db, fn_bytecode, *entity));
+            output.push_str("{");
+
+            let members = db.members(*entity).unwrap();
+
+            for (member, arg) in members.iter().zip(args.iter(fn_bytecode)) {
+                let member_name = member.name.untern(db);
+
+                output.push_str(&format!(
+                    "{}: {},",
+                    member_name,
+                    build_operand(db, fn_bytecode, arg)
+                ));
+            }
+
+            output.push_str("}");
+        }
+        x => unimplemented!("Rvalue value not supported: {:#?}", x.debug_with(db)),
     }
 }
 
@@ -258,11 +283,11 @@ pub fn codegen_function(
 /// Converts the MIR context of definitions into Rust source
 pub fn codegen_rust(db: &mut LarkDatabase) -> WithError<String> {
     let mut output = String::new();
-    let input_files = db.paths();
+    let input_files = db.file_names();
     let mut errors: Vec<Diagnostic> = vec![];
 
     for &input_file in &*input_files {
-        let entities = db.items_in_file(input_file);
+        let entities = db.top_level_entities_in_file(input_file);
 
         for &entity in &*entities {
             match entity.untern(&db) {
@@ -290,7 +315,7 @@ pub fn codegen_rust(db: &mut LarkDatabase) -> WithError<String> {
                         output.push_str(&result.value);
                     }
                 }
-                x => unimplemented!("Can not codegen {:#?}", x),
+                x => unimplemented!("Can not codegen {:#?}", x.debug_with(db)),
             }
         }
     }

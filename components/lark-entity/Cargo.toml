@@ -11,5 +11,5 @@ intern = { path = "../intern" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
 lark-string = { path = "../lark-string" }
+lark-span = { path = "../lark-span" }
 parking_lot = "0.6.4"
-parser = { path = "../parser" }

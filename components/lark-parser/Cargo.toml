@@ -10,6 +10,7 @@ derive-new = "0.5.5"
 indices = { path = "../indices" }
 intern = { path = "../intern" }
 itertools = "0.7.8"
+languageserver-types = "0.51.0"
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
@@ -17,9 +18,9 @@ lark-hir = { path = "../lark-hir" }
 lark-string = { path = "../lark-string" }
 lark-seq = { path = "../lark-seq" }
 lark-span = { path = "../lark-span" }
+lark-ty = { path = "../lark-ty" }
 log = "0.4.5"
 map = { path = "../map" }
-parser = { path = "../parser" }
 salsa = "0.8.0"
 parking_lot = "0.6.4"
 unicode-xid = "0.1.0"

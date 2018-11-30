@@ -15,8 +15,13 @@ use lark_error::ErrorReported;
 use lark_error::ResultExt;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_seq::Seq;
+use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::global::GlobalIdentifier;
+use lark_ty as ty;
+use lark_ty::declaration::Declaration;
+use std::sync::Arc;
 
 #[derive(DebugWith)]
 pub struct Field;
@@ -24,18 +29,18 @@ pub struct Field;
 /// Represents a parse of something like `foo: Type`
 #[derive(Copy, Clone, DebugWith)]
 pub struct ParsedField {
-    pub name: Spanned<GlobalIdentifier>,
+    pub name: Spanned<GlobalIdentifier, FileName>,
     pub ty: ParsedTypeReference,
 }
 
 impl Syntax<'parse> for Field {
-    type Data = Spanned<ParsedField>;
+    type Data = Spanned<ParsedField, FileName>;
 
     fn test(&mut self, parser: &Parser<'_>) -> bool {
         parser.test(SpannedGlobalIdentifier)
     }
 
-    fn expect(&mut self, parser: &mut Parser<'_>) -> Result<Spanned<ParsedField>, ErrorReported> {
+    fn expect(&mut self, parser: &mut Parser<'_>) -> Result<Self::Data, ErrorReported> {
         let name = parser.expect(SpannedGlobalIdentifier)?;
 
         let ty = parser
@@ -56,8 +61,32 @@ impl LazyParsedEntity for ParsedField {
         &self,
         _entity: Entity,
         _db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<Vec<ParsedEntity>> {
-        WithError::ok(vec![])
+    ) -> WithError<Seq<ParsedEntity>> {
+        WithError::ok(Seq::default())
+    }
+
+    fn parse_generic_declarations(
+        &self,
+        _entity: Entity,
+        _db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
+        WithError::ok(Ok(ty::GenericDeclarations::empty(None)))
+    }
+
+    fn parse_type(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<ty::Ty<Declaration>> {
+        self.ty.parse_type(entity, db)
+    }
+
+    fn parse_signature(
+        &self,
+        entity: Entity,
+        db: &dyn LazyParsedEntityDatabase,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
+        InvalidParsedEntity.parse_signature(entity, db)
     }
 
     fn parse_fn_body(

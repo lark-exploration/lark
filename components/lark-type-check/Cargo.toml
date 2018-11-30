@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 derive-new = "0.5.5"
-ast = { path = "../ast" }
 generational-arena = "0.1.0"
 indices = { path = "../indices" }
 intern = { path = "../intern" }
@@ -14,9 +13,9 @@ debug = { path = "../debug" }
 lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 lark-hir = { path = "../lark-hir" }
+lark-parser = { path = "../lark-parser" }
 lark-ty = { path = "../lark-ty" }
 lark-unify = { path = "../lark-unify" }
 log = "0.4.5"
 map = { path = "../map" }
-parser = { path = "../parser" }
 salsa = "0.8"

@@ -1,11 +1,10 @@
-use ast::AstDatabase;
 use intern::{Intern, Untern};
 use lark_entity::{EntityData, ItemKind};
 use lark_eval::Value;
 use lark_mir::{FnBytecode, MirDatabase, StatementKind, Variable};
+use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::LarkDatabase;
-use parser::{HasParserState, HasReaderState, ReaderDatabase};
 use std::collections::HashMap;
 use std::io::{stdin, stdout, Write};
 
@@ -16,7 +15,7 @@ pub fn get_bytecode(
 ) -> lark_error::WithError<std::sync::Arc<lark_mir::FnBytecode>> {
     let main_name = "main".intern(&db);
     let repl_filename = REPL_FILENAME.intern(&db);
-    let entities = db.items_in_file(repl_filename);
+    let entities = db.top_level_entities_in_file(repl_filename);
 
     for &entity in &*entities {
         match entity.untern(&db) {

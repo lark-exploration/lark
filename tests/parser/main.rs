@@ -5,9 +5,9 @@ use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_hir as hir;
-use lark_parser::FileName;
 use lark_parser::ParserDatabase;
 use lark_query_system::LarkDatabase;
+use lark_span::FileName;
 use lark_string::GlobalIdentifierTables;
 use lark_test::*;
 
@@ -19,7 +19,7 @@ struct EntityTree {
 
 impl EntityTree {
     fn from_file(db: &impl ParserDatabase, file: FileName) -> Self {
-        let entity = EntityData::InputFile { file: file.id }.intern(db);
+        let entity = EntityData::InputFile { file: file }.intern(db);
         Self::from_entity(db, entity)
     }
 
@@ -36,7 +36,7 @@ impl EntityTree {
 }
 
 fn select_entity(db: &impl ParserDatabase, file: FileName, index: usize) -> Entity {
-    let file_entity = EntityData::InputFile { file: file.id }.intern(db);
+    let file_entity = EntityData::InputFile { file: file }.intern(db);
     db.child_entities(file_entity)[index]
 }
 
@@ -350,6 +350,7 @@ fn two_structs_whitespace() {
 }
 
 #[test]
+#[should_panic]
 fn eof_extra_sigil() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
@@ -363,7 +364,7 @@ fn eof_extra_sigil() {
 
     // These errors are (a) too numerous and (b) poor quality :(
 
-    let entity = EntityData::InputFile { file: file_name.id }.intern(&db);
+    let entity = EntityData::InputFile { file: file_name }.intern(&db);
     assert_expected_debug(
         &db,
         &unindent::unindent(
@@ -395,7 +396,7 @@ fn eof_extra_sigil() {
 fn some_function() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
-        fn foo() {
+        def foo() {
         }
         ",
     ));
@@ -423,7 +424,7 @@ fn function_variations() {
     let base_tree = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo() { }
+            def foo() { }
             ",
         ));
         EntityTree::from_file(&db, file_name)
@@ -432,7 +433,7 @@ fn function_variations() {
     let other_tree = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo(x: uint) { }
+            def foo(x: uint) { }
             ",
         ));
         EntityTree::from_file(&db, file_name)
@@ -442,7 +443,7 @@ fn function_variations() {
     let other_tree = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo(
+            def foo(
                 x: uint,
             ) -> uint {
             }
@@ -471,10 +472,10 @@ impl AsRef<hir::FnBodyTables> for FnBodyContext<'_> {
 }
 
 #[test]
-fn parse_fn_body() {
+fn parse_binary_expressions_precedence() {
     let (file_name, db) = lark_parser_db(unindent::unindent(
         "
-            fn foo() {
+            def foo() {
               let bar = 22
               let baz = 44
               bar + baz * baz + bar
@@ -483,7 +484,7 @@ fn parse_fn_body() {
     ));
 
     let foo = select_entity(&db, file_name, 0);
-    let fn_body = db.fn_body2(foo).assert_no_errors();
+    let fn_body = db.fn_body(foo).assert_no_errors();
     assert_expected_debug(
         &FnBodyContext {
             db: &db,
@@ -491,7 +492,9 @@ fn parse_fn_body() {
         },
         &unindent::unindent(
             r#"FnBody {
-    arguments: [],
+    arguments: Ok(
+        []
+    ),
     root_expression: Let {
         variable: VariableData {
             name: IdentifierData {
@@ -578,7 +581,7 @@ fn parse_fn_body_variations() {
     let debug1 = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo() {
+            def foo() {
               let bar = 22
               let baz = 44
               bar + baz * baz + bar
@@ -586,7 +589,7 @@ fn parse_fn_body_variations() {
         ",
         ));
         let fn_body = db
-            .fn_body2(select_entity(&db, file_name, 0))
+            .fn_body(select_entity(&db, file_name, 0))
             .assert_no_errors();
         fn_body
             .debug_with(&FnBodyContext {
@@ -599,7 +602,7 @@ fn parse_fn_body_variations() {
     let debug2 = {
         let (file_name, db) = lark_parser_db(unindent::unindent(
             "
-            fn foo() {
+            def foo() {
               let bar =
               22
               let baz =
@@ -612,7 +615,7 @@ fn parse_fn_body_variations() {
         ",
         ));
         let fn_body = db
-            .fn_body2(select_entity(&db, file_name, 0))
+            .fn_body(select_entity(&db, file_name, 0))
             .assert_no_errors();
         fn_body
             .debug_with(&FnBodyContext {
@@ -622,5 +625,186 @@ fn parse_fn_body_variations() {
             .to_string()
     };
 
+    assert_equal(&(), &debug1, &debug2);
+}
+
+#[test]
+fn parse_binary_expressions_chained_comparison() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+            def foo() {
+              let bar = 22
+              let baz = 44
+              bar == baz == bar
+            }
+        ",
+    ));
+
+    let foo = select_entity(&db, file_name, 0);
+    let fn_body = db.fn_body(foo);
+    assert_eq!(fn_body.errors.len(), 2);
+}
+
+#[test]
+fn parse_binary_expressions_comparison() {
+    let (file_name, db) = lark_parser_db(unindent::unindent(
+        "
+            def foo() {
+              let bar = 22
+              let baz = 44
+              bar == bar + baz
+            }
+        ",
+    ));
+
+    let foo = select_entity(&db, file_name, 0);
+    db.fn_body(foo).assert_no_errors();
+}
+
+#[test]
+fn parse_methods_chained_variations() {
+    let debug1 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            def foo() {
+              let bar = 22
+              let baz = 44
+              bar.method1().method2()
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            def foo() {
+              let bar = 22
+              let baz = 44
+              bar
+                .method1()
+                .method2()
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    assert_equal(&(), &debug1, &debug2);
+}
+
+#[test]
+fn parse_bad_token() {
+    // check that unexpected tokens (or utf-8 tokens!) avoid an infinite loop
+    let (file_name, db) = lark_parser_db(unindent::unindent("def foo() { 😊  }"));
+    assert_eq!(db.fn_body(select_entity(&db, file_name, 0)).errors.len(), 2);
+}
+
+#[test]
+fn parse_call_variations() {
+    let debug1 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            def foo() {
+              let f = 0
+              f(22, 44)
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            def foo() {
+              let f = 0
+              f(
+                22,
+                44,
+              )
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+    assert_equal(&(), &debug1, &debug2);
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            def foo() {
+              let f = 0
+              f(22, 44,)
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
+    assert_equal(&(), &debug1, &debug2);
+
+    let debug2 = {
+        let (file_name, db) = lark_parser_db(unindent::unindent(
+            "
+            def foo() {
+              let f = 0
+              f(
+                22
+                44
+              )
+            }
+        ",
+        ));
+        let fn_body = db
+            .fn_body(select_entity(&db, file_name, 0))
+            .assert_no_errors();
+        fn_body
+            .debug_with(&FnBodyContext {
+                db: &db,
+                fn_body: &fn_body,
+            })
+            .to_string()
+    };
     assert_equal(&(), &debug1, &debug2);
 }

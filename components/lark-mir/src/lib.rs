@@ -10,10 +10,10 @@ use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::WithError;
+use lark_span::{FileName, Span, Spanned};
 use lark_string::global::GlobalIdentifier;
 use lark_ty::declaration::DeclarationTables;
 use lark_type_check as typecheck;
-use parser::pos::{HasSpan, Span, Spanned};
 use std::sync::Arc;
 
 mod fn_bytecode;
@@ -26,27 +26,6 @@ salsa::query_group! {
         }
     }
 }
-
-/*
-indices::index_type! {
-    pub struct Identifier { .. }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct IdentifierData {
-    pub text: GlobalIdentifier,
-}
-
-indices::index_type! {
-    pub struct Variable { .. }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
-pub struct VariableData {
-    pub name: Identifier,
-}
-
-*/
 
 indices::index_type! {
     pub struct Error { .. }
@@ -63,25 +42,25 @@ pub enum ErrorData {
 #[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
 pub struct FnBytecodeTables {
     /// Map each statement to its associated data.
-    pub statements: IndexVec<Statement, Spanned<StatementData>>,
+    pub statements: IndexVec<Statement, Spanned<StatementData, FileName>>,
 
     /// The blocks that make up the code of the function
-    pub basic_blocks: IndexVec<BasicBlock, Spanned<BasicBlockData>>,
+    pub basic_blocks: IndexVec<BasicBlock, Spanned<BasicBlockData, FileName>>,
 
     /// Map each place index to its associated data.
-    pub places: IndexVec<Place, Spanned<PlaceData>>,
+    pub places: IndexVec<Place, Spanned<PlaceData, FileName>>,
 
     /// Map each variable index to its associated data.
-    pub variables: IndexVec<Variable, Spanned<VariableData>>,
+    pub variables: IndexVec<Variable, Spanned<VariableData, FileName>>,
 
     /// Map each identifier index to its associated data.
-    pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
+    pub identifiers: IndexVec<Identifier, Spanned<IdentifierData, FileName>>,
 
     /// Map each rvalue index to its associated data.
-    pub rvalues: IndexVec<Rvalue, Spanned<RvalueData>>,
+    pub rvalues: IndexVec<Rvalue, Spanned<RvalueData, FileName>>,
 
     /// Map each operand index to its associated data.
-    pub operands: IndexVec<Operand, Spanned<OperandData>>,
+    pub operands: IndexVec<Operand, Spanned<OperandData, FileName>>,
 
     /// The data values for any `List<I>` values that appear elsewhere
     /// in the HIR; the way this works is that all of the list value
@@ -158,6 +137,7 @@ pub enum RvalueData {
     BinaryOp(BinOp, Variable, Variable),
     //FIXME: MIR has this as a TerminatorData, presumably because stack can unwind
     Call(Entity, List<Operand>),
+    Aggregate(Entity, List<Operand>),
 }
 
 indices::index_type! {
@@ -183,18 +163,22 @@ pub enum BinOp {
 pub trait MirIndex: U32Index + Into<MetaIndex> {
     type Data: Clone;
 
-    fn index_vec(mir: &FnBytecodeTables) -> &IndexVec<Self, Spanned<Self::Data>>;
-    fn index_vec_mut(mir: &mut FnBytecodeTables) -> &mut IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec(mir: &FnBytecodeTables) -> &IndexVec<Self, Spanned<Self::Data, FileName>>;
+    fn index_vec_mut(
+        mir: &mut FnBytecodeTables,
+    ) -> &mut IndexVec<Self, Spanned<Self::Data, FileName>>;
 }
 
 pub trait MirIndexData: Sized + Clone {
     type Index: MirIndex<Data = Self>;
 
-    fn index_vec(mir: &FnBytecodeTables) -> &IndexVec<Self::Index, Spanned<Self>> {
+    fn index_vec(mir: &FnBytecodeTables) -> &IndexVec<Self::Index, Spanned<Self, FileName>> {
         <<Self as MirIndexData>::Index as MirIndex>::index_vec(mir)
     }
 
-    fn index_vec_mut(mir: &mut FnBytecodeTables) -> &mut IndexVec<Self::Index, Spanned<Self>> {
+    fn index_vec_mut(
+        mir: &mut FnBytecodeTables,
+    ) -> &mut IndexVec<Self::Index, Spanned<Self, FileName>> {
         <<Self as MirIndexData>::Index as MirIndex>::index_vec_mut(mir)
     }
 }
@@ -273,26 +257,26 @@ pub struct IdentifierData {
 /// Trait for the various types for which a span can be had --
 /// corresponds to all the index types plus `MetaIndex`.
 pub trait SpanIndex {
-    fn span_from(self, tables: &FnBytecodeTables) -> Span;
+    fn span_from(self, tables: &FnBytecodeTables) -> Span<FileName>;
 }
 
 impl FnBytecode {
     /// Get the span for the given part of the HIR.
-    pub fn span(&self, index: impl SpanIndex) -> Span {
+    pub fn span(&self, index: impl SpanIndex) -> Span<FileName> {
         index.span_from(&self.tables)
     }
 }
 
 impl FnBytecodeTables {
     /// Get the span for the given part of the HIR.
-    pub fn span(&self, index: impl SpanIndex) -> Span {
+    pub fn span(&self, index: impl SpanIndex) -> Span<FileName> {
         index.span_from(self)
     }
 }
 
 impl<I: MirIndex> SpanIndex for I {
-    fn span_from(self, tables: &FnBytecodeTables) -> Span {
-        I::index_vec(tables)[self].span()
+    fn span_from(self, tables: &FnBytecodeTables) -> Span<FileName> {
+        I::index_vec(tables)[self].span
     }
 }
 
@@ -304,13 +288,13 @@ macro_rules! define_meta_index {
             impl MirIndex for $index_ty {
                 type Data = $data_ty;
 
-                fn index_vec(mir: &FnBytecodeTables) -> &IndexVec<Self, Spanned<Self::Data>> {
+                fn index_vec(mir: &FnBytecodeTables) -> &IndexVec<Self, Spanned<Self::Data, FileName>> {
                     &mir.$field
                 }
 
                 fn index_vec_mut(
                     mir: &mut FnBytecodeTables,
-                ) -> &mut IndexVec<Self, Spanned<Self::Data>> {
+                ) -> &mut IndexVec<Self, Spanned<Self::Data, FileName>> {
                     &mut mir.$field
                 }
             }
@@ -339,7 +323,7 @@ macro_rules! define_meta_index {
         }
 
         impl SpanIndex for MetaIndex {
-            fn span_from(self, tables: &FnBytecodeTables) -> Span {
+            fn span_from(self, tables: &FnBytecodeTables) -> Span<FileName> {
                 match self {
                     $(
                         MetaIndex::$index_ty(index) => index.span_from(tables),

@@ -1,16 +1,52 @@
-use crate::{CurrentFile, Span};
-
-use lark_string::Text;
+use crate::Span;
+use intern::{Intern, Untern};
+use lark_debug_derive::DebugWith;
+use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use std::fmt::Debug;
 
-pub trait SpanFile: Copy + Debug + Eq {}
-impl<T: Copy + Debug + Eq> SpanFile for T {}
+pub trait SpanFile: Copy + Debug + Eq + Ord {}
+impl<T: Copy + Debug + Eq + Ord> SpanFile for T {}
 
-impl std::ops::Index<Span<CurrentFile>> for Text {
+impl<File: SpanFile> std::ops::Index<Span<File>> for Text {
     type Output = str;
 
-    fn index(&self, span: Span<CurrentFile>) -> &str {
+    fn index(&self, span: Span<File>) -> &str {
         let s: &str = self;
-        &s[span.start..span.end]
+        &s[span]
+    }
+}
+
+#[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Ord, PartialOrd, Hash)]
+pub struct FileName {
+    pub id: GlobalIdentifier,
+}
+
+impl FileName {
+    pub fn untern(self, db: &dyn AsRef<GlobalIdentifierTables>) -> Text {
+        self.id.untern(db)
+    }
+}
+
+pub trait IntoFileName {
+    fn into_file_name(&self, db: &dyn AsRef<GlobalIdentifierTables>) -> FileName;
+}
+
+impl IntoFileName for FileName {
+    fn into_file_name(&self, _db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
+        *self
+    }
+}
+
+impl IntoFileName for &str {
+    fn into_file_name(&self, db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
+        FileName {
+            id: self.intern(db),
+        }
+    }
+}
+
+impl IntoFileName for GlobalIdentifier {
+    fn into_file_name(&self, _db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
+        FileName { id: *self }
     }
 }

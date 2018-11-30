@@ -4,7 +4,7 @@ use crate::syntax::{Delimiter, NonEmptySyntax, Syntax};
 
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
-use lark_span::Spanned;
+use lark_span::{FileName, Spanned};
 
 macro_rules! sigil_type {
     ($($v:vis struct $name:ident = ($kind:path, $token:expr);)*) => {
@@ -18,7 +18,7 @@ macro_rules! sigil_type {
             }
 
             impl Syntax<'parse> for $name {
-                type Data = Spanned<LexToken>;
+                type Data = Spanned<LexToken, FileName>;
 
                 fn test(&mut self, parser: &Parser<'parse>) -> bool {
                     parser.is($kind) && parser.peek_str() == $name::TEXT

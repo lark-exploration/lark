@@ -1,20 +1,21 @@
-use crate::HirDatabase;
-use intern::{Intern, Untern};
+use crate::ParserDatabase;
+use intern::Intern;
+use intern::Untern;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::LangItem;
 use lark_string::global::GlobalIdentifier;
 
 crate fn resolve_name(
-    db: &impl HirDatabase,
+    db: &impl ParserDatabase,
     scope: Entity,
     name: GlobalIdentifier,
 ) -> Option<Entity> {
     match scope.untern(db) {
-        EntityData::InputFile { file } => {
-            let items_in_file = db.items_in_file(file);
-            items_in_file
+        EntityData::InputFile { .. } => {
+            db.child_entities(scope)
                 .iter()
+                .cloned()
                 .filter(|entity| match entity.untern(db) {
                     EntityData::ItemName { id, .. } | EntityData::MemberName { id, .. } => {
                         id == name
@@ -24,17 +25,15 @@ crate fn resolve_name(
                     | EntityData::Error(_)
                     | EntityData::InputFile { .. } => false,
                 })
-                .cloned()
                 .next()
                 .or_else(|| {
                     // Implicit root scope:
-                    let bool_id = db.intern_string("bool");
-                    let int_id = db.intern_string("int");
-                    let uint_id = db.intern_string("uint");
-                    let string_id = db.intern_string("String");
-                    let false_id = db.intern_string("false");
-                    let true_id = db.intern_string("true");
-                    let debug_id = db.intern_string("debug");
+                    let bool_id = "bool".intern(db);
+                    let int_id = "int".intern(db);
+                    let uint_id = "uint".intern(db);
+                    let false_id = "false".intern(db);
+                    let true_id = "true".intern(db);
+                    let debug_id = "debug".intern(db);
                     if name == bool_id {
                         Some(EntityData::LangItem(LangItem::Boolean).intern(db))
                     } else if name == int_id {

@@ -8,76 +8,17 @@
 #![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 
-use ast::AstDatabase;
 use debug::DebugWith;
 use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
-use lark_error::WithError;
-use lark_seq::Seq;
+use lark_error::ErrorSentinel;
+use lark_span::{FileName, Span};
 use lark_string::global::GlobalIdentifier;
-use lark_ty as ty;
-use lark_ty::declaration::{Declaration, DeclarationTables};
-use parser::pos::{HasSpan, Span, Spanned};
+use map::FxIndexMap;
 use std::sync::Arc;
-
-mod fn_body;
-mod query_definitions;
-mod scope;
-mod type_conversion;
-
-salsa::query_group! {
-    pub trait HirDatabase: AstDatabase + AsRef<DeclarationTables> {
-        /// Get the fn-body for a given def-id.
-        fn fn_body(key: Entity) -> WithError<Arc<FnBody>> {
-            type FnBodyQuery;
-            use fn fn_body::fn_body;
-        }
-
-        /// Get the list of member names and their def-ids for a given struct.
-        fn members(key: Entity) -> Result<Seq<Member>, ErrorReported> {
-            type MembersQuery;
-            use fn query_definitions::members;
-        }
-
-        /// Gets the def-id for a field of a given class.
-        fn member_entity(entity: Entity, kind: MemberKind, id: GlobalIdentifier) -> Option<Entity> {
-            type MemberEntityQuery;
-            use fn query_definitions::member_entity;
-        }
-
-        fn subentities(entity: Entity) -> Seq<Entity> {
-            type SubentitiesQuery;
-            use fn query_definitions::subentities;
-        }
-
-        /// Get the type of something.
-        fn ty(key: Entity) -> WithError<ty::Ty<Declaration>> {
-            type TyQuery;
-            use fn type_conversion::ty;
-        }
-
-        /// Get the signature of a function.
-        fn signature(key: Entity) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
-            type SignatureQuery;
-            use fn type_conversion::signature;
-        }
-
-        /// Get the generic declarations from a particular item.
-        fn generic_declarations(key: Entity) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
-            type GenericDeclarationsQuery;
-            use fn type_conversion::generic_declarations;
-        }
-
-        /// Resolve a type name that appears in the given entity.
-        fn resolve_name(scope: Entity, name: GlobalIdentifier) -> Option<Entity> {
-            type ResolveNameQuery;
-            use fn scope::resolve_name;
-        }
-    }
-}
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct Member {
@@ -86,11 +27,11 @@ pub struct Member {
     pub entity: Entity,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FnBody {
     /// List of arguments to the function. The type of each argument
     /// is given by the function signature (which can be separately queried).
-    pub arguments: List<Variable>,
+    pub arguments: Result<List<Variable>, ErrorReported>,
 
     /// Index of the root expression in the function body. Its result
     /// will be returned.
@@ -112,29 +53,48 @@ impl debug::DebugWith for FnBody {
     }
 }
 
+impl<DB> ErrorSentinel<&DB> for FnBody
+where
+    DB: ?Sized,
+{
+    fn error_sentinel(_db: &DB, err: ErrorReported) -> Self {
+        let mut tables = FnBodyTables::default();
+        let error = tables.add(err.span(), ErrorData::Misc);
+        let error_expr = tables.add(err.span(), ExpressionData::Error { error });
+        FnBody {
+            arguments: Err(err),
+            root_expression: error_expr,
+            tables,
+        }
+    }
+}
+
 /// All the data for a fn-body is stored in these tables.a
-#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, DebugWith, Default, PartialEq, Eq)]
 pub struct FnBodyTables {
     /// Map each expression index to its associated data.
-    pub expressions: IndexVec<Expression, Spanned<ExpressionData>>,
+    pub expressions: IndexVec<Expression, ExpressionData>,
 
     /// A `a: b` pair.
-    pub identified_expressions: IndexVec<IdentifiedExpression, Spanned<IdentifiedExpressionData>>,
+    pub identified_expressions: IndexVec<IdentifiedExpression, IdentifiedExpressionData>,
 
     /// Map each place index to its associated data.
-    pub places: IndexVec<Place, Spanned<PlaceData>>,
+    pub places: IndexVec<Place, PlaceData>,
 
     /// Map each perm index to its associated data.
-    pub perms: IndexVec<Perm, Spanned<PermData>>,
+    pub perms: IndexVec<Perm, PermData>,
 
     /// Map each variable index to its associated data.
-    pub variables: IndexVec<Variable, Spanned<VariableData>>,
+    pub variables: IndexVec<Variable, VariableData>,
 
     /// Map each identifier index to its associated data.
-    pub identifiers: IndexVec<Identifier, Spanned<IdentifierData>>,
+    pub identifiers: IndexVec<Identifier, IdentifierData>,
 
     /// Errors we encountered constructing the hir
-    pub errors: IndexVec<Error, Spanned<ErrorData>>,
+    pub errors: IndexVec<Error, ErrorData>,
+
+    /// Spans corresponding to each index
+    pub spans: FxIndexMap<MetaIndex, Span<FileName>>,
 
     /// The data values for any `List<I>` values that appear elsewhere
     /// in the HIR; the way this works is that all of the list value
@@ -143,6 +103,18 @@ pub struct FnBodyTables {
     /// -- the actual `List<I>` remembers the index type `I` for its
     /// own values and does the casting back and forth.
     pub list_entries: Vec<u32>,
+}
+
+impl FnBodyTables {
+    pub fn add<D: HirIndexData>(&mut self, span: Span<FileName>, node: D) -> D::Index {
+        let index = D::index_vec_mut(self).push(node);
+
+        let meta_index: MetaIndex = index.into();
+
+        self.spans.insert(meta_index, span);
+
+        index
+    }
 }
 
 impl AsMut<FnBodyTables> for FnBodyTables {
@@ -156,18 +128,18 @@ impl AsMut<FnBodyTables> for FnBodyTables {
 pub trait HirIndex: U32Index + Into<MetaIndex> + DebugWith {
     type Data: Clone + DebugWith;
 
-    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>>;
-    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Spanned<Self::Data>>;
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Self::Data>;
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self, Self::Data>;
 }
 
 pub trait HirIndexData: Sized + Clone + DebugWith {
     type Index: HirIndex<Data = Self>;
 
-    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Spanned<Self>> {
+    fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self::Index, Self> {
         <<Self as HirIndexData>::Index as HirIndex>::index_vec(hir)
     }
 
-    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Spanned<Self>> {
+    fn index_vec_mut(hir: &mut FnBodyTables) -> &mut IndexVec<Self::Index, Self> {
         <<Self as HirIndexData>::Index as HirIndex>::index_vec_mut(hir)
     }
 }
@@ -212,26 +184,28 @@ where
 /// Trait for the various types for which a span can be had --
 /// corresponds to all the index types plus `MetaIndex`.
 pub trait SpanIndex {
-    fn span_from(self, tables: &FnBodyTables) -> Span;
+    fn span_from(self, tables: &FnBodyTables) -> Span<FileName>;
 }
 
 impl FnBody {
     /// Get the span for the given part of the HIR.
-    pub fn span(&self, index: impl SpanIndex) -> Span {
+    pub fn span(&self, index: impl SpanIndex) -> Span<FileName> {
         index.span_from(&self.tables)
     }
 }
 
 impl FnBodyTables {
     /// Get the span for the given part of the HIR.
-    pub fn span(&self, index: impl SpanIndex) -> Span {
+    pub fn span(&self, index: impl SpanIndex) -> Span<FileName> {
         index.span_from(self)
     }
 }
 
 impl<I: HirIndex> SpanIndex for I {
-    fn span_from(self, tables: &FnBodyTables) -> Span {
-        I::index_vec(tables)[self].span()
+    fn span_from(self, tables: &FnBodyTables) -> Span<FileName> {
+        let meta_index: MetaIndex = self.into();
+        tables.spans[&meta_index]
+        //I::index_vec(tables)[self].span
     }
 }
 
@@ -243,13 +217,13 @@ macro_rules! define_meta_index {
             impl HirIndex for $index_ty {
                 type Data = $data_ty;
 
-                fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Spanned<Self::Data>> {
+                fn index_vec(hir: &FnBodyTables) -> &IndexVec<Self, Self::Data> {
                     &hir.$field
                 }
 
                 fn index_vec_mut(
                     hir: &mut FnBodyTables,
-                ) -> &mut IndexVec<Self, Spanned<Self::Data>> {
+                ) -> &mut IndexVec<Self, Self::Data> {
                     &mut hir.$field
                 }
             }
@@ -287,7 +261,7 @@ macro_rules! define_meta_index {
         }
 
         impl SpanIndex for MetaIndex {
-            fn span_from(self, tables: &FnBodyTables) -> Span {
+            fn span_from(self, tables: &FnBodyTables) -> Span<FileName> {
                 match self {
                     $(
                         MetaIndex::$index_ty(index) => index.span_from(tables),
