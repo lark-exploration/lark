@@ -1,9 +1,9 @@
 use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::ParserDatabase;
-use debug::DebugWith;
-use intern::{Intern, Untern};
+use lark_debug_with::DebugWith;
 use lark_entity::{Entity, EntityData, LangItem};
 use lark_error::{ErrorReported, ErrorSentinel, WithError};
+use lark_intern::{Intern, Untern};
 use lark_ty as ty;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;

@@ -9,7 +9,7 @@
 use crate::lexer::token::LexToken;
 use crate::macros::EntityMacroDefinition;
 use crate::syntax::entity::ParsedEntity;
-use intern::Intern;
+use lark_collections::FxIndexMap;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::EntityTables;
@@ -18,6 +18,7 @@ use lark_error::Diagnostic;
 use lark_error::ErrorReported;
 use lark_error::WithError;
 use lark_hir as hir;
+use lark_intern::Intern;
 use lark_seq::Seq;
 use lark_span::ByteIndex;
 use lark_span::FileName;
@@ -31,7 +32,6 @@ use lark_string::Text;
 use lark_ty as ty;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
-use map::FxIndexMap;
 use std::sync::Arc;
 
 pub mod current_file;

@@ -7,16 +7,16 @@ edition = "2018"
 [dependencies]
 salsa = "0.8"
 
-debug = { path = "../debug" }
-indices = { path = "../indices" }
-intern = { path = "../intern" }
+lark-collections = { path = "../lark-collections" }
 lark-debug-derive = { path = "../lark-debug-derive" }
+lark-debug-with = { path = "../lark-debug-with" }
+lark-indices = { path = "../lark-indices" }
+lark-intern = { path = "../lark-intern" }
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-parser = { path = "../lark-parser" }
 lark-hir = { path = "../lark-hir" }
 lark-span = { path = "../lark-span" }
 lark-type-check = { path = "../lark-type-check" }
-map = { path = "../map" }
 lark-ty = { path = "../lark-ty" }
 lark-string = {path = "../lark-string" }

@@ -5,4 +5,4 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-debug = { path = "../debug" }
+lark-debug-with = { path = "../lark-debug-with" }

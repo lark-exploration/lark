@@ -7,10 +7,9 @@ use crate::BoundVar;
 use crate::BoundVarOr;
 use crate::ReprKind;
 use crate::TypeFamily;
-use debug::{DebugWith, FmtWithSpecialized};
-use intern::Intern;
-use intern::Untern;
 use lark_debug_derive::DebugWith;
+use lark_debug_with::{DebugWith, FmtWithSpecialized};
+use lark_intern::{Intern, Untern};
 use std::fmt;
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -46,11 +45,11 @@ impl Declaration {
     }
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Base { .. }
 }
 
-debug::debug_fallback_impl!(Base);
+lark_debug_with::debug_fallback_impl!(Base);
 
 impl<Cx> FmtWithSpecialized<Cx> for Base
 where
@@ -61,11 +60,11 @@ where
     }
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Perm { .. }
 }
 
-debug::debug_fallback_impl!(Perm);
+lark_debug_with::debug_fallback_impl!(Perm);
 
 impl<Cx> FmtWithSpecialized<Cx> for Perm
 where
@@ -82,7 +81,7 @@ pub enum DeclaredPermKind {
     Own,
 }
 
-intern::intern_tables! {
+lark_intern::intern_tables! {
     pub struct DeclarationTables {
         struct DeclarationTablesData {
             bases: map(Base, BoundVarOr<BaseData<Declaration>>),

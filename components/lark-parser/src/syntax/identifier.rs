@@ -2,9 +2,9 @@ use crate::lexer::token::LexToken;
 use crate::parser::Parser;
 use crate::syntax::{NonEmptySyntax, Syntax};
 
-use intern::Intern;
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
+use lark_intern::Intern;
 use lark_span::{FileName, Spanned};
 use lark_string::GlobalIdentifier;
 

@@ -2,8 +2,8 @@
 //! only" inference. This is inference where we ignore permissions and
 //! representations and focus only on the base types.
 
-use intern::Intern;
 use lark_debug_derive::DebugWith;
+use lark_intern::Intern;
 use lark_ty::BaseData;
 use lark_ty::Erased;
 use lark_ty::InferVarOr;
@@ -53,7 +53,7 @@ impl TypeFamily for FullInference {
     }
 }
 
-intern::intern_tables! {
+lark_intern::intern_tables! {
     crate struct FullInferenceTables {
         struct FullInferenceTablesData {
             bases: map(Base, InferVarOr<BaseData<FullInference>>),

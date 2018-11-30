@@ -1,5 +1,5 @@
-use debug::DebugWith;
 use derive_new::new;
+use lark_debug_with::DebugWith;
 use lark_span::{CurrentFile, Span, Spanned};
 use std::fmt::{self, Debug};
 use std::marker::PhantomData;

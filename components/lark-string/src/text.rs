@@ -1,4 +1,4 @@
-use debug::DebugWith;
+use lark_debug_with::DebugWith;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::ops::Range;

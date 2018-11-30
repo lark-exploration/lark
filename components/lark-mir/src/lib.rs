@@ -5,10 +5,10 @@
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 
-use indices::{IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::WithError;
+use lark_indices::{IndexVec, U32Index};
 use lark_span::{FileName, Span, Spanned};
 use lark_string::GlobalIdentifier;
 use lark_ty::declaration::DeclarationTables;
@@ -26,7 +26,7 @@ salsa::query_group! {
     }
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Error { .. }
 }
 
@@ -89,7 +89,7 @@ pub struct FnBytecode {
     pub tables: FnBytecodeTables,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct BasicBlock { .. }
 }
 
@@ -99,7 +99,7 @@ pub struct BasicBlockData {
     pub terminator: Terminator,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Statement { .. }
 }
 
@@ -127,7 +127,7 @@ pub enum Terminator {
     PassThrough,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Rvalue { .. }
 }
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -139,7 +139,7 @@ pub enum RvalueData {
     Aggregate(Entity, List<Operand>),
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Operand { .. }
 }
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -219,7 +219,7 @@ where
     }
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Place { .. }
 }
 
@@ -235,7 +235,7 @@ pub enum LiteralData {
     String(GlobalIdentifier),
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Variable { .. }
 }
 
@@ -244,7 +244,7 @@ pub struct VariableData {
     pub name: Identifier,
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Identifier { .. }
 }
 
@@ -302,7 +302,7 @@ macro_rules! define_meta_index {
                 type Index = $index_ty;
             }
 
-            debug::debug_fallback_impl!($index_ty);
+            lark_debug_with::debug_fallback_impl!($index_ty);
 
             impl From<$index_ty> for MetaIndex {
                 fn from(value: $index_ty) -> MetaIndex {
@@ -440,4 +440,4 @@ impl<I: MirIndex> List<I> {
     }
 }
 
-debug::debug_fallback_impl!(for[I: MirIndex] List<I>);
+lark_debug_with::debug_fallback_impl!(for[I: MirIndex] List<I>);

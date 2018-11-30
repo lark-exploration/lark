@@ -1,6 +1,6 @@
-use intern::{Intern, Untern};
 use language_reporting as l_r;
 use lark_entity::EntityTables;
+use lark_intern::{Intern, Untern};
 use lark_mir as mir;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_span::{ByteIndex, FileName, Span};

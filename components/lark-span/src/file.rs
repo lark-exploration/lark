@@ -1,6 +1,6 @@
 use crate::Span;
-use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
+use lark_intern::{Intern, Untern};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use std::fmt::Debug;
 

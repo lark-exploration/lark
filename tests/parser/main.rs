@@ -1,10 +1,10 @@
-use debug::DebugWith;
-use intern::Intern;
-use intern::Untern;
 use lark_debug_derive::DebugWith;
+use lark_debug_with::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_hir as hir;
+use lark_intern::Intern;
+use lark_intern::Untern;
 use lark_parser::ParserDatabase;
 use lark_query_system::LarkDatabase;
 use lark_span::FileName;

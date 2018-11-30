@@ -1,7 +1,7 @@
 //! Built-in syntax that can be used by macros.
 
 use crate::parser::Parser;
-use debug::DebugWith;
+use lark_debug_with::DebugWith;
 use lark_error::ErrorReported;
 
 pub mod delimited;

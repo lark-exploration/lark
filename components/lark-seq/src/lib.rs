@@ -1,6 +1,6 @@
 #![feature(in_band_lifetimes)]
 
-use debug::DebugWith;
+use lark_debug_with::DebugWith;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::iter::{once, FromIterator, IntoIterator};

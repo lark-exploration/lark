@@ -1,9 +1,0 @@
-[package]
-name = "debug"
-version = "0.1.0"
-authors = ["Niko Matsakis <niko@alum.mit.edu>"]
-edition = "2018"
-
-[dependencies]
-indices = { path = "../indices" }
-map = { path = "../map" }

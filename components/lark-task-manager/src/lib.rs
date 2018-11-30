@@ -1,4 +1,4 @@
-use map::FxIndexMap;
+use lark_collections::FxIndexMap;
 use std::collections::VecDeque;
 use std::sync::mpsc::{channel, Receiver, RecvError, Sender, TryRecvError};
 use std::thread;

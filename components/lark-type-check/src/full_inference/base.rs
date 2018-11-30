@@ -1,13 +1,13 @@
 use crate::full_inference::FullInference;
 use crate::full_inference::FullInferenceTables;
-use debug::DebugWith;
-use intern::Intern;
-use intern::Untern;
+use lark_debug_with::DebugWith;
+use lark_intern::Intern;
+use lark_intern::Untern;
 use lark_ty::BaseData;
 use lark_ty::InferVarOr;
 use lark_unify::{InferVar, Inferable};
 
-indices::index_type! {
+lark_indices::index_type! {
     crate struct Base { .. }
 }
 
@@ -37,9 +37,9 @@ impl Inferable<FullInferenceTables> for Base {
     }
 }
 
-debug::debug_fallback_impl!(Base);
+lark_debug_with::debug_fallback_impl!(Base);
 
-impl<Cx> debug::FmtWithSpecialized<Cx> for Base
+impl<Cx> lark_debug_with::FmtWithSpecialized<Cx> for Base
 where
     Cx: AsRef<FullInferenceTables>,
 {

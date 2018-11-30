@@ -3,13 +3,13 @@ use crate::macros::EntityMacroDefinition;
 use crate::syntax::NonEmptySyntax;
 use crate::syntax::Syntax;
 
-use debug::DebugWith;
+use lark_collections::FxIndexMap;
+use lark_debug_with::DebugWith;
 use lark_entity::EntityTables;
 use lark_error::{Diagnostic, ErrorReported, WithError};
 use lark_seq::Seq;
 use lark_span::{FileName, Span, Spanned};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
-use map::FxIndexMap;
 use std::sync::Arc;
 
 pub struct Parser<'parse> {

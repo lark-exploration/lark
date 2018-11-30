@@ -1,3 +1,5 @@
+#![feature(in_band_lifetimes)]
+
 use indexmap::IndexMap;
 use indexmap::IndexSet;
 use rustc_hash::FxHasher;

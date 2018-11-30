@@ -9,10 +9,11 @@
 #![feature(uniform_paths)]
 
 use generational_arena::Arena;
-use indices::IndexVec;
+use lark_collections::FxIndexMap;
 use lark_entity::{Entity, EntityTables};
 use lark_error::{Diagnostic, WithError};
 use lark_hir as hir;
+use lark_indices::IndexVec;
 use lark_parser::ParserDatabase;
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
@@ -28,7 +29,6 @@ use lark_ty::Universe;
 use lark_unify::InferVar;
 use lark_unify::Inferable;
 use lark_unify::UnificationTable;
-use map::FxIndexMap;
 use std::sync::Arc;
 
 mod base_inference;

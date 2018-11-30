@@ -1,4 +1,4 @@
-use intern::Intern;
+use lark_intern::Intern;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::{Cancelled, LsDatabase, RangedDiagnostic};
 use lark_query_system::LarkDatabase;
@@ -8,7 +8,7 @@ use lark_string::Text;
 use salsa::Database;
 use std::fmt::Debug;
 
-pub use debug::DebugWith;
+pub use lark_debug_with::DebugWith;
 pub use lark_span::IntoFileName;
 
 pub trait ErrorSpec {
