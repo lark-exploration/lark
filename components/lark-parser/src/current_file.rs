@@ -1,4 +1,4 @@
-use lark_string::text::Text;
+use lark_string::Text;
 
 /// Trait used for contexts that know the current file. This is used
 /// in `DebugWith` implementations to handle local strings.

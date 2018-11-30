@@ -6,7 +6,7 @@ use intern::Intern;
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
 use lark_span::{FileName, Spanned};
-use lark_string::global::GlobalIdentifier;
+use lark_string::GlobalIdentifier;
 
 #[derive(DebugWith)]
 pub struct SpannedGlobalIdentifier;

@@ -1,5 +1,3 @@
-#![feature(macro_at_most_once_rep)]
-
 use std::fmt::Debug;
 use std::hash::Hash;
 

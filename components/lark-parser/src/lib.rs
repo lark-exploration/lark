@@ -1,7 +1,6 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 #![feature(crate_visibility_modifier)]
-#![feature(macro_at_most_once_rep)]
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 #![feature(try_blocks)]
@@ -11,7 +10,6 @@ use crate::lexer::token::LexToken;
 use crate::macros::EntityMacroDefinition;
 use crate::syntax::entity::ParsedEntity;
 use intern::Intern;
-use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::EntityTables;
@@ -27,9 +25,9 @@ use lark_span::IntoFileName;
 use lark_span::Location;
 use lark_span::Span;
 use lark_span::Spanned;
-use lark_string::global::GlobalIdentifier;
-use lark_string::global::GlobalIdentifierTables;
-use lark_string::text::Text;
+use lark_string::GlobalIdentifier;
+use lark_string::GlobalIdentifierTables;
+use lark_string::Text;
 use lark_ty as ty;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;

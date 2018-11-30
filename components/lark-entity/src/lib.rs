@@ -1,4 +1,3 @@
-#![feature(macro_at_most_once_rep)]
 #![feature(specialization)]
 #![feature(const_fn)]
 #![feature(const_let)]
@@ -8,7 +7,7 @@ use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
 use lark_error::{ErrorReported, ErrorSentinel};
 use lark_span::FileName;
-use lark_string::global::{GlobalIdentifier, GlobalIdentifierTables};
+use lark_string::{GlobalIdentifier, GlobalIdentifierTables};
 
 indices::index_type! {
     pub struct Entity { .. }

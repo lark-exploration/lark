@@ -4,7 +4,7 @@ use lark_entity::Entity;
 use lark_error::ErrorReported;
 use lark_span::FileName;
 use lark_span::Spanned;
-use lark_string::global::GlobalIdentifier;
+use lark_string::GlobalIdentifier;
 
 crate mod function_declaration;
 crate mod struct_declaration;

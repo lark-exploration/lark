@@ -31,7 +31,7 @@ use lark_hir as hir;
 use lark_seq::Seq;
 use lark_span::FileName;
 use lark_span::Spanned;
-use lark_string::global::GlobalIdentifier;
+use lark_string::GlobalIdentifier;
 use lark_ty as ty;
 use lark_ty::declaration::Declaration;
 use lark_ty::GenericDeclarations;
@@ -131,6 +131,8 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
                 let ty = crate::type_conversion::declaration_ty_named(
                     &db,
                     entity,
+                    ty::declaration::DeclaredPermKind::Own,
+                    ty::ReprKind::Direct,
                     ty::Generics::empty(),
                 );
                 WithError::ok(ty)

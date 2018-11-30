@@ -1,12 +1,15 @@
-use crate::TypeCheckFamily;
 use crate::TypeChecker;
+use crate::TypeCheckerFamily;
+use crate::TypeCheckerFamilyDependentExt;
 use crate::UniverseBinder;
+use intern::Intern;
 use lark_entity::Entity;
+use lark_entity::EntityData;
+use lark_entity::LangItem;
 use lark_error::{Diagnostic, ErrorReported};
 use lark_hir as hir;
-use lark_ty::declaration::Declaration;
-use lark_ty::map_family::Map;
 use lark_ty::BaseData;
+use lark_ty::BaseKind;
 use lark_ty::GenericDeclarations;
 use lark_ty::GenericKind;
 use lark_ty::Generics;
@@ -18,11 +21,11 @@ use lark_unify::Inferable;
 use std::sync::Arc;
 
 #[derive(Copy, Clone, Debug)]
-pub(super) struct OpIndex {
+crate struct OpIndex {
     index: generational_arena::Index,
 }
 
-pub(super) trait BoxedTypeCheckerOp<TypeCheck> {
+crate trait BoxedTypeCheckerOp<TypeCheck> {
     fn execute(self: Box<Self>, typeck: &mut TypeCheck);
 }
 
@@ -39,101 +42,83 @@ where
     }
 }
 
-impl<DB, F> TypeChecker<'_, DB, F>
+impl<DB, F, S> TypeChecker<'_, DB, F, S>
 where
     DB: crate::TypeCheckDatabase,
-    F: TypeCheckFamily,
-    Self: AsRef<F::InternTables>,
+    F: TypeCheckerFamily,
+    Self: TypeCheckerFamilyDependentExt<F>,
+    F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
-    pub(super) fn new_infer_ty(&mut self) -> Ty<F> {
-        F::new_infer_ty(self)
+    crate fn boolean_type(&self) -> Ty<F> {
+        self.primitive_type(LangItem::Boolean)
     }
 
-    pub(super) fn equate_types(&mut self, cause: hir::MetaIndex, ty1: Ty<F>, ty2: Ty<F>) {
-        F::equate_types(self, cause, ty1, ty2)
+    crate fn int_type(&self) -> Ty<F> {
+        self.primitive_type(LangItem::Int)
     }
 
-    pub(super) fn boolean_type(&self) -> Ty<F> {
-        F::boolean_type(self)
+    crate fn uint_type(&self) -> Ty<F> {
+        self.primitive_type(LangItem::Uint)
     }
 
-    pub(super) fn int_type(&self) -> Ty<F> {
-        F::int_type(self)
+    crate fn string_type(&self) -> Ty<F> {
+        self.primitive_type(LangItem::String)
     }
 
-    pub(super) fn uint_type(&self) -> Ty<F> {
-        F::uint_type(self)
+    crate fn unit_type(&self) -> Ty<F> {
+        self.primitive_type(LangItem::Tuple(0))
     }
 
-    pub(super) fn string_type(&self) -> Ty<F> {
-        F::string_type(self)
-    }
-
-    pub(super) fn unit_type(&self) -> Ty<F> {
-        F::unit_type(self)
-    }
-
-    pub(super) fn error_type(&self) -> Ty<F> {
+    crate fn error_type(&self) -> Ty<F> {
         F::error_type(self)
     }
 
+    fn primitive_type(&self, item: LangItem) -> Ty<F> {
+        let entity = EntityData::LangItem(item).intern(self);
+        Ty {
+            repr: F::direct_repr(self),
+            perm: F::own_perm(self),
+            base: F::intern_base_data(
+                self,
+                BaseData {
+                    kind: BaseKind::Named(entity),
+                    generics: Generics::empty(),
+                },
+            ),
+        }
+    }
+
     /// Record that an error occurred at the given location.
-    pub(super) fn record_error(&mut self, label: String, location: impl Into<hir::MetaIndex>) {
-        let span = self.hir.span(location.into());
-        self.errors.push(Diagnostic::new(label, span));
-    }
-
-    pub(super) fn substitute<M>(
+    crate fn record_error(
         &mut self,
+        label: impl Into<String>,
         location: impl Into<hir::MetaIndex>,
-        generics: &Generics<F>,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<Declaration, F>,
-    {
-        F::substitute(self, location.into(), generics, value)
-    }
-
-    pub(super) fn apply_owner_perm<M>(
-        &mut self,
-        location: impl Into<hir::MetaIndex>,
-        owner_perm: F::Perm,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<F, F>,
-    {
-        F::apply_owner_perm(self, location, owner_perm, value)
-    }
-
-    pub(super) fn require_assignable(
-        &mut self,
-        expression: hir::Expression,
-        value_ty: Ty<F>,
-        place_ty: Ty<F>,
     ) {
-        F::require_assignable(self, expression, value_ty, place_ty)
+        let span = self.hir.span(location.into());
+        self.errors.push(Diagnostic::new(label.into(), span));
     }
 
-    pub(super) fn apply_user_perm(&mut self, perm: hir::Perm, place_ty: Ty<F>) -> Ty<F> {
-        F::apply_user_perm(self, perm, place_ty)
-    }
-
-    pub(super) fn own_perm(&mut self) -> F::Perm {
+    crate fn own_perm(&mut self) -> F::Perm {
         F::own_perm(self)
     }
 
-    pub(super) fn least_upper_bound(
-        &mut self,
-        if_expression: hir::Expression,
-        true_ty: Ty<F>,
-        false_ty: Ty<F>,
-    ) -> Ty<F> {
-        F::least_upper_bound(self, if_expression, true_ty, false_ty)
+    crate fn direct_repr(&mut self) -> F::Repr {
+        F::direct_repr(self)
     }
 
-    pub(super) fn placeholders_for(&mut self, def_id: Entity) -> Generics<F> {
+    /// Unifies all of the generic arguments from `data` with the
+    /// error type.
+    crate fn propagate_error(&mut self, cause: impl Into<hir::MetaIndex>, generics: &Generics<F>) {
+        let cause = cause.into();
+        let error_type = self.error_type();
+        for generic in generics.iter() {
+            match generic {
+                GenericKind::Ty(ty) => self.equate_types(cause, error_type, ty),
+            }
+        }
+    }
+
+    crate fn placeholders_for(&mut self, def_id: Entity) -> Generics<F> {
         let GenericDeclarations {
             parent_item,
             declarations,
@@ -159,6 +144,7 @@ where
                     })
                     .map(|p| {
                         GenericKind::Ty(Ty {
+                            repr: self.direct_repr(),
                             perm: self.own_perm(),
                             base: F::intern_base_data(self, BaseData::from_placeholder(p)),
                         })
@@ -169,21 +155,24 @@ where
         generics
     }
 
-    pub(super) fn inference_variables_for(&mut self, def_id: Entity) -> Generics<F> {
+    crate fn inference_variables_for(&mut self, entity: Entity) -> Generics<F> {
         let GenericDeclarations {
             parent_item,
             declarations,
         } = &*self
             .db
-            .generic_declarations(def_id)
+            .generic_declarations(entity)
             .into_value()
             .unwrap_or_else(|ErrorReported(_)| Arc::new(GenericDeclarations::default()));
 
+        // If the generics for `entity` extend those of its parent,
+        // first create the parent's generics.
         let mut generics = match parent_item {
-            Some(def_id) => self.inference_variables_for(*def_id),
+            Some(entity) => self.inference_variables_for(*entity),
             None => Generics::empty(),
         };
 
+        // Now extend with our own.
         if !declarations.is_empty() {
             generics.extend(
                 declarations
@@ -207,10 +196,10 @@ where
     /// Otherwise, creates a type variable and returns that;
     /// once `base` can be mapped, the closure `op` will be
     /// invoked and the type variable will be unified.
-    pub(super) fn with_base_data(
+    crate fn with_base_data(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
-        base: F::TcBase,
+        base: F::Base,
         op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
     ) -> Ty<F> {
         let cause = cause.into();
@@ -228,7 +217,7 @@ where
     fn with_base_data_unify_with(
         &mut self,
         cause: hir::MetaIndex,
-        base: F::TcBase,
+        base: F::Base,
         output_ty: Ty<F>,
         op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
     ) {
@@ -246,7 +235,7 @@ where
 
     /// Enqueues a closure to execute when any of the
     /// variables in `values` are unified.
-    pub(super) fn enqueue_op(
+    crate fn enqueue_op(
         &mut self,
         values: impl IntoIterator<Item = impl Inferable<F::InternTables>>,
         closure: impl FnOnce(&mut Self) + 'static,
@@ -272,7 +261,7 @@ where
     }
 
     /// Executes any closures that are blocked on `var`.
-    pub(super) fn trigger_ops(&mut self, var: InferVar) {
+    crate fn trigger_ops(&mut self, var: InferVar) {
         let blocked_ops = self.ops_blocked.remove(&var).unwrap_or(vec![]);
         for OpIndex { index } in blocked_ops {
             match self.ops_arena.remove(index) {
@@ -292,7 +281,7 @@ where
     /// Records any inference variables that are have
     /// not-yet-triggered operations. These must all be currently
     /// unresolved.
-    pub(super) fn untriggered_ops(&mut self, output: &mut Vec<InferVar>) {
+    crate fn untriggered_ops(&mut self, output: &mut Vec<InferVar>) {
         'var_loop: for (&var, blocked_ops) in &self.ops_blocked {
             assert!(!self.unify.var_is_known(var));
             for &OpIndex { index } in blocked_ops {

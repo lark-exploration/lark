@@ -131,13 +131,15 @@ impl LazyParsedEntity for ParsedStructDeclaration {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
-        // For each struct `Foo`, the "type" is just `Foo`
+        // For each struct `Foo`, the "type" is just `own Foo`
         match db.generic_declarations(entity).into_value() {
             Ok(generic_declarations) => {
                 assert!(generic_declarations.is_empty());
                 let ty = crate::type_conversion::declaration_ty_named(
                     &db,
                     entity,
+                    ty::declaration::DeclaredPermKind::Own,
+                    ty::ReprKind::Direct,
                     ty::Generics::empty(),
                 );
                 WithError::ok(ty)
