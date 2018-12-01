@@ -197,18 +197,22 @@ where
     /// Otherwise, creates a type variable and returns that;
     /// once `base` can be mapped, the closure `op` will be
     /// invoked and the type variable will be unified.
-    crate fn with_base_data(
+    crate fn with_base_data<V: 'static>(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
         base: F::Base,
-        op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
-    ) -> Ty<F> {
+        op: impl FnOnce(&mut Self, BaseData<F>) -> V + 'static,
+    ) -> V
+    where
+        V: Copy,
+        Self: TypeCheckerVariableExt<F, V>,
+    {
         let cause = cause.into();
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => op(self, data),
 
             Err(_) => {
-                let var: Ty<F> = self.new_variable();
+                let var: V = self.new_variable();
                 self.with_base_data_unify_with(base, var, op, move |this, t1, t2| {
                     this.equate(cause, t1, t2)
                 });
