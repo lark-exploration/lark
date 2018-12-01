@@ -12,6 +12,8 @@ use lark_ty::Placeholder;
 use lark_ty::ReprKind;
 use lark_ty::TypeFamily;
 
+mod apply_perm;
+
 mod constraint;
 
 /// Defines the `Base` type that represents base types.

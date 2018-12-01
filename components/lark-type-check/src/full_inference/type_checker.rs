@@ -1,3 +1,4 @@
+use crate::full_inference::apply_perm::ApplyPerm;
 use crate::full_inference::constraint::Constraint;
 use crate::full_inference::constraint::ConstraintAt;
 use crate::full_inference::perm::Perm;
@@ -45,11 +46,11 @@ crate struct FullInferenceStorage {
 }
 
 impl FullInferenceStorage {
-    fn new_inferred_perm(&mut self, tables: &dyn AsRef<FullInferenceTables>) -> Perm {
+    crate fn new_inferred_perm(&mut self, tables: &dyn AsRef<FullInferenceTables>) -> Perm {
         PermData::Inferred(self.perm_vars.push(())).intern(tables)
     }
 
-    fn add_constraint(&mut self, cause: impl Into<hir::MetaIndex>, constraint: Constraint) {
+    crate fn add_constraint(&mut self, cause: impl Into<hir::MetaIndex>, constraint: Constraint) {
         self.constraints.insert(ConstraintAt {
             cause: cause.into(),
             constraint,
@@ -81,11 +82,11 @@ where
 
     fn apply_owner_perm(
         &mut self,
-        _location: impl Into<hir::MetaIndex>,
-        _owner_perm: Perm,
+        location: impl Into<hir::MetaIndex>,
+        owner_perm: Perm,
         field_ty: Ty<FullInference>,
     ) -> Ty<FullInference> {
-        field_ty
+        self.apply_access_perm(location.into(), owner_perm, field_ty)
     }
 
     fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<FullInference>) {
