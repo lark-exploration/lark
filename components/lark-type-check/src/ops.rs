@@ -113,7 +113,7 @@ where
         let error_type = self.error_type();
         for generic in generics.iter() {
             match generic {
-                GenericKind::Ty(ty) => self.equate_types(cause, error_type, ty),
+                GenericKind::Ty(ty) => self.equate(cause, error_type, ty),
             }
         }
     }
@@ -177,7 +177,7 @@ where
             generics.extend(
                 declarations
                     .indices()
-                    .map(|_| GenericKind::Ty(self.new_infer_ty())),
+                    .map(|_| GenericKind::Ty(self.new_variable())),
             );
         }
 
@@ -207,9 +207,9 @@ where
             Ok(data) => op(self, data),
 
             Err(_) => {
-                let var: Ty<F> = self.new_infer_ty();
+                let var: Ty<F> = self.new_variable();
                 self.with_base_data_unify_with(base, var, op, move |this, t1, t2| {
-                    this.equate_types(cause, t1, t2)
+                    this.equate(cause, t1, t2)
                 });
                 var
             }

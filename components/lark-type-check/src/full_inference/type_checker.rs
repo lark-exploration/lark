@@ -62,7 +62,7 @@ impl<DB> TypeCheckerFamilyDependentExt<FullInference>
 where
     DB: TypeCheckDatabase,
 {
-    fn new_infer_ty(&mut self) -> Ty<FullInference> {
+    fn new_variable(&mut self) -> Ty<FullInference> {
         Ty {
             repr: Erased,
             perm: self.storage.new_inferred_perm(&self.f_tables),
@@ -70,7 +70,7 @@ where
         }
     }
 
-    fn equate_types(
+    fn equate(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
         ty1: Ty<FullInference>,
@@ -116,7 +116,7 @@ where
                 for (generic1, generic2) in data1.generics.iter().zip(&data2.generics) {
                     match (generic1, generic2) {
                         (GenericKind::Ty(g1), GenericKind::Ty(g2)) => {
-                            self.equate_types(cause, g1, g2);
+                            self.equate(cause, g1, g2);
                         }
                     }
                 }
@@ -126,7 +126,7 @@ where
 
     fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<FullInference>) {
         let value_ty = self.storage.results.ty(expression);
-        self.equate_types(expression, value_ty, place_ty)
+        self.equate(expression, value_ty, place_ty)
     }
 
     fn substitute<M>(
@@ -173,7 +173,7 @@ where
 
     fn request_variable_ty(&mut self, var: hir::Variable) -> Ty<FullInference> {
         self.storage.results.opt_ty(var).unwrap_or_else(|| {
-            let ty = self.new_infer_ty();
+            let ty = self.new_variable();
             self.storage.results.record_ty(var, ty);
             ty
         })

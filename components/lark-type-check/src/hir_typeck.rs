@@ -72,7 +72,7 @@ where
 
     fn type_or_infer_variable(&mut self, mode: Mode<F>) -> Ty<F> {
         match mode {
-            Synthesize => self.new_infer_ty(),
+            Synthesize => self.new_variable(),
             CheckType(expected_ty) => expected_ty,
         }
     }
@@ -515,7 +515,7 @@ where
                 // inference variable, we can unify it *now* rather
                 // than wait until the input types are known.
                 let boolean_type = self.boolean_type();
-                self.equate_types(expression, result_ty, boolean_type);
+                self.equate(expression, result_ty, boolean_type);
                 boolean_type
             }
 

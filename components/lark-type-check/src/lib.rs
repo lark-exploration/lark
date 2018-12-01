@@ -107,11 +107,11 @@ where
     F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
     /// Creates a new type with fresh inference variables.
-    fn new_infer_ty(&mut self) -> Ty<F>;
+    fn new_variable(&mut self) -> Ty<F>;
 
     /// Equates two types (producing an error if they are not
     /// equatable).
-    fn equate_types(&mut self, cause: impl Into<hir::MetaIndex>, ty1: Ty<F>, ty2: Ty<F>);
+    fn equate(&mut self, cause: impl Into<hir::MetaIndex>, ty1: Ty<F>, ty2: Ty<F>);
 
     /// Generates the constraint that the type of `expression` be
     /// assignable to a place with the type `place_ty`. This may
