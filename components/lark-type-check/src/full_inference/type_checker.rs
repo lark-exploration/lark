@@ -43,6 +43,8 @@ crate struct FullInferenceStorage {
 
     /// Results we have generated thus far.
     results: TypeCheckResults<FullInference>,
+
+    access_permissions: std::collections::BTreeMap<hir::Expression, Perm>,
 }
 
 impl FullInferenceStorage {
@@ -65,7 +67,20 @@ where
 {
     fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<FullInference>) {
         let value_ty = self.storage.results.ty(expression);
-        self.equate(expression, value_ty, place_ty)
+
+        // When assigning a value into a place, we do not *have* to
+        // transfer the full permissions of that value into the
+        // place. So create a permission variable for the amount of
+        // access and use it to modify the value access ty.
+        let perm_access = self.storage.new_inferred_perm(&self.f_tables);
+        let value_access_ty = self.apply_access_perm(expression.into(), perm_access, value_ty);
+
+        // Record the permission used at `expression` for later.
+        self.storage
+            .access_permissions
+            .insert(expression, perm_access);
+
+        self.equate(expression, value_access_ty, place_ty)
     }
 
     fn substitute<M>(
