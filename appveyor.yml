@@ -24,7 +24,7 @@ build: false
 test_script:
   # compile #[cfg(not(test))] code
   - cargo build --verbose
-  - cargo test --verbose
+  - cargo test --all --verbose
 
 cache:
   - target -> Cargo.lock
