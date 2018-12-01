@@ -1,6 +1,7 @@
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
 use crate::TypeCheckerFamilyDependentExt;
+use crate::TypeCheckerVariableExt;
 use crate::UniverseBinder;
 use lark_entity::Entity;
 use lark_entity::EntityData;

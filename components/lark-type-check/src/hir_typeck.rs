@@ -2,6 +2,7 @@ use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
 use crate::TypeCheckerFamilyDependentExt;
+use crate::TypeCheckerVariableExt;
 use lark_collections::FxIndexSet;
 use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;

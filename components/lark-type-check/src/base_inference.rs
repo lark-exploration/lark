@@ -8,6 +8,7 @@ use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
+use crate::TypeCheckerVariableExt;
 use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;
 use lark_entity::Entity;
@@ -111,65 +112,6 @@ impl<DB> TypeCheckerFamilyDependentExt<BaseInference>
 where
     DB: TypeCheckDatabase,
 {
-    fn new_variable(&mut self) -> Ty<BaseInference> {
-        Ty {
-            repr: Erased,
-            perm: Erased,
-            base: self.unify.new_inferable(),
-        }
-    }
-
-    fn equate(
-        &mut self,
-        cause: impl Into<hir::MetaIndex>,
-        ty1: Ty<BaseInference>,
-        ty2: Ty<BaseInference>,
-    ) {
-        let cause = cause.into();
-
-        let Ty {
-            repr: Erased,
-            perm: Erased,
-            base: base1,
-        } = ty1;
-        let Ty {
-            repr: Erased,
-            perm: Erased,
-            base: base2,
-        } = ty2;
-
-        match self.unify.unify(cause, base1, base2) {
-            Ok(()) => {}
-
-            Err((data1, data2)) => {
-                match (data1.kind, data2.kind) {
-                    (BaseKind::Error, _) => {
-                        self.propagate_error(cause, &data2.generics);
-                        return;
-                    }
-                    (_, BaseKind::Error) => {
-                        self.propagate_error(cause, &data1.generics);
-                        return;
-                    }
-                    _ => {}
-                }
-
-                if data1.kind != data2.kind {
-                    self.record_error("Mismatched types", cause);
-                    return;
-                }
-
-                for (generic1, generic2) in data1.generics.iter().zip(&data2.generics) {
-                    match (generic1, generic2) {
-                        (GenericKind::Ty(g1), GenericKind::Ty(g2)) => {
-                            self.equate(cause, g1, g2);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<BaseInference>) {
         let value_ty = self.storage.ty(expression);
         self.equate(expression, value_ty, place_ty)
@@ -239,6 +181,71 @@ where
         let generics = self.inference_variables_for(entity);
         self.storage.record_generics(index, &generics);
         generics
+    }
+}
+
+impl<DB> TypeCheckerVariableExt<BaseInference, Ty<BaseInference>>
+    for TypeChecker<'_, DB, BaseInference, TypeCheckResults<BaseInference>>
+where
+    DB: TypeCheckDatabase,
+{
+    fn new_variable(&mut self) -> Ty<BaseInference> {
+        Ty {
+            repr: Erased,
+            perm: Erased,
+            base: self.unify.new_inferable(),
+        }
+    }
+
+    fn equate(
+        &mut self,
+        cause: impl Into<hir::MetaIndex>,
+        ty1: Ty<BaseInference>,
+        ty2: Ty<BaseInference>,
+    ) {
+        let cause = cause.into();
+
+        let Ty {
+            repr: Erased,
+            perm: Erased,
+            base: base1,
+        } = ty1;
+        let Ty {
+            repr: Erased,
+            perm: Erased,
+            base: base2,
+        } = ty2;
+
+        match self.unify.unify(cause, base1, base2) {
+            Ok(()) => {}
+
+            Err((data1, data2)) => {
+                match (data1.kind, data2.kind) {
+                    (BaseKind::Error, _) => {
+                        self.propagate_error(cause, &data2.generics);
+                        return;
+                    }
+                    (_, BaseKind::Error) => {
+                        self.propagate_error(cause, &data1.generics);
+                        return;
+                    }
+                    _ => {}
+                }
+
+                if data1.kind != data2.kind {
+                    self.record_error("Mismatched types", cause);
+                    return;
+                }
+
+                for (generic1, generic2) in data1.generics.iter().zip(&data2.generics) {
+                    match (generic1, generic2) {
+                        (GenericKind::Ty(g1), GenericKind::Ty(g2)) => {
+                            self.equate(cause, g1, g2);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

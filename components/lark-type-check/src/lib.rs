@@ -102,17 +102,12 @@ impl<T: TypeFamily<Placeholder = Placeholder>> TypeCheckerFamily for T {}
 /// will find e.g. one implementation of this for the `BaseInference`
 /// type family and one for more complete inference (not yet
 /// implemented).
-trait TypeCheckerFamilyDependentExt<F: TypeCheckerFamily>: AsRef<F::InternTables>
+trait TypeCheckerFamilyDependentExt<F: TypeCheckerFamily>
 where
+    Self: AsRef<F::InternTables>,
+    Self: TypeCheckerVariableExt<F, Ty<F>>,
     F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
-    /// Creates a new type with fresh inference variables.
-    fn new_variable(&mut self) -> Ty<F>;
-
-    /// Equates two types (producing an error if they are not
-    /// equatable).
-    fn equate(&mut self, cause: impl Into<hir::MetaIndex>, ty1: Ty<F>, ty2: Ty<F>);
-
     /// Generates the constraint that the type of `expression` be
     /// assignable to a place with the type `place_ty`. This may
     /// induce coercions.
@@ -172,6 +167,16 @@ where
         index: impl Into<hir::MetaIndex>,
         entity: Entity,
     ) -> Generics<F>;
+}
+
+/// Trait for "inferable values" of type `V` (e.g., types).
+trait TypeCheckerVariableExt<F: TypeCheckerFamily, V> {
+    /// Creates a new type (or other value) with fresh inference variable(s).
+    fn new_variable(&mut self) -> V;
+
+    /// Equates two types or other inferable values (producing an error if they are not
+    /// equatable).
+    fn equate(&mut self, cause: impl Into<hir::MetaIndex>, val1: V, val2: V);
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
