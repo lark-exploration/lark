@@ -15,6 +15,7 @@ use lark_ty::declaration::Declaration;
 use lark_ty::Signature;
 use lark_ty::Ty;
 use lark_ty::{BaseData, BaseKind};
+use lark_unify::InferVar;
 use lark_unify::Inferable;
 
 #[derive(Copy, Clone, Debug, DebugWith)]
@@ -31,7 +32,7 @@ where
     Self: TypeCheckerFamilyDependentExt<F>,
     F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
-    crate fn check_fn_body(&mut self) {
+    crate fn check_fn_body(&mut self) -> Vec<InferVar> {
         let hir_arguments_len = self.hir.arguments.map(|l| l.len()).unwrap_or(0);
         let declaration_signature = self
             .db
@@ -54,6 +55,26 @@ where
             }
         }
         self.check_expression(CheckType(signature.output), self.hir.root_expression);
+
+        // Complete all deferred type operations; run to steady state.
+        loop {
+            let vars: Vec<InferVar> = self.unify.drain_events().collect();
+            if vars.is_empty() {
+                break;
+            }
+            for var in vars {
+                self.trigger_ops(var);
+            }
+        }
+
+        let mut unresolved_variables = vec![];
+
+        // Look for any deferred operations that never executed. Those
+        // variables that they are blocked on must not be resolved; record
+        // as an error.
+        self.untriggered_ops(&mut unresolved_variables);
+
+        unresolved_variables
     }
 
     /// Type-check the expression `expression` in the given mode

@@ -14,7 +14,6 @@ use lark_indices::IndexVec;
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::full_inferred::FullInferred;
 use lark_ty::map_family::Map;
-use lark_unify::InferVar;
 use lark_unify::UnificationTable;
 use std::sync::Arc;
 
@@ -37,26 +36,7 @@ crate fn base_type_check(
         errors: vec![],
     };
 
-    // Run the base type-check.
-    base_type_checker.check_fn_body();
-
-    // Complete all deferred type operations; run to steady state.
-    loop {
-        let vars: Vec<InferVar> = base_type_checker.unify.drain_events().collect();
-        if vars.is_empty() {
-            break;
-        }
-        for var in vars {
-            base_type_checker.trigger_ops(var);
-        }
-    }
-
-    let mut unresolved_variables = vec![];
-
-    // Look for any deferred operations that never executed. Those
-    // variables that they are blocked on must not be resolved; record
-    // as an error.
-    base_type_checker.untriggered_ops(&mut unresolved_variables);
+    let mut unresolved_variables = base_type_checker.check_fn_body();
 
     // Record the final results. If any unresolved type variables are
     // encountered, report an error.
@@ -103,26 +83,7 @@ crate fn full_type_check(
         errors: vec![],
     };
 
-    // Run the base type-check.
     full_type_checker.check_fn_body();
-
-    // Complete all deferred type operations; run to steady state.
-    loop {
-        let vars: Vec<InferVar> = full_type_checker.unify.drain_events().collect();
-        if vars.is_empty() {
-            break;
-        }
-        for var in vars {
-            full_type_checker.trigger_ops(var);
-        }
-    }
-
-    let mut unresolved_variables = vec![];
-
-    // Look for any deferred operations that never executed. Those
-    // variables that they are blocked on must not be resolved; record
-    // as an error.
-    full_type_checker.untriggered_ops(&mut unresolved_variables);
 
     unimplemented!()
 }
