@@ -17,7 +17,6 @@ use lark_intern::Intern;
 use lark_intern::Untern;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
-use lark_ty::identity::Identity;
 use lark_ty::map_family::Map;
 use lark_ty::BaseData;
 use lark_ty::BaseKind;
@@ -129,16 +128,13 @@ where
         value.map(&mut Substitution::new(self, generics))
     }
 
-    fn apply_owner_perm<M>(
+    fn apply_owner_perm(
         &mut self,
         _location: impl Into<hir::MetaIndex>,
-        _owner_perm: Erased,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<BaseInference, BaseInference>,
-    {
-        value.map(&mut Identity::new(self))
+        _access_perm: Erased,
+        field_ty: Ty<BaseInference>,
+    ) -> Ty<BaseInference> {
+        field_ty
     }
 
     fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<BaseInference>) {

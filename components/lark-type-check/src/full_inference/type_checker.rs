@@ -21,7 +21,6 @@ use lark_intern::Untern;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclaredPermKind;
-use lark_ty::identity::Identity;
 use lark_ty::map_family::Map;
 use lark_ty::BaseKind;
 use lark_ty::Erased;
@@ -80,16 +79,13 @@ where
         value.map(&mut Substitution::new(self, generics))
     }
 
-    fn apply_owner_perm<M>(
+    fn apply_owner_perm(
         &mut self,
         _location: impl Into<hir::MetaIndex>,
         _owner_perm: Perm,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<FullInference, FullInference>,
-    {
-        value.map(&mut Identity::new(self))
+        field_ty: Ty<FullInference>,
+    ) -> Ty<FullInference> {
+        field_ty
     }
 
     fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<FullInference>) {

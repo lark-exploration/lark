@@ -127,15 +127,13 @@ where
 
     /// Adjust the type of `value` to account for having been
     /// projected from an owned with the given permissions
-    /// `owner_perm` (e.g., when accessing a field).
-    fn apply_owner_perm<M>(
+    /// `access_perm` (e.g., when accessing a field).
+    fn apply_owner_perm(
         &mut self,
         location: impl Into<hir::MetaIndex>,
-        owner_perm: F::Perm,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<F, F>;
+        access_perm: F::Perm,
+        field_ty: Ty<F>,
+    ) -> Ty<F>;
 
     /// Requests the type for a given HIR variable. Upon the first
     /// request, the result may be a fresh inference variable.
