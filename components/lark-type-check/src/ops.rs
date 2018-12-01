@@ -192,11 +192,11 @@ where
         self.universe_binders.push(binder)
     }
 
-    /// If `base` can be mapped to a concrete `BaseData`,
-    /// invokes `op` and returns the resulting type.
-    /// Otherwise, creates a type variable and returns that;
-    /// once `base` can be mapped, the closure `op` will be
-    /// invoked and the type variable will be unified.
+    /// If `base` can be mapped to a concrete `BaseData`, invokes `op`
+    /// and returns the resulting value.  Otherwise, creates an
+    /// inference variable and returns that; once `base` can be
+    /// mapped, the closure `op` will be invoked and the type variable
+    /// will be unified.
     crate fn with_base_data<V: 'static>(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
@@ -213,8 +213,8 @@ where
 
             Err(_) => {
                 let var: V = self.new_variable();
-                self.with_base_data_unify_with(base, var, op, move |this, t1, t2| {
-                    this.equate(cause, t1, t2)
+                self.with_base_data_equate(base, op, move |this, value| {
+                    this.equate(cause, var, value)
                 });
                 var
             }
@@ -223,26 +223,26 @@ where
 
     /// Helper function:
     ///
-    /// The operation `op` requires the base data of `base` but it was not
-    /// available when we first looked, so we created a dummy intermediate
-    /// value `output_val`. We now think that `base` may have been inferred,
-    /// so check again: if so, invoke `op` and invoke `equate` to combine the
-    /// result with `output_val`. If not, enqueue us up for later.
-    fn with_base_data_unify_with<O: 'static>(
+    /// The operation `op` requires the base data of `base` but it was
+    /// not available when we first looked, so we created a dummy
+    /// intermediate value. We now think that `base` may have been
+    /// inferred, so check again: if so, invoke `op` and invoke
+    /// `equate` (which will combine the result with that dummy
+    /// value). If not, enqueue us up for later.
+    fn with_base_data_equate<O: 'static>(
         &mut self,
         base: F::Base,
-        output_val: O,
         op: impl FnOnce(&mut Self, BaseData<F>) -> O + 'static,
-        equate: impl Fn(&mut Self, O, O) + Copy + 'static,
+        equate: impl Fn(&mut Self, O) + Copy + 'static,
     ) {
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => {
                 let val1 = op(self, data);
-                equate(self, output_val, val1);
+                equate(self, val1);
             }
 
             Err(_) => self.enqueue_op(Some(base), move |this| {
-                this.with_base_data_unify_with(base, output_val, op, equate)
+                this.with_base_data_equate(base, op, equate)
             }),
         }
     }
