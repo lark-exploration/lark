@@ -208,27 +208,36 @@ where
 
             Err(_) => {
                 let var: Ty<F> = self.new_infer_ty();
-                self.with_base_data_unify_with(cause, base, var, op);
+                self.with_base_data_unify_with(base, var, op, move |this, t1, t2| {
+                    this.equate_types(cause, t1, t2)
+                });
                 var
             }
         }
     }
 
-    fn with_base_data_unify_with(
+    /// Helper function:
+    ///
+    /// The operation `op` requires the base data of `base` but it was not
+    /// available when we first looked, so we created a dummy intermediate
+    /// value `output_val`. We now think that `base` may have been inferred,
+    /// so check again: if so, invoke `op` and invoke `equate` to combine the
+    /// result with `output_val`. If not, enqueue us up for later.
+    fn with_base_data_unify_with<O: 'static>(
         &mut self,
-        cause: hir::MetaIndex,
         base: F::Base,
-        output_ty: Ty<F>,
-        op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
+        output_val: O,
+        op: impl FnOnce(&mut Self, BaseData<F>) -> O + 'static,
+        equate: impl Fn(&mut Self, O, O) + Copy + 'static,
     ) {
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => {
-                let ty1 = op(self, data);
-                self.equate_types(cause, output_ty, ty1);
+                let val1 = op(self, data);
+                equate(self, output_val, val1);
             }
 
             Err(_) => self.enqueue_op(Some(base), move |this| {
-                this.with_base_data_unify_with(cause, base, output_ty, op)
+                this.with_base_data_unify_with(base, output_val, op, equate)
             }),
         }
     }
