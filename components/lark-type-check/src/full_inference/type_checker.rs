@@ -33,6 +33,7 @@ use lark_ty::Ty;
 
 /// The full-inference-specific data stored in the type-checker when
 /// doing full inference.
+#[derive(Default)]
 crate struct FullInferenceStorage {
     /// Set of all permission veriables created. Right now we don't
     /// keep any information about them in particular.

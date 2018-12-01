@@ -99,6 +99,7 @@ salsa::database_storage! {
         }
         impl lark_type_check::TypeCheckDatabase {
             fn base_type_check() for lark_type_check::BaseTypeCheckQuery;
+            fn full_type_check() for lark_type_check::FullTypeCheckQuery;
         }
         impl mir::MirDatabase {
             fn fn_bytecode() for mir::FnBytecodeQuery;

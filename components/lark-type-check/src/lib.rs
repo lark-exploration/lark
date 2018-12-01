@@ -19,6 +19,7 @@ use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
+use lark_ty::full_inferred::FullInferred;
 use lark_ty::map_family::{FamilyMapper, Map};
 use lark_ty::BaseData;
 use lark_ty::Generics;
@@ -46,6 +47,13 @@ salsa::query_group! {
         fn base_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
             type BaseTypeCheckQuery;
             use fn query_definitions::base_type_check;
+        }
+
+        /// Compute the "base type information" for a given fn body.
+        /// This is the type information excluding permissions.
+        fn full_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<FullInferred>>> {
+            type FullTypeCheckQuery;
+            use fn query_definitions::full_type_check;
         }
     }
 }
