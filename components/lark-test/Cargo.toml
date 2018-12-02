@@ -17,4 +17,8 @@ lark-seq = { path = "../lark-seq" }
 lark-span = { path = "../lark-span" }
 lark-string = { path = "../lark-string" }
 lark-collections = { path = "../lark-collections" }
+lazy_static = "1.2.0"
+rayon = "1.0.3"
+regex = "1"
 salsa = "0.8.0"
+walkdir = "2.2.7"

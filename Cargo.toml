@@ -66,3 +66,7 @@ lark-test = { path = "components/lark-test" }
 lark-entity = { path = "components/lark-entity" }
 lark-parser = { path = "components/lark-parser" }
 env_logger = "0.5.13"
+walkdir = "2.2.7"
+rayon = "1.0.3"
+regex = "1"
+lazy_static = "1.2.0"

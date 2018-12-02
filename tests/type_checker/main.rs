@@ -1,22 +1,6 @@
 use lark_test::*;
 
 #[test]
-fn bad_identifier() {
-    run_test(
-        "def new(msg: bool,) -> bool { msg1 }",
-        "                              ~~~~",
-    );
-}
-
-#[test]
-fn bad_callee() {
-    run_test(
-        "def foo(msg: bool,) -> bool { bar(msg) }",
-        "                              ~~~",
-    );
-}
-
-#[test]
 fn correct_call() {
     run_test(
         "def foo(msg: bool,) { bar(msg) } def bar(arg:bool,) { }",
