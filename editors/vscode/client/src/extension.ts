@@ -20,10 +20,10 @@ export function activate(context: ExtensionContext) {
 	let serverPath;
 
 	if (isWin) {
-		serverPath = context.asAbsolutePath(path.join("..", "target", "debug", "lark.exe"));
+		serverPath = context.asAbsolutePath(path.join("..", "..", "target", "debug", "lark.exe"));
 	}
 	else {
-		serverPath = context.asAbsolutePath(path.join("..", "target", "debug", "lark"));
+		serverPath = context.asAbsolutePath(path.join("..", "..", "target", "debug", "lark"));
 	}
 	let serverOptions: ServerOptions = {
 		run: { command: serverPath, args: ["ide"], options: { env: { "RUST_BACKTRACE": 1 } } },
