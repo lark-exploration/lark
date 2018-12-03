@@ -1,6 +1,8 @@
 use crate::harness::test::TestContext;
 use lark_query_system::ls_ops::Cancelled;
 use lark_query_system::ls_ops::LsDatabase;
+use lark_query_system::ls_ops::RangedDiagnostic;
+use std::collections::HashMap;
 
 impl TestContext<'_> {
     crate fn run_compilation_test(&self, expect_error: bool) {
@@ -13,7 +15,10 @@ impl TestContext<'_> {
             Err(Cancelled) => panic!("encountered cancellation in unit test"),
         };
 
-        // Compute the errors to the ones we expect to see.
+        self.compare_errors_against_expected(errors);
+    }
+
+    fn compare_errors_against_expected(&self, errors: HashMap<String, Vec<RangedDiagnostic>>) {
         let mut expected_errors: Vec<_> = self.options.expected_errors.iter().collect();
         let mut unexpected_errors = vec![];
         for (file_name, errors) in errors {
