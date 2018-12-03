@@ -11,7 +11,7 @@ use std::io::{stdin, stdout, Write};
 const REPL_FILENAME: &str = "__REPL__.lark";
 
 pub fn get_bytecode(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
 ) -> lark_error::WithError<std::sync::Arc<lark_mir::FnBytecode>> {
     let main_name = "main".intern(&db);
     let repl_filename = REPL_FILENAME.intern(&db);

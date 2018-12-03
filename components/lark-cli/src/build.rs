@@ -45,10 +45,9 @@ pub fn build(file_name: &str, output_file_name: Option<&str>) {
     db.add_file(file_id, contents);
 
     let writer = StandardStream::stderr(ColorChoice::Auto);
-    let error_count = match db.display_errors(&mut writer.lock()) {
-        Ok(n) => n,
-        Err(Cancelled) => panic!("cancelled at CLI?"),
-    };
+    let error_count = db
+        .display_errors(&mut writer.lock())
+        .unwrap_or_else(|Cancelled| panic!("cancelled"));
 
     if error_count == 0 {
         let out_file_name = if let Some(path) = output_file_name {
@@ -63,22 +62,32 @@ pub fn build(file_name: &str, output_file_name: Option<&str>) {
             file_path.file_name().unwrap().to_str().unwrap().to_string()
         };
 
-        let source_file = lark_build::codegen(&mut db, lark_build::CodegenType::Rust);
-
-        lark_build::build(
-            &out_file_name,
-            &source_file.value,
-            lark_build::CodegenType::Rust,
-        )
-        .unwrap();
+        db.build(&out_file_name)
+            .unwrap_or_else(|Cancelled| panic!("cancelled"));
     }
 }
 
 pub trait LarkDatabaseExt {
     fn display_errors(&self, out: impl WriteColor) -> Result<usize, Cancelled>;
+
+    /// Build an executable into `output_file_name`.
+    fn build(&self, output_file_name: &str) -> Result<(), Cancelled>;
 }
 
 impl LarkDatabaseExt for LarkDatabase {
+    fn build(&self, output_file_name: &str) -> Result<(), Cancelled> {
+        let source_file = lark_build::codegen(self, lark_build::CodegenType::Rust);
+
+        lark_build::build(
+            &output_file_name,
+            &source_file.value,
+            lark_build::CodegenType::Rust,
+        )
+        .unwrap();
+
+        Ok(())
+    }
+
     /// Displays all errors for the project on stderr. Returns `Ok(n)` where
     /// n is the number of errors (or `Cancelled` if execution is cancelled).
     fn display_errors(&self, mut out: impl WriteColor) -> Result<usize, Cancelled> {
