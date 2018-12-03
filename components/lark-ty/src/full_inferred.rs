@@ -7,9 +7,9 @@ use crate::Erased;
 use crate::Placeholder;
 use crate::ReprKind;
 use crate::TypeFamily;
-use debug::{DebugWith, FmtWithSpecialized};
-use intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
+use lark_debug_with::{DebugWith, FmtWithSpecialized};
+use lark_intern::{Intern, Untern};
 use std::fmt;
 
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
@@ -38,11 +38,11 @@ impl TypeFamily for FullInferred {
     }
 }
 
-indices::index_type! {
+lark_indices::index_type! {
     pub struct Base { .. }
 }
 
-debug::debug_fallback_impl!(Base);
+lark_debug_with::debug_fallback_impl!(Base);
 
 impl<Cx> FmtWithSpecialized<Cx> for Base
 where
@@ -53,7 +53,7 @@ where
     }
 }
 
-intern::intern_tables! {
+lark_intern::intern_tables! {
     pub struct FullInferredTables {
         struct FullInferredTablesData {
             full_inferred_base: map(Base, BaseData<FullInferred>),
