@@ -17,7 +17,7 @@
 use flexi_logger::{opt_format, Logger};
 use std::{env, io};
 
-mod build;
+pub mod build;
 mod ide;
 mod repl;
 mod run;

@@ -19,9 +19,9 @@ use std::fs::File;
 use std::io::Read;
 use std::sync::Arc;
 use std::{env, io};
-use termcolor::{ColorChoice, StandardStream};
+use termcolor::{ColorChoice, StandardStream, WriteColor};
 
-pub(crate) fn build(file_name: &str, output_file_name: Option<&str>) {
+pub fn build(file_name: &str, output_file_name: Option<&str>) {
     let mut file = match File::open(file_name) {
         Ok(f) => f,
         Err(err) => {
@@ -44,65 +44,74 @@ pub(crate) fn build(file_name: &str, output_file_name: Option<&str>) {
     let file_id: FileName = file_name.into_file_name(&db);
     db.add_file(file_id, contents);
 
-    match db.errors_for_project() {
-        Ok(errors) => {
-            let mut first = true;
-            let mut error_count = 0;
+    let writer = StandardStream::stderr(ColorChoice::Auto);
+    let error_count = match db.display_errors(&mut writer.lock()) {
+        Ok(n) => n,
+        Err(Cancelled) => panic!("cancelled at CLI?"),
+    };
 
-            for (_filename, ranged_diagnostics) in errors {
-                for ranged_diagnostic in ranged_diagnostics {
-                    error_count += 1;
-                    if !std::mem::replace(&mut first, false) {
-                        eprintln!("");
-                    }
+    if error_count == 0 {
+        let out_file_name = if let Some(path) = output_file_name {
+            path.to_string()
+        } else {
+            let file_path = if cfg!(windows) {
+                std::path::Path::new(file_name).with_extension("exe")
+            } else {
+                std::path::Path::new(file_name).with_extension("")
+            };
 
-                    let range = ranged_diagnostic.range;
-                    let error = Diagnostic::new(Severity::Error, ranged_diagnostic.label);
+            file_path.file_name().unwrap().to_str().unwrap().to_string()
+        };
 
-                    let span = Span::new(
-                        file_id,
-                        db.byte_index(file_id, range.start.line, range.start.character),
-                        db.byte_index(file_id, range.end.line, range.end.character),
-                    );
+        let source_file = lark_build::codegen(&mut db, lark_build::CodegenType::Rust);
 
-                    let error = error.with_label(Label::new_primary(span));
+        lark_build::build(
+            &out_file_name,
+            &source_file.value,
+            lark_build::CodegenType::Rust,
+        )
+        .unwrap();
+    }
+}
 
-                    let writer = StandardStream::stderr(ColorChoice::Auto);
+pub trait LarkDatabaseExt {
+    fn display_errors(&mut self, out: impl WriteColor) -> Result<usize, Cancelled>;
+}
 
-                    emit(
-                        &mut writer.lock(),
-                        &&db,
-                        &error,
-                        &language_reporting::DefaultConfig,
-                    )
-                    .unwrap();
+impl LarkDatabaseExt for LarkDatabase {
+    /// Displays all errors for the project on stderr. Returns `Ok(n)` where
+    /// n is the number of errors (or `Cancelled` if execution is cancelled).
+    fn display_errors(&mut self, mut out: impl WriteColor) -> Result<usize, Cancelled> {
+        let db = self;
+
+        let errors = db.errors_for_project()?;
+        let mut first = true;
+        let mut error_count = 0;
+
+        for (file_name, ranged_diagnostics) in errors {
+            let file_id: FileName = file_name.into_file_name(&db);
+
+            for ranged_diagnostic in ranged_diagnostics {
+                error_count += 1;
+                if !std::mem::replace(&mut first, false) {
+                    eprintln!("");
                 }
-            }
 
-            if error_count == 0 {
-                let out_file_name = if let Some(path) = output_file_name {
-                    path.to_string()
-                } else {
-                    let file_path = if cfg!(windows) {
-                        std::path::Path::new(file_name).with_extension("exe")
-                    } else {
-                        std::path::Path::new(file_name).with_extension("")
-                    };
+                let range = ranged_diagnostic.range;
+                let error = Diagnostic::new(Severity::Error, ranged_diagnostic.label);
 
-                    file_path.file_name().unwrap().to_str().unwrap().to_string()
-                };
+                let span = Span::new(
+                    file_id,
+                    db.byte_index(file_id, range.start.line, range.start.character),
+                    db.byte_index(file_id, range.end.line, range.end.character),
+                );
 
-                let source_file = lark_build::codegen(&mut db, lark_build::CodegenType::Rust);
+                let error = error.with_label(Label::new_primary(span));
 
-                lark_build::build(
-                    &out_file_name,
-                    &source_file.value,
-                    lark_build::CodegenType::Rust,
-                )
-                .unwrap();
+                emit(&mut out, &&*db, &error, &language_reporting::DefaultConfig).unwrap();
             }
         }
 
-        Err(Cancelled) => unreachable!("cancellation?"),
+        Ok(error_count)
     }
 }
