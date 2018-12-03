@@ -15,7 +15,7 @@ impl TestContext<'_> {
             .expect("Failed to run compile test");
         let test_output = String::from_utf8(cmd.stdout).unwrap();
 
-        self.compare_reference_contents("exe", test_output.as_bytes());
+        self.compare_reference_contents("build", test_output.as_bytes());
     }
 
     crate fn run_eval(&self) {
