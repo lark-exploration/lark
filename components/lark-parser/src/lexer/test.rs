@@ -66,6 +66,8 @@ fn test_quicklex() -> Result<(), Span<CurrentFile>> {
             0011111234444445 Whitespace Identifier Sigil Whitespace Identifier Sigil
             } 22 1_000
             0122344444 Sigil Whitespace Integer Whitespace Integer
+            ////foo bar baz
+            000000000000000 Comment
             "##,
     );
 
