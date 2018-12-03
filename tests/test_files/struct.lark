@@ -1,3 +1,5 @@
+//~ mode:all
+
 struct Foo {
     bar: bool,
 }

@@ -1,1 +1,4 @@
-def foo(x: bool, y: uint) -> bool { y }
+def foo(x: bool, y: uint) -> bool {
+  y
+  //~ ERROR
+}

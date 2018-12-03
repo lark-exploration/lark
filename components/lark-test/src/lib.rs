@@ -14,6 +14,7 @@ use std::fmt::Debug;
 mod harness;
 pub use harness::run_test_harness;
 pub use harness::search_files;
+pub use harness::TestPath;
 
 pub use lark_debug_with::DebugWith;
 pub use lark_span::IntoFileName;

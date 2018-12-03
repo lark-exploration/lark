@@ -1,0 +1,12 @@
+[package]
+name = "lark-test-generate"
+version = "0.1.0"
+authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+lark-test = { path = "../lark-test" }
+unindent = "0.1.3"

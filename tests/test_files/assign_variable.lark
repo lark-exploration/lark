@@ -1,3 +1,5 @@
+//~ mode:all
+
 def main() {
     let x = true
     debug(x)

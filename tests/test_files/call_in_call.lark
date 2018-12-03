@@ -1,3 +1,5 @@
+//~ mode:all
+
 def id(x: bool,) -> bool {
     x
 }
