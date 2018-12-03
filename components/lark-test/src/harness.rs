@@ -12,11 +12,14 @@ mod test;
 use test::TestContext;
 
 pub struct TestPath {
-    pub path: PathBuf,
+    pub relative_test_path: PathBuf,
+    pub test_path: PathBuf,
     pub is_dir: bool,
 }
 
-pub fn search_files(root_path: &Path) -> Vec<TestPath> {
+pub fn search_files(root_path: impl AsRef<Path>) -> Vec<TestPath> {
+    let root_path: &Path = root_path.as_ref();
+
     let mut iterator = WalkDir::new(root_path).into_iter();
 
     // Search for all files (or directories!) named `.lark`.  Those
@@ -44,8 +47,23 @@ pub fn search_files(root_path: &Path) -> Vec<TestPath> {
                 iterator.skip_current_dir();
             }
 
+            let test_path = entry.into_path();
+
+            let relative_test_path = test_path
+                .strip_prefix(root_path)
+                .unwrap_or_else(|err| {
+                    panic!(
+                        "failed to strip prefix `{}` from `{}`: {}",
+                        root_path.display(),
+                        test_path.display(),
+                        err
+                    )
+                })
+                .to_owned();
+
             test_paths.push(TestPath {
-                path: entry.into_path(),
+                test_path,
+                relative_test_path,
                 is_dir,
             });
         }
@@ -54,19 +72,15 @@ pub fn search_files(root_path: &Path) -> Vec<TestPath> {
     test_paths
 }
 
-/// Runs the test harness against a given test file:
-///
-/// - `base_path` -- the path where test files are found (`tests/test_files`)
-/// - `test_path` -- path to an individual file (`tests/test_files/foo/bar.lark`)
-/// - `is_dir` -- true if `test_path` is a directory
-/// - `bless_mode` -- if true, generate reference files with content
+/// Runs the test harness against a given test file. The first few arguments
+/// are the fields from `TestPath`.
 pub fn run_test_harness(
-    base_path: impl AsRef<Path>,
+    relative_test_path: impl AsRef<Path>,
     test_path: impl AsRef<Path>,
     is_dir: bool,
     bless_mode: bool,
 ) {
-    let base_path: &Path = base_path.as_ref();
+    let relative_test_path: &Path = relative_test_path.as_ref();
     let test_path: &Path = test_path.as_ref();
 
     if is_dir {
@@ -75,15 +89,6 @@ pub fn run_test_harness(
     }
 
     eprintln!("Test file: `{}`", test_path.display());
-
-    let relative_test_path = test_path.strip_prefix(base_path).unwrap_or_else(|err| {
-        panic!(
-            "failed to strip prefix `{}` from `{}`: {}",
-            base_path.display(),
-            test_path.display(),
-            err
-        )
-    });
 
     let test_name = relative_test_path.with_extension("").display().to_string();
 
