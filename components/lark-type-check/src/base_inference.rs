@@ -32,6 +32,8 @@ use lark_unify::{InferVar, Inferable};
 
 crate mod query_definition;
 
+mod resolve_to_base_inferred;
+
 /// Type family for "base inference" -- inferring just the base types.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct BaseInference;

@@ -36,7 +36,6 @@ mod base_inference;
 mod full_inference;
 mod hir_typeck;
 mod ops;
-mod resolve_to_base_inferred;
 mod substitute;
 
 salsa::query_group! {

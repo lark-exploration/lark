@@ -1,5 +1,5 @@
+use crate::base_inference::resolve_to_base_inferred::ResolveToBaseInferred;
 use crate::base_inference::{BaseInference, BaseInferenceTables};
-use crate::resolve_to_base_inferred::ResolveToBaseInferred;
 use crate::TypeCheckDatabase;
 use crate::TypeCheckResults;
 use crate::TypeChecker;
