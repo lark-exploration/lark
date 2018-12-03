@@ -10,7 +10,7 @@ pub enum CodegenType {
 }
 
 /// Converts the MIR context of definitions into the chosen source type
-pub fn codegen(db: &mut LarkDatabase, codegen_type: CodegenType) -> WithError<String> {
+pub fn codegen(db: &LarkDatabase, codegen_type: CodegenType) -> WithError<String> {
     match codegen_type {
         CodegenType::Rust => codegen_rust::codegen_rust(db),
         //CodegenType::C => codegen_c::codegen_c(context),

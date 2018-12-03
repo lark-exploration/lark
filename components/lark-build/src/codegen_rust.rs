@@ -10,7 +10,7 @@ use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::LarkDatabase;
 use lark_ty::Ty;
 
-pub fn build_type(db: &mut LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>) -> String {
+pub fn build_type(db: &LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>) -> String {
     let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(db);
     let uint_entity = EntityData::LangItem(LangItem::Uint).intern(db);
     let void_entity = EntityData::LangItem(LangItem::Tuple(0)).intern(db);
@@ -35,7 +35,7 @@ pub fn build_type(db: &mut LarkDatabase, ty: &Ty<lark_ty::declaration::Declarati
 }
 
 fn build_variable_name(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
     variable: lark_mir::Variable,
 ) -> String {
@@ -45,7 +45,7 @@ fn build_variable_name(
 }
 
 fn build_entity_name(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     _fn_bytecode: &std::sync::Arc<FnBytecode>,
     entity: Entity,
 ) -> String {
@@ -60,7 +60,7 @@ fn build_entity_name(
 }
 
 pub fn build_place(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
     place: Place,
 ) -> String {
@@ -80,7 +80,7 @@ pub fn build_place(
 }
 
 fn build_operand(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
     operand: Operand,
 ) -> String {
@@ -95,7 +95,7 @@ fn build_operand(
 }
 
 pub fn codegen_struct(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     entity: Entity,
     id: lark_string::GlobalIdentifier,
 ) -> WithError<String> {
@@ -125,7 +125,7 @@ pub fn codegen_struct(
 }
 
 pub fn codegen_rvalue(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
     rvalue: Rvalue,
     output: &mut String,
@@ -180,7 +180,7 @@ pub fn codegen_rvalue(
 }
 
 pub fn codegen_statement(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     statement: Statement,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
     output: &mut String,
@@ -208,7 +208,7 @@ pub fn codegen_statement(
 }
 
 pub fn codegen_basic_block(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &std::sync::Arc<FnBytecode>,
     basic_block: BasicBlock,
     output: &mut String,
@@ -228,7 +228,7 @@ pub fn codegen_basic_block(
 }
 
 pub fn codegen_function(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     entity: Entity,
     id: lark_string::GlobalIdentifier,
 ) -> WithError<String> {
@@ -281,7 +281,7 @@ pub fn codegen_function(
 }
 
 /// Converts the MIR context of definitions into Rust source
-pub fn codegen_rust(db: &mut LarkDatabase) -> WithError<String> {
+pub fn codegen_rust(db: &LarkDatabase) -> WithError<String> {
     let mut output = String::new();
     let input_files = db.file_names();
     let mut errors: Vec<Diagnostic> = vec![];
