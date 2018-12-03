@@ -7,12 +7,14 @@ edition = "2018"
 [dependencies]
 diff = "0.1.0"
 env_logger = "0.5.13"
+languageserver-types = "0.51.0"
 lark-debug-with = { path = "../lark-debug-with" }
 lark-cli = { path = "../lark-cli" }
 lark-error = { path = "../lark-error" }
 lark-eval = { path = "../lark-eval" }
 lark-hir = { path = "../lark-hir" }
 lark-intern = { path = "../lark-intern" }
+lark-language-server = { path = "../lark-language-server" }
 lark-query-system = { path = "../lark-query-system" }
 lark-parser = { path = "../lark-parser" }
 lark-seq = { path = "../lark-seq" }
@@ -23,5 +25,8 @@ lazy_static = "1.2.0"
 rayon = "1.0.3"
 regex = "1"
 salsa = "0.8.0"
+serde = "1"
+serde_json = "1"
 termcolor = "1.0.4"
+url = "1.7"
 walkdir = "2.2.7"

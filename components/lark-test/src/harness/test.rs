@@ -7,6 +7,7 @@ use std::path::Path;
 
 mod compilation_test;
 mod execution_test;
+mod ls_test;
 mod util;
 
 crate struct TestContext<'me> {
@@ -59,5 +60,9 @@ impl TestContext<'_> {
                 self.run_eval();
             }
         }
+
+        self.test_language_server().unwrap_or_else(|err| {
+            panic!("language server failed: {}", err);
+        });
     }
 }
