@@ -40,10 +40,10 @@ crate struct FullInferenceStorage {
     perm_vars: IndexVec<PermVar, ()>,
 
     /// Constraints we have created during type-checking thus far.
-    constraints: FxIndexSet<ConstraintAt>,
+    crate constraints: FxIndexSet<ConstraintAt>,
 
     /// Results we have generated thus far.
-    results: TypeCheckResults<FullInference>,
+    crate results: TypeCheckResults<FullInference>,
 }
 
 impl FullInferenceStorage {

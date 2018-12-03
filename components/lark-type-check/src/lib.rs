@@ -53,7 +53,7 @@ salsa::query_group! {
         /// This is the type information excluding permissions.
         fn full_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<FullInferred>>> {
             type FullTypeCheckQuery;
-            use fn query_definitions::full_type_check;
+            use fn full_inference::query_definition::full_type_check;
         }
     }
 }

@@ -14,16 +14,20 @@ use lark_ty::TypeFamily;
 
 crate mod apply_perm;
 
-crate mod constraint;
-
 /// Defines the `Base` type that represents base types.
 crate mod base;
 use base::Base;
+
+crate mod constraint;
+
+crate mod datafrog;
 
 /// Defines the `Perm` type that represents permissions.
 crate mod perm;
 use perm::Perm;
 use perm::PermData;
+
+crate mod query_definition;
 
 /// Implements the `TypeCheckerFamilyDependentExt` methods along with substitution.
 crate mod type_checker;
