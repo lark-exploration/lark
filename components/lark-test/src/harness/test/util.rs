@@ -44,11 +44,20 @@ impl TestContext<'_> {
         Some(contents)
     }
 
-    crate fn compare_reference_contents(&self, extension: &str, actual_bytes: &[u8]) {
-        let actual_str = match std::str::from_utf8(actual_bytes) {
-            Ok(s) => s,
+    crate fn compare_reference_contents(
+        &self,
+        extension: &str,
+        actual_bytes: &[u8],
+        normalize_paths: bool,
+    ) {
+        let mut actual_str = match std::str::from_utf8(actual_bytes) {
+            Ok(s) => s.to_string(),
             Err(utf8_error) => panic!("actual output not utf8: `{}`", utf8_error),
         };
+
+        if normalize_paths {
+            actual_str = actual_str.replace("\\", "/");
+        }
 
         let reference_path = self.reference_path(extension);
 

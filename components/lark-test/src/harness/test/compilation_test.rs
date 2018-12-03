@@ -67,6 +67,6 @@ impl TestContext<'_> {
             .display_errors(NoColor::new(&mut buffer))
             .unwrap_or_else(|Cancelled| panic!("cancelled?"));
 
-        self.compare_reference_contents("stderr", &buffer);
+        self.compare_reference_contents("stderr", &buffer, true);
     }
 }
