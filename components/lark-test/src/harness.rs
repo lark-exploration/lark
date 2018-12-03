@@ -8,6 +8,8 @@ use walkdir::WalkDir;
 mod options;
 use options::TestOptions;
 
+mod self_test;
+
 mod test;
 use test::TestContext;
 

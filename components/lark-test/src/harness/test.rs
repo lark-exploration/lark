@@ -45,7 +45,7 @@ impl TestContext<'_> {
         match self.options.execution_mode {
             None => {
                 if self.options.expected_errors.is_empty() {
-                    panic!("no expected errors found, but no `//~ mode` comment")
+                    panic!("no expected errors found, but no `execute` comment")
                 }
             }
             Some(ExecutionMode::No) => {}
