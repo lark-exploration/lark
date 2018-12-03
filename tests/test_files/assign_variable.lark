@@ -1,4 +1,4 @@
-//~ mode:all
+//~ execute:all
 
 def main() {
     let x = true

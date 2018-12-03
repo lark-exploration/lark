@@ -1,4 +1,4 @@
-//~ mode:all
+//~ execute:all
 
 struct Foo {
     bar: bool

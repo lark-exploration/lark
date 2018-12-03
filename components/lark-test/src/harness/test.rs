@@ -48,15 +48,15 @@ impl TestContext<'_> {
                     panic!("no expected errors found, but no `//~ mode` comment")
                 }
             }
-            Some(ExecutionMode::Compile) => {}
-            Some(ExecutionMode::Executable) => {
-                self.run_executable();
+            Some(ExecutionMode::No) => {}
+            Some(ExecutionMode::Build) => {
+                self.build_and_run_executable();
             }
             Some(ExecutionMode::Eval) => {
                 self.run_eval();
             }
             Some(ExecutionMode::All) => {
-                self.run_executable();
+                self.build_and_run_executable();
                 self.run_eval();
             }
         }

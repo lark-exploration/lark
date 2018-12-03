@@ -1,4 +1,4 @@
-//~ mode:all
+//~ execute:all
 
 def id(x: bool,) -> bool {
     x

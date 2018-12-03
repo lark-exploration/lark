@@ -21,8 +21,8 @@ crate struct TestOptions {
 
 #[derive(Debug)]
 crate enum ExecutionMode {
-    Compile,
-    Executable,
+    No,
+    Build,
     Eval,
     All,
 }
@@ -101,10 +101,10 @@ impl TestOptions {
                 }
             }
 
-            "mode" => {
+            "execute" => {
                 self.execution_mode = Some(match value.trim() {
-                    "compile" => ExecutionMode::Compile,
-                    "executable" => ExecutionMode::Executable,
+                    "no" => ExecutionMode::No,
+                    "build" => ExecutionMode::Build,
                     "eval" => ExecutionMode::Eval,
                     "all" => ExecutionMode::All,
                     _ => return Err(format!("unexpected compilation mode: `{}`", value.trim())),

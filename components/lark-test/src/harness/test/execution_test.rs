@@ -4,7 +4,7 @@ use lark_query_system::ls_ops::Cancelled;
 use std::process::Command;
 
 impl TestContext<'_> {
-    crate fn run_executable(&self) {
+    crate fn build_and_run_executable(&self) {
         let exe_path = self.executable_path();
         self.db
             .build(exe_path.to_str().unwrap())

@@ -1,4 +1,4 @@
-//~ mode:all
+//~ execute:all
 
 def print_bool(x: bool,) {
     debug(x)
