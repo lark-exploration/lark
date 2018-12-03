@@ -3,21 +3,17 @@ use std::path::Path;
 
 #[derive(Debug, Default)]
 crate struct TestOptions {
-    crate mode: TestMode,
     crate skip_test: Option<String>,
     crate expected_errors: Vec<ExpectedError>,
+    crate execution_mode: Option<ExecutionMode>,
 }
 
 #[derive(Debug)]
-crate enum TestMode {
-    Compilation { error: bool },
-    Execute,
-}
-
-impl Default for TestMode {
-    fn default() -> Self {
-        TestMode::Compilation { error: true }
-    }
+crate enum ExecutionMode {
+    Compile,
+    Executable,
+    Eval,
+    All,
 }
 
 #[derive(Clone, Debug)]
@@ -87,12 +83,13 @@ impl TestOptions {
             }
 
             "mode" => {
-                self.mode = match value.trim() {
-                    "compile_fail" => TestMode::Compilation { error: true },
-                    "compile_pass" => TestMode::Compilation { error: false },
-                    "run_pass" => TestMode::Execute,
+                self.execution_mode = Some(match value.trim() {
+                    "compile" => ExecutionMode::Compile,
+                    "executable" => ExecutionMode::Executable,
+                    "eval" => ExecutionMode::Eval,
+                    "all" => ExecutionMode::All,
                     _ => return Err(format!("unexpected compilation mode: `{}`", value.trim())),
-                };
+                });
                 Ok(())
             }
 

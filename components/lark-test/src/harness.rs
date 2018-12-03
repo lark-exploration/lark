@@ -54,30 +54,43 @@ pub fn search_files(root_path: &Path) -> Vec<TestPath> {
     test_paths
 }
 
-pub fn run_test_harness(path: impl AsRef<Path>, is_dir: bool, bless_mode: bool) {
+/// Runs the test harness against a given test file:
+///
+/// - `base_path` -- the path where test files are found (`tests/test_files`)
+/// - `test_path` -- path to an individual file (`tests/test_files/foo/bar.lark`)
+/// - `is_dir` -- true if `test_path` is a directory
+/// - `bless_mode` -- if true, generate reference files with content
+pub fn run_test_harness(
+    base_path: impl AsRef<Path>,
+    test_path: impl AsRef<Path>,
+    is_dir: bool,
+    bless_mode: bool,
+) {
+    let base_path: &Path = base_path.as_ref();
+    let test_path: &Path = test_path.as_ref();
+
     if is_dir {
         // this is meant to be a manifest tes
         unimplemented!("test directories");
     }
 
-    let test_path = &TestPath {
-        path: path.as_ref().to_owned(),
-        is_dir,
-    };
+    eprintln!("Test file: `{}`", test_path.display());
 
-    eprintln!("Test file: `{}`", test_path.path.display());
+    let relative_test_path = test_path.strip_prefix(base_path).unwrap_or_else(|err| {
+        panic!(
+            "failed to strip prefix `{}` from `{}`: {}",
+            base_path.display(),
+            test_path.display(),
+            err
+        )
+    });
 
-    let test_name = test_path
-        .path
-        .file_name()
-        .unwrap()
-        .to_string_lossy()
-        .into_owned();
+    let test_name = relative_test_path.with_extension("").display().to_string();
 
-    let file_contents = fs::read_to_string(&test_path.path)
-        .unwrap_or_else(|err| panic!("error reading `{}`: {}", test_path.path.display(), err));
+    let file_contents = fs::read_to_string(&test_path)
+        .unwrap_or_else(|err| panic!("error reading `{}`: {}", test_path.display(), err));
 
-    let options = TestOptions::from_source_text(&test_path.path, &file_contents);
+    let options = TestOptions::from_source_text(&test_path, &file_contents);
 
     eprintln!("Options: {:?}", options);
 
@@ -93,6 +106,7 @@ pub fn run_test_harness(path: impl AsRef<Path>, is_dir: bool, bless_mode: bool) 
         bless_mode,
         test_name,
         test_path,
+        relative_test_path: &relative_test_path,
         db,
         options,
     }

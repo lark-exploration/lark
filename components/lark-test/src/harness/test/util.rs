@@ -9,7 +9,25 @@ impl TestContext<'_> {
     /// `foo.lark`, and we invoke this with `stderr`, would
     /// create `foo.stderr`.
     crate fn reference_path(&self, extension: &str) -> PathBuf {
-        self.test_path.path.with_extension(extension)
+        self.test_path.with_extension(extension)
+    }
+
+    crate fn executable_path(&self) -> PathBuf {
+        if cfg!(windows) {
+            self.output_path("exe")
+        } else {
+            self.output_path("")
+        }
+    }
+
+    /// Generates a path for an output file with the given extension.
+    crate fn output_path(&self, extension: &str) -> PathBuf {
+        // For now, use `/tmp`, but it would be better I think to use
+        // the cargo target directory perhaps?
+
+        let dir = std::env::temp_dir();
+        let out_path = std::path::Path::new(self.relative_test_path).with_extension(extension);
+        dir.join(out_path)
     }
 
     /// Load the contents of the reference file with the given extension.
@@ -34,14 +52,14 @@ impl TestContext<'_> {
 
         let reference_path = self.reference_path(extension);
 
-        let reference_contents = self.file_contents(&reference_path);
-
         if self.bless_mode {
             match fs::write(&reference_path, actual_bytes) {
                 Ok(()) => {}
                 Err(err) => panic!("failed to write `{}`: {}", reference_path.display(), err,),
             }
         }
+
+        let reference_contents = self.file_contents(&reference_path);
 
         let reference_str = reference_contents.unwrap_or(String::new());
         if actual_str != reference_str {
