@@ -44,8 +44,6 @@ crate struct FullInferenceStorage {
 
     /// Results we have generated thus far.
     results: TypeCheckResults<FullInference>,
-
-    access_permissions: std::collections::BTreeMap<hir::Expression, Perm>,
 }
 
 impl FullInferenceStorage {
@@ -78,6 +76,7 @@ where
 
         // Record the permission used at `expression` for later.
         self.storage
+            .results
             .access_permissions
             .insert(expression, perm_access);
 

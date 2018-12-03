@@ -202,6 +202,8 @@ pub struct TypeCheckResults<F: TypeFamily> {
     /// - `Foo { a: b }` -- attached to the identifier `a`, entity of the field
     /// - `foo` -- when an identifier refers to an entity
     entities: std::collections::BTreeMap<hir::MetaIndex, Entity>,
+
+    access_permissions: std::collections::BTreeMap<hir::Expression, F::Perm>,
 }
 
 impl<F: TypeFamily> TypeCheckResults<F> {
@@ -260,6 +262,7 @@ impl<F: TypeFamily> Default for TypeCheckResults<F> {
             types: Default::default(),
             generics: Default::default(),
             entities: Default::default(),
+            access_permissions: Default::default(),
         }
     }
 }
@@ -268,6 +271,7 @@ impl<S, T> Map<S, T> for TypeCheckResults<S>
 where
     S: TypeFamily,
     T: TypeFamily,
+    S::Perm: Map<S, T, Output = T::Perm>,
 {
     type Output = TypeCheckResults<T>;
 
@@ -276,11 +280,13 @@ where
             types,
             generics,
             entities,
+            access_permissions,
         } = self;
         TypeCheckResults {
             types: types.map(mapper),
             generics: generics.map(mapper),
             entities: entities.map(mapper),
+            access_permissions: access_permissions.map(mapper),
         }
     }
 }

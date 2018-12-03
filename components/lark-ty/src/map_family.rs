@@ -1,5 +1,6 @@
 use crate::BaseData;
 use crate::BaseKind;
+use crate::Erased;
 use crate::Generic;
 use crate::GenericKind;
 use crate::Generics;
@@ -243,5 +244,17 @@ where
             inputs: inputs.map(mapper),
             output: output.map(mapper),
         }
+    }
+}
+
+impl<S, T> Map<S, T> for Erased
+where
+    S: TypeFamily,
+    T: TypeFamily,
+{
+    type Output = Erased;
+
+    fn map(&self, _mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        *self
     }
 }
