@@ -15,8 +15,10 @@ crate enum LexerState {
     ContinueIdent,
     StringLiteral,
     Sigil,
+    Slash,
     Number,
     Comment(u32),
+    EolComment,
 }
 
 impl LexerDelegateTrait for LexerState {
@@ -33,6 +35,7 @@ impl LexerDelegateTrait for LexerState {
             LexerState::Top => match c {
                 None => LexerNext::EOF,
                 Some(c) => match c {
+                    '/' => LexerNext::begin(Slash),
                     c if UnicodeXID::is_xid_start(c) => LexerNext::begin(StartIdent),
                     c if is_delimiter_sigil_char(c) => {
                         consume(c).and_emit(LexToken::Sigil).and_remain()
@@ -48,6 +51,14 @@ impl LexerDelegateTrait for LexerState {
                     _ if rest.starts_with("/*") => consume_str("/*").and_push(Comment(1)),
                     _ => consume(c).and_emit(LexToken::Error).and_remain(),
                 },
+            },
+
+            LexerState::Slash => match c {
+                None => reconsume()
+                    .and_emit(LexToken::Sigil)
+                    .and_transition(LexerState::Top),
+                Some('/') => reconsume().and_transition(LexerState::EolComment),
+                Some(c) => consume(c).and_transition(LexerState::Sigil),
             },
 
             LexerState::Sigil => match c {
@@ -159,6 +170,16 @@ impl LexerDelegateTrait for LexerState {
                     }
                 }
             }
+
+            LexerState::EolComment => match c {
+                None => reconsume()
+                    .and_emit(LexToken::Comment)
+                    .and_transition(LexerState::Top),
+                Some('\n') => consume('\n')
+                    .and_emit(LexToken::Comment)
+                    .and_transition(LexerState::Top),
+                Some(c) => consume(c).and_remain(),
+            },
         };
 
         out

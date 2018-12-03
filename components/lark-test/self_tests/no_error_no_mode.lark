@@ -1,0 +1,3 @@
+// This test file purposefully has no `ERROR` and no `execute` annotation.
+
+def main() { }

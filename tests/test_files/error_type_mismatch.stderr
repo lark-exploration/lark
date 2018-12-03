@@ -1,0 +1,4 @@
+error: Mismatched types
+- error_type_mismatch:2:2
+2 |   y
+  |   ^

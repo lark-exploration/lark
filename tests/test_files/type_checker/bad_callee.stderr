@@ -1,0 +1,4 @@
+error: unknown identifier `bar`
+- type_checker/bad_callee:2:4
+2 |     bar(msg)
+  |     ^^^

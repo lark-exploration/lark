@@ -63,7 +63,7 @@ impl IOHandler {
 }
 
 pub fn eval_place(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &FnBytecode,
     place: Place,
     variables: &mut HashMap<Variable, Vec<Value>>,
@@ -93,7 +93,7 @@ pub fn eval_place(
 }
 
 pub fn eval_operand(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &FnBytecode,
     operand: Operand,
     variables: &mut HashMap<Variable, Vec<Value>>,
@@ -109,7 +109,7 @@ pub fn eval_operand(
 }
 
 pub fn eval_rvalue(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &FnBytecode,
     rvalue: Rvalue,
     variables: &mut HashMap<Variable, Vec<Value>>,
@@ -188,7 +188,7 @@ pub fn assign_to_variable(
 }
 
 pub fn eval_statement(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &FnBytecode,
     statement: Statement,
     variables: &mut HashMap<Variable, Vec<Value>>,
@@ -217,7 +217,7 @@ pub fn eval_statement(
 }
 
 pub fn eval_basic_block(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &FnBytecode,
     basic_block: BasicBlock,
     variables: &mut HashMap<Variable, Vec<Value>>,
@@ -244,7 +244,7 @@ pub fn eval_basic_block(
 }
 
 pub fn eval_function(
-    db: &mut LarkDatabase,
+    db: &LarkDatabase,
     fn_bytecode: &FnBytecode,
     variables: &mut HashMap<Variable, Vec<Value>>,
     io_handler: &mut IOHandler,
@@ -257,7 +257,7 @@ pub fn eval_function(
     return_value
 }
 
-pub fn eval(db: &mut LarkDatabase, io_handler: &mut IOHandler) {
+pub fn eval(db: &LarkDatabase, io_handler: &mut IOHandler) {
     let input_files = db.file_names();
     //let mut errors: Vec<Diagnostic> = vec![];
 

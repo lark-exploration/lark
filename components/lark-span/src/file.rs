@@ -45,6 +45,18 @@ impl IntoFileName for &str {
     }
 }
 
+impl IntoFileName for &String {
+    fn into_file_name(&self, db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
+        self.as_str().into_file_name(db)
+    }
+}
+
+impl IntoFileName for String {
+    fn into_file_name(&self, db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
+        self.as_str().into_file_name(db)
+    }
+}
+
 impl IntoFileName for GlobalIdentifier {
     fn into_file_name(&self, _db: &dyn AsRef<GlobalIdentifierTables>) -> FileName {
         FileName { id: *self }

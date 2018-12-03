@@ -63,6 +63,12 @@ impl From<String> for Text {
     }
 }
 
+impl From<&String> for Text {
+    fn from(text: &String) -> Self {
+        Text::from(text.to_string())
+    }
+}
+
 impl From<&str> for Text {
     fn from(text: &str) -> Self {
         Text::from(text.to_string())

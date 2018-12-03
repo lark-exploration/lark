@@ -1,0 +1,4 @@
+def new(msg: bool,) -> bool {
+    msg1
+    //~ ERROR: unknown identifier `msg1`
+}
