@@ -35,7 +35,7 @@ crate fn full_type_check(
 
     full_type_checker.check_fn_body();
 
-    let results = datafrog::inference(&full_type_checker, &full_type_checker.storage.constraints);
+    let _results = datafrog::inference(&full_type_checker, &full_type_checker.storage.constraints);
 
     unimplemented!()
 }

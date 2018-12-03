@@ -30,6 +30,8 @@ use lark_ty::Ty;
 use lark_ty::TypeFamily;
 use lark_unify::{InferVar, Inferable};
 
+crate mod query_definition;
+
 /// Type family for "base inference" -- inferring just the base types.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub struct BaseInference;
