@@ -588,6 +588,7 @@ dependencies = [
  "lark-collections 0.1.0",
  "lark-debug-with 0.1.0",
  "lark-error 0.1.0",
+ "lark-eval 0.1.0",
  "lark-hir 0.1.0",
  "lark-intern 0.1.0",
  "lark-parser 0.1.0",

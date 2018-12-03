@@ -10,6 +10,7 @@ env_logger = "0.5.13"
 lark-debug-with = { path = "../lark-debug-with" }
 lark-cli = { path = "../lark-cli" }
 lark-error = { path = "../lark-error" }
+lark-eval = { path = "../lark-eval" }
 lark-hir = { path = "../lark-hir" }
 lark-intern = { path = "../lark-intern" }
 lark-query-system = { path = "../lark-query-system" }
