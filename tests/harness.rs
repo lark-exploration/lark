@@ -2,10 +2,18 @@ use lark_test;
 
 #[test]
 fn bad_identifier() {
-    lark_test::run_test_harness("tests/test_files/type_checker/bad_identifier.lark", false);
+    lark_test::run_test_harness(
+        "tests/test_files/type_checker/bad_identifier.lark",
+        false,
+        std::env::var("LARK_BLESS").is_ok(),
+    );
 }
 
 #[test]
 fn bad_callee() {
-    lark_test::run_test_harness("tests/test_files/type_checker/bad_callee.lark", false);
+    lark_test::run_test_harness(
+        "tests/test_files/type_checker/bad_callee.lark",
+        false,
+        std::env::var("LARK_BLESS").is_ok(),
+    );
 }

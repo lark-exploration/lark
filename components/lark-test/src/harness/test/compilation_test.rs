@@ -1,8 +1,10 @@
 use crate::harness::test::TestContext;
+use lark_cli::build::LarkDatabaseExt;
 use lark_query_system::ls_ops::Cancelled;
 use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::ls_ops::RangedDiagnostic;
 use std::collections::HashMap;
+use termcolor::NoColor;
 
 impl TestContext<'_> {
     crate fn run_compilation_test(&self, expect_error: bool) {
@@ -16,6 +18,7 @@ impl TestContext<'_> {
         };
 
         self.compare_errors_against_expected(errors);
+        self.compare_stderr_against_expected();
     }
 
     fn compare_errors_against_expected(&self, errors: HashMap<String, Vec<RangedDiagnostic>>) {
@@ -68,5 +71,14 @@ impl TestContext<'_> {
         }
 
         assert!(unexpected_errors.is_empty() && expected_errors.is_empty());
+    }
+
+    fn compare_stderr_against_expected(&self) {
+        let mut buffer = Vec::new();
+        self.db
+            .display_errors(NoColor::new(&mut buffer))
+            .unwrap_or_else(|Cancelled| panic!("cancelled?"));
+
+        self.compare_reference_contents("stderr", &buffer);
     }
 }

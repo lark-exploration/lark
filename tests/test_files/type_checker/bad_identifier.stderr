@@ -1,0 +1,4 @@
+error: unknown identifier `msg1`
+- bad_identifier.lark:2:4
+2 |     msg1
+  |     ^^^^

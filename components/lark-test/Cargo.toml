@@ -8,6 +8,7 @@ edition = "2018"
 diff = "0.1.0"
 env_logger = "0.5.13"
 lark-debug-with = { path = "../lark-debug-with" }
+lark-cli = { path = "../lark-cli" }
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
 lark-intern = { path = "../lark-intern" }
@@ -21,4 +22,5 @@ lazy_static = "1.2.0"
 rayon = "1.0.3"
 regex = "1"
 salsa = "0.8.0"
+termcolor = "1.0.4"
 walkdir = "2.2.7"

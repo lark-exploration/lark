@@ -5,8 +5,10 @@ use lark_query_system::LarkDatabase;
 
 mod compilation_test;
 mod execution_test;
+mod util;
 
 crate struct TestContext<'me> {
+    crate bless_mode: bool,
     crate test_name: String,
     crate test_path: &'me TestPath,
     crate db: LarkDatabase,

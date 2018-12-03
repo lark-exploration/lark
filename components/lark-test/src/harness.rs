@@ -54,7 +54,7 @@ pub fn search_files(root_path: &Path) -> Vec<TestPath> {
     test_paths
 }
 
-pub fn run_test_harness(path: impl AsRef<Path>, is_dir: bool) {
+pub fn run_test_harness(path: impl AsRef<Path>, is_dir: bool, bless_mode: bool) {
     if is_dir {
         // this is meant to be a manifest tes
         unimplemented!("test directories");
@@ -90,6 +90,7 @@ pub fn run_test_harness(path: impl AsRef<Path>, is_dir: bool) {
     db.add_file(&test_name, &file_contents);
 
     TestContext {
+        bless_mode,
         test_name,
         test_path,
         db,

@@ -75,13 +75,13 @@ pub fn build(file_name: &str, output_file_name: Option<&str>) {
 }
 
 pub trait LarkDatabaseExt {
-    fn display_errors(&mut self, out: impl WriteColor) -> Result<usize, Cancelled>;
+    fn display_errors(&self, out: impl WriteColor) -> Result<usize, Cancelled>;
 }
 
 impl LarkDatabaseExt for LarkDatabase {
     /// Displays all errors for the project on stderr. Returns `Ok(n)` where
     /// n is the number of errors (or `Cancelled` if execution is cancelled).
-    fn display_errors(&mut self, mut out: impl WriteColor) -> Result<usize, Cancelled> {
+    fn display_errors(&self, mut out: impl WriteColor) -> Result<usize, Cancelled> {
         let db = self;
 
         let errors = db.errors_for_project()?;
@@ -108,7 +108,7 @@ impl LarkDatabaseExt for LarkDatabase {
 
                 let error = error.with_label(Label::new_primary(span));
 
-                emit(&mut out, &&*db, &error, &language_reporting::DefaultConfig).unwrap();
+                emit(&mut out, &db, &error, &language_reporting::DefaultConfig).unwrap();
             }
         }
 
