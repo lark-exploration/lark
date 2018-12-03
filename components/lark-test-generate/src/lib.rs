@@ -25,7 +25,8 @@ pub fn generate_tests(_item: TokenStream) -> TokenStream {
             .with_extension("")
             .display()
             .to_string()
-            .replace("/", "__");
+            .replace("/", "__")
+            .replace("\\", "__");
 
         write!(
             result,
