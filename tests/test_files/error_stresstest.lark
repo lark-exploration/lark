@@ -1,0 +1,6514 @@
+struct Diagnostic0 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+  level: bool,
+  //~ ERROR
+         //~ ERROR
+         //~ ERROR
+             //~ ERROR
+}
+//~ ERROR
+struct Diagnostic1 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic2 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic3 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic4 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic5 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic6 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic7 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic8 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic9 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic10 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic11 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic12 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic13 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic14 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic15 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic16 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic17 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic18 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic19 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic20 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic21 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic22 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic23 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic24 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic25 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic26 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic27 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic28 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic29 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic30 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic31 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic32 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic33 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic34 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic35 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic36 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic37 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic38 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic39 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic40 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic41 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic42 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic43 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic44 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic45 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic46 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic47 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic48 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic49 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic50 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic51 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic52 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic53 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic54 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic55 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic56 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic57 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic58 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic59 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic60 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic61 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic62 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic63 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic64 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic65 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic66 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic67 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic68 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic69 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic70 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic71 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic72 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic73 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic74 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic75 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic76 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic77 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic78 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic79 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic80 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic81 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic82 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic83 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic84 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic85 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic86 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic87 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic88 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic89 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic90 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic91 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic92 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic93 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic94 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic95 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic96 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic97 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic98 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic99 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic100 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic101 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic102 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic103 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic104 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic105 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic106 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic107 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic108 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic109 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic110 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic111 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic112 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic113 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic114 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic115 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic116 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic117 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic118 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic119 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic120 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic121 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic122 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic123 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic124 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic125 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic126 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic127 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic128 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic129 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic130 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic131 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic132 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic133 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic134 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic135 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic136 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic137 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic138 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic139 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic140 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic141 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic142 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic143 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic144 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic145 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic146 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic147 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic148 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic149 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic150 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic151 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic152 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic153 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic154 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic155 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic156 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic157 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic158 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic159 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic160 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic161 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic162 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic163 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic164 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic165 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic166 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic167 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic168 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic169 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic170 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic171 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic172 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic173 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic174 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic175 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic176 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic177 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic178 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic179 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic180 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic181 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic182 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic183 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic184 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic185 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic186 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic187 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic188 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic189 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic190 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic191 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic192 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic193 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic194 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic195 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic196 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic197 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic198 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic199 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic200 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic201 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic202 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic203 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic204 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic205 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic206 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic207 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic208 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic209 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic210 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic211 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic212 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic213 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic214 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic215 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic216 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic217 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic218 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic219 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic220 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic221 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic222 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic223 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic224 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic225 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic226 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic227 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic228 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic229 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic230 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic231 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic232 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic233 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic234 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic235 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic236 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic237 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic238 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic239 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic240 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic241 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic242 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic243 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic244 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic245 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic246 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic247 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic248 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic249 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic250 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic251 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic252 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic253 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic254 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic255 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic256 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic257 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic258 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic259 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic260 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic261 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic262 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic263 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic264 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic265 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic266 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic267 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic268 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic269 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic270 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic271 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic272 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic273 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic274 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic275 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic276 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic277 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic278 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic279 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic280 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic281 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic282 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic283 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic284 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic285 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic286 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic287 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic288 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic289 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic290 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic291 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic292 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic293 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic294 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic295 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic296 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic297 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic298 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic299 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic300 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic301 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic302 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic303 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic304 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic305 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic306 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic307 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic308 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic309 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic310 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic311 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic312 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic313 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic314 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic315 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic316 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic317 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic318 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic319 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic320 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic321 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic322 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic323 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic324 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic325 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic326 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic327 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic328 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic329 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic330 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic331 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic332 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic333 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic334 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic335 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic336 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic337 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic338 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic339 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic340 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic341 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic342 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic343 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic344 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic345 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic346 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic347 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic348 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic349 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic350 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic351 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic352 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic353 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic354 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic355 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic356 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic357 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic358 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic359 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic360 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic361 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic362 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic363 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic364 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic365 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic366 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic367 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic368 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic369 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic370 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic371 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic372 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic373 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic374 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic375 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic376 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic377 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic378 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic379 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic380 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic381 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic382 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic383 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic384 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic385 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic386 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic387 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic388 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic389 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic390 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic391 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic392 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic393 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic394 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic395 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic396 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic397 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic398 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic399 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic400 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic401 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic402 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic403 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic404 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic405 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic406 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic407 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic408 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic409 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic410 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic411 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic412 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic413 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic414 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic415 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic416 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic417 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic418 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic419 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic420 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic421 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic422 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic423 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic424 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic425 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic426 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic427 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic428 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic429 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic430 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic431 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic432 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic433 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic434 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic435 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic436 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic437 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic438 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic439 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic440 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic441 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic442 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic443 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic444 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic445 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic446 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic447 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic448 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic449 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic450 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic451 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic452 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic453 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic454 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic455 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic456 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic457 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic458 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic459 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic460 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic461 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic462 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic463 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic464 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic465 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic466 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic467 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic468 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic469 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic470 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic471 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic472 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic473 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic474 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic475 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic476 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic477 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic478 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic479 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic480 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic481 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic482 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic483 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic484 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic485 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic486 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic487 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic488 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic489 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic490 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic491 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic492 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic493 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic494 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic495 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic496 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic497 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic498 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic499 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+struct Diagnostic500 {
+  msg: own bool,
+       //~ ERROR
+       //~ ERROR
+               //~ ERROR
+   level: bool,
+   //~ ERROR
+          //~ ERROR
+          //~ ERROR
+              //~ ERROR
+}
+//~ ERROR
+
+def main() {
+}

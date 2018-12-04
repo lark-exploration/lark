@@ -122,6 +122,27 @@ impl<File: SpanFile> Span<File> {
 
         Ok(languageserver_types::Range::new(left, right))
     }
+
+    pub fn to_range_with_line_indices(
+        &self,
+        source_line_indices: &Vec<usize>,
+        source_len: usize,
+    ) -> Result<languageserver_types::Range, OutOfBounds> {
+        let left = Location::from_index_with_line_indices(
+            source_line_indices,
+            source_len,
+            self.start,
+        )?
+        .as_position();
+        let right = Location::from_index_with_line_indices(
+            source_line_indices,
+            source_len,
+            self.end,
+        )?
+        .as_position();
+
+        Ok(languageserver_types::Range::new(left, right))
+    }
 }
 
 impl<F: SpanFile> l_r::ReportingSpan for Span<F> {

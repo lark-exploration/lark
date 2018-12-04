@@ -18,10 +18,65 @@ pub struct Location {
 pub struct OutOfBounds;
 
 impl Location {
+    pub fn from_index_with_line_indices(
+        source_line_indices: &Vec<usize>,
+        source_len: usize,
+        i: ByteIndex,
+    ) -> Result<Location, OutOfBounds> {
+        let target = i.0 - 1;
+
+        if target > source_len {
+            return Err(OutOfBounds);
+        }
+
+        // Binary search for range
+        let mut pivot = source_line_indices.len() / 2;
+        let mut step = pivot / 2;
+
+        loop {
+            if step == 0 {
+                while source_line_indices[pivot] > target && pivot > 0 {
+                    pivot -= 1;
+                }
+
+                while pivot < (source_line_indices.len() - 1)
+                    && source_line_indices[pivot] < target
+                    && source_line_indices[pivot + 1] <= target
+                {
+                    pivot += 1;
+                }
+            }
+
+            if source_line_indices[pivot] == target {
+                let location = Location {
+                    line: pivot + 1,
+                    column: 0,
+                    byte: i,
+                };
+                return Ok(location);
+            }
+
+            if step == 0 {
+                let location = Location {
+                    line: pivot + 1,
+                    column: target - source_line_indices[pivot],
+                    byte: i,
+                };
+                return Ok(location);
+            }
+
+            if source_line_indices[pivot] > target {
+                pivot -= step;
+                step = step / 2;
+            } else {
+                pivot += step;
+                step = step / 2;
+            }
+        }
+    }
+
     pub fn from_index(s: &str, i: ByteIndex) -> Result<Location, OutOfBounds> {
         let target = i.0;
-        //println!("s_len={}", s.len());
-        //println!("target={}", target);
 
         let mut seen_lines = 0;
         let mut last = 0;
@@ -32,16 +87,6 @@ impl Location {
 
         for (pos, _) in s.match_indices('\n') {
             let pos = pos + 1;
-
-            /*
-            println!(
-                "pos={} last={} seen_lines={} text={:?}",
-                pos,
-                last,
-                seen_lines,
-                &s[..pos]
-            );
-            */
 
             if pos == target {
                 return Ok(Location {
