@@ -271,6 +271,10 @@ where
         (Erased, Erased)
     }
 
+    fn map_perm(&mut self, _perm: declaration::Perm) -> Erased {
+        Erased
+    }
+
     fn apply_repr_perm(
         &mut self,
         _repr: ReprKind,

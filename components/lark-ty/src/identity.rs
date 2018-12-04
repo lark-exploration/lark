@@ -20,6 +20,10 @@ where
     fn map_placeholder(&mut self, placeholder: F::Placeholder) -> F::Placeholder {
         placeholder
     }
+
+    fn map_perm(&mut self, perm: F::Perm) -> F::Perm {
+        perm
+    }
 }
 
 impl<DB> AsRef<DB> for Identity<'_, DB> {

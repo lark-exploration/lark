@@ -25,6 +25,8 @@ pub trait FamilyMapper<S: TypeFamily, T: TypeFamily> {
     fn map_ty(&mut self, ty: Ty<S>) -> Ty<T>;
 
     fn map_placeholder(&mut self, placeholder: S::Placeholder) -> T::Placeholder;
+
+    fn map_perm(&mut self, perm: S::Perm) -> T::Perm;
 }
 
 impl<S, T, V> Map<S, T> for &V

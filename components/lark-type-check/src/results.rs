@@ -91,7 +91,6 @@ impl<S, T> Map<S, T> for TypeCheckResults<S>
 where
     S: TypeFamily,
     T: TypeFamily,
-    S::Perm: Map<S, T, Output = T::Perm>,
 {
     type Output = TypeCheckResults<T>;
 
@@ -106,7 +105,10 @@ where
             types: types.map(mapper),
             generics: generics.map(mapper),
             entities: entities.map(mapper),
-            access_permissions: access_permissions.map(mapper),
+            access_permissions: access_permissions
+                .iter()
+                .map(|(&key, &value)| (key, mapper.map_perm(value)))
+                .collect(),
         }
     }
 }

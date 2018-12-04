@@ -234,11 +234,15 @@ where
     }
 
     fn map_repr_perm(&mut self, _repr: ReprKind, perm: declaration::Perm) -> (Erased, Perm) {
-        let perm = match perm.untern(self) {
-            DeclaredPermKind::Own => PermData::Known(PermKind::Own).intern(self),
-        };
+        let perm = self.map_perm(perm);
 
         (Erased, perm)
+    }
+
+    fn map_perm(&mut self, perm: declaration::Perm) -> Perm {
+        match perm.untern(self) {
+            DeclaredPermKind::Own => PermData::Known(PermKind::Own).intern(self),
+        }
     }
 
     fn apply_repr_perm(
