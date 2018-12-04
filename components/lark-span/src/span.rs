@@ -1,4 +1,4 @@
-use crate::{FileName, Location, OutOfBounds, SpanFile};
+use crate::{FileName, SpanFile};
 
 use language_reporting as l_r;
 use lark_debug_derive::DebugWith;
@@ -114,13 +114,6 @@ impl<File: SpanFile> Span<File> {
         let len = self.len();
         let start = self.start.0 - entity_span.start.0;
         Span::new(CurrentEntity, start, start + len.0)
-    }
-
-    pub fn to_range(&self, s: &str) -> Result<languageserver_types::Range, OutOfBounds> {
-        let left = Location::from_index(s, self.start)?.as_position();
-        let right = Location::from_index(s, self.end)?.as_position();
-
-        Ok(languageserver_types::Range::new(left, right))
     }
 }
 

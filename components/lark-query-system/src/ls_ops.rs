@@ -9,7 +9,7 @@ use lark_debug_with::DebugWith;
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
 use lark_intern::{Intern, Untern};
-use lark_span::{ByteIndex, FileName, IntoFileName};
+use lark_span::{ByteIndex, FileName, IntoFileName, Span};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -56,17 +56,21 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                 self.accumulate_errors_for_entity(entity, &mut errors)?;
             }
 
-            let text = self.file_text(input_file);
-
             let error_ranges = errors
                 .iter()
-                .map(|x| RangedDiagnostic::new(x.label.clone(), x.span.to_range(&text).unwrap()))
+                .map(|x| RangedDiagnostic::new(x.label.clone(), self.range(x.span)))
                 .collect();
 
             file_errors.insert(input_file.id.untern(self).to_string(), error_ranges);
         }
 
         Ok(file_errors)
+    }
+
+    fn range(&self, span: Span<FileName>) -> languageserver_types::Range {
+        let left = self.location(span.file(), span.start()).as_position();
+        let right = self.location(span.file(), span.end()).as_position();
+        languageserver_types::Range::new(left, right)
     }
 
     fn accumulate_errors_for_entity(
