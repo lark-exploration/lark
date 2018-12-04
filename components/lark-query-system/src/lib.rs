@@ -20,6 +20,7 @@ pub struct LarkDatabase {
     global_id_tables: Arc<GlobalIdentifierTables>,
     declaration_tables: Arc<lark_ty::declaration::DeclarationTables>,
     base_inferred_tables: Arc<lark_ty::base_inferred::BaseInferredTables>,
+    full_inferred_tables: Arc<lark_ty::full_inferred::FullInferredTables>,
 }
 
 impl std::fmt::Debug for LarkDatabase {
@@ -48,6 +49,7 @@ impl Default for LarkDatabase {
             global_id_tables: Default::default(),
             declaration_tables: Default::default(),
             base_inferred_tables: Default::default(),
+            full_inferred_tables: Default::default(),
         };
         db.init_parser_db();
         db
@@ -68,6 +70,7 @@ impl ParallelDatabase for LarkDatabase {
             global_id_tables: self.global_id_tables.clone(),
             declaration_tables: self.declaration_tables.clone(),
             base_inferred_tables: self.base_inferred_tables.clone(),
+            full_inferred_tables: self.full_inferred_tables.clone(),
         })
     }
 }
@@ -128,6 +131,12 @@ impl AsRef<lark_ty::declaration::DeclarationTables> for LarkDatabase {
 impl AsRef<lark_ty::base_inferred::BaseInferredTables> for LarkDatabase {
     fn as_ref(&self) -> &lark_ty::base_inferred::BaseInferredTables {
         &self.base_inferred_tables
+    }
+}
+
+impl AsRef<lark_ty::full_inferred::FullInferredTables> for LarkDatabase {
+    fn as_ref(&self) -> &lark_ty::full_inferred::FullInferredTables {
+        &self.full_inferred_tables
     }
 }
 

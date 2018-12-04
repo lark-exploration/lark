@@ -29,6 +29,8 @@ use perm::PermData;
 
 crate mod query_definition;
 
+mod resolve_to_full_inferred;
+
 /// Implements the `TypeCheckerFamilyDependentExt` methods along with substitution.
 crate mod type_checker;
 

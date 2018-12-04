@@ -4,6 +4,7 @@
 
 use crate::BaseData;
 use crate::Erased;
+use crate::PermKind;
 use crate::Placeholder;
 use crate::ReprKind;
 use crate::TypeFamily;
@@ -18,12 +19,12 @@ pub struct FullInferred;
 impl TypeFamily for FullInferred {
     type InternTables = FullInferredTables;
     type Repr = Erased; // FIXME
-    type Perm = Erased; // FIXME
+    type Perm = PermKind;
     type Base = Base;
     type Placeholder = Placeholder;
 
-    fn own_perm(_tables: &dyn AsRef<FullInferredTables>) -> Erased {
-        Erased
+    fn own_perm(_tables: &dyn AsRef<FullInferredTables>) -> PermKind {
+        PermKind::Own
     }
 
     fn known_repr(_tables: &dyn AsRef<FullInferredTables>, _repr_kind: ReprKind) -> Self::Repr {

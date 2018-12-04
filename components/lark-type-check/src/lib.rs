@@ -20,6 +20,7 @@ use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
 use lark_ty::full_inferred::FullInferred;
+use lark_ty::full_inferred::FullInferredTables;
 use lark_ty::map_family::Map;
 use lark_ty::BaseData;
 use lark_ty::Generics;
@@ -40,7 +41,10 @@ mod results;
 mod substitute;
 
 salsa::query_group! {
-    pub trait TypeCheckDatabase: ParserDatabase + AsRef<BaseInferredTables> {
+    pub trait TypeCheckDatabase: ParserDatabase
+        + AsRef<BaseInferredTables>
+        + AsRef<FullInferredTables>
+    {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
