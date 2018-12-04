@@ -2,8 +2,8 @@ use lark_debug_with::DebugWith;
 use lark_entity::{EntityData, ItemKind, LangItem};
 use lark_intern::{Intern, Untern};
 use lark_mir::{
-    BasicBlock, FnBytecode, IdentifierData, MirDatabase, Operand, OperandData, Place, PlaceData,
-    Rvalue, RvalueData, Statement, StatementKind, Variable,
+    BasicBlock, BinOp, FnBytecode, IdentifierData, MirDatabase, Operand, OperandData, Place,
+    PlaceData, Rvalue, RvalueData, Statement, StatementKind, Variable,
 };
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::LarkDatabase;
@@ -14,7 +14,7 @@ use std::fmt;
 pub enum Value {
     Void,
     Bool(bool),
-    I32(i32),
+    U32(u32),
     Str(String),
     Struct(HashMap<lark_string::GlobalIdentifier, Value>),
     Reference(usize), // a reference into the value stack
@@ -26,7 +26,7 @@ impl fmt::Display for Value {
             f,
             "{}",
             match self {
-                Value::I32(i) => i.to_string(),
+                Value::U32(u) => u.to_string(),
                 Value::Str(s) => s.clone(),
                 Value::Bool(b) => b.to_string(),
                 Value::Reference(r) => format!("reference to {}", r),
@@ -104,6 +104,7 @@ pub fn eval_operand(
         OperandData::Copy(place) | OperandData::Move(place) => {
             eval_place(db, fn_bytecode, *place, variables)
         }
+        OperandData::ConstantInt(u) => Value::U32(*u),
         _ => unimplemented!("Operand not yet supported"),
     }
 }
@@ -164,7 +165,21 @@ pub fn eval_rvalue(
 
             Value::Struct(result_struct)
         }
-        x => unimplemented!("Rvalue not yet supported in eval: {:#?}", x.debug_with(db)),
+        RvalueData::BinaryOp(binop, lhs, rhs) => {
+            let lhs_eval = eval_operand(db, fn_bytecode, *lhs, variables);
+            let rhs_eval = eval_operand(db, fn_bytecode, *rhs, variables);
+
+            match binop {
+                BinOp::Add => match (lhs_eval, rhs_eval) {
+                    (Value::U32(l), Value::U32(r)) => Value::U32(l + r),
+                    _ => panic!("Addition of non-numeric values"),
+                },
+                BinOp::Sub => match (lhs_eval, rhs_eval) {
+                    (Value::U32(l), Value::U32(r)) => Value::U32(l - r),
+                    _ => panic!("Subtraction of non-numeric values"),
+                },
+            }
+        }
     }
 }
 

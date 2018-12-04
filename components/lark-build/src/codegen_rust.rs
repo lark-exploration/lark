@@ -3,7 +3,7 @@ use lark_entity::{Entity, EntityData, ItemKind, LangItem};
 use lark_error::{Diagnostic, WithError};
 use lark_intern::{Intern, Untern};
 use lark_mir::{
-    BasicBlock, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
+    BasicBlock, BinOp, FnBytecode, MirDatabase, Operand, OperandData, Place, PlaceData, Rvalue,
     RvalueData, Statement, StatementKind,
 };
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
@@ -175,7 +175,22 @@ pub fn codegen_rvalue(
 
             output.push_str("}");
         }
-        x => unimplemented!("Rvalue value not supported: {:#?}", x.debug_with(db)),
+        RvalueData::BinaryOp(bin_op, lhs, rhs) => match bin_op {
+            BinOp::Add => {
+                output.push_str(&format!(
+                    "({}+{})",
+                    build_operand(db, fn_bytecode, *lhs),
+                    build_operand(db, fn_bytecode, *rhs)
+                ));
+            }
+            BinOp::Sub => {
+                output.push_str(&format!(
+                    "({}-{})",
+                    build_operand(db, fn_bytecode, *lhs),
+                    build_operand(db, fn_bytecode, *rhs)
+                ));
+            }
+        },
     }
 }
 
