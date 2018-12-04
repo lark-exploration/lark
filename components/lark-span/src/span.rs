@@ -116,30 +116,13 @@ impl<File: SpanFile> Span<File> {
         Span::new(CurrentEntity, start, start + len.0)
     }
 
-    pub fn to_range(&self, s: &str) -> Result<languageserver_types::Range, OutOfBounds> {
-        let left = Location::from_index(s, self.start)?.as_position();
-        let right = Location::from_index(s, self.end)?.as_position();
-
-        Ok(languageserver_types::Range::new(left, right))
-    }
-
-    pub fn to_range_with_line_indices(
+    pub fn to_range(
         &self,
         source_line_indices: &Vec<usize>,
         source_len: usize,
     ) -> Result<languageserver_types::Range, OutOfBounds> {
-        let left = Location::from_index_with_line_indices(
-            source_line_indices,
-            source_len,
-            self.start,
-        )?
-        .as_position();
-        let right = Location::from_index_with_line_indices(
-            source_line_indices,
-            source_len,
-            self.end,
-        )?
-        .as_position();
+        let left = Location::from_index(source_line_indices, source_len, self.start)?.as_position();
+        let right = Location::from_index(source_line_indices, source_len, self.end)?.as_position();
 
         Ok(languageserver_types::Range::new(left, right))
     }

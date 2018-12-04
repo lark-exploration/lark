@@ -57,23 +57,17 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             }
 
             let text = self.file_text(input_file);
-
             let text_length = text.len();
 
-            let source_line_indices: Vec<usize> = text
-                .match_indices("\n")
-                .into_iter()
-                .map(|(x, _)| x)
-                .collect();
+            let source_line_indices: Vec<usize> =
+                self.line_offsets(input_file).iter().cloned().collect();
 
             let error_ranges = errors
                 .iter()
                 .map(|x| {
                     RangedDiagnostic::new(
                         x.label.clone(),
-                        x.span
-                            .to_range_with_line_indices(&source_line_indices, text_length)
-                            .unwrap(),
+                        x.span.to_range(&source_line_indices, text_length).unwrap(),
                     )
                 })
                 .collect();
