@@ -1,8 +1,8 @@
 use crate::full_inference::datafrog;
 use crate::full_inference::type_checker::FullInferenceStorage;
 use crate::full_inference::{FullInference, FullInferenceTables};
+use crate::results::TypeCheckResults;
 use crate::TypeCheckDatabase;
-use crate::TypeCheckResults;
 use crate::TypeChecker;
 use crate::UniverseBinder;
 use generational_arena::Arena;

@@ -2,10 +2,10 @@
 //! only" inference. This is inference where we ignore permissions and
 //! representations and focus only on the base types.
 
+use crate::results::TypeCheckResults;
 use crate::substitute::Substitution;
 use crate::substitute::SubstitutionDelegate;
 use crate::TypeCheckDatabase;
-use crate::TypeCheckResults;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
 use crate::TypeCheckerVariableExt;
