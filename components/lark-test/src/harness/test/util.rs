@@ -58,6 +58,7 @@ impl TestContext<'_> {
         if normalize_paths {
             actual_str = actual_str.replace("\\", "/");
         }
+        actual_str = actual_str.replace("\r\n", "\n");
 
         let reference_path = self.reference_path(extension);
 
@@ -70,7 +71,9 @@ impl TestContext<'_> {
 
         let reference_contents = self.file_contents(&reference_path);
 
-        let reference_str = reference_contents.unwrap_or(String::new());
+        let mut reference_str = reference_contents.unwrap_or(String::new());
+        reference_str = reference_str.replace("\r\n", "\n");
+
         if actual_str != reference_str {
             let mut first_diff = None;
             for (diff, i) in diff::lines(&reference_str, &actual_str).iter().zip(1..) {

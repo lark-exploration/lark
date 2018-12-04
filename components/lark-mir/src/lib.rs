@@ -133,7 +133,7 @@ lark_indices::index_type! {
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]
 pub enum RvalueData {
     Use(Operand),
-    BinaryOp(BinOp, Variable, Variable),
+    BinaryOp(BinOp, Operand, Operand),
     //FIXME: MIR has this as a TerminatorData, presumably because stack can unwind
     Call(Entity, List<Operand>),
     Aggregate(Entity, List<Operand>),
@@ -147,7 +147,7 @@ pub enum OperandData {
     Copy(Place),
     Move(Place),
     //FIXME: Move to Box<Constant>
-    ConstantInt(i32),
+    ConstantInt(u32),
     ConstantString(String),
 }
 

@@ -5,7 +5,7 @@ use lark_entity::Entity;
 use lark_error::Diagnostic;
 use lark_error::WithError;
 use lark_hir as hir;
-use lark_intern::Intern;
+use lark_intern::{Intern, Untern};
 use lark_span::{FileName, Span, Spanned};
 use lark_string::GlobalIdentifier;
 use std::collections::HashMap;
@@ -173,6 +173,76 @@ where
                 let rvalue = self.add(
                     fn_body.span(expression),
                     mir::RvalueData::Call(entity, call_arguments),
+                );
+                let lvalue = self.add(
+                    fn_body.span(expression),
+                    mir::PlaceData::Variable(new_temp_var),
+                );
+                let statement = self.add(
+                    fn_body.span(expression),
+                    mir::StatementData {
+                        kind: mir::StatementKind::Assign(lvalue, rvalue),
+                    },
+                );
+                statements.push(statement);
+
+                // Record that we've created this temporary variable for later dropping
+                temp_vars.insert(0, new_temp_var);
+
+                // Finally, create the operand we'll use to refer to this call
+                let operand = self.add(fn_body.span(expression), mir::OperandData::Copy(lvalue));
+
+                (operand, temp_vars)
+            }
+            hir::ExpressionData::Literal { data } => match data.kind {
+                hir::LiteralKind::UnsignedInteger => {
+                    let string = data.value.untern(&mut self.db);
+                    let value: u32 = string.parse().unwrap();
+
+                    let operand = self.add(
+                        fn_body.span(expression),
+                        mir::OperandData::ConstantInt(value),
+                    );
+
+                    (operand, vec![])
+                }
+                _ => unimplemented!("Unsupported literal"),
+            },
+            hir::ExpressionData::Binary {
+                operator,
+                left,
+                right,
+            } => {
+                let mut temp_vars = vec![];
+                let new_temp_var = self.create_temporary(fn_body.span(expression));
+
+                let (lhs_operand, mut lhs_temp_vars) =
+                    self.lower_operand(fn_body, left, statements);
+                lhs_temp_vars.append(&mut temp_vars);
+
+                let (rhs_operand, mut rhs_temp_vars) =
+                    self.lower_operand(fn_body, right, statements);
+                rhs_temp_vars.append(&mut temp_vars);
+
+                let mir_operator = match operator {
+                    hir::BinaryOperator::Add => mir::BinOp::Add,
+                    hir::BinaryOperator::Subtract => mir::BinOp::Sub,
+                    _ => unimplemented!("Not yet supported operator"),
+                };
+
+                // Start the variable scope
+                let statement = self.add(
+                    fn_body.span(expression),
+                    mir::StatementData {
+                        kind: mir::StatementKind::StorageLive(new_temp_var),
+                    },
+                );
+                statements.push(statement);
+
+                // Assign this operation to the temp variable
+                let rvalue = self.add(
+                    fn_body.span(expression),
+                    mir::RvalueData::BinaryOp(mir_operator, lhs_operand, rhs_operand),
                 );
                 let lvalue = self.add(
                     fn_body.span(expression),

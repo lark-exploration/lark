@@ -1,0 +1,5 @@
+//~ execute:all
+
+def main() {
+    debug(3 + 10)
+}
