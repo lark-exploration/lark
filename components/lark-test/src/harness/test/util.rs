@@ -63,9 +63,16 @@ impl TestContext<'_> {
         let reference_path = self.reference_path(extension);
 
         if self.bless_mode {
-            match fs::write(&reference_path, actual_bytes) {
-                Ok(()) => {}
-                Err(err) => panic!("failed to write `{}`: {}", reference_path.display(), err,),
+            if !actual_bytes.is_empty() {
+                match fs::write(&reference_path, actual_bytes) {
+                    Ok(()) => {}
+                    Err(err) => panic!("failed to write `{}`: {}", reference_path.display(), err,),
+                }
+            } else if reference_path.exists() {
+                match fs::remove_file(&reference_path) {
+                    Ok(()) => {}
+                    Err(err) => panic!("failed to remove `{}`: {}", reference_path.display(), err,),
+                }
             }
         }
 
