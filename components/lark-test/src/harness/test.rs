@@ -7,6 +7,7 @@ use std::path::Path;
 
 mod compilation_test;
 mod execution_test;
+mod hir_test;
 mod ls_test;
 mod util;
 
@@ -64,5 +65,7 @@ impl TestContext<'_> {
         self.test_language_server().unwrap_or_else(|err| {
             panic!("language server failed: {}", err);
         });
+
+        self.compare_hir_output();
     }
 }

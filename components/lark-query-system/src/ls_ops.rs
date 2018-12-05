@@ -9,6 +9,7 @@ use lark_debug_with::DebugWith;
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
 use lark_intern::{Intern, Untern};
+use lark_parser::HoverTargetKind;
 use lark_span::{ByteIndex, FileName, IntoFileName, Span};
 use std::collections::HashMap;
 
@@ -134,94 +135,64 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
     /// Returns the hover text to display for a given position (if
     /// any).
     fn hover_text_at_position(&self, url: &str, position: Position) -> Cancelable<Option<String>> {
+        let url_file_name = url.into_file_name(self);
         let byte_index = self.position_to_byte_index(url, position);
-        let entity_ids = self.entity_ids_at_position(url, byte_index)?;
+        let targets = self.hover_targets(url_file_name, byte_index);
         self.check_for_cancellation()?;
-        let entity = *entity_ids.last().unwrap();
-        match entity.untern(self) {
-            EntityData::ItemName {
-                kind: ItemKind::Struct,
-                id,
-                ..
-            } => Ok(Some(format!("struct {}", id.untern(self)))),
 
-            EntityData::MemberName {
-                kind: MemberKind::Field,
-                ..
-            } => {
-                let field_ty = self.ty(entity).into_value();
-                // FIXME should not use "debug" but display to format the type
-                Ok(Some(format!("{}", field_ty.debug_with(self))))
-            }
+        Ok(targets
+            .iter()
+            .rev()
+            .filter_map(|target| match target.kind {
+                HoverTargetKind::Entity(entity) => {
+                    match entity.untern(self) {
+                        EntityData::ItemName {
+                            kind: ItemKind::Struct,
+                            id,
+                            ..
+                        } => Some(format!("struct {}", id.untern(self))),
 
-            EntityData::ItemName {
-                kind: ItemKind::Function,
-                ..
-            }
-            | EntityData::MemberName {
-                kind: MemberKind::Method,
-                ..
-            } => {
-                // what should we say for functions and methods?
-                Ok(None)
-            }
+                        EntityData::MemberName {
+                            kind: MemberKind::Field,
+                            ..
+                        } => {
+                            let field_ty = self.ty(entity).into_value();
+                            // FIXME should not use "debug" but display to format the type
+                            Some(format!("{}", field_ty.debug_with(self)))
+                        }
 
-            EntityData::InputFile { .. } | EntityData::LangItem(_) | EntityData::Error(_) => {
-                Ok(None)
-            }
-        }
+                        EntityData::ItemName {
+                            kind: ItemKind::Function,
+                            ..
+                        }
+                        | EntityData::MemberName {
+                            kind: MemberKind::Method,
+                            ..
+                        } => {
+                            // what should we say for functions and methods?
+                            None
+                        }
+
+                        EntityData::InputFile { .. }
+                        | EntityData::LangItem(_)
+                        | EntityData::Error(_) => None,
+                    }
+                }
+
+                HoverTargetKind::MetaIndex(entity, mi) => {
+                    let fn_body_types = self.full_type_check(entity).into_value();
+                    if let Some(ty) = fn_body_types.types.get(&mi) {
+                        Some(format!("{}", ty.debug_with(self)))
+                    } else {
+                        None
+                    }
+                }
+            })
+            .next())
     }
 
     fn position_to_byte_index(&self, url: &str, position: Position) -> ByteIndex {
         let url_id = url.intern(self);
         self.byte_index(FileName { id: url_id }, position.line, position.character)
-    }
-
-    /// Return a "stack" of entity-ids in position, from outermost to
-    /// innermost.  Always returns a non-empty vector.
-    fn entity_ids_at_position(
-        &self,
-        file: impl IntoFileName,
-        index: ByteIndex,
-    ) -> Cancelable<Vec<Entity>> {
-        let file = file.into_file_name(self);
-
-        self.check_for_cancellation()?;
-
-        let file_entity = EntityData::InputFile { file }.intern(self);
-
-        let mut entities: Vec<_> = self
-            .descendant_entities(file_entity)
-            .iter()
-            .filter_map(|&entity| {
-                let span = self.entity_span(entity);
-                if span.contains_index(index) {
-                    return Some(entity);
-                }
-
-                None
-            })
-            .collect();
-
-        // If we assume that all the entities contain one another,
-        // then sorting by their *start spans* first (and inversely by
-        // *end spans* in case of ties...)  should give in
-        // "outermost-to-innermost" order.
-        //
-        // Example:
-        //
-        // foo { bar { } }
-        //       ^^^       2
-        //       ^^^^^^^   1
-        // ^^^^^^^^^^^^^^^ 0
-        entities.sort_by_key(|&entity| {
-            let span = self.entity_span(entity);
-            let start = span.start();
-            let end = std::usize::MAX - span.end().to_usize();
-            (start, end)
-        });
-
-        assert!(!entities.is_empty());
-        Ok(entities)
     }
 }

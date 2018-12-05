@@ -5,6 +5,7 @@ use lark_intern::Intern;
 use lark_intern::Untern;
 use lark_ty::BaseData;
 use lark_ty::InferVarOr;
+use lark_ty::TypeFamily;
 use lark_unify::{InferVar, Inferable};
 
 lark_indices::index_type! {
@@ -45,5 +46,13 @@ where
 {
     fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.untern(cx).fmt_with(cx, fmt)
+    }
+}
+
+impl Intern<FullInferenceTables> for BaseData<FullInference> {
+    type Key = Base;
+
+    fn intern(self, interner: &dyn AsRef<FullInferenceTables>) -> Self::Key {
+        FullInference::intern_base_data(interner, self)
     }
 }

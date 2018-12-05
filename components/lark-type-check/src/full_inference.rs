@@ -12,19 +12,27 @@ use lark_ty::Placeholder;
 use lark_ty::ReprKind;
 use lark_ty::TypeFamily;
 
-mod constraint;
+crate mod apply_perm;
 
 /// Defines the `Base` type that represents base types.
-mod base;
+crate mod base;
 use base::Base;
 
+crate mod constraint;
+
+crate mod datafrog;
+
 /// Defines the `Perm` type that represents permissions.
-mod perm;
+crate mod perm;
 use perm::Perm;
 use perm::PermData;
 
+crate mod query_definition;
+
+mod resolve_to_full_inferred;
+
 /// Implements the `TypeCheckerFamilyDependentExt` methods along with substitution.
-mod type_checker;
+crate mod type_checker;
 
 /// Type family for "base inference" -- inferring just the base types.
 #[derive(Copy, Clone, Debug, DebugWith, PartialEq, Eq, Hash)]

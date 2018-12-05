@@ -1,4 +1,5 @@
 #![feature(crate_visibility_modifier)]
+#![feature(specialization)]
 #![feature(uniform_paths)]
 
 use lark_intern::Intern;

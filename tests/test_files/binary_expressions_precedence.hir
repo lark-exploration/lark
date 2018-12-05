@@ -1,0 +1,474 @@
+ItemName { base: InputFile { file: FileName { id: "binary_expressions_precedence" } }, kind: Function, id: "main" }
+FnBody {
+    arguments: Ok(
+        []
+    ),
+    root_expression: Expression {
+        id: 12,
+        data: Let {
+            variable: Variable {
+                id: 0,
+                data: VariableData {
+                    name: Identifier {
+                        id: 0,
+                        data: IdentifierData {
+                            text: "bar"
+                        }
+                    }
+                },
+                ty: Ty {
+                    repr: Erased,
+                    perm: Erased,
+                    base: BaseData {
+                        kind: Named(
+                            LangItem(
+                                Uint
+                            )
+                        ),
+                        generics: []
+                    }
+                }
+            },
+            initializer: Expression {
+                id: 0,
+                data: Literal {
+                    data: LiteralData {
+                        kind: UnsignedInteger,
+                        value: "22"
+                    }
+                },
+                ty: Ty {
+                    repr: Erased,
+                    perm: Erased,
+                    base: BaseData {
+                        kind: Named(
+                            LangItem(
+                                Uint
+                            )
+                        ),
+                        generics: []
+                    }
+                }
+            },
+            body: Expression {
+                id: 11,
+                data: Let {
+                    variable: Variable {
+                        id: 1,
+                        data: VariableData {
+                            name: Identifier {
+                                id: 1,
+                                data: IdentifierData {
+                                    text: "baz"
+                                }
+                            }
+                        },
+                        ty: Ty {
+                            repr: Erased,
+                            perm: Erased,
+                            base: BaseData {
+                                kind: Named(
+                                    LangItem(
+                                        Uint
+                                    )
+                                ),
+                                generics: []
+                            }
+                        }
+                    },
+                    initializer: Expression {
+                        id: 1,
+                        data: Literal {
+                            data: LiteralData {
+                                kind: UnsignedInteger,
+                                value: "44"
+                            }
+                        },
+                        ty: Ty {
+                            repr: Erased,
+                            perm: Erased,
+                            base: BaseData {
+                                kind: Named(
+                                    LangItem(
+                                        Uint
+                                    )
+                                ),
+                                generics: []
+                            }
+                        }
+                    },
+                    body: Expression {
+                        id: 10,
+                        data: Let {
+                            variable: Variable {
+                                id: 2,
+                                data: VariableData {
+                                    name: Identifier {
+                                        id: 2,
+                                        data: IdentifierData {
+                                            text: "v"
+                                        }
+                                    }
+                                },
+                                ty: Ty {
+                                    repr: Erased,
+                                    perm: Erased,
+                                    base: BaseData {
+                                        kind: Named(
+                                            LangItem(
+                                                Uint
+                                            )
+                                        ),
+                                        generics: []
+                                    }
+                                }
+                            },
+                            initializer: Expression {
+                                id: 8,
+                                data: Binary {
+                                    operator: Add,
+                                    left: Expression {
+                                        id: 6,
+                                        data: Binary {
+                                            operator: Add,
+                                            left: Expression {
+                                                id: 2,
+                                                data: Place {
+                                                    place: Place {
+                                                        id: 0,
+                                                        data: Variable(
+                                                            Variable {
+                                                                id: 0,
+                                                                data: VariableData {
+                                                                    name: Identifier {
+                                                                        id: 0,
+                                                                        data: IdentifierData {
+                                                                            text: "bar"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                ty: Ty {
+                                                                    repr: Erased,
+                                                                    perm: Erased,
+                                                                    base: BaseData {
+                                                                        kind: Named(
+                                                                            LangItem(
+                                                                                Uint
+                                                                            )
+                                                                        ),
+                                                                        generics: []
+                                                                    }
+                                                                }
+                                                            }
+                                                        ),
+                                                        ty: Ty {
+                                                            repr: Erased,
+                                                            perm: Erased,
+                                                            base: BaseData {
+                                                                kind: Named(
+                                                                    LangItem(
+                                                                        Uint
+                                                                    )
+                                                                ),
+                                                                generics: []
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                ty: Ty {
+                                                    repr: Erased,
+                                                    perm: Erased,
+                                                    base: BaseData {
+                                                        kind: Named(
+                                                            LangItem(
+                                                                Uint
+                                                            )
+                                                        ),
+                                                        generics: []
+                                                    }
+                                                }
+                                            },
+                                            right: Expression {
+                                                id: 5,
+                                                data: Binary {
+                                                    operator: Multiply,
+                                                    left: Expression {
+                                                        id: 3,
+                                                        data: Place {
+                                                            place: Place {
+                                                                id: 1,
+                                                                data: Variable(
+                                                                    Variable {
+                                                                        id: 1,
+                                                                        data: VariableData {
+                                                                            name: Identifier {
+                                                                                id: 1,
+                                                                                data: IdentifierData {
+                                                                                    text: "baz"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        ty: Ty {
+                                                                            repr: Erased,
+                                                                            perm: Erased,
+                                                                            base: BaseData {
+                                                                                kind: Named(
+                                                                                    LangItem(
+                                                                                        Uint
+                                                                                    )
+                                                                                ),
+                                                                                generics: []
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ),
+                                                                ty: Ty {
+                                                                    repr: Erased,
+                                                                    perm: Erased,
+                                                                    base: BaseData {
+                                                                        kind: Named(
+                                                                            LangItem(
+                                                                                Uint
+                                                                            )
+                                                                        ),
+                                                                        generics: []
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        ty: Ty {
+                                                            repr: Erased,
+                                                            perm: Erased,
+                                                            base: BaseData {
+                                                                kind: Named(
+                                                                    LangItem(
+                                                                        Uint
+                                                                    )
+                                                                ),
+                                                                generics: []
+                                                            }
+                                                        }
+                                                    },
+                                                    right: Expression {
+                                                        id: 4,
+                                                        data: Place {
+                                                            place: Place {
+                                                                id: 2,
+                                                                data: Variable(
+                                                                    Variable {
+                                                                        id: 1,
+                                                                        data: VariableData {
+                                                                            name: Identifier {
+                                                                                id: 1,
+                                                                                data: IdentifierData {
+                                                                                    text: "baz"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        ty: Ty {
+                                                                            repr: Erased,
+                                                                            perm: Erased,
+                                                                            base: BaseData {
+                                                                                kind: Named(
+                                                                                    LangItem(
+                                                                                        Uint
+                                                                                    )
+                                                                                ),
+                                                                                generics: []
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ),
+                                                                ty: Ty {
+                                                                    repr: Erased,
+                                                                    perm: Erased,
+                                                                    base: BaseData {
+                                                                        kind: Named(
+                                                                            LangItem(
+                                                                                Uint
+                                                                            )
+                                                                        ),
+                                                                        generics: []
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        ty: Ty {
+                                                            repr: Erased,
+                                                            perm: Erased,
+                                                            base: BaseData {
+                                                                kind: Named(
+                                                                    LangItem(
+                                                                        Uint
+                                                                    )
+                                                                ),
+                                                                generics: []
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                ty: Ty {
+                                                    repr: Erased,
+                                                    perm: Erased,
+                                                    base: BaseData {
+                                                        kind: Named(
+                                                            LangItem(
+                                                                Uint
+                                                            )
+                                                        ),
+                                                        generics: []
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        ty: Ty {
+                                            repr: Erased,
+                                            perm: Erased,
+                                            base: BaseData {
+                                                kind: Named(
+                                                    LangItem(
+                                                        Uint
+                                                    )
+                                                ),
+                                                generics: []
+                                            }
+                                        }
+                                    },
+                                    right: Expression {
+                                        id: 7,
+                                        data: Place {
+                                            place: Place {
+                                                id: 3,
+                                                data: Variable(
+                                                    Variable {
+                                                        id: 0,
+                                                        data: VariableData {
+                                                            name: Identifier {
+                                                                id: 0,
+                                                                data: IdentifierData {
+                                                                    text: "bar"
+                                                                }
+                                                            }
+                                                        },
+                                                        ty: Ty {
+                                                            repr: Erased,
+                                                            perm: Erased,
+                                                            base: BaseData {
+                                                                kind: Named(
+                                                                    LangItem(
+                                                                        Uint
+                                                                    )
+                                                                ),
+                                                                generics: []
+                                                            }
+                                                        }
+                                                    }
+                                                ),
+                                                ty: Ty {
+                                                    repr: Erased,
+                                                    perm: Erased,
+                                                    base: BaseData {
+                                                        kind: Named(
+                                                            LangItem(
+                                                                Uint
+                                                            )
+                                                        ),
+                                                        generics: []
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        ty: Ty {
+                                            repr: Erased,
+                                            perm: Erased,
+                                            base: BaseData {
+                                                kind: Named(
+                                                    LangItem(
+                                                        Uint
+                                                    )
+                                                ),
+                                                generics: []
+                                            }
+                                        }
+                                    }
+                                },
+                                ty: Ty {
+                                    repr: Erased,
+                                    perm: Erased,
+                                    base: BaseData {
+                                        kind: Named(
+                                            LangItem(
+                                                Uint
+                                            )
+                                        ),
+                                        generics: []
+                                    }
+                                }
+                            },
+                            body: Expression {
+                                id: 9,
+                                data: Unit,
+                                ty: Ty {
+                                    repr: Erased,
+                                    perm: Erased,
+                                    base: BaseData {
+                                        kind: Named(
+                                            LangItem(
+                                                Tuple(
+                                                    0
+                                                )
+                                            )
+                                        ),
+                                        generics: []
+                                    }
+                                }
+                            }
+                        },
+                        ty: Ty {
+                            repr: Erased,
+                            perm: Erased,
+                            base: BaseData {
+                                kind: Named(
+                                    LangItem(
+                                        Tuple(
+                                            0
+                                        )
+                                    )
+                                ),
+                                generics: []
+                            }
+                        }
+                    }
+                },
+                ty: Ty {
+                    repr: Erased,
+                    perm: Erased,
+                    base: BaseData {
+                        kind: Named(
+                            LangItem(
+                                Tuple(
+                                    0
+                                )
+                            )
+                        ),
+                        generics: []
+                    }
+                }
+            }
+        },
+        ty: Ty {
+            repr: Erased,
+            perm: Erased,
+            base: BaseData {
+                kind: Named(
+                    LangItem(
+                        Tuple(
+                            0
+                        )
+                    )
+                ),
+                generics: []
+            }
+        }
+    }
+}

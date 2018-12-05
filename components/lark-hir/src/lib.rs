@@ -205,6 +205,30 @@ impl<I: HirIndex> SpanIndex for I {
     }
 }
 
+/// A trait used to add extra information to fn-body debugs. You can
+/// specialize it and you will get a callback for each item that lets
+/// you add extra fields etc.
+pub trait FnBodyExtraDebug: AsRef<FnBodyTables> {
+    fn extended_debug_with(
+        &self,
+        index: MetaIndex,
+        debug: &mut std::fmt::DebugStruct<'_, '_>,
+    ) -> std::fmt::Result;
+}
+
+impl<T> FnBodyExtraDebug for T
+where
+    T: AsRef<FnBodyTables>,
+{
+    default fn extended_debug_with(
+        &self,
+        _index: MetaIndex,
+        _debug: &mut std::fmt::DebugStruct<'_, '_>,
+    ) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
 /// Declares impls for each kind of HIR index as well as the
 /// `hir::MetaIndex` enum.
 macro_rules! define_meta_index {
@@ -231,11 +255,15 @@ macro_rules! define_meta_index {
             lark_debug_with::debug_fallback_impl!($index_ty);
 
             impl<Cx> lark_debug_with::FmtWithSpecialized<Cx> for $index_ty
-            where Cx: AsRef<FnBodyTables>
+            where Cx: FnBodyExtraDebug
             {
                 fn fmt_with_specialized(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                     let tables: &FnBodyTables = cx.as_ref();
-                    lark_debug_with::DebugWith::fmt_with(&tables[*self], cx, fmt)
+                    let mut debug = fmt.debug_struct(stringify!($index_ty));
+                    debug.field("id", &self.as_usize());
+                    debug.field("data", &tables[*self].debug_with(cx));
+                    cx.extended_debug_with((*self).into(), &mut debug)?;
+                    debug.finish()
                 }
             }
 

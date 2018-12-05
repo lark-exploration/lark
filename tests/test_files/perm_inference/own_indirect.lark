@@ -1,0 +1,19 @@
+//~ execute:no
+
+struct Foo {
+  s: Bar
+}
+
+struct Bar { }
+
+def foo(foo: Foo) {
+  let a = foo.s
+      //~ HOVER: Ty \{ repr: Erased, perm: Share, .* }
+
+  let p = foo
+      //~ HOVER: Ty \{ repr: Erased, perm: Own, .* }
+  let q = p.s
+  bar(q)
+}
+
+def bar(s: Bar) { }

@@ -20,7 +20,7 @@ crate struct ResolveToBaseInferred<'me> {
     unresolved: &'me mut Vec<InferVar>,
 }
 
-impl FamilyMapper<BaseInference, BaseInferred> for ResolveToBaseInferred<'me> {
+impl FamilyMapper<BaseInference, BaseInferred> for ResolveToBaseInferred<'_> {
     fn map_ty(&mut self, ty: Ty<BaseInference>) -> Ty<BaseInferred> {
         let Ty {
             repr: Erased,
@@ -49,5 +49,9 @@ impl FamilyMapper<BaseInference, BaseInferred> for ResolveToBaseInferred<'me> {
 
     fn map_placeholder(&mut self, placeholder: Placeholder) -> Placeholder {
         placeholder
+    }
+
+    fn map_perm(&mut self, _perm: Erased) -> Erased {
+        Erased
     }
 }

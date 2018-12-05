@@ -21,6 +21,7 @@ use std::sync::Arc;
 
 pub mod base_inferred;
 pub mod declaration;
+pub mod full_inferred;
 pub mod identity;
 pub mod map_family;
 

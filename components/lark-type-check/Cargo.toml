@@ -5,6 +5,7 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
+datafrog = "0.1.0"
 derive-new = "0.5.5"
 parking_lot = "0.6.4"
 generational-arena = "0.1.0"

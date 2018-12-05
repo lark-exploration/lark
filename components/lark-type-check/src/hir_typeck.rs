@@ -2,6 +2,7 @@ use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
 use crate::TypeCheckerFamilyDependentExt;
+use crate::TypeCheckerVariableExt;
 use lark_collections::FxIndexSet;
 use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;
@@ -14,6 +15,7 @@ use lark_ty::declaration::Declaration;
 use lark_ty::Signature;
 use lark_ty::Ty;
 use lark_ty::{BaseData, BaseKind};
+use lark_unify::InferVar;
 use lark_unify::Inferable;
 
 #[derive(Copy, Clone, Debug, DebugWith)]
@@ -30,7 +32,7 @@ where
     Self: TypeCheckerFamilyDependentExt<F>,
     F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
-    crate fn check_fn_body(&mut self) {
+    crate fn check_fn_body(&mut self) -> Vec<InferVar> {
         let hir_arguments_len = self.hir.arguments.map(|l| l.len()).unwrap_or(0);
         let declaration_signature = self
             .db
@@ -53,6 +55,26 @@ where
             }
         }
         self.check_expression(CheckType(signature.output), self.hir.root_expression);
+
+        // Complete all deferred type operations; run to steady state.
+        loop {
+            let vars: Vec<InferVar> = self.unify.drain_events().collect();
+            if vars.is_empty() {
+                break;
+            }
+            for var in vars {
+                self.trigger_ops(var);
+            }
+        }
+
+        let mut unresolved_variables = vec![];
+
+        // Look for any deferred operations that never executed. Those
+        // variables that they are blocked on must not be resolved; record
+        // as an error.
+        self.untriggered_ops(&mut unresolved_variables);
+
+        unresolved_variables
     }
 
     /// Type-check the expression `expression` in the given mode
@@ -72,7 +94,7 @@ where
 
     fn type_or_infer_variable(&mut self, mode: Mode<F>) -> Ty<F> {
         match mode {
-            Synthesize => self.new_infer_ty(),
+            Synthesize => self.new_variable(),
             CheckType(expected_ty) => expected_ty,
         }
     }
@@ -515,7 +537,7 @@ where
                 // inference variable, we can unify it *now* rather
                 // than wait until the input types are known.
                 let boolean_type = self.boolean_type();
-                self.equate_types(expression, result_ty, boolean_type);
+                self.equate(expression, result_ty, boolean_type);
                 boolean_type
             }
 

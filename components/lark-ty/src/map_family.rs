@@ -1,5 +1,6 @@
 use crate::BaseData;
 use crate::BaseKind;
+use crate::Erased;
 use crate::Generic;
 use crate::GenericKind;
 use crate::Generics;
@@ -24,6 +25,8 @@ pub trait FamilyMapper<S: TypeFamily, T: TypeFamily> {
     fn map_ty(&mut self, ty: Ty<S>) -> Ty<T>;
 
     fn map_placeholder(&mut self, placeholder: S::Placeholder) -> T::Placeholder;
+
+    fn map_perm(&mut self, perm: S::Perm) -> T::Perm;
 }
 
 impl<S, T, V> Map<S, T> for &V
@@ -243,5 +246,17 @@ where
             inputs: inputs.map(mapper),
             output: output.map(mapper),
         }
+    }
+}
+
+impl<S, T> Map<S, T> for Erased
+where
+    S: TypeFamily,
+    T: TypeFamily,
+{
+    type Output = Erased;
+
+    fn map(&self, _mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
+        *self
     }
 }

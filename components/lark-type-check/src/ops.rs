@@ -1,6 +1,7 @@
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
 use crate::TypeCheckerFamilyDependentExt;
+use crate::TypeCheckerVariableExt;
 use crate::UniverseBinder;
 use lark_entity::Entity;
 use lark_entity::EntityData;
@@ -113,7 +114,7 @@ where
         let error_type = self.error_type();
         for generic in generics.iter() {
             match generic {
-                GenericKind::Ty(ty) => self.equate_types(cause, error_type, ty),
+                GenericKind::Ty(ty) => self.equate(cause, error_type, ty),
             }
         }
     }
@@ -177,7 +178,7 @@ where
             generics.extend(
                 declarations
                     .indices()
-                    .map(|_| GenericKind::Ty(self.new_infer_ty())),
+                    .map(|_| GenericKind::Ty(self.new_variable())),
             );
         }
 
@@ -191,44 +192,57 @@ where
         self.universe_binders.push(binder)
     }
 
-    /// If `base` can be mapped to a concrete `BaseData`,
-    /// invokes `op` and returns the resulting type.
-    /// Otherwise, creates a type variable and returns that;
-    /// once `base` can be mapped, the closure `op` will be
-    /// invoked and the type variable will be unified.
-    crate fn with_base_data(
+    /// If `base` can be mapped to a concrete `BaseData`, invokes `op`
+    /// and returns the resulting value.  Otherwise, creates an
+    /// inference variable and returns that; once `base` can be
+    /// mapped, the closure `op` will be invoked and the type variable
+    /// will be unified.
+    crate fn with_base_data<V: 'static>(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
         base: F::Base,
-        op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
-    ) -> Ty<F> {
+        op: impl FnOnce(&mut Self, BaseData<F>) -> V + 'static,
+    ) -> V
+    where
+        V: Copy,
+        Self: TypeCheckerVariableExt<F, V>,
+    {
         let cause = cause.into();
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => op(self, data),
 
             Err(_) => {
-                let var: Ty<F> = self.new_infer_ty();
-                self.with_base_data_unify_with(cause, base, var, op);
+                let var: V = self.new_variable();
+                self.with_base_data_equate(base, op, move |this, value| {
+                    this.equate(cause, var, value)
+                });
                 var
             }
         }
     }
 
-    fn with_base_data_unify_with(
+    /// Helper function:
+    ///
+    /// The operation `op` requires the base data of `base` but it was
+    /// not available when we first looked, so we created a dummy
+    /// intermediate value. We now think that `base` may have been
+    /// inferred, so check again: if so, invoke `op` and invoke
+    /// `equate` (which will combine the result with that dummy
+    /// value). If not, enqueue us up for later.
+    fn with_base_data_equate<O: 'static>(
         &mut self,
-        cause: hir::MetaIndex,
         base: F::Base,
-        output_ty: Ty<F>,
-        op: impl FnOnce(&mut Self, BaseData<F>) -> Ty<F> + 'static,
+        op: impl FnOnce(&mut Self, BaseData<F>) -> O + 'static,
+        equate: impl Fn(&mut Self, O) + Copy + 'static,
     ) {
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => {
-                let ty1 = op(self, data);
-                self.equate_types(cause, output_ty, ty1);
+                let val1 = op(self, data);
+                equate(self, val1);
             }
 
             Err(_) => self.enqueue_op(Some(base), move |this| {
-                this.with_base_data_unify_with(cause, base, output_ty, op)
+                this.with_base_data_equate(base, op, equate)
             }),
         }
     }

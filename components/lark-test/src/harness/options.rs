@@ -17,14 +17,23 @@ crate struct TestOptions {
     //
     // Default: if there are errors, no. Otherwise, mode must be explicitly specified.
     crate execution_mode: Option<ExecutionMode>,
+
+    // Do we dump out the HIR?
+    crate hir_mode: Option<HirMode>,
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 crate enum ExecutionMode {
     No,
     Build,
     Eval,
     All,
+}
+
+#[derive(Copy, Clone, Debug)]
+crate enum HirMode {
+    Base,
+    Full,
 }
 
 #[derive(Clone, Debug)]
@@ -107,6 +116,15 @@ impl TestOptions {
                     "build" => ExecutionMode::Build,
                     "eval" => ExecutionMode::Eval,
                     "all" => ExecutionMode::All,
+                    _ => return Err(format!("unexpected compilation mode: `{}`", value.trim())),
+                });
+                Ok(())
+            }
+
+            "hir" => {
+                self.hir_mode = Some(match value.trim() {
+                    "base" => HirMode::Base,
+                    "full" => HirMode::Full,
                     _ => return Err(format!("unexpected compilation mode: `{}`", value.trim())),
                 });
                 Ok(())

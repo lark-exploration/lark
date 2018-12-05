@@ -10,6 +10,7 @@ use crate::lexer::token::LexToken;
 use crate::macros::EntityMacroDefinition;
 use crate::syntax::entity::ParsedEntity;
 use lark_collections::FxIndexMap;
+use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::EntityTables;
@@ -132,6 +133,12 @@ salsa::query_group! {
             use fn query_definitions::fn_body;
         }
 
+        /// Given a span, find the things that it may have been referring to.
+        fn hover_targets(file: FileName, index: ByteIndex) -> Seq<HoverTarget> {
+            type HoverTargetsQuery;
+            use fn query_definitions::hover_targets;
+        }
+
         /// Get the list of member names and their def-ids for a given struct.
         fn members(key: Entity) -> Result<Seq<hir::Member>, ErrorReported> {
             type MembersQuery;
@@ -168,6 +175,18 @@ salsa::query_group! {
             use fn scope::resolve_name;
         }
     }
+}
+
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
+pub struct HoverTarget {
+    pub span: Span<FileName>,
+    pub kind: HoverTargetKind,
+}
+
+#[derive(Clone, Debug, DebugWith, PartialEq, Eq)]
+pub enum HoverTargetKind {
+    Entity(Entity),
+    MetaIndex(Entity, hir::MetaIndex),
 }
 
 pub trait ParserDatabaseExt: ParserDatabase {

@@ -19,7 +19,9 @@ use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclarationTables;
-use lark_ty::map_family::{FamilyMapper, Map};
+use lark_ty::full_inferred::FullInferred;
+use lark_ty::full_inferred::FullInferredTables;
+use lark_ty::map_family::Map;
 use lark_ty::BaseData;
 use lark_ty::Generics;
 use lark_ty::Placeholder;
@@ -35,20 +37,31 @@ mod base_inference;
 mod full_inference;
 mod hir_typeck;
 mod ops;
-mod query_definitions;
-mod resolve_to_base_inferred;
+mod results;
 mod substitute;
 
 salsa::query_group! {
-    pub trait TypeCheckDatabase: ParserDatabase + AsRef<BaseInferredTables> {
+    pub trait TypeCheckDatabase: ParserDatabase
+        + AsRef<BaseInferredTables>
+        + AsRef<FullInferredTables>
+    {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
         fn base_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
             type BaseTypeCheckQuery;
-            use fn query_definitions::base_type_check;
+            use fn base_inference::query_definition::base_type_check;
+        }
+
+        /// Compute the "base type information" for a given fn body.
+        /// This is the type information excluding permissions.
+        fn full_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<FullInferred>>> {
+            type FullTypeCheckQuery;
+            use fn full_inference::query_definition::full_type_check;
         }
     }
 }
+
+pub use results::TypeCheckResults;
 
 struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily, S> {
     /// Salsa database.
@@ -102,17 +115,12 @@ impl<T: TypeFamily<Placeholder = Placeholder>> TypeCheckerFamily for T {}
 /// will find e.g. one implementation of this for the `BaseInference`
 /// type family and one for more complete inference (not yet
 /// implemented).
-trait TypeCheckerFamilyDependentExt<F: TypeCheckerFamily>: AsRef<F::InternTables>
+trait TypeCheckerFamilyDependentExt<F: TypeCheckerFamily>
 where
+    Self: AsRef<F::InternTables>,
+    Self: TypeCheckerVariableExt<F, Ty<F>>,
     F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
-    /// Creates a new type with fresh inference variables.
-    fn new_infer_ty(&mut self) -> Ty<F>;
-
-    /// Equates two types (producing an error if they are not
-    /// equatable).
-    fn equate_types(&mut self, cause: impl Into<hir::MetaIndex>, ty1: Ty<F>, ty2: Ty<F>);
-
     /// Generates the constraint that the type of `expression` be
     /// assignable to a place with the type `place_ty`. This may
     /// induce coercions.
@@ -132,15 +140,13 @@ where
 
     /// Adjust the type of `value` to account for having been
     /// projected from an owned with the given permissions
-    /// `owner_perm` (e.g., when accessing a field).
-    fn apply_owner_perm<M>(
+    /// `access_perm` (e.g., when accessing a field).
+    fn apply_owner_perm(
         &mut self,
         location: impl Into<hir::MetaIndex>,
-        owner_perm: F::Perm,
-        value: M,
-    ) -> M::Output
-    where
-        M: Map<F, F>;
+        access_perm: F::Perm,
+        field_ty: Ty<F>,
+    ) -> Ty<F>;
 
     /// Requests the type for a given HIR variable. Upon the first
     /// request, the result may be a fresh inference variable.
@@ -174,104 +180,14 @@ where
     ) -> Generics<F>;
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct TypeCheckResults<F: TypeFamily> {
-    /// The type computed for expressions, identified-expressions, and
-    /// other things that have a type.
-    types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
+/// Trait for "inferable values" of type `V` (e.g., types).
+trait TypeCheckerVariableExt<F: TypeCheckerFamily, V> {
+    /// Creates a new type (or other value) with fresh inference variable(s).
+    fn new_variable(&mut self) -> V;
 
-    /// For references to entities, the generics applied.
-    generics: std::collections::BTreeMap<hir::MetaIndex, Generics<F>>,
-
-    /// For "type-relative" identifiers, stores the entity that we resolved
-    /// to. Examples:
-    ///
-    /// - `foo.bar` -- attached to the identifier `bar`, entity of the field
-    /// - `foo.bar(..)` -- attached to the identifier `bar`, entity of the method
-    /// - `Foo { a: b }` -- attached to the identifier `a`, entity of the field
-    /// - `foo` -- when an identifier refers to an entity
-    entities: std::collections::BTreeMap<hir::MetaIndex, Entity>,
-}
-
-impl<F: TypeFamily> TypeCheckResults<F> {
-    /// Record the entity assigned with a given element of the HIR
-    /// (e.g. the identifier of a field).
-    fn record_entity(&mut self, index: impl Into<hir::MetaIndex>, entity: Entity) {
-        let index = index.into();
-        let old_entity = self.entities.insert(index, entity);
-        assert!(
-            old_entity.is_none(),
-            "index {:?} already had an entity",
-            index
-        );
-    }
-
-    /// Record the type assigned with a given element of the HIR
-    /// (typically an expression).
-    fn record_ty(&mut self, index: impl Into<hir::MetaIndex>, ty: Ty<F>) {
-        let index = index.into();
-        let old_ty = self.types.insert(index, ty);
-        assert!(old_ty.is_none(), "index {:?} already had a type", index);
-    }
-
-    /// Record the generics for a given element of the HIR
-    /// (typically an expression).
-    fn record_generics(&mut self, index: impl Into<hir::MetaIndex>, g: &Generics<F>) {
-        let index = index.into();
-        let old_generics = self.generics.insert(index, g.clone());
-        assert!(
-            old_generics.is_none(),
-            "index {:?} already had generics",
-            index
-        );
-    }
-
-    /// Access the type stored for the given `index`, usually the
-    /// index of an expression.
-    pub fn ty(&self, index: impl Into<hir::MetaIndex>) -> Ty<F> {
-        self.types[&index.into()]
-    }
-
-    /// Load the type for `index`, if any is stored, else return `None`.
-    pub fn opt_ty(&self, index: impl Into<hir::MetaIndex>) -> Option<Ty<F>> {
-        self.types.get(&index.into()).cloned()
-    }
-
-    /// Check whether there is a type recorded for `index`.
-    pub fn has_recorded_ty(&self, index: impl Into<hir::MetaIndex>) -> bool {
-        self.types.contains_key(&index.into())
-    }
-}
-
-impl<F: TypeFamily> Default for TypeCheckResults<F> {
-    fn default() -> Self {
-        Self {
-            types: Default::default(),
-            generics: Default::default(),
-            entities: Default::default(),
-        }
-    }
-}
-
-impl<S, T> Map<S, T> for TypeCheckResults<S>
-where
-    S: TypeFamily,
-    T: TypeFamily,
-{
-    type Output = TypeCheckResults<T>;
-
-    fn map(&self, mapper: &mut impl FamilyMapper<S, T>) -> Self::Output {
-        let TypeCheckResults {
-            types,
-            generics,
-            entities,
-        } = self;
-        TypeCheckResults {
-            types: types.map(mapper),
-            generics: generics.map(mapper),
-            entities: entities.map(mapper),
-        }
-    }
+    /// Equates two types or other inferable values (producing an error if they are not
+    /// equatable).
+    fn equate(&mut self, cause: impl Into<hir::MetaIndex>, val1: V, val2: V);
 }
 
 impl<DB, F, S> AsRef<DeclarationTables> for TypeChecker<'_, DB, F, S>

@@ -29,6 +29,8 @@ crate trait SubstitutionDelegate<F: TypeFamily>: AsRef<DeclarationTables> {
     /// would map the `own` from that declaration into the family F.
     fn map_repr_perm(&mut self, repr: ReprKind, perm: declaration::Perm) -> (F::Repr, F::Perm);
 
+    fn map_perm(&mut self, perm: declaration::Perm) -> F::Perm;
+
     /// Map the repr/perm from a case where the "base type" is
     /// substituted to `ty`; e.g. if the user declared `own T`, and
     /// `T` maps to `ty`, then this function applies the `own` from
@@ -85,5 +87,9 @@ where
 
     fn map_placeholder(&mut self, placeholder: !) -> F::Placeholder {
         placeholder
+    }
+
+    fn map_perm(&mut self, perm: declaration::Perm) -> F::Perm {
+        self.delegate.map_perm(perm)
     }
 }
