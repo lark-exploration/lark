@@ -1,3 +1,4 @@
+use crate::build::LarkDatabaseExt;
 use lark_entity::{EntityData, ItemKind};
 use lark_eval::Value;
 use lark_intern::{Intern, Untern};
@@ -7,6 +8,7 @@ use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::LarkDatabase;
 use std::collections::HashMap;
 use std::io::{stdin, stdout, Write};
+use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 const REPL_FILENAME: &str = "__REPL__.lark";
 
@@ -81,18 +83,10 @@ pub fn repl() {
             format!("def main() {{\n{}\n}}", fn_body.join("\n")),
         );
 
-        let mut error_count = 0;
-        match db.errors_for_project() {
-            Ok(errors) => {
-                for (_filename, ranged_diagnostics) in errors {
-                    for ranged_diagnostic in ranged_diagnostics {
-                        error_count += 1;
-                        println!("{:#?}", ranged_diagnostic);
-                    }
-                }
-            }
-            Err(_) => println!("Internal error: error check internally cancelled"),
-        }
+        let writer = StandardStream::stderr(ColorChoice::Auto);
+        let error_count = db
+            .display_errors(&mut writer.lock())
+            .unwrap_or_else(|_| panic!("cancelled"));
 
         if error_count > 0 {
             // The last command was bad. Let's remove it from our function body
