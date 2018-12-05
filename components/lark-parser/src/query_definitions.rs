@@ -5,6 +5,8 @@ use crate::lexer::tools::Tokenizer;
 use crate::parser::Parser;
 use crate::syntax::entity::{EntitySyntax, ParsedEntity, ParsedEntityThunk};
 use crate::syntax::skip_newline::SkipNewline;
+use crate::HoverTarget;
+use crate::HoverTargetKind;
 use crate::ParserDatabase;
 
 use lark_debug_with::DebugWith;
@@ -248,4 +250,65 @@ crate fn member_entity(
             })
             .next(),
     }
+}
+
+crate fn hover_targets(
+    db: &impl ParserDatabase,
+    file: FileName,
+    index: ByteIndex,
+) -> Seq<HoverTarget> {
+    let file_entity = EntityData::InputFile { file }.intern(db);
+
+    let mut targets: Vec<_> = db
+        .descendant_entities(file_entity)
+        .iter()
+        .flat_map(|&entity| {
+            let entity_span = db.entity_span(entity);
+
+            if !entity_span.contains_index(index) {
+                return vec![];
+            }
+
+            let mut targets = vec![HoverTarget {
+                span: entity_span,
+                kind: HoverTargetKind::Entity(entity),
+            }];
+
+            if entity.untern(db).has_fn_body() {
+                let fn_body = db.fn_body(entity).into_value();
+                targets.extend(fn_body.tables.spans.iter().filter_map(|(&mi, &mi_span)| {
+                    if mi_span.contains_index(index) {
+                        Some(HoverTarget {
+                            span: mi_span,
+                            kind: HoverTargetKind::MetaIndex(entity, mi),
+                        })
+                    } else {
+                        None
+                    }
+                }));
+            }
+
+            targets
+        })
+        .collect();
+
+    // If we assume that all the targets contain one another,
+    // then sorting by their *start spans* first (and inversely by
+    // *end spans* in case of ties...)  should give in
+    // "outermost-to-innermost" order.
+    //
+    // Example:
+    //
+    // foo { bar { } }
+    //       ^^^       2
+    //       ^^^^^^^   1
+    // ^^^^^^^^^^^^^^^ 0
+    targets.sort_by_key(|target| {
+        let start = target.span.start();
+        let end = std::usize::MAX - target.span.end().to_usize();
+        (start, end)
+    });
+
+    assert!(!targets.is_empty());
+    Seq::from(targets)
 }

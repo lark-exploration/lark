@@ -1,0 +1,8 @@
+//~ execute:no
+//~ hir:base
+
+def main() {
+  let bar = 22
+  let baz = 44
+  let v = bar + baz * baz + bar
+}

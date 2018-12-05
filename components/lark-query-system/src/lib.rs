@@ -91,6 +91,7 @@ salsa::database_storage! {
             fn parsed_entity() for lark_parser::ParsedEntityQuery;
             fn child_entities() for lark_parser::ChildEntitiesQuery;
             fn fn_body() for lark_parser::FnBodyQuery;
+            fn hover_targets() for lark_parser::HoverTargetsQuery;
             fn members() for lark_parser::MembersQuery;
             fn member_entity() for lark_parser::MemberEntityQuery;
             fn descendant_entities() for lark_parser::DescendantEntitiesQuery;

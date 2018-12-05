@@ -2,10 +2,10 @@
 #![feature(const_fn)]
 #![feature(const_let)]
 
-use lark_intern::{Intern, Untern};
 use lark_debug_derive::DebugWith;
 use lark_debug_with::{DebugWith, FmtWithSpecialized};
 use lark_error::{ErrorReported, ErrorSentinel};
+use lark_intern::{Intern, Untern};
 use lark_span::FileName;
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables};
 
@@ -92,6 +92,32 @@ impl EntityData {
             | EntityData::LangItem(LangItem::False)
             | EntityData::LangItem(LangItem::Debug)
             | EntityData::Error(_) => true,
+        }
+    }
+
+    /// True if this entity has a fn body associated with it.
+    pub fn has_fn_body(&self) -> bool {
+        match self {
+            EntityData::InputFile { .. }
+            | EntityData::ItemName {
+                kind: ItemKind::Struct,
+                ..
+            }
+            | EntityData::MemberName {
+                kind: MemberKind::Field,
+                ..
+            }
+            | EntityData::LangItem(_)
+            | EntityData::Error(_) => false,
+
+            EntityData::ItemName {
+                kind: ItemKind::Function,
+                ..
+            }
+            | EntityData::MemberName {
+                kind: MemberKind::Method,
+                ..
+            } => true,
         }
     }
 }
