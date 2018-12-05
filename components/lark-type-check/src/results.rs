@@ -9,10 +9,10 @@ use lark_ty::TypeFamily;
 pub struct TypeCheckResults<F: TypeFamily> {
     /// The type computed for expressions, identified-expressions, and
     /// other things that have a type.
-    crate types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
+    pub types: std::collections::BTreeMap<hir::MetaIndex, Ty<F>>,
 
     /// For references to entities, the generics applied.
-    crate generics: std::collections::BTreeMap<hir::MetaIndex, Generics<F>>,
+    pub generics: std::collections::BTreeMap<hir::MetaIndex, Generics<F>>,
 
     /// For "type-relative" identifiers, stores the entity that we resolved
     /// to. Examples:
@@ -21,9 +21,9 @@ pub struct TypeCheckResults<F: TypeFamily> {
     /// - `foo.bar(..)` -- attached to the identifier `bar`, entity of the method
     /// - `Foo { a: b }` -- attached to the identifier `a`, entity of the field
     /// - `foo` -- when an identifier refers to an entity
-    crate entities: std::collections::BTreeMap<hir::MetaIndex, Entity>,
+    pub entities: std::collections::BTreeMap<hir::MetaIndex, Entity>,
 
-    crate access_permissions: std::collections::BTreeMap<hir::Expression, F::Perm>,
+    pub access_permissions: std::collections::BTreeMap<hir::Expression, F::Perm>,
 }
 
 impl<F: TypeFamily> TypeCheckResults<F> {
