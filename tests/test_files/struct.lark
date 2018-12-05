@@ -2,7 +2,7 @@
 
 struct Foo {
     bar: bool,
-     //~ HOVER: Boolean
+     //~ HOVER: bool
 }
 
 def main() {}

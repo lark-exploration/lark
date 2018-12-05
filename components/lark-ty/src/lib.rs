@@ -24,6 +24,7 @@ pub mod declaration;
 pub mod full_inferred;
 pub mod identity;
 pub mod map_family;
+pub mod pretty_print;
 
 pub trait TypeFamily: Copy + Clone + Debug + DebugWith + Eq + Hash + 'static {
     type InternTables: AsRef<Self::InternTables>;

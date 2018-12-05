@@ -6,6 +6,7 @@ use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_span::{ByteIndex, FileName, Span};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
+use lark_ty::pretty_print::PrettyPrinter;
 use salsa::{Database, ParallelDatabase, Snapshot};
 use std::collections::VecDeque;
 use std::sync::Arc;
@@ -30,6 +31,8 @@ impl std::fmt::Debug for LarkDatabase {
 }
 
 impl ParserDatabaseExt for LarkDatabase {}
+
+impl PrettyPrinter for LarkDatabase {}
 
 impl LarkDatabase {
     pub fn intern_string(&self, s: &str) -> GlobalIdentifier {

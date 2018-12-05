@@ -5,7 +5,6 @@
 //! convenient.
 
 use languageserver_types::{Position, Range};
-use lark_debug_with::DebugWith;
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
 use lark_intern::{Intern, Untern};
@@ -29,7 +28,9 @@ pub struct Cancelled;
 
 pub type Cancelable<T> = Result<T, Cancelled>;
 
-pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
+pub trait LsDatabase:
+    lark_type_check::TypeCheckDatabase + lark_ty::pretty_print::PrettyPrinter
+{
     fn check_for_cancellation(&self) -> Cancelable<()> {
         if self.salsa_runtime().is_current_revision_canceled() {
             Err(Cancelled)
@@ -158,20 +159,20 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                         } => {
                             let field_ty = self.ty(entity).into_value();
                             // FIXME should not use "debug" but display to format the type
-                            Some(format!("{}", field_ty.debug_with(self)))
+                            Some(format!("{}", field_ty.pretty_print(self)))
                         }
 
                         EntityData::ItemName {
                             kind: ItemKind::Function,
+                            id,
                             ..
-                        }
-                        | EntityData::MemberName {
+                        } => Some(format!("function {}", id.untern(self))),
+
+                        EntityData::MemberName {
                             kind: MemberKind::Method,
+                            id,
                             ..
-                        } => {
-                            // what should we say for functions and methods?
-                            None
-                        }
+                        } => Some(format!("method {}", id.untern(self))),
 
                         EntityData::InputFile { .. }
                         | EntityData::LangItem(_)
@@ -182,7 +183,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                 HoverTargetKind::MetaIndex(entity, mi) => {
                     let fn_body_types = self.full_type_check(entity).into_value();
                     if let Some(ty) = fn_body_types.types.get(&mi) {
-                        Some(format!("{}", ty.debug_with(self)))
+                        Some(format!("{}", ty.pretty_print(self)))
                     } else {
                         None
                     }
