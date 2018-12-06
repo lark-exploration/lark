@@ -10,6 +10,7 @@ use lark_error::Diagnostic;
 use lark_intern::{Intern, Untern};
 use lark_parser::HoverTargetKind;
 use lark_span::{ByteIndex, FileName, IntoFileName, Span};
+use lark_type_check::PrettyPrint;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -145,36 +146,10 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             .filter_map(|target| match target.kind {
                 HoverTargetKind::Entity(entity) => {
                     match entity.untern(self) {
-                        EntityData::ItemName {
-                            kind: ItemKind::Struct,
-                            id,
-                            ..
-                        } => Some(format!("struct {}", id.untern(self))),
-
-                        EntityData::MemberName {
-                            kind: MemberKind::Field,
-                            ..
-                        } => {
-                            let field_ty = self.ty(entity).into_value();
-                            // FIXME should not use "debug" but display to format the type
-                            Some(format!("{}", field_ty.pretty_print(self)))
-                        }
-
-                        EntityData::ItemName {
-                            kind: ItemKind::Function,
-                            id,
-                            ..
-                        } => Some(format!("function {}", id.untern(self))),
-
-                        EntityData::MemberName {
-                            kind: MemberKind::Method,
-                            id,
-                            ..
-                        } => Some(format!("method {}", id.untern(self))),
-
                         EntityData::InputFile { .. }
                         | EntityData::LangItem(_)
                         | EntityData::Error(_) => None,
+                        _ => Some(entity.pretty_print(self))
                     }
                 }
 

@@ -22,7 +22,6 @@ use lark_ty::declaration::DeclarationTables;
 use lark_ty::full_inferred::FullInferred;
 use lark_ty::full_inferred::FullInferredTables;
 use lark_ty::map_family::Map;
-use lark_ty::pretty_print::PrettyPrinter;
 use lark_ty::BaseData;
 use lark_ty::Generics;
 use lark_ty::Placeholder;
@@ -38,6 +37,7 @@ mod base_inference;
 mod full_inference;
 mod hir_typeck;
 mod ops;
+mod pretty_print;
 mod results;
 mod substitute;
 
@@ -45,7 +45,6 @@ salsa::query_group! {
     pub trait TypeCheckDatabase: ParserDatabase
         + AsRef<BaseInferredTables>
         + AsRef<FullInferredTables>
-        + PrettyPrinter
     {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
@@ -63,6 +62,7 @@ salsa::query_group! {
     }
 }
 
+pub use pretty_print::PrettyPrint;
 pub use results::TypeCheckResults;
 
 struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily, S> {

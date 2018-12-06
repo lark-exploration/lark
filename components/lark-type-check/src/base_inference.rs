@@ -2,6 +2,7 @@
 //! only" inference. This is inference where we ignore permissions and
 //! representations and focus only on the base types.
 
+use crate::pretty_print::PrettyPrint;
 use crate::results::TypeCheckResults;
 use crate::substitute::Substitution;
 use crate::substitute::SubstitutionDelegate;
@@ -18,7 +19,6 @@ use lark_intern::Untern;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::map_family::Map;
-use lark_ty::pretty_print::pretty_print_kind;
 use lark_ty::BaseData;
 use lark_ty::BaseKind;
 use lark_ty::Erased;
@@ -237,8 +237,8 @@ where
                     self.record_error(
                         format!(
                             "mismatched types ({} vs {})",
-                            pretty_print_kind(data1.kind, self.db),
-                            pretty_print_kind(data2.kind, self.db)
+                            data1.kind.pretty_print(self.db),
+                            data2.kind.pretty_print(self.db)
                         ),
                         cause,
                     );
