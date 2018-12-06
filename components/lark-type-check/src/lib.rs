@@ -15,6 +15,7 @@ use lark_error::{Diagnostic, WithError};
 use lark_hir as hir;
 use lark_indices::IndexVec;
 use lark_parser::ParserDatabase;
+use lark_pretty_print::PrettyPrintDatabase;
 use lark_ty::base_inferred::BaseInferred;
 use lark_ty::base_inferred::BaseInferredTables;
 use lark_ty::declaration::Declaration;
@@ -37,7 +38,6 @@ mod base_inference;
 mod full_inference;
 mod hir_typeck;
 mod ops;
-mod pretty_print;
 mod results;
 mod substitute;
 
@@ -45,6 +45,7 @@ salsa::query_group! {
     pub trait TypeCheckDatabase: ParserDatabase
         + AsRef<BaseInferredTables>
         + AsRef<FullInferredTables>
+        + PrettyPrintDatabase
     {
         /// Compute the "base type information" for a given fn body.
         /// This is the type information excluding permissions.
@@ -62,7 +63,6 @@ salsa::query_group! {
     }
 }
 
-pub use pretty_print::PrettyPrint;
 pub use results::TypeCheckResults;
 
 struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily, S> {

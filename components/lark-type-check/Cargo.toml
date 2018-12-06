@@ -18,6 +18,7 @@ lark-error = { path = "../lark-error" }
 lark-entity = { path = "../lark-entity" }
 lark-hir = { path = "../lark-hir" }
 lark-parser = { path = "../lark-parser" }
+lark-pretty-print = { path = "../lark-pretty-print" }
 lark-ty = { path = "../lark-ty" }
 lark-unify = { path = "../lark-unify" }
 log = "0.4.5"

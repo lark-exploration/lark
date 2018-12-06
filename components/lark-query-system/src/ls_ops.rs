@@ -9,8 +9,8 @@ use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
 use lark_intern::{Intern, Untern};
 use lark_parser::HoverTargetKind;
+use lark_pretty_print::PrettyPrint;
 use lark_span::{ByteIndex, FileName, IntoFileName, Span};
-use lark_type_check::PrettyPrint;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -144,22 +144,20 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             .iter()
             .rev()
             .filter_map(|target| match target.kind {
-                HoverTargetKind::Entity(entity) => {
-                    match entity.untern(self) {
-                        EntityData::InputFile { .. }
-                        | EntityData::LangItem(_)
-                        | EntityData::Error(_) => None,
-                        EntityData::ItemName {
-                            kind: ItemKind::Struct,
-                            ..
-                        } => Some(format!("struct {}", entity.pretty_print(self))),
-                        EntityData::ItemName {
-                            kind: ItemKind::Function,
-                            ..
-                        } => Some(format!("def {}", entity.pretty_print(self))),
-                        _ => Some(entity.pretty_print(self))
-                    }
-                }
+                HoverTargetKind::Entity(entity) => match entity.untern(self) {
+                    EntityData::InputFile { .. }
+                    | EntityData::LangItem(_)
+                    | EntityData::Error(_) => None,
+                    EntityData::ItemName {
+                        kind: ItemKind::Struct,
+                        ..
+                    } => Some(format!("struct {}", entity.pretty_print(self))),
+                    EntityData::ItemName {
+                        kind: ItemKind::Function,
+                        ..
+                    } => Some(format!("def {}", entity.pretty_print(self))),
+                    _ => Some(entity.pretty_print(self)),
+                },
 
                 HoverTargetKind::MetaIndex(entity, mi) => {
                     let fn_body_types = self.full_type_check(entity).into_value();

@@ -2,7 +2,6 @@
 //! only" inference. This is inference where we ignore permissions and
 //! representations and focus only on the base types.
 
-use crate::pretty_print::PrettyPrint;
 use crate::results::TypeCheckResults;
 use crate::substitute::Substitution;
 use crate::substitute::SubstitutionDelegate;
@@ -16,6 +15,7 @@ use lark_entity::Entity;
 use lark_hir as hir;
 use lark_intern::Intern;
 use lark_intern::Untern;
+use lark_pretty_print::PrettyPrint;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::map_family::Map;

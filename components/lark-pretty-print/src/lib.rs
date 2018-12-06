@@ -1,16 +1,18 @@
-use crate::TypeCheckDatabase;
 use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_intern::Untern;
+use lark_parser::ParserDatabase;
 use lark_ty::declaration::{Declaration, DeclaredPermKind};
-use lark_ty::full_inferred::FullInferred;
+use lark_ty::full_inferred::{FullInferred, FullInferredTables};
 use lark_ty::{BaseData, BaseKind, BoundVarOr, PermKind, Ty, TypeFamily};
 
+pub trait PrettyPrintDatabase: ParserDatabase + AsRef<FullInferredTables> {}
+
 pub trait PrettyPrint {
-    fn pretty_print(&self, db: &impl TypeCheckDatabase) -> String;
+    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String;
 }
 
 impl PrettyPrint for Ty<Declaration> {
-    fn pretty_print(&self, db: &impl TypeCheckDatabase) -> String {
+    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
         format!(
             "{}{}",
             match self.perm.untern(db) {
@@ -25,7 +27,7 @@ impl PrettyPrint for Ty<Declaration> {
 }
 
 impl PrettyPrint for Ty<FullInferred> {
-    fn pretty_print(&self, db: &impl TypeCheckDatabase) -> String {
+    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
         format!(
             "{}{}",
             match self.perm {
@@ -39,13 +41,13 @@ impl PrettyPrint for Ty<FullInferred> {
 }
 
 impl<T: TypeFamily> PrettyPrint for BaseData<T> {
-    fn pretty_print(&self, db: &impl TypeCheckDatabase) -> String {
+    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
         self.kind.pretty_print(db)
     }
 }
 
 impl PrettyPrint for Entity {
-    fn pretty_print(&self, db: &impl TypeCheckDatabase) -> String {
+    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
         match self.untern(db) {
             EntityData::LangItem(LangItem::Boolean) => "bool".into(),
             EntityData::LangItem(LangItem::Uint) => "uint".into(),
@@ -94,7 +96,7 @@ impl PrettyPrint for Entity {
 }
 
 impl<T: TypeFamily> PrettyPrint for BaseKind<T> {
-    fn pretty_print(&self, db: &impl TypeCheckDatabase) -> String {
+    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
         match self {
             BaseKind::Named(entity) => entity.pretty_print(db),
             BaseKind::Placeholder(..) => "<placeholder>".into(),

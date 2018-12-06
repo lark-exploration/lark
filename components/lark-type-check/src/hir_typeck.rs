@@ -1,4 +1,4 @@
-use crate::pretty_print::PrettyPrint;
+use lark_pretty_print::PrettyPrint;
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
