@@ -149,6 +149,14 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                         EntityData::InputFile { .. }
                         | EntityData::LangItem(_)
                         | EntityData::Error(_) => None,
+                        EntityData::ItemName {
+                            kind: ItemKind::Struct,
+                            ..
+                        } => Some(format!("struct {}", entity.pretty_print(self))),
+                        EntityData::ItemName {
+                            kind: ItemKind::Function,
+                            ..
+                        } => Some(format!("def {}", entity.pretty_print(self))),
                         _ => Some(entity.pretty_print(self))
                     }
                 }
