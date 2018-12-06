@@ -45,7 +45,7 @@ impl Ty<FullInferred> {
     }
 }
 
-fn pretty_print_kind<T: TypeFamily>(kind: BaseKind<T>, db: &impl PrettyPrinter) -> String {
+pub fn pretty_print_kind<T: TypeFamily>(kind: BaseKind<T>, db: &impl PrettyPrinter) -> String {
     match kind {
         BaseKind::Named(entity) => match entity.untern(db) {
             EntityData::LangItem(LangItem::Boolean) => "bool".into(),

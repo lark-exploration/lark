@@ -12,6 +12,7 @@ use lark_error::ErrorSentinel;
 use lark_hir as hir;
 use lark_intern::Untern;
 use lark_ty::declaration::Declaration;
+use lark_ty::pretty_print::pretty_print_kind;
 use lark_ty::Signature;
 use lark_ty::Ty;
 use lark_ty::{BaseData, BaseKind};
@@ -589,7 +590,14 @@ where
                 (BaseKind::Error, _) | (_, BaseKind::Error) => self.error_type(),
 
                 (BaseKind::Named(_), _) | (BaseKind::Placeholder(_), _) => {
-                    self.record_error("mismatched types", expression);
+                    self.record_error(
+                        format!(
+                            "mismatched types ({} vs {})",
+                            pretty_print_kind(left_base_data.kind, self.db),
+                            pretty_print_kind(left_base_data.kind, self.db)
+                        ),
+                        expression,
+                    );
                     self.error_type()
                 }
             },
@@ -598,7 +606,14 @@ where
                 // Unclear what rule will eventually be... for now, require
                 // that the two types are the same?
                 if left_base_data != right_base_data {
-                    self.record_error("mismatched types", expression);
+                    self.record_error(
+                        format!(
+                            "mismatched types ({} vs {})",
+                            pretty_print_kind(left_base_data.kind, self.db),
+                            pretty_print_kind(left_base_data.kind, self.db)
+                        ),
+                        expression,
+                    );
                 }
 
                 // Either way, yields a boolean

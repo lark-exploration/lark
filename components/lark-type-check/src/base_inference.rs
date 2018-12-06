@@ -18,6 +18,7 @@ use lark_intern::Untern;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::map_family::Map;
+use lark_ty::pretty_print::pretty_print_kind;
 use lark_ty::BaseData;
 use lark_ty::BaseKind;
 use lark_ty::Erased;
@@ -233,7 +234,14 @@ where
                 }
 
                 if data1.kind != data2.kind {
-                    self.record_error("Mismatched types", cause);
+                    self.record_error(
+                        format!(
+                            "mismatched types ({} vs {})",
+                            pretty_print_kind(data1.kind, self.db),
+                            pretty_print_kind(data2.kind, self.db)
+                        ),
+                        cause,
+                    );
                     return;
                 }
 

@@ -145,7 +145,7 @@ mod tests {
 
         assert_eq!(result.method, "textDocument/publishDiagnostics",);
         assert_eq!(result.params.diagnostics.len(), 1,);
-        assert_eq!(result.params.diagnostics[0].message, "Mismatched types",);
+        assert_eq!(result.params.diagnostics[0].message, "mismatched types (uint vs bool)",);
 
         Ok(())
     }
