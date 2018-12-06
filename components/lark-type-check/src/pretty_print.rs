@@ -62,7 +62,7 @@ impl PrettyPrint for Entity {
                 kind: ItemKind::Struct,
                 id,
                 ..
-            } => format!("struct {}", id.untern(db)),
+            } => format!("{}", id.untern(db)),
             EntityData::ItemName {
                 kind: ItemKind::Function,
                 id,

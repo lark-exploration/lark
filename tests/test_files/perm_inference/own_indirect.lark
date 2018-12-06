@@ -8,7 +8,7 @@ struct Bar { }
 
 def foo(foo: Foo) {
   let a = foo.s
-      //~ HOVER: shared struct Bar
+      //~ HOVER: shared Bar
 
   let p = foo
       //~ HOVER: Foo
