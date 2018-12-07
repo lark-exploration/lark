@@ -20,7 +20,7 @@ use base::Base;
 
 crate mod constraint;
 
-crate mod datafrog;
+crate mod kind_inference;
 
 /// Defines the `Perm` type that represents permissions.
 crate mod perm;
