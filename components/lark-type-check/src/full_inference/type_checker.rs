@@ -19,6 +19,7 @@ use lark_hir as hir;
 use lark_indices::IndexVec;
 use lark_intern::Intern;
 use lark_intern::Untern;
+use lark_pretty_print::PrettyPrint;
 use lark_ty::declaration;
 use lark_ty::declaration::Declaration;
 use lark_ty::declaration::DeclaredPermKind;
@@ -199,7 +200,14 @@ where
                 }
 
                 if data1.kind != data2.kind {
-                    self.record_error("Mismatched types", cause);
+                    self.record_error(
+                        format!(
+                            "mismatched types ({} vs {})",
+                            data1.kind.pretty_print(self.db),
+                            data2.kind.pretty_print(self.db)
+                        ),
+                        cause,
+                    );
                     return;
                 }
 

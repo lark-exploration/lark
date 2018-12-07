@@ -3,6 +3,7 @@ use lark_entity::EntityTables;
 use lark_intern::{Intern, Untern};
 use lark_mir as mir;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
+use lark_pretty_print::PrettyPrintDatabase;
 use lark_span::{ByteIndex, FileName, Span};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
 use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
@@ -74,6 +75,8 @@ impl ParallelDatabase for LarkDatabase {
         })
     }
 }
+
+impl PrettyPrintDatabase for LarkDatabase {}
 
 impl LsDatabase for LarkDatabase {}
 

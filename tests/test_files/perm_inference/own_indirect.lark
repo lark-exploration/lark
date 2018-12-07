@@ -8,10 +8,10 @@ struct Bar { }
 
 def foo(foo: Foo) {
   let a = foo.s
-      //~ HOVER: Ty \{ repr: Erased, perm: Share, .* }
+      //~ HOVER: shared Bar
 
   let p = foo
-      //~ HOVER: Ty \{ repr: Erased, perm: Own, .* }
+      //~ HOVER: Foo
   let q = p.s
   bar(q)
 }

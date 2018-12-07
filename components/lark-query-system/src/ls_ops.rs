@@ -5,11 +5,11 @@
 //! convenient.
 
 use languageserver_types::{Position, Range};
-use lark_debug_with::DebugWith;
 use lark_entity::{Entity, EntityData, ItemKind, MemberKind};
 use lark_error::Diagnostic;
 use lark_intern::{Intern, Untern};
 use lark_parser::HoverTargetKind;
+use lark_pretty_print::PrettyPrint;
 use lark_span::{ByteIndex, FileName, IntoFileName, Span};
 use std::collections::HashMap;
 
@@ -144,45 +144,25 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             .iter()
             .rev()
             .filter_map(|target| match target.kind {
-                HoverTargetKind::Entity(entity) => {
-                    match entity.untern(self) {
-                        EntityData::ItemName {
-                            kind: ItemKind::Struct,
-                            id,
-                            ..
-                        } => Some(format!("struct {}", id.untern(self))),
-
-                        EntityData::MemberName {
-                            kind: MemberKind::Field,
-                            ..
-                        } => {
-                            let field_ty = self.ty(entity).into_value();
-                            // FIXME should not use "debug" but display to format the type
-                            Some(format!("{}", field_ty.debug_with(self)))
-                        }
-
-                        EntityData::ItemName {
-                            kind: ItemKind::Function,
-                            ..
-                        }
-                        | EntityData::MemberName {
-                            kind: MemberKind::Method,
-                            ..
-                        } => {
-                            // what should we say for functions and methods?
-                            None
-                        }
-
-                        EntityData::InputFile { .. }
-                        | EntityData::LangItem(_)
-                        | EntityData::Error(_) => None,
-                    }
-                }
+                HoverTargetKind::Entity(entity) => match entity.untern(self) {
+                    EntityData::InputFile { .. }
+                    | EntityData::LangItem(_)
+                    | EntityData::Error(_) => None,
+                    EntityData::ItemName {
+                        kind: ItemKind::Struct,
+                        ..
+                    } => Some(format!("struct {}", entity.pretty_print(self))),
+                    EntityData::ItemName {
+                        kind: ItemKind::Function,
+                        ..
+                    } => Some(format!("def {}", entity.pretty_print(self))),
+                    _ => Some(entity.pretty_print(self)),
+                },
 
                 HoverTargetKind::MetaIndex(entity, mi) => {
                     let fn_body_types = self.full_type_check(entity).into_value();
                     if let Some(ty) = fn_body_types.types.get(&mi) {
-                        Some(format!("{}", ty.debug_with(self)))
+                        Some(format!("{}", ty.pretty_print(self)))
                     } else {
                         None
                     }

@@ -1,4 +1,4 @@
-error: Mismatched types
+error: mismatched types (uint vs bool)
 - error_type_mismatch:2:2
 2 |   y
   |   ^

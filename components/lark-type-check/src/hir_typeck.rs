@@ -1,3 +1,4 @@
+use lark_pretty_print::PrettyPrint;
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
@@ -589,7 +590,14 @@ where
                 (BaseKind::Error, _) | (_, BaseKind::Error) => self.error_type(),
 
                 (BaseKind::Named(_), _) | (BaseKind::Placeholder(_), _) => {
-                    self.record_error("mismatched types", expression);
+                    self.record_error(
+                        format!(
+                            "mismatched types ({} vs {})",
+                            left_base_data.pretty_print(self.db),
+                            right_base_data.pretty_print(self.db)
+                        ),
+                        expression,
+                    );
                     self.error_type()
                 }
             },
@@ -598,7 +606,14 @@ where
                 // Unclear what rule will eventually be... for now, require
                 // that the two types are the same?
                 if left_base_data != right_base_data {
-                    self.record_error("mismatched types", expression);
+                    self.record_error(
+                        format!(
+                            "mismatched types ({} vs {})",
+                            left_base_data.pretty_print(self.db),
+                            right_base_data.pretty_print(self.db)
+                        ),
+                        expression,
+                    );
                 }
 
                 // Either way, yields a boolean
