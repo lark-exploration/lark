@@ -132,6 +132,50 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         Ok(())
     }
 
+    fn definition_range_at_position(
+        &self,
+        url: &str,
+        position: Position,
+    ) -> Cancelable<Option<(String, Range)>> {
+        let url_file_name = url.into_file_name(self);
+        let byte_index = self.position_to_byte_index(url, position);
+        let targets = self.hover_targets(url_file_name, byte_index);
+        self.check_for_cancellation()?;
+
+        Ok(targets
+            .iter()
+            .rev()
+            .filter_map(|target| match target.kind {
+                HoverTargetKind::MetaIndex(entity, mi) => match mi {
+                    lark_hir::MetaIndex::Place(place_idx) => {
+                        let fn_body = self.fn_body(entity).into_value();
+                        let p = fn_body.tables[place_idx];
+                        match p {
+                            lark_hir::PlaceData::Entity(entity) => match entity.untern(self) {
+                                EntityData::ItemName { .. } | EntityData::MemberName { .. } => {
+                                    let span = self.parsed_entity(entity).full_span;
+                                    let range = self.range(span);
+                                    let filename = span.file().id.untern(self).to_string();
+                                    Some((filename, range))
+                                }
+                                _ => None,
+                            },
+                            lark_hir::PlaceData::Variable(variable) => {
+                                let span = fn_body.span(variable);
+                                let range = self.range(span);
+                                let filename = span.file().id.untern(self).to_string();
+                                Some((filename, range))
+                            }
+                            _ => None,
+                        }
+                    }
+                    _ => None,
+                },
+                _ => None,
+            })
+            .next())
+    }
+
     /// Returns the hover text to display for a given position (if
     /// any).
     fn hover_text_at_position(&self, url: &str, position: Position) -> Cancelable<Option<String>> {

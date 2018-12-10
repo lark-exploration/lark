@@ -29,6 +29,7 @@ pub enum MsgToManager {
 /// from the manager.
 pub enum LspRequest {
     TypeForPos(TaskId, Url, Position),
+    DefinitionForPos(TaskId, Url, Position),
     OpenFile(Url, String),
     EditFile(Url, Vec<(Range, String)>),
     Initialize(TaskId),
@@ -38,8 +39,10 @@ pub enum LspRequest {
 /// the manager.
 pub enum LspResponse {
     Type(TaskId, String),
+    Range(TaskId, Url, Range),
     Completions(TaskId, Vec<(String, String)>),
     Initialized(TaskId),
+    Nothing(TaskId),
     Diagnostics(Url, Vec<(Range, String)>),
 }
 
@@ -51,6 +54,7 @@ pub enum QueryRequest {
     OpenFile(Url, String),
     EditFile(Url, Vec<(Range, String)>),
     TypeAtPosition(TaskId, Url, Position),
+    DefinitionAtPosition(TaskId, Url, Position),
 }
 
 impl QueryRequest {
@@ -60,6 +64,7 @@ impl QueryRequest {
         match self {
             QueryRequest::OpenFile(..) | QueryRequest::EditFile(..) => true,
             QueryRequest::TypeAtPosition(..) => false,
+            QueryRequest::DefinitionAtPosition(..) => false,
         }
     }
 }
@@ -68,7 +73,12 @@ impl QueryRequest {
 /// manager
 pub enum QueryResponse {
     Type(TaskId, String),
+    Range(TaskId, Url, Range),
     Diagnostics(Url, Vec<(Range, String)>),
+
+    /// This represents that the task completed but produced
+    /// nothing
+    Nothing(TaskId),
 }
 
 /// Requests are broken into a series of steps called a recipe, each
@@ -76,10 +86,12 @@ pub enum QueryResponse {
 /// control over when tasks are cancelled, their priority, and how
 /// they become parallel.
 enum RecipeStep {
-    GetTextForFile,
+    GetTypeAtPosition,
+    GetDefinitionAtPosition,
 
     RespondWithType,
     RespondWithInitialized,
+    RespondWithRange,
 }
 
 /// An actor in the task system. This gives a uniform way to
@@ -201,7 +213,7 @@ impl TaskManager {
                     let next_step = x.remove(0);
 
                     match next_step {
-                        RecipeStep::GetTextForFile => {
+                        RecipeStep::GetTypeAtPosition => {
                             if let Ok(location) = argument.downcast::<(Url, Position)>() {
                                 self.query_system
                                     .channel
@@ -211,11 +223,35 @@ impl TaskManager {
                                     .unwrap();
                             }
                         }
+                        RecipeStep::GetDefinitionAtPosition => {
+                            if let Ok(location) = argument.downcast::<(Url, Position)>() {
+                                self.query_system
+                                    .channel
+                                    .send(MsgFromManager::Message(
+                                        QueryRequest::DefinitionAtPosition(
+                                            task_id, location.0, location.1,
+                                        ),
+                                    ))
+                                    .unwrap();
+                            }
+                        }
                         RecipeStep::RespondWithType => {
                             if let Ok(ty) = argument.downcast::<String>() {
                                 self.lsp_responder
                                     .channel
                                     .send(MsgFromManager::Message(LspResponse::Type(task_id, *ty)))
+                                    .unwrap();
+                            } else {
+                                panic!("Internal error: malformed RespondWithType");
+                            }
+                        }
+                        RecipeStep::RespondWithRange => {
+                            if let Ok(pos) = argument.downcast::<(Url, Range)>() {
+                                self.lsp_responder
+                                    .channel
+                                    .send(MsgFromManager::Message(LspResponse::Range(
+                                        task_id, pos.0, pos.1,
+                                    )))
                                     .unwrap();
                             } else {
                                 panic!("Internal error: malformed RespondWithType");
@@ -239,7 +275,16 @@ impl TaskManager {
     fn do_recipe_for_lsp_request(&mut self, lsp_request: LspRequest) {
         match lsp_request {
             LspRequest::TypeForPos(task_id, url, position) => {
-                let recipe = vec![RecipeStep::GetTextForFile, RecipeStep::RespondWithType];
+                let recipe = vec![RecipeStep::GetTypeAtPosition, RecipeStep::RespondWithType];
+
+                self.live_recipes.insert(task_id, recipe);
+                self.send_next_step(task_id, Box::new((url, position)));
+            }
+            LspRequest::DefinitionForPos(task_id, url, position) => {
+                let recipe = vec![
+                    RecipeStep::GetDefinitionAtPosition,
+                    RecipeStep::RespondWithRange,
+                ];
 
                 self.live_recipes.insert(task_id, recipe);
                 self.send_next_step(task_id, Box::new((url, position)));
@@ -279,6 +324,15 @@ impl TaskManager {
                     let _ = self.lsp_responder.channel.send(MsgFromManager::Message(
                         LspResponse::Diagnostics(url, errors),
                     ));
+                }
+                Ok(MsgToManager::QueryResponse(QueryResponse::Range(task_id, url, range))) => {
+                    self.send_next_step(task_id, Box::new((url, range)));
+                }
+                Ok(MsgToManager::QueryResponse(QueryResponse::Nothing(task_id))) => {
+                    self.lsp_responder
+                        .channel
+                        .send(MsgFromManager::Message(LspResponse::Nothing(task_id)))
+                        .unwrap();
                 }
                 Ok(MsgToManager::LspRequest(lsp_request)) => {
                     self.do_recipe_for_lsp_request(lsp_request);
