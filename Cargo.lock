@@ -313,6 +313,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "lark-build-hir"
+version = "0.1.0"
+dependencies = [
+ "cc 1.0.23 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lark-debug-with 0.1.0",
+ "lark-entity 0.1.0",
+ "lark-error 0.1.0",
+ "lark-hir 0.1.0",
+ "lark-intern 0.1.0",
+ "lark-parser 0.1.0",
+ "lark-query-system 0.1.0",
+ "lark-string 0.1.0",
+ "lark-ty 0.1.0",
+ "lark-type-check 0.1.0",
+ "tempfile 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "lark-cli"
 version = "0.1.0"
 dependencies = [
@@ -324,12 +342,14 @@ dependencies = [
  "language-reporting 0.2.0 (git+https://github.com/nikomatsakis/language-reporting?branch=remove-codespan-dep)",
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-build 0.1.0",
+ "lark-build-hir 0.1.0",
  "lark-collections 0.1.0",
  "lark-debug-derive 0.1.0",
  "lark-debug-with 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
  "lark-eval 0.1.0",
+ "lark-eval-hir 0.1.0",
  "lark-hir 0.1.0",
  "lark-indices 0.1.0",
  "lark-intern 0.1.0",
@@ -420,6 +440,23 @@ dependencies = [
  "lark-hir 0.1.0",
  "lark-intern 0.1.0",
  "lark-mir 0.1.0",
+ "lark-parser 0.1.0",
+ "lark-query-system 0.1.0",
+ "lark-span 0.1.0",
+ "lark-string 0.1.0",
+ "lark-ty 0.1.0",
+ "lark-type-check 0.1.0",
+]
+
+[[package]]
+name = "lark-eval-hir"
+version = "0.1.0"
+dependencies = [
+ "lark-debug-with 0.1.0",
+ "lark-entity 0.1.0",
+ "lark-error 0.1.0",
+ "lark-hir 0.1.0",
+ "lark-intern 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
  "lark-span 0.1.0",
@@ -609,6 +646,7 @@ dependencies = [
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
  "lark-eval 0.1.0",
+ "lark-eval-hir 0.1.0",
  "lark-hir 0.1.0",
  "lark-intern 0.1.0",
  "lark-language-server 0.1.0",

@@ -31,12 +31,14 @@ serde_derive = "1.0"
 url = "1.7"
 
 lark-build = { path = "../lark-build" }
+lark-build-hir = { path = "../lark-build-hir" }
 lark-collections = { path = "../lark-collections" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-debug-with = { path = "../lark-debug-with" }
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-eval = { path = "../lark-eval" }
+lark-eval-hir = { path = "../lark-eval-hir" }
 lark-hir = { path = "../lark-hir" }
 lark-indices = { path = "../lark-indices" }
 lark-intern = { path = "../lark-intern" }

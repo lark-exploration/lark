@@ -76,12 +76,12 @@ pub trait LarkDatabaseExt {
 
 impl LarkDatabaseExt for LarkDatabase {
     fn build(&self, output_file_name: &str) -> Result<(), Cancelled> {
-        let source_file = lark_build::codegen(self, lark_build::CodegenType::Rust);
+        let source_file = lark_build_hir::codegen(self, lark_build_hir::CodegenType::Rust);
 
-        lark_build::build(
+        lark_build_hir::build(
             &output_file_name,
             &source_file.value,
-            lark_build::CodegenType::Rust,
+            lark_build_hir::CodegenType::Rust,
         )
         .unwrap();
 
