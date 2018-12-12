@@ -89,6 +89,9 @@ pub enum Value {
     Str(String),
     Struct(HashMap<lark_string::GlobalIdentifier, Value>),
     Reference(usize), // a reference into the value stack
+
+    // REPL: placeholder value to denote we're currently skipping eval
+    Skipped,
 }
 
 impl fmt::Display for Value {
@@ -103,6 +106,7 @@ impl fmt::Display for Value {
                 Value::Reference(r) => format!("reference to {}", r),
                 Value::Void => "<void>".into(),
                 Value::Struct(s) => format!("{:?}", s),
+                Value::Skipped => "<repl placeholder>".into(),
             }
         )
     }
@@ -184,7 +188,7 @@ pub fn eval_expression(
             if ready_to_execute {
                 eval_place(db, fn_body, place, state)
             } else {
-                Value::Void
+                Value::Skipped
             }
         }
 
@@ -233,7 +237,7 @@ pub fn eval_expression(
                     let return_value = if ready_to_execute {
                         eval_function(db, &target, state, io_handler)
                     } else {
-                        Value::Void
+                        Value::Skipped
                     };
 
                     for argument in target.arguments.unwrap().iter(&target) {
@@ -276,7 +280,7 @@ pub fn eval_expression(
                     _ => unimplemented!("Operator not yet supported"),
                 }
             } else {
-                Value::Void
+                Value::Skipped
             }
         }
 
@@ -290,7 +294,7 @@ pub fn eval_expression(
                     let value: u32 = string.parse().unwrap();
                     Value::U32(value)
                 } else {
-                    Value::Void
+                    Value::Skipped
                 }
             }
             _ => unimplemented!("Unsupported literal value"),
@@ -312,11 +316,36 @@ pub fn eval_expression(
             if ready_to_execute {
                 Value::Struct(result_struct)
             } else {
-                Value::Void
+                Value::Skipped
             }
         }
 
         hir::ExpressionData::Unit {} => Value::Void,
+
+        hir::ExpressionData::If {
+            condition,
+            if_true,
+            if_false,
+        } => {
+            let cond_value = eval_expression(db, fn_body, condition, state, io_handler);
+
+            match cond_value {
+                Value::Bool(true) => eval_expression(db, fn_body, if_true, state, io_handler),
+                Value::Bool(false) => eval_expression(db, fn_body, if_false, state, io_handler),
+                Value::Skipped => {
+                    // Because the condition is skipped (during REPL)
+                    // we need to look in both branches for where to continue
+                    let mut result = eval_expression(db, fn_body, if_true, state, io_handler);
+
+                    if !state.ready_to_execute() {
+                        result = eval_expression(db, fn_body, if_false, state, io_handler);
+                    }
+
+                    result
+                }
+                _ => panic!("Unsupported conditional in 'if'"),
+            }
+        }
 
         ref x => unimplemented!(
             "Eval does not yet support this expression type: {:#?}",
