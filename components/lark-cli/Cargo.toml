@@ -41,7 +41,6 @@ lark-hir = { path = "../lark-hir" }
 lark-indices = { path = "../lark-indices" }
 lark-intern = { path = "../lark-intern" }
 lark-language-server = { path = "../lark-language-server" }
-lark-mir = { path = "../lark-mir" }
 lark-parser = { path = "../lark-parser" }
 lark-query-system = { path = "../lark-query-system" }
 lark-span = { path = "../lark-span" }

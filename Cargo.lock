@@ -303,7 +303,6 @@ dependencies = [
  "lark-error 0.1.0",
  "lark-hir 0.1.0",
  "lark-intern 0.1.0",
- "lark-mir 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
  "lark-string 0.1.0",
@@ -334,7 +333,6 @@ dependencies = [
  "lark-indices 0.1.0",
  "lark-intern 0.1.0",
  "lark-language-server 0.1.0",
- "lark-mir 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
  "lark-span 0.1.0",
@@ -419,7 +417,6 @@ dependencies = [
  "lark-error 0.1.0",
  "lark-hir 0.1.0",
  "lark-intern 0.1.0",
- "lark-mir 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
  "lark-span 0.1.0",
@@ -472,26 +469,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lark-mir"
-version = "0.1.0"
-dependencies = [
- "lark-collections 0.1.0",
- "lark-debug-derive 0.1.0",
- "lark-debug-with 0.1.0",
- "lark-entity 0.1.0",
- "lark-error 0.1.0",
- "lark-hir 0.1.0",
- "lark-indices 0.1.0",
- "lark-intern 0.1.0",
- "lark-parser 0.1.0",
- "lark-span 0.1.0",
- "lark-string 0.1.0",
- "lark-ty 0.1.0",
- "lark-type-check 0.1.0",
- "salsa 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "lark-parser"
 version = "0.1.0"
 dependencies = [
@@ -541,7 +518,6 @@ dependencies = [
  "lark-error 0.1.0",
  "lark-hir 0.1.0",
  "lark-intern 0.1.0",
- "lark-mir 0.1.0",
  "lark-parser 0.1.0",
  "lark-pretty-print 0.1.0",
  "lark-span 0.1.0",
@@ -592,7 +568,6 @@ version = "0.1.0"
 dependencies = [
  "languageserver-types 0.51.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lark-collections 0.1.0",
- "lark-mir 0.1.0",
  "url 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
