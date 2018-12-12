@@ -320,6 +320,28 @@ impl QuerySystem {
                 let text = Text::from(current_contents);
                 self.lark_db.add_file(url.as_str(), text);
             }
+            QueryRequest::DefinitionAtPosition(task_id, url, position) => {
+                std::thread::spawn({
+                    let db = self.lark_db.snapshot();
+                    let send_channel = self.send_channel.clone_send_channel();
+                    move || {
+                        let _killme = KillTheProcess;
+
+                        match db.definition_range_at_position(url.as_str(), position) {
+                            Ok(Some(v)) => {
+                                send_channel.send(QueryResponse::Range(
+                                    task_id,
+                                    Url::parse(&v.0).unwrap(),
+                                    v.1,
+                                ));
+                            }
+                            _ => {
+                                send_channel.send(QueryResponse::Nothing(task_id));
+                            }
+                        }
+                    }
+                });
+            }
             QueryRequest::TypeAtPosition(task_id, url, position) => {
                 std::thread::spawn({
                     let db = self.lark_db.snapshot();
@@ -360,13 +382,5 @@ impl Drop for KillTheProcess {
         if std::thread::panicking() {
             std::process::abort();
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
     }
 }

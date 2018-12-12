@@ -35,6 +35,11 @@ pub enum LSPCommand {
         id: usize,
         params: languageserver_types::CompletionParams,
     },
+    #[serde(rename = "textDocument/definition")]
+    definition {
+        id: usize,
+        params: languageserver_types::TextDocumentPositionParams,
+    },
     #[serde(rename = "$/cancelRequest")]
     cancelRequest {
         params: languageserver_types::CancelParams,
@@ -133,6 +138,14 @@ impl Actor for LspResponder {
 
                 send_response(id, result);
             }
+            LspResponse::Range(id, uri, range) => {
+                let result = languageserver_types::Location { uri, range };
+
+                send_response(id, result);
+            }
+            LspResponse::Nothing(id) => {
+                send_response(id, ());
+            }
             LspResponse::Completions(id, completions) => {
                 let mut completion_items = vec![];
 
@@ -167,7 +180,7 @@ impl Actor for LspResponder {
                         */
                         completion_provider: None,
                         signature_help_provider: None,
-                        definition_provider: None,
+                        definition_provider: Some(true),
                         type_definition_provider: None,
                         implementation_provider: None,
                         references_provider: None,
@@ -262,6 +275,15 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
 
                             let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
                                 LspRequest::TypeForPos(
+                                    id,
+                                    params.text_document.uri.clone(),
+                                    params.position.clone(),
+                                ),
+                            ));
+                        }
+                        Ok(LSPCommand::definition { id, params }) => {
+                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
+                                LspRequest::DefinitionForPos(
                                     id,
                                     params.text_document.uri.clone(),
                                     params.position.clone(),
