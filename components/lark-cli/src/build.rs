@@ -4,7 +4,6 @@ use languageserver_types::Position;
 use lark_entity::{EntityData, ItemKind, MemberKind};
 use lark_intern::{Intern, Untern};
 use lark_language_server::{lsp_serve, LspResponder};
-use lark_mir::MirDatabase;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::Cancelled;
 use lark_query_system::ls_ops::LsDatabase;

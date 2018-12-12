@@ -7,5 +7,4 @@ edition = "2018"
 [dependencies]
 languageserver-types = "0.51.0"
 lark-collections = { path = "../lark-collections" }
-lark-mir = { path = "../lark-mir" }
 url = "1.7"

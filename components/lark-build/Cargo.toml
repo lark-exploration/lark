@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 lark-debug-with = { path = "../lark-debug-with" }
-lark-mir = { path = "../lark-mir" }
 lark-hir = { path = "../lark-hir" }
 lark-type-check = { path = "../lark-type-check" }
 lark-query-system = { path = "../lark-query-system" }
