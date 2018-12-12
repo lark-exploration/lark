@@ -13,7 +13,6 @@ lark-cli = { path = "../lark-cli" }
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-eval = { path = "../lark-eval" }
-lark-eval-hir = { path = "../lark-eval-hir" }
 lark-hir = { path = "../lark-hir" }
 lark-intern = { path = "../lark-intern" }
 lark-language-server = { path = "../lark-language-server" }

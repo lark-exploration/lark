@@ -19,9 +19,9 @@ impl TestContext<'_> {
     }
 
     crate fn run_eval(&self) {
-        let mut handler = lark_eval_hir::IOHandler::new(true);
-        lark_eval_hir::eval(&self.db, &mut handler);
-        let lark_eval_hir::IOHandler { redirect: output } = handler;
+        let mut handler = lark_eval::IOHandler::new(true);
+        lark_eval::eval(&self.db, &mut handler);
+        let lark_eval::IOHandler { redirect: output } = handler;
         let output = output.unwrap();
         self.compare_reference_contents("output", output.as_bytes(), false);
     }

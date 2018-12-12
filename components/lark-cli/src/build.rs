@@ -4,7 +4,6 @@ use languageserver_types::Position;
 use lark_entity::{EntityData, ItemKind, MemberKind};
 use lark_intern::{Intern, Untern};
 use lark_language_server::{lsp_serve, LspResponder};
-use lark_mir::MirDatabase;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::Cancelled;
 use lark_query_system::ls_ops::LsDatabase;
@@ -76,12 +75,12 @@ pub trait LarkDatabaseExt {
 
 impl LarkDatabaseExt for LarkDatabase {
     fn build(&self, output_file_name: &str) -> Result<(), Cancelled> {
-        let source_file = lark_build_hir::codegen(self, lark_build_hir::CodegenType::Rust);
+        let source_file = lark_build::codegen(self, lark_build::CodegenType::Rust);
 
-        lark_build_hir::build(
+        lark_build::build(
             &output_file_name,
             &source_file.value,
-            lark_build_hir::CodegenType::Rust,
+            lark_build::CodegenType::Rust,
         )
         .unwrap();
 
