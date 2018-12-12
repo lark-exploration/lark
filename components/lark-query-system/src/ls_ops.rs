@@ -152,62 +152,30 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                         let p = fn_body.tables[place_idx];
 
                         match p {
-                            lark_hir::PlaceData::Entity(entity) => match entity.untern(self) {
-                                EntityData::ItemName { .. } | EntityData::MemberName { .. } => {
-                                    let span = self.parsed_entity(entity).full_span;
-                                    let range = self.range(span);
-                                    let filename = span.file().id.untern(self).to_string();
-                                    Some((filename, range))
-                                }
-                                _ => None,
-                            },
+                            lark_hir::PlaceData::Entity(entity) => {
+                                let span = self.entity_span(entity);
+                                let range = self.range(span);
+                                let filename = span.file().id.untern(self).to_string();
+                                Some((filename, range))
+                            }
                             lark_hir::PlaceData::Variable(variable) => {
                                 let span = fn_body.span(variable);
                                 let range = self.range(span);
                                 let filename = span.file().id.untern(self).to_string();
                                 Some((filename, range))
                             }
-                            lark_hir::PlaceData::Field { owner, name } => {
-                                let name_data = fn_body.tables[name];
+                            lark_hir::PlaceData::Field { name, .. } => {
+                                let results = &self.full_type_check(entity).into_value();
 
-                                match fn_body.tables[owner] {
-                                    lark_hir::PlaceData::Variable(variable) => {
-                                        let results = &self.full_type_check(entity).into_value();
-
-                                        match results.types
-                                            [&lark_hir::MetaIndex::Variable(variable)]
-                                            .base
-                                            .untern(self)
-                                            .kind
-                                        {
-                                            lark_ty::BaseKind::Named(named_entity) => {
-                                                for child_entity in
-                                                    self.child_entities(named_entity).iter()
-                                                {
-                                                    match child_entity.untern(self) {
-                                                        EntityData::MemberName { id, .. } => {
-                                                            if id == name_data.text {
-                                                                let span = self
-                                                                    .parsed_entity(*child_entity)
-                                                                    .full_span;
-                                                                let range = self.range(span);
-                                                                let filename = span
-                                                                    .file()
-                                                                    .id
-                                                                    .untern(self)
-                                                                    .to_string();
-                                                                return Some((filename, range));
-                                                            }
-                                                        }
-                                                        _ => {}
-                                                    }
-                                                }
-                                                None
-                                            }
-                                            _ => None,
-                                        }
+                                match results.entities.get(&name.into()) {
+                                    Some(child_entity) => {
+                                        let span = self.entity_span(*child_entity);
+                                        let range = self.range(span);
+                                        let filename = span.file().id.untern(self).to_string();
+                                        Some((filename, range))
                                     }
-                                    _ => None,
+
+                                    None => None,
                                 }
                             }
                             _ => None,

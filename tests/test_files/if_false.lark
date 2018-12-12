@@ -1,0 +1,8 @@
+//~ execute:all
+
+def main() {
+    if false {
+        debug(1)
+    }
+    debug(2)
+}
