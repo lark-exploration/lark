@@ -12,4 +12,4 @@ lark-indices = { path = "../lark-indices" }
 lark-intern = { path = "../lark-intern" }
 lark-string = { path = "../lark-string" }
 lark-span = { path = "../lark-span" }
-parking_lot = "0.6.4"
+parking_lot = "0.7"

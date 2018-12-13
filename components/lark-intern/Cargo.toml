@@ -7,4 +7,4 @@ edition = "2018"
 [dependencies]
 lark-collections = { path = "../lark-collections" }
 lark-indices = { path = "../lark-indices" }
-parking_lot = "0.6.4"
+parking_lot = "0.7"

@@ -5,10 +5,10 @@ authors = ["Yehuda Katz <wycats@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-derive-new = "0.5.5"
+derive-new = "0.5.6"
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-string = { path = "../lark-string" }
 lark-debug-with = { path = "../lark-debug-with" }
 lark-intern = { path = "../lark-intern" }
-languageserver-types = "0.51.0"
+languageserver-types = "0.51.1"
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }

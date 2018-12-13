@@ -5,10 +5,10 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-datafrog = "0.1.0"
-derive-new = "0.5.5"
-parking_lot = "0.6.4"
-generational-arena = "0.1.0"
+datafrog = "1.0.0"
+derive-new = "0.5.6"
+parking_lot = "0.7"
+generational-arena = "0.2.0"
 lark-collections = { path = "../lark-collections" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-debug-with = { path = "../lark-debug-with" }
@@ -21,5 +21,5 @@ lark-parser = { path = "../lark-parser" }
 lark-pretty-print = { path = "../lark-pretty-print" }
 lark-ty = { path = "../lark-ty" }
 lark-unify = { path = "../lark-unify" }
-log = "0.4.5"
+log = "0.4.6"
 salsa = "0.8"

@@ -5,6 +5,6 @@ authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-languageserver-types = "0.51.0"
+languageserver-types = "0.51.1"
 lark-collections = { path = "../lark-collections" }
 url = "1.7"
