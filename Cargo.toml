@@ -18,8 +18,8 @@ members = ["components/lark-parser", "components/lark-span"]
 lark-cli = { path = "components/lark-cli" }
 
 [dev-dependencies]
-env_logger = "0.5.13"
-languageserver-types = "0.51.0"
+env_logger = "0.6"
+languageserver-types = "0.51.1"
 lark-debug-derive = { path = "components/lark-debug-derive" }
 lark-debug-with = { path = "components/lark-debug-with" }
 lark-entity = { path = "components/lark-entity" }

@@ -5,9 +5,9 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-derive-new = "0.5.5"
-itertools = "0.7.8"
-languageserver-types = "0.51.0"
+derive-new = "0.5.6"
+itertools = "0.8"
+languageserver-types = "0.51.1"
 lark-collections = { path = "../lark-collections" }
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-debug-with = { path = "../lark-debug-with" }
@@ -20,12 +20,12 @@ lark-seq = { path = "../lark-seq" }
 lark-string = { path = "../lark-string" }
 lark-span = { path = "../lark-span" }
 lark-ty = { path = "../lark-ty" }
-log = "0.4.5"
+log = "0.4.6"
 salsa = "0.8.0"
-parking_lot = "0.6.4"
+parking_lot = "0.7"
 unicode-xid = "0.1.0"
 
 [dev-dependencies]
 unindent = "0.1.3"
-pretty_env_logger = "0.2"
+pretty_env_logger = "0.3"
 

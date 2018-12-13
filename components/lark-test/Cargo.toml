@@ -5,9 +5,9 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-diff = "0.1.0"
-env_logger = "0.5.13"
-languageserver-types = "0.51.0"
+diff = "0.1.11"
+env_logger = "0.6"
+languageserver-types = "0.51.1"
 lark-debug-with = { path = "../lark-debug-with" }
 lark-cli = { path = "../lark-cli" }
 lark-entity = { path = "../lark-entity" }

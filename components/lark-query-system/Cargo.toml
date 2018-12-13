@@ -5,7 +5,7 @@ authors = ["Jonathan Turner <jonathan.d.turner@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-languageserver-types = "0.51.0"
+languageserver-types = "0.51.1"
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
 lark-collections = { path = "../lark-collections" }
 lark-debug-with = { path = "../lark-debug-with" }
@@ -20,7 +20,7 @@ lark-string = { path = "../lark-string" }
 lark-task-manager = { path = "../lark-task-manager" }
 lark-ty = { path = "../lark-ty" }
 lark-type-check = { path = "../lark-type-check" }
-log = "0.4.5"
-parking_lot = "0.6.4"
+log = "0.4.6"
+parking_lot = "0.7"
 salsa = "0.8"
 url = "1.7"
