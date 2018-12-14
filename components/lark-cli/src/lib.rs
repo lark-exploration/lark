@@ -4,7 +4,6 @@
 #![feature(box_syntax)]
 #![feature(crate_visibility_modifier)]
 #![feature(existential_type)]
-#![feature(self_in_typedefs)]
 #![feature(never_type)]
 #![feature(nll)]
 #![feature(const_fn)]

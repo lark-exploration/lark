@@ -132,6 +132,142 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         Ok(())
     }
 
+    fn find_all_references_at_position(
+        &self,
+        url: &str,
+        position: Position,
+    ) -> Cancelable<Vec<(String, Range)>> {
+        // First, let's add the definition site, as this is one of the references
+        let definition_position = self.definition_range_at_position(url, position)?;
+
+        // Then, we gather the uses
+        let url_file_name = url.into_file_name(self);
+        let byte_index = self.position_to_byte_index(url, position);
+        let targets = self.hover_targets(url_file_name, byte_index);
+        self.check_for_cancellation()?;
+
+        let results = targets
+            .iter()
+            .rev()
+            .filter_map(|target| match target.kind {
+                HoverTargetKind::MetaIndex(entity, mi) => match mi {
+                    lark_hir::MetaIndex::Place(place_idx) => {
+                        let fn_body = self.fn_body(entity).into_value();
+
+                        let p = fn_body.tables[place_idx];
+                        let mut uses = vec![];
+
+                        match p {
+                            lark_hir::PlaceData::Entity(..) => {
+                                let input_files = self.file_names();
+
+                                for &input_file in &*input_files {
+                                    let _ = self.parsed_file(input_file);
+
+                                    let file_entity =
+                                        EntityData::InputFile { file: input_file }.intern(self);
+                                    for &entity in self.descendant_entities(file_entity).iter() {
+                                        if entity.untern(self).has_fn_body() {
+                                            let fn_body = self.fn_body(entity).into_value();
+                                            for (key, value) in
+                                                fn_body.tables.places.iter_enumerated()
+                                            {
+                                                if *value == p {
+                                                    let span = fn_body.span(key);
+                                                    let range = self.range(span);
+                                                    let filename =
+                                                        span.file().id.untern(self).to_string();
+                                                    uses.push((filename, range));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Some(uses)
+                            }
+                            lark_hir::PlaceData::Variable(..) => {
+                                for (key, value) in fn_body.tables.places.iter_enumerated() {
+                                    if *value == p {
+                                        let span = fn_body.span(key);
+                                        let range = self.range(span);
+                                        let filename = span.file().id.untern(self).to_string();
+                                        uses.push((filename, range));
+                                    }
+                                }
+
+                                Some(uses)
+                            }
+                            lark_hir::PlaceData::Field { name, .. } => {
+                                let input_files = self.file_names();
+                                let source_types = &self.full_type_check(entity).into_value();
+
+                                let hovered_entity = source_types.entities[&name.into()];
+
+                                for &input_file in &*input_files {
+                                    let _ = self.parsed_file(input_file);
+
+                                    let file_entity =
+                                        EntityData::InputFile { file: input_file }.intern(self);
+                                    for &entity in self.descendant_entities(file_entity).iter() {
+                                        if entity.untern(self).has_fn_body() {
+                                            let fn_body = self.fn_body(entity).into_value();
+                                            let possible_match_types =
+                                                &self.full_type_check(entity).into_value();
+
+                                            for (_, value) in
+                                                fn_body.tables.places.iter_enumerated()
+                                            {
+                                                match value {
+                                                    lark_hir::PlaceData::Field {
+                                                        name: value_name,
+                                                        ..
+                                                    } => {
+                                                        if possible_match_types.entities
+                                                            [&(*value_name).into()]
+                                                            == hovered_entity
+                                                        {
+                                                            let span = fn_body.span(*value_name);
+                                                            let range = self.range(span);
+                                                            let filename = span
+                                                                .file()
+                                                                .id
+                                                                .untern(self)
+                                                                .to_string();
+                                                            uses.push((filename, range));
+                                                        }
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Some(uses)
+                            }
+                            _ => None,
+                        }
+                    }
+                    _ => None,
+                },
+                _ => None,
+            })
+            .next();
+
+        if results.is_some() {
+            let mut results = results.unwrap();
+
+            if definition_position.is_some() {
+                results.push(definition_position.unwrap());
+            }
+
+            Ok(results)
+        } else {
+            Ok(vec![])
+        }
+    }
+
     fn definition_range_at_position(
         &self,
         url: &str,
@@ -212,13 +348,14 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                         kind: ItemKind::Function,
                         ..
                     } => Some(format!("def {}", entity.pretty_print(self))),
-                    _ => Some(entity.pretty_print(self)),
+                    _ => None,
                 },
 
                 HoverTargetKind::MetaIndex(entity, mi) => {
                     let fn_body_types = self.full_type_check(entity).into_value();
+
                     if let Some(ty) = fn_body_types.types.get(&mi) {
-                        Some(format!("{}", ty.pretty_print(self)))
+                        Some(format!("{}", ty.pretty_print(self),))
                     } else {
                         None
                     }

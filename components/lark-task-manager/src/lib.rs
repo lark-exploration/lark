@@ -30,6 +30,7 @@ pub enum MsgToManager {
 pub enum LspRequest {
     TypeForPos(TaskId, Url, Position),
     DefinitionForPos(TaskId, Url, Position),
+    ReferencesForPos(TaskId, Url, Position, bool),
     OpenFile(Url, String),
     EditFile(Url, Vec<(Range, String)>),
     Initialize(TaskId),
@@ -40,6 +41,7 @@ pub enum LspRequest {
 pub enum LspResponse {
     Type(TaskId, String),
     Range(TaskId, Url, Range),
+    Ranges(TaskId, Vec<(Url, Range)>),
     Completions(TaskId, Vec<(String, String)>),
     Initialized(TaskId),
     Nothing(TaskId),
@@ -55,6 +57,7 @@ pub enum QueryRequest {
     EditFile(Url, Vec<(Range, String)>),
     TypeAtPosition(TaskId, Url, Position),
     DefinitionAtPosition(TaskId, Url, Position),
+    ReferencesAtPosition(TaskId, Url, Position, bool),
 }
 
 impl QueryRequest {
@@ -65,6 +68,7 @@ impl QueryRequest {
             QueryRequest::OpenFile(..) | QueryRequest::EditFile(..) => true,
             QueryRequest::TypeAtPosition(..) => false,
             QueryRequest::DefinitionAtPosition(..) => false,
+            QueryRequest::ReferencesAtPosition(..) => false,
         }
     }
 }
@@ -74,6 +78,7 @@ impl QueryRequest {
 pub enum QueryResponse {
     Type(TaskId, String),
     Range(TaskId, Url, Range),
+    Ranges(TaskId, Vec<(Url, Range)>),
     Diagnostics(Url, Vec<(Range, String)>),
 
     /// This represents that the task completed but produced
@@ -88,10 +93,12 @@ pub enum QueryResponse {
 enum RecipeStep {
     GetTypeAtPosition,
     GetDefinitionAtPosition,
+    GetReferencesAtPosition,
 
     RespondWithType,
     RespondWithInitialized,
     RespondWithRange,
+    RespondWithRanges,
 }
 
 /// An actor in the task system. This gives a uniform way to
@@ -235,6 +242,18 @@ impl TaskManager {
                                     .unwrap();
                             }
                         }
+                        RecipeStep::GetReferencesAtPosition => {
+                            if let Ok(command) = argument.downcast::<(Url, Position, bool)>() {
+                                self.query_system
+                                    .channel
+                                    .send(MsgFromManager::Message(
+                                        QueryRequest::ReferencesAtPosition(
+                                            task_id, command.0, command.1, command.2,
+                                        ),
+                                    ))
+                                    .unwrap();
+                            }
+                        }
                         RecipeStep::RespondWithType => {
                             if let Ok(ty) = argument.downcast::<String>() {
                                 self.lsp_responder
@@ -251,6 +270,18 @@ impl TaskManager {
                                     .channel
                                     .send(MsgFromManager::Message(LspResponse::Range(
                                         task_id, pos.0, pos.1,
+                                    )))
+                                    .unwrap();
+                            } else {
+                                panic!("Internal error: malformed RespondWithType");
+                            }
+                        }
+                        RecipeStep::RespondWithRanges => {
+                            if let Ok(positions) = argument.downcast::<Vec<(Url, Range)>>() {
+                                self.lsp_responder
+                                    .channel
+                                    .send(MsgFromManager::Message(LspResponse::Ranges(
+                                        task_id, *positions,
                                     )))
                                     .unwrap();
                             } else {
@@ -288,6 +319,15 @@ impl TaskManager {
 
                 self.live_recipes.insert(task_id, recipe);
                 self.send_next_step(task_id, Box::new((url, position)));
+            }
+            LspRequest::ReferencesForPos(task_id, url, position, include_declaration) => {
+                let recipe = vec![
+                    RecipeStep::GetReferencesAtPosition,
+                    RecipeStep::RespondWithRanges,
+                ];
+
+                self.live_recipes.insert(task_id, recipe);
+                self.send_next_step(task_id, Box::new((url, position, include_declaration)));
             }
             LspRequest::OpenFile(url, contents) => {
                 self.query_system
@@ -327,6 +367,9 @@ impl TaskManager {
                 }
                 Ok(MsgToManager::QueryResponse(QueryResponse::Range(task_id, url, range))) => {
                     self.send_next_step(task_id, Box::new((url, range)));
+                }
+                Ok(MsgToManager::QueryResponse(QueryResponse::Ranges(task_id, url_ranges))) => {
+                    self.send_next_step(task_id, Box::new(url_ranges));
                 }
                 Ok(MsgToManager::QueryResponse(QueryResponse::Nothing(task_id))) => {
                     self.lsp_responder

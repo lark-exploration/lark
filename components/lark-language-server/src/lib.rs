@@ -40,6 +40,11 @@ pub enum LSPCommand {
         id: usize,
         params: languageserver_types::TextDocumentPositionParams,
     },
+    #[serde(rename = "textDocument/references")]
+    references {
+        id: usize,
+        params: languageserver_types::TextDocumentPositionParams,
+    },
     #[serde(rename = "$/cancelRequest")]
     cancelRequest {
         params: languageserver_types::CancelParams,
@@ -143,6 +148,17 @@ impl Actor for LspResponder {
 
                 send_response(id, result);
             }
+            LspResponse::Ranges(id, vec_of_uri_range) => {
+                let result: Vec<languageserver_types::Location> = vec_of_uri_range
+                    .into_iter()
+                    .map(|x| languageserver_types::Location {
+                        uri: x.0,
+                        range: x.1,
+                    })
+                    .collect();
+
+                send_response(id, result);
+            }
             LspResponse::Nothing(id) => {
                 send_response(id, ());
             }
@@ -183,7 +199,7 @@ impl Actor for LspResponder {
                         definition_provider: Some(true),
                         type_definition_provider: None,
                         implementation_provider: None,
-                        references_provider: None,
+                        references_provider: Some(true),
                         document_highlight_provider: None,
                         document_symbol_provider: None,
                         workspace_symbol_provider: None,
@@ -287,6 +303,16 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                                     id,
                                     params.text_document.uri.clone(),
                                     params.position.clone(),
+                                ),
+                            ));
+                        }
+                        Ok(LSPCommand::references { id, params }) => {
+                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
+                                LspRequest::ReferencesForPos(
+                                    id,
+                                    params.text_document.uri.clone(),
+                                    params.position.clone(),
+                                    true,
                                 ),
                             ));
                         }

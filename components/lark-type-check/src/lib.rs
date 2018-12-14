@@ -4,7 +4,6 @@
 #![feature(in_band_lifetimes)]
 #![feature(never_type)]
 #![feature(specialization)]
-#![feature(self_in_typedefs)]
 #![feature(trait_alias)]
 #![feature(uniform_paths)]
 
