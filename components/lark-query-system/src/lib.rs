@@ -98,6 +98,7 @@ salsa::database_storage! {
             fn member_entity() for lark_parser::MemberEntityQuery;
             fn descendant_entities() for lark_parser::DescendantEntitiesQuery;
             fn entity_span() for lark_parser::EntitySpanQuery;
+            fn characteristic_entity_span() for lark_parser::CharacteristicEntitySpanQuery;
             fn ty() for lark_parser::TyQuery;
             fn signature() for lark_parser::SignatureQuery;
             fn generic_declarations() for lark_parser::GenericDeclarationsQuery;
@@ -349,7 +350,7 @@ impl QuerySystem {
                     move || {
                         let _killme = KillTheProcess;
 
-                        match db.definition_range_at_position(url.as_str(), position) {
+                        match db.definition_range_at_position(url.as_str(), position, false) {
                             Ok(Some(v)) => {
                                 send_channel.send(QueryResponse::Range(
                                     task_id,

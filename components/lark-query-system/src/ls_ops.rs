@@ -138,7 +138,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         position: Position,
     ) -> Cancelable<Vec<(String, Range)>> {
         // First, let's add the definition site, as this is one of the references
-        let definition_position = self.definition_range_at_position(url, position)?;
+        let definition_position = self.definition_range_at_position(url, position, true)?;
 
         // Then, we gather the uses
         let url_file_name = url.into_file_name(self);
@@ -264,7 +264,11 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
 
             Ok(results)
         } else {
-            Ok(vec![])
+            if definition_position.is_some() {
+                Ok(vec![definition_position.unwrap()])
+            } else {
+                Ok(vec![])
+            }
         }
     }
 
@@ -272,6 +276,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         &self,
         url: &str,
         position: Position,
+        minimal_span: bool,
     ) -> Cancelable<Option<(String, Range)>> {
         let url_file_name = url.into_file_name(self);
         let byte_index = self.position_to_byte_index(url, position);
@@ -289,7 +294,11 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
 
                         match p {
                             lark_hir::PlaceData::Entity(entity) => {
-                                let span = self.entity_span(entity);
+                                let span = if minimal_span {
+                                    self.characteristic_entity_span(entity)
+                                } else {
+                                    self.entity_span(entity)
+                                };
                                 let range = self.range(span);
                                 let filename = span.file().id.untern(self).to_string();
                                 Some((filename, range))
@@ -305,7 +314,11 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
 
                                 match results.entities.get(&name.into()) {
                                     Some(child_entity) => {
-                                        let span = self.entity_span(*child_entity);
+                                        let span = if minimal_span {
+                                            self.characteristic_entity_span(*child_entity)
+                                        } else {
+                                            self.entity_span(*child_entity)
+                                        };
                                         let range = self.range(span);
                                         let filename = span.file().id.untern(self).to_string();
                                         Some((filename, range))
