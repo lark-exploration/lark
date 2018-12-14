@@ -348,7 +348,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                         kind: ItemKind::Function,
                         ..
                     } => Some(format!("def {}", entity.pretty_print(self))),
-                    _ => None,
+                    _ => Some(entity.pretty_print(self)),
                 },
 
                 HoverTargetKind::MetaIndex(entity, mi) => {
