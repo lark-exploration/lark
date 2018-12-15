@@ -159,7 +159,7 @@ crate fn line_offsets(db: &impl ParserDatabase, id: FileName) -> Seq<usize> {
             let line_start = accumulator;
             accumulator += line_text.len();
             if text[accumulator..].starts_with("\r\n") {
-                accumulator += 1;
+                accumulator += 2;
             } else if text[accumulator..].starts_with("\n") {
                 accumulator += 1;
             }
