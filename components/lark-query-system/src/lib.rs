@@ -98,6 +98,7 @@ salsa::database_storage! {
             fn member_entity() for lark_parser::MemberEntityQuery;
             fn descendant_entities() for lark_parser::DescendantEntitiesQuery;
             fn entity_span() for lark_parser::EntitySpanQuery;
+            fn characteristic_entity_span() for lark_parser::CharacteristicEntitySpanQuery;
             fn ty() for lark_parser::TyQuery;
             fn signature() for lark_parser::SignatureQuery;
             fn generic_declarations() for lark_parser::GenericDeclarationsQuery;
@@ -320,6 +321,28 @@ impl QuerySystem {
                 let text = Text::from(current_contents);
                 self.lark_db.add_file(url.as_str(), text);
             }
+            QueryRequest::ReferencesAtPosition(task_id, url, position, _include_declaration) => {
+                std::thread::spawn({
+                    let db = self.lark_db.snapshot();
+                    let send_channel = self.send_channel.clone_send_channel();
+                    move || {
+                        let _killme = KillTheProcess;
+
+                        match db.find_all_references_at_position(url.as_str(), position) {
+                            Ok(v) => {
+                                let result = v
+                                    .iter()
+                                    .map(|(x, y)| (Url::parse(x).unwrap(), *y))
+                                    .collect();
+                                send_channel.send(QueryResponse::Ranges(task_id, result));
+                            }
+                            _ => {
+                                send_channel.send(QueryResponse::Nothing(task_id));
+                            }
+                        }
+                    }
+                });
+            }
             QueryRequest::DefinitionAtPosition(task_id, url, position) => {
                 std::thread::spawn({
                     let db = self.lark_db.snapshot();
@@ -327,7 +350,7 @@ impl QuerySystem {
                     move || {
                         let _killme = KillTheProcess;
 
-                        match db.definition_range_at_position(url.as_str(), position) {
+                        match db.definition_range_at_position(url.as_str(), position, false) {
                             Ok(Some(v)) => {
                                 send_channel.send(QueryResponse::Range(
                                     task_id,

@@ -143,6 +143,14 @@ crate fn entity_span(db: &impl ParserDatabase, entity: Entity) -> Span<FileName>
     )
 }
 
+crate fn characteristic_entity_span(db: &impl ParserDatabase, entity: Entity) -> Span<FileName> {
+    db.parsed_entity(entity).characteristic_span.in_file_named(
+        entity
+            .input_file(db)
+            .expect("Unexpected entity_span for LangItem or Error"),
+    )
+}
+
 crate fn line_offsets(db: &impl ParserDatabase, id: FileName) -> Seq<usize> {
     let text: &str = &db.file_text(id);
     let mut accumulator = 0;

@@ -69,6 +69,11 @@ salsa::query_group! {
             use fn query_definitions::entity_span;
         }
 
+        fn characteristic_entity_span(entity: Entity) -> Span<FileName> {
+            type CharacteristicEntitySpanQuery;
+            use fn query_definitions::characteristic_entity_span;
+        }
+
         /// Returns, for each line in the given file, the start index
         /// -- the final element is the length of the file (there is
         /// kind of a "pseudo-empty line" at the end, so to speak). So

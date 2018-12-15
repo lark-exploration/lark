@@ -132,10 +132,186 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         Ok(())
     }
 
+    fn find_all_references_to_definition(&self, definition_entity: Entity) -> Vec<(String, Range)> {
+        let input_files = self.file_names();
+        let mut uses = vec![];
+
+        let p = lark_hir::PlaceData::Entity(definition_entity);
+
+        for &input_file in &*input_files {
+            let _ = self.parsed_file(input_file);
+
+            let file_entity = EntityData::InputFile { file: input_file }.intern(self);
+            for &entity in self.descendant_entities(file_entity).iter() {
+                if entity.untern(self).has_fn_body() {
+                    let fn_body = self.fn_body(entity).into_value();
+                    for (key, value) in fn_body.tables.places.iter_enumerated() {
+                        if *value == p {
+                            let span = fn_body.span(key);
+                            let range = self.range(span);
+                            let filename = span.file().id.untern(self).to_string();
+                            uses.push((filename, range));
+                        }
+                    }
+                }
+            }
+        }
+
+        uses
+    }
+
+    fn find_all_references_to_variable(
+        &self,
+        fn_body: &lark_hir::FnBody,
+        variable: lark_hir::Variable,
+    ) -> Vec<(String, Range)> {
+        let mut uses = vec![];
+
+        let p = lark_hir::PlaceData::Variable(variable);
+
+        for (key, value) in fn_body.tables.places.iter_enumerated() {
+            if *value == p {
+                let span = fn_body.span(key);
+                let range = self.range(span);
+                let filename = span.file().id.untern(self).to_string();
+                uses.push((filename, range));
+            }
+        }
+
+        uses
+    }
+
+    fn find_all_references_to_field(&self, field_entity: Entity) -> Vec<(String, Range)> {
+        let input_files = self.file_names();
+        let mut uses = vec![];
+
+        for &input_file in &*input_files {
+            let _ = self.parsed_file(input_file);
+
+            let file_entity = EntityData::InputFile { file: input_file }.intern(self);
+            for &entity in self.descendant_entities(file_entity).iter() {
+                if entity.untern(self).has_fn_body() {
+                    let fn_body = self.fn_body(entity).into_value();
+                    let possible_match_types = &self.full_type_check(entity).into_value();
+
+                    for (_, value) in fn_body.tables.places.iter_enumerated() {
+                        match value {
+                            lark_hir::PlaceData::Field {
+                                name: value_name, ..
+                            } => {
+                                if possible_match_types.entities[&(*value_name).into()]
+                                    == field_entity
+                                {
+                                    let span = fn_body.span(*value_name);
+                                    let range = self.range(span);
+                                    let filename = span.file().id.untern(self).to_string();
+                                    uses.push((filename, range));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        uses
+    }
+
+    fn find_all_references_at_position(
+        &self,
+        url: &str,
+        position: Position,
+    ) -> Cancelable<Vec<(String, Range)>> {
+        // First, let's add the definition site, as this is one of the references
+        let definition_position = self.definition_range_at_position(url, position, true)?;
+
+        // Then, we gather the uses
+        let url_file_name = url.into_file_name(self);
+        let byte_index = self.position_to_byte_index(url, position);
+        let targets = self.hover_targets(url_file_name, byte_index);
+        self.check_for_cancellation()?;
+
+        let results = targets
+            .iter()
+            .rev()
+            .filter_map(|target| match target.kind {
+                HoverTargetKind::Entity(hovered_entity) => match hovered_entity.untern(self) {
+                    EntityData::MemberName {
+                        kind: MemberKind::Field,
+                        ..
+                    } => Some(self.find_all_references_to_field(hovered_entity)),
+                    _ => Some(self.find_all_references_to_definition(hovered_entity)),
+                },
+                HoverTargetKind::MetaIndex(entity, mi) => match mi {
+                    lark_hir::MetaIndex::Variable(variable) => {
+                        let fn_body = self.fn_body(entity).into_value();
+                        Some(self.find_all_references_to_variable(&fn_body, variable))
+                    }
+                    lark_hir::MetaIndex::Place(place_idx) => {
+                        let fn_body = self.fn_body(entity).into_value();
+                        let p = fn_body.tables[place_idx];
+
+                        match p {
+                            lark_hir::PlaceData::Entity(entity) => {
+                                Some(self.find_all_references_to_definition(entity))
+                            }
+                            lark_hir::PlaceData::Variable(variable) => {
+                                Some(self.find_all_references_to_variable(&fn_body, variable))
+                            }
+                            lark_hir::PlaceData::Field { name, .. } => {
+                                let source_types = &self.full_type_check(entity).into_value();
+                                let hovered_entity = source_types.entities[&name.into()];
+
+                                Some(self.find_all_references_to_field(hovered_entity))
+                            }
+                            _ => None,
+                        }
+                    }
+                    _ => None,
+                },
+            })
+            .next();
+
+        if results.is_some() {
+            let mut results = results.unwrap();
+
+            if definition_position.is_some() {
+                results.push(definition_position.unwrap());
+            }
+
+            Ok(results)
+        } else {
+            if definition_position.is_some() {
+                Ok(vec![definition_position.unwrap()])
+            } else {
+                Ok(vec![])
+            }
+        }
+    }
+
+    fn get_entity_span_if_possible(
+        &self,
+        entity: Entity,
+        use_minimal_span: bool,
+    ) -> Option<Span<FileName>> {
+        match entity.untern(self) {
+            EntityData::Error(..) | EntityData::LangItem { .. } => None,
+            _ => {
+                if use_minimal_span {
+                    Some(self.characteristic_entity_span(entity))
+                } else {
+                    Some(self.entity_span(entity))
+                }
+            }
+        }
+    }
+
     fn definition_range_at_position(
         &self,
         url: &str,
         position: Position,
+        minimal_span: bool,
     ) -> Cancelable<Option<(String, Range)>> {
         let url_file_name = url.into_file_name(self);
         let byte_index = self.position_to_byte_index(url, position);
@@ -146,17 +322,41 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
             .iter()
             .rev()
             .filter_map(|target| match target.kind {
+                HoverTargetKind::Entity(entity) => {
+                    if let Some(span) = self.get_entity_span_if_possible(entity, minimal_span) {
+                        let range = self.range(span);
+                        let filename = span.file().id.untern(self).to_string();
+                        Some((filename, range))
+                    } else {
+                        None
+                    }
+                }
                 HoverTargetKind::MetaIndex(entity, mi) => match mi {
+                    lark_hir::MetaIndex::Variable(variable) => {
+                        let fn_body = self.fn_body(entity).into_value();
+                        let span = fn_body.span(variable);
+                        let range = self.range(span);
+                        let filename = span.file().id.untern(self).to_string();
+                        Some((filename, range))
+                    }
                     lark_hir::MetaIndex::Place(place_idx) => {
                         let fn_body = self.fn_body(entity).into_value();
                         let p = fn_body.tables[place_idx];
 
                         match p {
                             lark_hir::PlaceData::Entity(entity) => {
-                                let span = self.entity_span(entity);
-                                let range = self.range(span);
-                                let filename = span.file().id.untern(self).to_string();
-                                Some((filename, range))
+                                if let Some(span) =
+                                    self.get_entity_span_if_possible(entity, minimal_span)
+                                {
+                                    let range = self.range(span);
+                                    let filename = span.file().id.untern(self).to_string();
+                                    Some((filename, range))
+                                } else {
+                                    let span = fn_body.span(place_idx);
+                                    let range = self.range(span);
+                                    let filename = span.file().id.untern(self).to_string();
+                                    Some((filename, range))
+                                }
                             }
                             lark_hir::PlaceData::Variable(variable) => {
                                 let span = fn_body.span(variable);
@@ -169,10 +369,16 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
 
                                 match results.entities.get(&name.into()) {
                                     Some(child_entity) => {
-                                        let span = self.entity_span(*child_entity);
-                                        let range = self.range(span);
-                                        let filename = span.file().id.untern(self).to_string();
-                                        Some((filename, range))
+                                        if let Some(span) = self.get_entity_span_if_possible(
+                                            *child_entity,
+                                            minimal_span,
+                                        ) {
+                                            let range = self.range(span);
+                                            let filename = span.file().id.untern(self).to_string();
+                                            Some((filename, range))
+                                        } else {
+                                            None
+                                        }
                                     }
 
                                     None => None,
@@ -183,7 +389,6 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     }
                     _ => None,
                 },
-                _ => None,
             })
             .next())
     }
@@ -217,8 +422,9 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
 
                 HoverTargetKind::MetaIndex(entity, mi) => {
                     let fn_body_types = self.full_type_check(entity).into_value();
+
                     if let Some(ty) = fn_body_types.types.get(&mi) {
-                        Some(format!("{}", ty.pretty_print(self)))
+                        Some(format!("{}", ty.pretty_print(self),))
                     } else {
                         None
                     }
