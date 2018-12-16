@@ -1,4 +1,3 @@
-use lark_pretty_print::PrettyPrint;
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
@@ -12,6 +11,7 @@ use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
 use lark_hir as hir;
 use lark_intern::Untern;
+use lark_pretty_print::PrettyPrint;
 use lark_ty::declaration::Declaration;
 use lark_ty::Signature;
 use lark_ty::Ty;

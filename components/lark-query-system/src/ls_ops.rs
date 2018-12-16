@@ -194,7 +194,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     let fn_body = self.fn_body(entity).into_value();
                     let possible_match_types = &self.full_type_check(entity).into_value();
 
-                    for (_, value) in fn_body.tables.places.iter_enumerated() {
+                    for value in fn_body.tables.places.iter() {
                         match value {
                             lark_hir::PlaceData::Field {
                                 name: value_name, ..
@@ -209,6 +209,21 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                                 }
                             }
                             _ => {}
+                        }
+                    }
+
+                    for identified_expression in fn_body.tables.identified_expressions.iter() {
+                        match &identified_expression {
+                            lark_hir::IdentifiedExpressionData { identifier, .. } => {
+                                if possible_match_types.entities[&(*identifier).into()]
+                                    == field_entity
+                                {
+                                    let span = fn_body.span(*identifier);
+                                    let range = self.range(span);
+                                    let filename = span.file().id.untern(self).to_string();
+                                    uses.push((filename, range));
+                                }
+                            }
                         }
                     }
                 }
@@ -332,6 +347,22 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     }
                 }
                 HoverTargetKind::MetaIndex(entity, mi) => match mi {
+                    lark_hir::MetaIndex::Identifier(identifier) => {
+                        let source_types = &self.full_type_check(entity).into_value();
+                        if let Some(target_entity) = source_types.entities.get(&identifier.into()) {
+                            if let Some(span) =
+                                self.get_entity_span_if_possible(*target_entity, minimal_span)
+                            {
+                                let range = self.range(span);
+                                let filename = span.file().id.untern(self).to_string();
+                                Some((filename, range))
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    }
                     lark_hir::MetaIndex::Variable(variable) => {
                         let fn_body = self.fn_body(entity).into_value();
                         let span = fn_body.span(variable);
@@ -423,10 +454,26 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                 HoverTargetKind::MetaIndex(entity, mi) => {
                     let fn_body_types = self.full_type_check(entity).into_value();
 
-                    if let Some(ty) = fn_body_types.types.get(&mi) {
-                        Some(format!("{}", ty.pretty_print(self),))
-                    } else {
-                        None
+                    match mi {
+                        lark_hir::MetaIndex::Identifier(identifier) => {
+                            if let Some(target_entity) =
+                                fn_body_types.entities.get(&identifier.into())
+                            {
+                                Some(format!(
+                                    "{}",
+                                    self.ty(*target_entity).value.pretty_print(self),
+                                ))
+                            } else {
+                                None
+                            }
+                        }
+                        _ => {
+                            if let Some(ty) = fn_body_types.types.get(&mi) {
+                                Some(format!("{}", ty.pretty_print(self),))
+                            } else {
+                                None
+                            }
+                        }
                     }
                 }
             })
