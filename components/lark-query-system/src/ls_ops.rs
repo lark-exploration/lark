@@ -194,7 +194,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     let fn_body = self.fn_body(entity).into_value();
                     let possible_match_types = &self.full_type_check(entity).into_value();
 
-                    for (_, value) in fn_body.tables.places.iter_enumerated() {
+                    for value in fn_body.tables.places.iter() {
                         match value {
                             lark_hir::PlaceData::Field {
                                 name: value_name, ..
@@ -209,6 +209,21 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                                 }
                             }
                             _ => {}
+                        }
+                    }
+
+                    for identified_expression in fn_body.tables.identified_expressions.iter() {
+                        match &identified_expression {
+                            lark_hir::IdentifiedExpressionData { identifier, .. } => {
+                                if possible_match_types.entities[&(*identifier).into()]
+                                    == field_entity
+                                {
+                                    let span = fn_body.span(*identifier);
+                                    let range = self.range(span);
+                                    let filename = span.file().id.untern(self).to_string();
+                                    uses.push((filename, range));
+                                }
+                            }
                         }
                     }
                 }
@@ -332,6 +347,20 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                     }
                 }
                 HoverTargetKind::MetaIndex(entity, mi) => match mi {
+                    lark_hir::MetaIndex::Identifier(identifier) => {
+                        let source_types = &self.full_type_check(entity).into_value();
+                        let target_entity = source_types.entities[&identifier.into()];
+
+                        if let Some(span) =
+                            self.get_entity_span_if_possible(target_entity, minimal_span)
+                        {
+                            let range = self.range(span);
+                            let filename = span.file().id.untern(self).to_string();
+                            Some((filename, range))
+                        } else {
+                            None
+                        }
+                    }
                     lark_hir::MetaIndex::Variable(variable) => {
                         let fn_body = self.fn_body(entity).into_value();
                         let span = fn_body.span(variable);
