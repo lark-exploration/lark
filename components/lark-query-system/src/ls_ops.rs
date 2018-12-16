@@ -349,14 +349,16 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                 HoverTargetKind::MetaIndex(entity, mi) => match mi {
                     lark_hir::MetaIndex::Identifier(identifier) => {
                         let source_types = &self.full_type_check(entity).into_value();
-                        let target_entity = source_types.entities[&identifier.into()];
-
-                        if let Some(span) =
-                            self.get_entity_span_if_possible(target_entity, minimal_span)
-                        {
-                            let range = self.range(span);
-                            let filename = span.file().id.untern(self).to_string();
-                            Some((filename, range))
+                        if let Some(target_entity) = source_types.entities.get(&identifier.into()) {
+                            if let Some(span) =
+                                self.get_entity_span_if_possible(*target_entity, minimal_span)
+                            {
+                                let range = self.range(span);
+                                let filename = span.file().id.untern(self).to_string();
+                                Some((filename, range))
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }
@@ -452,10 +454,26 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                 HoverTargetKind::MetaIndex(entity, mi) => {
                     let fn_body_types = self.full_type_check(entity).into_value();
 
-                    if let Some(ty) = fn_body_types.types.get(&mi) {
-                        Some(format!("{}", ty.pretty_print(self),))
-                    } else {
-                        None
+                    match mi {
+                        lark_hir::MetaIndex::Identifier(identifier) => {
+                            if let Some(target_entity) =
+                                fn_body_types.entities.get(&identifier.into())
+                            {
+                                Some(format!(
+                                    "{}",
+                                    self.ty(*target_entity).value.pretty_print(self),
+                                ))
+                            } else {
+                                None
+                            }
+                        }
+                        _ => {
+                            if let Some(ty) = fn_body_types.types.get(&mi) {
+                                Some(format!("{}", ty.pretty_print(self),))
+                            } else {
+                                None
+                            }
+                        }
                     }
                 }
             })
