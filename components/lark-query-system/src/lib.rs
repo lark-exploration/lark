@@ -319,7 +319,9 @@ impl QuerySystem {
                 }
 
                 let text = Text::from(current_contents);
-                self.lark_db.add_file(url.as_str(), text);
+                self.lark_db
+                    .query_mut(lark_parser::FileTextQuery)
+                    .set(file_name, text);
             }
             QueryRequest::ReferencesAtPosition(task_id, url, position, _include_declaration) => {
                 std::thread::spawn({
