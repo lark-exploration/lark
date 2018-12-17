@@ -1,0 +1,126 @@
+use crate::full_inference::Perm;
+use lark_debug_derive::DebugWith;
+use lark_entity::Entity;
+use lark_hir as hir;
+use lark_indices::IndexVec;
+use lark_string::GlobalIdentifier;
+
+mod builder;
+
+crate struct Analysis {
+    /// For each node, information about what it represents (the
+    /// analysis itself doesn't care).
+    crate node_datas: IndexVec<Node, NodeData>,
+
+    /// For each path, information about what it represents (the
+    /// analysis itself doesn't care).
+    crate path_datas: IndexVec<Path, PathData>,
+
+    /// Edges in the control-flow graph.
+    crate cfg_edges: Vec<(Node, Node)>,
+
+    /// Contains pairs `(Path1, Path2)` where `Path1` is a "parent
+    /// path" of `Path2` -- e.g., there would be a pair for `foo` and
+    /// `foo.bar`. This contains *immediate* parents only, so there
+    /// would NOT be a pair `(foo, foo.bar.baz)`.
+    crate owner_paths: Vec<(Path, Path)>,
+
+    /// An "access" of the given path with the given permission takes place
+    /// at the given node.
+    crate accesses: Vec<(Perm, Path, Node)>,
+
+    /// Indicates that the value of `Path` is overwritten at the given `Node`
+    /// (e.g., `x = 5` overwrites `x`).
+    crate overwritten: Vec<(Path, Node)>,
+
+    /// Indicates that the value of `Path` is "traversed" -- i.e.,
+    /// instantaneously accessed -- at the given node. This is used
+    /// when a subpath is overwritten; so, for example, `x.y = 10`
+    /// "traverses" `x`, and hence `x` cannot be moved.
+    crate traverse: Vec<(Path, Node)>,
+
+    /// Indicates that data with the given permission is "used" at the
+    /// given node. For example, if you have `foo(x)`, then at the
+    /// node for the call to `foo`, all permissions appearing in the
+    /// type of `x` are "used".
+    crate used: Vec<(Perm, Node)>,
+}
+
+lark_indices::index_type! {
+    /// A node in the control-flow graph. Typically represents a HIR
+    /// expression, but may represent other sorts of events.
+    crate struct Node { .. }
+}
+
+#[derive(Copy, Clone, Debug, DebugWith)]
+crate enum NodeData {
+    /// Start of the control-flow graph.
+    Start,
+
+    /// The point where an expression "executes" -- note that
+    /// subexpressions also have their own nodes. So e.g. if you have
+    /// the HIR expression `a + b`, then there will be a node for `a`
+    /// (corresponding to accessing `a`) and a node for `b`
+    /// (corresponding to accessing `b`) and then a node for `+`
+    /// (corresponding to adding those two values).
+    Expression(hir::Expression),
+
+    Join(hir::Expression),
+}
+
+lark_indices::index_type! {
+    /// A "path" is an expression that leads to a memory location. This is
+    /// the unit that can be accessed. For example, `x` is a path as is
+    /// `x.a.b`, but `foo()` is not (because that expression produces a
+    /// value and doesn't reference a storage location). Paths are often
+    /// called "lvalues" in C.
+    ///
+    /// Paths are not necessarily fully executable; they may be
+    /// approximated to remove information that the analysis does not need
+    /// -- for example, the expression `foo[bar]` may be a path, but we
+    /// retain only `foo[]`.
+    crate struct Path { .. }
+}
+
+lark_debug_with::debug_fallback_impl!(Path);
+
+#[derive(Copy, Clone, Debug, DebugWith, Hash, PartialEq, Eq)]
+crate enum PathData {
+    /// A variable in the HIR like `x`
+    Variable(hir::Variable),
+
+    /// A static variable
+    Entity(Entity),
+
+    /// A temporary on the stack containing the result of some
+    /// value-producing expression (e.g., `foo()`); such temporaries
+    /// may be produced when you have something like:
+    ///
+    /// ```ignore
+    /// let p = borrow foo().bar
+    /// ```
+    Temporary(hir::Expression),
+
+    /// A path like `owner.name`
+    Field { owner: Path, name: GlobalIdentifier },
+
+    /// A path like `owner[_]`.
+    Index { owner: Path },
+}
+
+impl PathData {
+    fn owner(self) -> Option<Path> {
+        match self {
+            PathData::Entity(_) | PathData::Temporary(_) | PathData::Variable(_) => None,
+            PathData::Field { owner, name: _ } | PathData::Index { owner } => Some(owner),
+        }
+    }
+
+    fn precise(self, path_datas: &IndexVec<Path, PathData>) -> bool {
+        match self {
+            PathData::Entity(_) | PathData::Temporary(_) | PathData::Variable(_) => true,
+            PathData::Field { owner, name: _ } => path_datas[owner].precise(path_datas),
+            PathData::Index { owner: _ } => false,
+        }
+    }
+}

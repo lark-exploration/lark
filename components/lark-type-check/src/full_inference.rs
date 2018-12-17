@@ -14,6 +14,8 @@ use lark_ty::TypeFamily;
 
 crate mod apply_perm;
 
+crate mod analysis;
+
 /// Defines the `Base` type that represents base types.
 crate mod base;
 use base::Base;
