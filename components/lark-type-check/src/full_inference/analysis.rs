@@ -1,4 +1,5 @@
 use crate::full_inference::constraint::ConstraintAt;
+use crate::full_inference::perm::PermVar;
 use crate::full_inference::FullInference;
 use crate::full_inference::FullInferenceTables;
 use crate::full_inference::Perm;
@@ -12,9 +13,11 @@ use lark_hir as hir;
 use lark_indices::IndexVec;
 use lark_indices::U32Index;
 use lark_string::GlobalIdentifier;
+use lark_ty::PermKind;
 use lark_unify::UnificationTable;
 
 mod builder;
+mod kind_inference;
 
 #[derive(Default)]
 crate struct Analysis {
@@ -76,6 +79,13 @@ impl Analysis {
         unify: &mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
     ) -> Analysis {
         builder::AnalysisBuilder::analyze(fn_body, results, constraints, unify)
+    }
+
+    crate fn infer(
+        self,
+        tables: &impl AsRef<FullInferenceTables>,
+    ) -> FxIndexMap<PermVar, PermKind> {
+        kind_inference::inference(tables, &self.perm_less_base, &self.perm_less_if_base)
     }
 
     crate fn start_node(&self) -> Node {

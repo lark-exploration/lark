@@ -1,7 +1,6 @@
 //! We use `datafrog` to implement the actual inference.
 
-use crate::full_inference::constraint::Constraint;
-use crate::full_inference::constraint::ConstraintAt;
+use crate::full_inference::analysis::Node;
 use crate::full_inference::perm::Perm;
 use crate::full_inference::perm::PermData;
 use crate::full_inference::perm::PermVar;
@@ -9,7 +8,6 @@ use crate::full_inference::FullInferenceTables;
 use datafrog::Iteration;
 use datafrog::Relation;
 use lark_collections::FxIndexMap;
-use lark_collections::FxIndexSet;
 use lark_intern::Intern;
 use lark_intern::Untern;
 use lark_ty::PermKind;
@@ -134,37 +132,24 @@ things it derives from.
 */
 
 crate fn inference(
-    db: &impl AsRef<FullInferenceTables>,
-    constraints: &FxIndexSet<ConstraintAt>,
+    tables: &impl AsRef<FullInferenceTables>,
+    perm_less_base: &[(Perm, Perm, Node)],
+    perm_less_if_base: &[(Perm, Perm, Perm, Node)],
 ) -> FxIndexMap<PermVar, PermKind> {
     let mut iteration = Iteration::new();
 
     let perm_less = iteration.variable::<(Perm, Perm)>("perm_less");
-    perm_less.insert(Relation::from(constraints.iter().flat_map(|c| {
-        let (p_a, p_b) = match c.constraint {
-            Constraint::PermEquateConditionally { .. } => (None, None),
-            Constraint::PermEquate { a, b } => (Some((a, b)), Some((b, a))),
-            Constraint::PermPermits { a, b } => (Some((b, a)), None),
-        };
-
-        p_a.into_iter().chain(p_b)
-    })));
+    perm_less.insert(Relation::from(
+        perm_less_base.iter().map(|&(a, b, _n)| (a, b)),
+    ));
 
     let perm_condition0 = iteration.variable::<(Perm, (Perm, Perm))>("perm_condition");
-    perm_condition0.insert(Relation::from(constraints.iter().flat_map(|c| {
-        let (p_a, p_b) = match c.constraint {
-            Constraint::PermEquateConditionally { condition, a, b } => {
-                (Some((condition, (a, b))), Some((condition, (b, a))))
-            }
-            Constraint::PermEquate { .. } => (None, None),
-            Constraint::PermPermits { .. } => (None, None),
-        };
+    perm_condition0.insert(Relation::from(
+        perm_less_if_base.iter().map(|&(c, a, b, _n)| (c, (a, b))),
+    ));
 
-        p_a.into_iter().chain(p_b)
-    })));
-
-    let perm_borrow: Perm = PermKind::Borrow.intern(db);
-    let perm_own: Perm = PermKind::Own.intern(db);
+    let perm_borrow: Perm = PermKind::Borrow.intern(tables);
+    let perm_own: Perm = PermKind::Own.intern(tables);
 
     let borrow = iteration.variable::<(Perm, ())>("borrow");
     borrow.insert(Relation::from(
@@ -195,7 +180,7 @@ crate fn inference(
         borrow
             .elements
             .iter()
-            .filter_map(|&(v, ())| match v.untern(db) {
+            .filter_map(|&(v, ())| match v.untern(tables) {
                 PermData::Inferred(v) => Some((v, PermKind::Borrow)),
                 PermData::Known(_) | PermData::Placeholder(_) => None,
             }),
@@ -204,7 +189,7 @@ crate fn inference(
         owned
             .elements
             .iter()
-            .filter_map(|&(v, ())| match v.untern(db) {
+            .filter_map(|&(v, ())| match v.untern(tables) {
                 PermData::Inferred(v) => Some((v, PermKind::Own)),
                 PermData::Known(_) | PermData::Placeholder(_) => None,
             }),
