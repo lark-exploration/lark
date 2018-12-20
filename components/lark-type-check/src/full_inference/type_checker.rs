@@ -9,6 +9,7 @@ use crate::full_inference::FullInferenceTables;
 use crate::results::TypeCheckResults;
 use crate::substitute::Substitution;
 use crate::substitute::SubstitutionDelegate;
+use crate::HirLocation;
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
@@ -52,9 +53,15 @@ impl FullInferenceStorage {
         PermData::Inferred(self.perm_vars.push(())).intern(tables)
     }
 
-    crate fn add_constraint(&mut self, cause: impl Into<hir::MetaIndex>, constraint: Constraint) {
+    crate fn add_constraint(
+        &mut self,
+        cause: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
+        constraint: Constraint,
+    ) {
         self.constraints.insert(ConstraintAt {
             cause: cause.into(),
+            location: location.into(),
             constraint,
         });
     }
@@ -65,7 +72,14 @@ impl<DB> TypeCheckerFamilyDependentExt<FullInference>
 where
     DB: TypeCheckDatabase,
 {
-    fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<FullInference>) {
+    fn require_assignable(
+        &mut self,
+        location: impl Into<HirLocation>,
+        expression: hir::Expression,
+        place_ty: Ty<FullInference>,
+    ) {
+        let location: HirLocation = location.into();
+
         let value_ty = self.storage.results.ty(expression);
 
         // When assigning a value into a place, we do not *have* to
@@ -73,7 +87,8 @@ where
         // place. So create a permission variable for the amount of
         // access and use it to modify the value access ty.
         let perm_access = self.storage.new_inferred_perm(&self.f_tables);
-        let value_access_ty = self.apply_access_perm(expression.into(), perm_access, value_ty);
+        let value_access_ty =
+            self.apply_access_perm(expression.into(), location.into(), perm_access, value_ty);
 
         // Record the permission used at `expression` for later.
         self.storage
@@ -81,12 +96,12 @@ where
             .access_permissions
             .insert(expression, perm_access);
 
-        self.equate(expression, value_access_ty, place_ty)
+        self.equate(expression, location, value_access_ty, place_ty)
     }
 
     fn substitute<M>(
         &mut self,
-        _location: impl Into<hir::MetaIndex>,
+        _location: impl Into<HirLocation>,
         generics: &Generics<FullInference>,
         value: M,
     ) -> M::Output
@@ -98,11 +113,12 @@ where
 
     fn apply_owner_perm(
         &mut self,
-        location: impl Into<hir::MetaIndex>,
+        cause: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
         owner_perm: Perm,
         field_ty: Ty<FullInference>,
     ) -> Ty<FullInference> {
-        self.apply_access_perm(location.into(), owner_perm, field_ty)
+        self.apply_access_perm(cause.into(), location.into(), owner_perm, field_ty)
     }
 
     fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<FullInference>) {
@@ -164,10 +180,12 @@ where
     fn equate(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
         ty1: Ty<FullInference>,
         ty2: Ty<FullInference>,
     ) {
-        let cause = cause.into();
+        let cause: hir::MetaIndex = cause.into();
+        let location: HirLocation = location.into();
 
         let Ty {
             repr: Erased,
@@ -180,8 +198,11 @@ where
             base: base2,
         } = ty2;
 
-        self.storage
-            .add_constraint(cause, Constraint::PermEquate { a: perm1, b: perm2 });
+        self.storage.add_constraint(
+            cause,
+            location,
+            Constraint::PermEquate { a: perm1, b: perm2 },
+        );
 
         match self.unify.unify(cause, base1, base2) {
             Ok(()) => {}
@@ -214,7 +235,7 @@ where
                 for (generic1, generic2) in data1.generics.iter().zip(&data2.generics) {
                     match (generic1, generic2) {
                         (GenericKind::Ty(g1), GenericKind::Ty(g2)) => {
-                            self.equate(cause, g1, g2);
+                            self.equate(cause, location, g1, g2);
                         }
                     }
                 }

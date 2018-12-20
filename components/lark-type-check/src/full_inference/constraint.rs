@@ -1,4 +1,5 @@
 use crate::full_inference::perm::Perm;
+use crate::HirLocation;
 use lark_debug_derive::DebugWith;
 use lark_hir as hir;
 
@@ -21,5 +22,6 @@ crate enum Constraint {
 #[derive(Copy, Clone, Hash, Debug, DebugWith, PartialEq, Eq)]
 crate struct ConstraintAt {
     crate cause: hir::MetaIndex,
+    crate location: HirLocation,
     crate constraint: Constraint,
 }

@@ -1,4 +1,4 @@
-use crate::full_inference::datafrog;
+use crate::full_inference::analysis::AnalysisIr;
 use crate::full_inference::resolve_to_full_inferred::ResolveToFullInferred;
 use crate::full_inference::type_checker::FullInferenceStorage;
 use crate::full_inference::FullInference;
@@ -39,7 +39,14 @@ crate fn full_type_check(
 
     type_checker.check_fn_body();
 
-    let perm_kinds = datafrog::inference(&type_checker, &type_checker.storage.constraints);
+    let analysis = AnalysisIr::new(
+        &fn_body,
+        &type_checker.storage.results,
+        &type_checker.storage.constraints,
+        &mut type_checker.unify,
+    );
+
+    let perm_kinds = analysis.infer(&type_checker);
 
     let mut unresolved_variables = vec![];
     let inferred_results = type_checker
