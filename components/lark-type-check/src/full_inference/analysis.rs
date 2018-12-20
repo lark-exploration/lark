@@ -1,12 +1,18 @@
+use crate::full_inference::constraint::ConstraintAt;
+use crate::full_inference::FullInference;
+use crate::full_inference::FullInferenceTables;
 use crate::full_inference::Perm;
+use crate::results::TypeCheckResults;
 use crate::HirLocation;
 use lark_collections::FxIndexMap;
+use lark_collections::FxIndexSet;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_hir as hir;
 use lark_indices::IndexVec;
 use lark_indices::U32Index;
 use lark_string::GlobalIdentifier;
+use lark_unify::UnificationTable;
 
 mod builder;
 
@@ -59,10 +65,19 @@ crate struct Analysis {
 
     /// `Pc[Pa <= Pb]` -- if `Pc` is borrow/own, then `Pb` must permit
     /// `Pa` (occurs during subtyping)
-    crate perm_less_if_base: Vec<(Perm, Perm, Node)>,
+    crate perm_less_if_base: Vec<(Perm, Perm, Perm, Node)>,
 }
 
 impl Analysis {
+    crate fn new(
+        fn_body: &hir::FnBody,
+        results: &TypeCheckResults<FullInference>,
+        constraints: &FxIndexSet<ConstraintAt>,
+        unify: &mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
+    ) -> Analysis {
+        builder::AnalysisBuilder::analyze(fn_body, results, constraints, unify)
+    }
+
     crate fn start_node(&self) -> Node {
         self.lookup_node(HirLocation::Start)
     }

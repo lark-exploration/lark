@@ -2,6 +2,8 @@ use crate::full_inference::analysis::Analysis;
 use crate::full_inference::analysis::Node;
 use crate::full_inference::analysis::Path;
 use crate::full_inference::analysis::PathData;
+use crate::full_inference::constraint::Constraint;
+use crate::full_inference::constraint::ConstraintAt;
 use crate::full_inference::FullInference;
 use crate::full_inference::FullInferenceTables;
 use crate::full_inference::Perm;
@@ -9,6 +11,7 @@ use crate::results::TypeCheckResults;
 use crate::HirLocation;
 use lark_collections::map::Entry;
 use lark_collections::FxIndexMap;
+use lark_collections::FxIndexSet;
 use lark_hir as hir;
 use lark_indices::IndexVec;
 use lark_indices::U32Index;
@@ -19,21 +22,24 @@ use std::hash::Hash;
 crate struct AnalysisBuilder<'me> {
     analysis: Analysis,
     fn_body: &'me hir::FnBody,
+    constraints: &'me FxIndexSet<ConstraintAt>,
     results: &'me TypeCheckResults<FullInference>,
     unify: &'me mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
     reverse_path_datas: FxIndexMap<PathData, ()>,
 }
 
-impl AnalysisBuilder<'me> {
+impl AnalysisBuilder<'_> {
     crate fn analyze(
-        fn_body: &'me hir::FnBody,
-        results: &'me TypeCheckResults<FullInference>,
+        fn_body: &hir::FnBody,
+        results: &TypeCheckResults<FullInference>,
+        constraints: &FxIndexSet<ConstraintAt>,
         unify: &'me mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
     ) -> Analysis {
         let mut builder = AnalysisBuilder {
             analysis: Analysis::default(),
             fn_body,
             results,
+            constraints,
             unify,
             reverse_path_datas: Default::default(),
         };
@@ -42,7 +48,39 @@ impl AnalysisBuilder<'me> {
         let root_node = builder.build_node(start_node, fn_body.root_expression);
         let _return_node = builder.push_node_edge(root_node, HirLocation::Return);
 
+        builder.build_constraints();
+
         builder.analysis
+    }
+
+    fn build_constraints(&mut self) {
+        for ConstraintAt {
+            cause: _,
+            location,
+            constraint,
+        } in self.constraints
+        {
+            let node = self.lookup_node(*location);
+            match *constraint {
+                Constraint::PermEquate { a, b } => {
+                    self.analysis.perm_less_base.push((a, b, node));
+                    self.analysis.perm_less_base.push((b, a, node));
+                }
+
+                Constraint::PermPermits { a, b } => {
+                    self.analysis.perm_less_base.push((b, a, node));
+                }
+
+                Constraint::PermEquateConditionally { condition, a, b } => {
+                    self.analysis
+                        .perm_less_if_base
+                        .push((condition, a, b, node));
+                    self.analysis
+                        .perm_less_if_base
+                        .push((condition, b, a, node));
+                }
+            }
+        }
     }
 
     /// Helper for interning things and creating an index. `data_vec`
