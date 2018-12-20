@@ -1,10 +1,12 @@
 use lark_actor::{self, Actor, LspResponse, QueryRequest};
 use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::io;
 use std::io::prelude::{Read, Write};
 use std::sync::mpsc::Sender;
+use url::Url;
 
 /// The command given by the IDE to the LSP server. These represent the actions of the user in the IDE,
 /// as well as actions the IDE might perform as a result of user actions (like cancelling a task)
@@ -44,6 +46,11 @@ pub enum LSPCommand {
     references {
         id: usize,
         params: languageserver_types::TextDocumentPositionParams,
+    },
+    #[serde(rename = "textDocument/rename")]
+    rename {
+        id: usize,
+        params: languageserver_types::RenameParams,
     },
     #[serde(rename = "$/cancelRequest")]
     cancelRequest {
@@ -154,6 +161,25 @@ impl Actor for LspResponder {
 
                 send_response(id, result);
             }
+            LspResponse::WorkspaceEdits(id, vec_of_edits) => {
+                let mut map_of_edits: HashMap<Url, Vec<languageserver_types::TextEdit>> =
+                    HashMap::new();
+
+                for edit in vec_of_edits.into_iter() {
+                    let entry = map_of_edits.entry(edit.0).or_insert(vec![]);
+                    (*entry).push(languageserver_types::TextEdit {
+                        range: edit.1,
+                        new_text: edit.2,
+                    });
+                }
+
+                let result = languageserver_types::WorkspaceEdit {
+                    changes: Some(map_of_edits),
+                    document_changes: None,
+                };
+
+                send_response(id, result);
+            }
             LspResponse::Nothing(id) => {
                 send_response(id, ());
             }
@@ -203,7 +229,9 @@ impl Actor for LspResponder {
                         document_formatting_provider: None,
                         document_range_formatting_provider: None,
                         document_on_type_formatting_provider: None,
-                        rename_provider: None,
+                        rename_provider: Some(
+                            languageserver_types::RenameProviderCapability::Simple(true),
+                        ),
                         color_provider: None,
                         folding_range_provider: None,
                         execute_command_provider: None,
@@ -301,6 +329,14 @@ pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
                                 params.text_document.uri.clone(),
                                 params.position.clone(),
                                 true,
+                            ));
+                        }
+                        Ok(LSPCommand::rename { id, params }) => {
+                            let _ = send_to_query_channel.send(QueryRequest::RenameAtPosition(
+                                id,
+                                params.text_document.uri.clone(),
+                                params.position.clone(),
+                                params.new_name.clone(),
                             ));
                         }
                         Ok(LSPCommand::completion { .. }) => {

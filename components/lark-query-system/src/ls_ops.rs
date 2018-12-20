@@ -233,6 +233,22 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
         uses
     }
 
+    fn rename_all_references_at_position(
+        &self,
+        url: &str,
+        position: Position,
+        new_name: &str,
+    ) -> Cancelable<Vec<(String, Range, String)>> {
+        self.check_for_cancellation()?;
+
+        let references = self.find_all_references_at_position(url, position)?;
+
+        Ok(references
+            .into_iter()
+            .map(|(x, y)| (x, y, new_name.to_string()))
+            .collect())
+    }
+
     fn find_all_references_at_position(
         &self,
         url: &str,

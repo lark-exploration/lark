@@ -326,6 +326,32 @@ impl QuerySystem {
                     .query_mut(lark_parser::FileTextQuery)
                     .set(file_name, text);
             }
+            QueryRequest::RenameAtPosition(task_id, url, position, new_name) => {
+                std::thread::spawn({
+                    let db = self.lark_db.snapshot();
+                    let send_channel = self.send_channel.clone();
+                    move || {
+                        let _killme = KillTheProcess;
+
+                        match db.rename_all_references_at_position(
+                            url.as_str(),
+                            position,
+                            &new_name,
+                        ) {
+                            Ok(v) => {
+                                let result = v
+                                    .iter()
+                                    .map(|(x, y, z)| (Url::parse(x).unwrap(), *y, z.clone()))
+                                    .collect();
+                                send(send_channel, LspResponse::WorkspaceEdits(task_id, result));
+                            }
+                            _ => {
+                                send(send_channel, LspResponse::Nothing(task_id));
+                            }
+                        }
+                    }
+                });
+            }
             QueryRequest::ReferencesAtPosition(task_id, url, position, _include_declaration) => {
                 std::thread::spawn({
                     let db = self.lark_db.snapshot();
