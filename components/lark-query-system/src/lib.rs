@@ -1,13 +1,14 @@
 use language_reporting as l_r;
+use lark_actor::{Actor, LspResponse, QueryRequest};
 use lark_entity::EntityTables;
 use lark_intern::{Intern, Untern};
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_pretty_print::PrettyPrintDatabase;
 use lark_span::{ByteIndex, FileName, Span};
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables, Text};
-use lark_task_manager::{Actor, NoopSendChannel, QueryRequest, QueryResponse, SendChannel};
 use salsa::{Database, ParallelDatabase, Snapshot};
 use std::collections::VecDeque;
+use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use url::Url;
 
@@ -192,15 +193,15 @@ impl l_r::ReportingFiles for &LarkDatabase {
 }
 
 pub struct QuerySystem {
-    send_channel: Box<dyn SendChannel<QueryResponse>>,
+    send_channel: Sender<LspResponse>,
     lark_db: LarkDatabase,
     needs_error_check: bool,
 }
 
 impl QuerySystem {
-    pub fn new() -> QuerySystem {
+    pub fn new(send_channel: Sender<LspResponse>) -> QuerySystem {
         QuerySystem {
-            send_channel: Box::new(NoopSendChannel),
+            send_channel,
             lark_db: LarkDatabase::default(),
             needs_error_check: false,
         }
@@ -209,13 +210,6 @@ impl QuerySystem {
 
 impl Actor for QuerySystem {
     type InMessage = QueryRequest;
-    type OutMessage = QueryResponse;
-
-    fn startup(&mut self, send_channel: &dyn SendChannel<QueryResponse>) {
-        self.send_channel = send_channel.clone_send_channel();
-    }
-
-    fn shutdown(&mut self) {}
 
     fn receive_messages(&mut self, messages: &mut VecDeque<Self::InMessage>) {
         log::info!("receive_messages({} messages pending)", messages.len());
@@ -253,16 +247,20 @@ impl QuerySystem {
         self.needs_error_check = false;
         std::thread::spawn({
             let db = self.lark_db.snapshot();
-            let send_channel = self.send_channel.clone_send_channel();
+            let send_channel = self.send_channel.clone();
             move || {
                 match db.errors_for_project() {
                     Ok(errors) => {
                         // loop over hashmap and send messages
                         for (key, value) in errors {
+                            let send_channel = send_channel.clone();
                             let url = Url::parse(&key).unwrap();
                             let ranges_with_default =
                                 value.iter().map(|x| (x.range, x.label.clone())).collect();
-                            send_channel.send(QueryResponse::Diagnostics(url, ranges_with_default));
+                            send(
+                                send_channel,
+                                LspResponse::Diagnostics(url, ranges_with_default),
+                            );
                         }
                     }
                     Err(Cancelled) => {
@@ -278,6 +276,11 @@ impl QuerySystem {
         log::info!("process_message(message={:#?})", message);
 
         match message {
+            QueryRequest::Initialize(task_id) => {
+                let send_channel = self.send_channel.clone();
+                send(send_channel, LspResponse::Initialized(task_id));
+            }
+
             QueryRequest::OpenFile(url, contents) => {
                 let text = contents.intern(&self.lark_db).untern(&self.lark_db);
 
@@ -326,7 +329,7 @@ impl QuerySystem {
             QueryRequest::ReferencesAtPosition(task_id, url, position, _include_declaration) => {
                 std::thread::spawn({
                     let db = self.lark_db.snapshot();
-                    let send_channel = self.send_channel.clone_send_channel();
+                    let send_channel = self.send_channel.clone();
                     move || {
                         let _killme = KillTheProcess;
 
@@ -336,10 +339,10 @@ impl QuerySystem {
                                     .iter()
                                     .map(|(x, y)| (Url::parse(x).unwrap(), *y))
                                     .collect();
-                                send_channel.send(QueryResponse::Ranges(task_id, result));
+                                send(send_channel, LspResponse::Ranges(task_id, result));
                             }
                             _ => {
-                                send_channel.send(QueryResponse::Nothing(task_id));
+                                send(send_channel, LspResponse::Nothing(task_id));
                             }
                         }
                     }
@@ -348,20 +351,19 @@ impl QuerySystem {
             QueryRequest::DefinitionAtPosition(task_id, url, position) => {
                 std::thread::spawn({
                     let db = self.lark_db.snapshot();
-                    let send_channel = self.send_channel.clone_send_channel();
+                    let send_channel = self.send_channel.clone();
                     move || {
                         let _killme = KillTheProcess;
 
                         match db.definition_range_at_position(url.as_str(), position, false) {
                             Ok(Some(v)) => {
-                                send_channel.send(QueryResponse::Range(
-                                    task_id,
-                                    Url::parse(&v.0).unwrap(),
-                                    v.1,
-                                ));
+                                send(
+                                    send_channel,
+                                    LspResponse::Range(task_id, Url::parse(&v.0).unwrap(), v.1),
+                                );
                             }
                             _ => {
-                                send_channel.send(QueryResponse::Nothing(task_id));
+                                send(send_channel, LspResponse::Nothing(task_id));
                             }
                         }
                     }
@@ -370,22 +372,24 @@ impl QuerySystem {
             QueryRequest::TypeAtPosition(task_id, url, position) => {
                 std::thread::spawn({
                     let db = self.lark_db.snapshot();
-                    let send_channel = self.send_channel.clone_send_channel();
+                    let send_channel = self.send_channel.clone();
                     move || {
                         let _killme = KillTheProcess;
 
                         match db.hover_text_at_position(url.as_str(), position) {
                             Ok(Some(v)) => {
-                                send_channel.send(QueryResponse::Type(task_id, v.to_string()));
+                                send(send_channel, LspResponse::Type(task_id, v.to_string()));
                             }
                             Ok(None) => {
                                 // FIXME what to send here to indicate "no hover"?
-                                send_channel.send(QueryResponse::Type(task_id, "".to_string()));
+                                send(send_channel, LspResponse::Type(task_id, "".to_string()));
                             }
                             Err(Cancelled) => {
                                 // Not sure what to send here, if anything.
-                                send_channel
-                                    .send(QueryResponse::Type(task_id, format!("<cancelled>")));
+                                send(
+                                    send_channel,
+                                    LspResponse::Type(task_id, format!("<cancelled>")),
+                                );
                             }
                         }
                     }
@@ -394,6 +398,15 @@ impl QuerySystem {
         }
 
         log::info!("receive_message: awaiting next message");
+    }
+}
+
+fn send(channel: Sender<LspResponse>, message: LspResponse) {
+    match channel.send(message) {
+        Ok(..) => {}
+        Err(err) => {
+            log::error!("internal error: {}", err);
+        }
     }
 }
 

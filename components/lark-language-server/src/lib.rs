@@ -1,4 +1,4 @@
-use lark_task_manager::{self, Actor, LspRequest, LspResponse, MsgToManager, SendChannel};
+use lark_actor::{self, Actor, LspResponse, QueryRequest};
 use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::VecDeque;
@@ -122,11 +122,6 @@ pub struct LspResponder;
 
 impl Actor for LspResponder {
     type InMessage = LspResponse;
-    type OutMessage = ();
-
-    fn startup(&mut self, _: &dyn SendChannel<Self::OutMessage>) {}
-
-    fn shutdown(&mut self) {}
 
     /// Receive messages from the task manager that contain the results of
     /// a given task. This allows us to repond to the IDE in an orderly
@@ -240,7 +235,7 @@ impl Actor for LspResponder {
 /// The workhorse function for handling incoming requests from the IDE. This will
 /// take instructions from stdin sent by the IDE and then send them to the appropriate
 /// system.
-pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager>) {
+pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
     loop {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
@@ -257,8 +252,7 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
 
                     match command {
                         Ok(LSPCommand::initialize { id, .. }) => {
-                            let _ = send_to_manager_channel
-                                .send(MsgToManager::LspRequest(LspRequest::Initialize(id)));
+                            let _ = send_to_query_channel.send(QueryRequest::Initialize(id));
                         }
                         Ok(LSPCommand::initialized) => {
                             //eprintln!("Initialized received");
@@ -266,11 +260,9 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                         Ok(LSPCommand::didOpen { params }) => {
                             //eprintln!("didOpen: {:#?}", params);
 
-                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
-                                LspRequest::OpenFile(
-                                    params.text_document.uri.clone(),
-                                    params.text_document.text.clone(),
-                                ),
+                            let _ = send_to_query_channel.send(QueryRequest::OpenFile(
+                                params.text_document.uri.clone(),
+                                params.text_document.text.clone(),
                             ));
                         }
                         Ok(LSPCommand::didChange { params }) => {
@@ -282,38 +274,33 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                                 .map(|x| (x.range.unwrap(), x.text.clone()))
                                 .collect();
 
-                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
-                                LspRequest::EditFile(params.text_document.uri.clone(), changes),
+                            let _ = send_to_query_channel.send(QueryRequest::EditFile(
+                                params.text_document.uri.clone(),
+                                changes,
                             ));
                         }
                         Ok(LSPCommand::hover { id, params }) => {
                             //eprintln!("hover: id={} {:#?}", id, params);
 
-                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
-                                LspRequest::TypeForPos(
-                                    id,
-                                    params.text_document.uri.clone(),
-                                    params.position.clone(),
-                                ),
+                            let _ = send_to_query_channel.send(QueryRequest::TypeAtPosition(
+                                id,
+                                params.text_document.uri.clone(),
+                                params.position.clone(),
                             ));
                         }
                         Ok(LSPCommand::definition { id, params }) => {
-                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
-                                LspRequest::DefinitionForPos(
-                                    id,
-                                    params.text_document.uri.clone(),
-                                    params.position.clone(),
-                                ),
+                            let _ = send_to_query_channel.send(QueryRequest::DefinitionAtPosition(
+                                id,
+                                params.text_document.uri.clone(),
+                                params.position.clone(),
                             ));
                         }
                         Ok(LSPCommand::references { id, params }) => {
-                            let _ = send_to_manager_channel.send(MsgToManager::LspRequest(
-                                LspRequest::ReferencesForPos(
-                                    id,
-                                    params.text_document.uri.clone(),
-                                    params.position.clone(),
-                                    true,
-                                ),
+                            let _ = send_to_query_channel.send(QueryRequest::ReferencesAtPosition(
+                                id,
+                                params.text_document.uri.clone(),
+                                params.position.clone(),
+                                true,
                             ));
                         }
                         Ok(LSPCommand::completion { .. }) => {
@@ -327,10 +314,12 @@ pub fn lsp_serve(send_to_manager_channel: Sender<lark_task_manager::MsgToManager
                         Ok(LSPCommand::cancelRequest {
                             params: languageserver_types::CancelParams { id },
                         }) => match id {
-                            languageserver_types::NumberOrString::Number(num) => {
+                            languageserver_types::NumberOrString::Number(_num) => {
                                 //eprintln!("cancelling item: id={}", num);
+                                /* FIXME FIXME: removing cancelling for the time being
                                 let _ = send_to_manager_channel
                                     .send(MsgToManager::Cancel(num as usize));
+                                */
                             }
                             _ => unimplemented!(
                                 "Non-number cancellation IDs not currently supported"

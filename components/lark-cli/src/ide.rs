@@ -1,13 +1,11 @@
+use lark_actor::{spawn_actor, Actor, LspResponse, QueryRequest};
 use lark_language_server::{lsp_serve, LspResponder};
 use lark_query_system::QuerySystem;
-use lark_task_manager::Actor;
+use std::sync::mpsc::{channel, Receiver, RecvError, Sender, TryRecvError};
 
 pub fn ide() {
-    let query_system = QuerySystem::new();
-    let lsp_responder = LspResponder;
+    let lsp_responder = spawn_actor(LspResponder);
+    let query_system = spawn_actor(QuerySystem::new(lsp_responder.channel));
 
-    let task_manager = lark_task_manager::TaskManager::spawn(query_system, lsp_responder);
-
-    lsp_serve(task_manager.channel);
-    let _ = task_manager.join_handle.join();
+    lsp_serve(query_system.channel);
 }
