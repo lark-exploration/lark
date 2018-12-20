@@ -10,5 +10,5 @@ lark-debug-derive = { path = "../lark-debug-derive" }
 lark-string = { path = "../lark-string" }
 lark-debug-with = { path = "../lark-debug-with" }
 lark-intern = { path = "../lark-intern" }
-languageserver-types = "0.51.1"
+languageserver-types = "0.53"
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }

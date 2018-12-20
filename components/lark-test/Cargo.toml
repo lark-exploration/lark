@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 diff = "0.1.11"
 env_logger = "0.6"
-languageserver-types = "0.51.1"
+languageserver-types = "0.53"
 lark-debug-with = { path = "../lark-debug-with" }
 lark-cli = { path = "../lark-cli" }
 lark-entity = { path = "../lark-entity" }

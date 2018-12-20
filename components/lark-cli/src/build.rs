@@ -1,6 +1,7 @@
 use flexi_logger::{opt_format, Logger};
 use language_reporting::{emit, Diagnostic, Label, Severity};
 use languageserver_types::Position;
+use lark_actor::Actor;
 use lark_entity::{EntityData, ItemKind, MemberKind};
 use lark_intern::{Intern, Untern};
 use lark_language_server::{lsp_serve, LspResponder};
@@ -10,7 +11,6 @@ use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::LarkDatabase;
 use lark_query_system::QuerySystem;
 use lark_span::{ByteIndex, FileName, IntoFileName, Span};
-use lark_task_manager::Actor;
 use salsa::Database;
 use std::borrow::Cow;
 use std::collections::HashMap;
