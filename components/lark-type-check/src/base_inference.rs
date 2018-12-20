@@ -5,6 +5,7 @@
 use crate::results::TypeCheckResults;
 use crate::substitute::Substitution;
 use crate::substitute::SubstitutionDelegate;
+use crate::HirLocation;
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
@@ -116,14 +117,19 @@ impl<DB> TypeCheckerFamilyDependentExt<BaseInference>
 where
     DB: TypeCheckDatabase,
 {
-    fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<BaseInference>) {
+    fn require_assignable(
+        &mut self,
+        location: impl Into<HirLocation>,
+        expression: hir::Expression,
+        place_ty: Ty<BaseInference>,
+    ) {
         let value_ty = self.storage.ty(expression);
-        self.equate(expression, value_ty, place_ty)
+        self.equate(expression, location, value_ty, place_ty)
     }
 
     fn substitute<M>(
         &mut self,
-        _location: impl Into<hir::MetaIndex>,
+        _location: impl Into<HirLocation>,
         generics: &Generics<BaseInference>,
         value: M,
     ) -> M::Output
@@ -135,7 +141,8 @@ where
 
     fn apply_owner_perm(
         &mut self,
-        _location: impl Into<hir::MetaIndex>,
+        _cause: impl Into<hir::MetaIndex>,
+        _location: impl Into<HirLocation>,
         _access_perm: Erased,
         field_ty: Ty<BaseInference>,
     ) -> Ty<BaseInference> {
@@ -201,10 +208,12 @@ where
     fn equate(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
         ty1: Ty<BaseInference>,
         ty2: Ty<BaseInference>,
     ) {
-        let cause = cause.into();
+        let cause: hir::MetaIndex = cause.into();
+        let location: HirLocation = location.into();
 
         let Ty {
             repr: Erased,
@@ -248,7 +257,7 @@ where
                 for (generic1, generic2) in data1.generics.iter().zip(&data2.generics) {
                     match (generic1, generic2) {
                         (GenericKind::Ty(g1), GenericKind::Ty(g2)) => {
-                            self.equate(cause, g1, g2);
+                            self.equate(cause, location, g1, g2);
                         }
                     }
                 }

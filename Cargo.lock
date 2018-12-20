@@ -626,6 +626,7 @@ dependencies = [
  "lark-intern 0.1.0",
  "lark-parser 0.1.0",
  "lark-pretty-print 0.1.0",
+ "lark-string 0.1.0",
  "lark-ty 0.1.0",
  "lark-unify 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",

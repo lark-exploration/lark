@@ -9,6 +9,7 @@
 
 use generational_arena::Arena;
 use lark_collections::{FxIndexMap, IndexVec};
+use lark_debug_derive::DebugWith;
 use lark_entity::{Entity, EntityTables};
 use lark_error::{Diagnostic, WithError};
 use lark_hir as hir;
@@ -124,14 +125,22 @@ where
     /// Generates the constraint that the type of `expression` be
     /// assignable to a place with the type `place_ty`. This may
     /// induce coercions.
-    fn require_assignable(&mut self, expression: hir::Expression, place_ty: Ty<F>);
+    ///
+    /// The `location` is the point in the control-flow where the
+    /// assignment occurs.
+    fn require_assignable(
+        &mut self,
+        location: impl Into<HirLocation>,
+        expression: hir::Expression,
+        place_ty: Ty<F>,
+    );
 
     /// Substitute the given generics into the value `M`, which must
     /// be something in the `Declaration` type family (e.g., the type
     /// of a field).
     fn substitute<M>(
         &mut self,
-        location: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
         generics: &Generics<F>,
         value: M,
     ) -> M::Output
@@ -143,7 +152,8 @@ where
     /// `access_perm` (e.g., when accessing a field).
     fn apply_owner_perm(
         &mut self,
-        location: impl Into<hir::MetaIndex>,
+        cause: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
         access_perm: F::Perm,
         field_ty: Ty<F>,
     ) -> Ty<F>;
@@ -187,7 +197,13 @@ trait TypeCheckerVariableExt<F: TypeCheckerFamily, V> {
 
     /// Equates two types or other inferable values (producing an error if they are not
     /// equatable).
-    fn equate(&mut self, cause: impl Into<hir::MetaIndex>, val1: V, val2: V);
+    fn equate(
+        &mut self,
+        cause: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
+        val1: V,
+        val2: V,
+    );
 }
 
 impl<DB, F, S> AsRef<DeclarationTables> for TypeChecker<'_, DB, F, S>
@@ -217,5 +233,27 @@ where
 {
     fn as_ref(&self) -> &EntityTables {
         self.db.as_ref()
+    }
+}
+
+#[derive(Copy, Clone, Hash, Debug, DebugWith, PartialEq, Eq)]
+enum HirLocation {
+    Start,
+    Return,
+    Expression(hir::Expression),
+    AfterExpression(hir::Expression),
+    Place(hir::Place),
+    Error,
+}
+
+impl Into<HirLocation> for hir::Expression {
+    fn into(self) -> HirLocation {
+        HirLocation::Expression(self)
+    }
+}
+
+impl Into<HirLocation> for hir::Place {
+    fn into(self) -> HirLocation {
+        HirLocation::Place(self)
     }
 }

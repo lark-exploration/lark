@@ -17,6 +17,7 @@ pub use crate::seq::Seq;
 
 pub type FxIndexMap<K, V> = IndexMap<K, V, BuildHasherDefault<FxHasher>>;
 pub type FxIndexSet<K> = IndexSet<K, BuildHasherDefault<FxHasher>>;
+pub use indexmap::map;
 pub use indexmap::Equivalent;
 
 /// Use to declare a "newtype'd" index that can be used with `IndexVec`.
