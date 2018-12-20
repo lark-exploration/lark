@@ -1,4 +1,4 @@
-use crate::full_inference::analysis::Analysis;
+use crate::full_inference::analysis::AnalysisIr;
 use crate::full_inference::resolve_to_full_inferred::ResolveToFullInferred;
 use crate::full_inference::type_checker::FullInferenceStorage;
 use crate::full_inference::FullInference;
@@ -39,7 +39,7 @@ crate fn full_type_check(
 
     type_checker.check_fn_body();
 
-    let analysis = Analysis::new(
+    let analysis = AnalysisIr::new(
         &fn_body,
         &type_checker.storage.results,
         &type_checker.storage.constraints,

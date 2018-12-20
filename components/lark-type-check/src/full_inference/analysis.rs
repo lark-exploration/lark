@@ -19,8 +19,15 @@ use lark_unify::UnificationTable;
 mod builder;
 mod kind_inference;
 
+/// The "analysis IR" is a view onto a HIR fn body that adds a
+/// control-flow graph as well as a number of tuples that are used
+/// during safety analysis.  It's plausible that this struct -- or
+/// some subset of it -- should be extracted into its own crate,
+/// particularly if we wind up wanting to consume the HIR in
+/// "control-flow graph form" (i.e., this IR could play a role similar
+/// to MIR in Rust).
 #[derive(Default)]
-crate struct Analysis {
+crate struct AnalysisIr {
     /// For each node, information about what it represents (the
     /// analysis itself doesn't care).
     crate node_datas: IndexVec<Node, HirLocation>,
@@ -71,13 +78,13 @@ crate struct Analysis {
     crate perm_less_if_base: Vec<(Perm, Perm, Perm, Node)>,
 }
 
-impl Analysis {
+impl AnalysisIr {
     crate fn new(
         fn_body: &hir::FnBody,
         results: &TypeCheckResults<FullInference>,
         constraints: &FxIndexSet<ConstraintAt>,
         unify: &mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
-    ) -> Analysis {
+    ) -> AnalysisIr {
         builder::AnalysisBuilder::analyze(fn_body, results, constraints, unify)
     }
 

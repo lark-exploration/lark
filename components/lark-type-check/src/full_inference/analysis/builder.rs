@@ -1,4 +1,4 @@
-use crate::full_inference::analysis::Analysis;
+use crate::full_inference::analysis::AnalysisIr;
 use crate::full_inference::analysis::Node;
 use crate::full_inference::analysis::Path;
 use crate::full_inference::analysis::PathData;
@@ -20,7 +20,7 @@ use lark_unify::UnificationTable;
 use std::hash::Hash;
 
 crate struct AnalysisBuilder<'me> {
-    analysis: Analysis,
+    analysis: AnalysisIr,
     fn_body: &'me hir::FnBody,
     constraints: &'me FxIndexSet<ConstraintAt>,
     results: &'me TypeCheckResults<FullInference>,
@@ -34,9 +34,9 @@ impl AnalysisBuilder<'_> {
         results: &TypeCheckResults<FullInference>,
         constraints: &FxIndexSet<ConstraintAt>,
         unify: &'me mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
-    ) -> Analysis {
+    ) -> AnalysisIr {
         let mut builder = AnalysisBuilder {
-            analysis: Analysis::default(),
+            analysis: AnalysisIr::default(),
             fn_body,
             results,
             constraints,
