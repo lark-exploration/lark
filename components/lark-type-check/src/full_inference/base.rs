@@ -8,7 +8,7 @@ use lark_ty::InferVarOr;
 use lark_ty::TypeFamily;
 use lark_unify::{InferVar, Inferable};
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     crate struct Base { .. }
 }
 

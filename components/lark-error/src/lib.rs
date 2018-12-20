@@ -28,8 +28,8 @@
 
 #![feature(decl_macro)]
 
+use lark_collections::{seq, Seq};
 use lark_debug_derive::DebugWith;
-use lark_seq::{seq, Seq};
 use lark_span::{FileName, Span};
 use std::sync::Arc;
 

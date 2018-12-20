@@ -4,12 +4,12 @@ use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
 
 use derive_new::new;
+use lark_collections::Seq;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
 use lark_error::WithError;
 use lark_hir as hir;
-use lark_seq::Seq;
 use lark_span::{FileName, Span};
 use lark_ty as ty;
 use lark_ty::declaration::Declaration;

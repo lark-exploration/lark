@@ -7,14 +7,13 @@
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 
-use lark_collections::FxIndexMap;
+use lark_collections::{IndexVec, U32Index, FxIndexMap};
 use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;
 use lark_entity::Entity;
 use lark_entity::MemberKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
-use lark_indices::{IndexVec, U32Index};
 use lark_span::{FileName, Span};
 use lark_string::GlobalIdentifier;
 use std::sync::Arc;
@@ -421,7 +420,7 @@ where
     }
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Expression { .. }
 }
 
@@ -512,7 +511,7 @@ pub enum UnaryOperator {
     Not,
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct IdentifiedExpression { .. }
 }
 
@@ -522,7 +521,7 @@ pub struct IdentifiedExpressionData {
     pub expression: Expression,
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Place { .. }
 }
 
@@ -550,7 +549,7 @@ pub enum LiteralKind {
     String,
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Variable { .. }
 }
 
@@ -559,7 +558,7 @@ pub struct VariableData {
     pub name: Identifier,
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Identifier { .. }
 }
 
@@ -568,7 +567,7 @@ pub struct IdentifierData {
     pub text: GlobalIdentifier,
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Error { .. }
 }
 

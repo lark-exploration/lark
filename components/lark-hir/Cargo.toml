@@ -14,7 +14,6 @@ lark-debug-derive = { path = "../lark-debug-derive" }
 lark-debug-with = { path = "../lark-debug-with" }
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
-lark-indices = { path = "../lark-indices" }
 lark-intern = { path = "../lark-intern" }
 lark-span = { path = "../lark-span" }
 lark-string = { path = "../lark-string" }

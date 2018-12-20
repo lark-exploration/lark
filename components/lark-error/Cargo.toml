@@ -8,5 +8,4 @@ edition = "2018"
 lark-debug-derive = { path = "../lark-debug-derive" }
 lark-debug-with = { path = "../lark-debug-with" }
 lark-collections = { path = "../lark-collections" }
-lark-seq = { path = "../lark-seq" }
 lark-span = { path = "../lark-span" }

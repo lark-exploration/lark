@@ -9,6 +9,7 @@ use crate::HoverTarget;
 use crate::HoverTargetKind;
 use crate::ParserDatabase;
 
+use lark_collections::Seq;
 use lark_debug_with::DebugWith;
 use lark_entity::MemberKind;
 use lark_entity::{Entity, EntityData};
@@ -17,7 +18,6 @@ use lark_error::ErrorSentinel;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_intern::{Intern, Untern};
-use lark_seq::Seq;
 use lark_span::{ByteIndex, FileName, Location, Span, Spanned};
 use lark_string::GlobalIdentifier;
 use std::sync::Arc;

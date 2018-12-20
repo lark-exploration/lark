@@ -5,13 +5,10 @@ use crate::full_inference::FullInferenceTables;
 use crate::full_inference::Perm;
 use crate::results::TypeCheckResults;
 use crate::HirLocation;
-use lark_collections::FxIndexMap;
-use lark_collections::FxIndexSet;
+use lark_collections::{FxIndexMap, FxIndexSet, IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_hir as hir;
-use lark_indices::IndexVec;
-use lark_indices::U32Index;
 use lark_string::GlobalIdentifier;
 use lark_ty::PermKind;
 use lark_unify::UnificationTable;
@@ -104,13 +101,13 @@ impl AnalysisIr {
     }
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     /// A node in the control-flow graph. Typically represents a HIR
     /// expression, but may represent other sorts of events.
     crate struct Node { .. }
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     /// A "path" is an expression that leads to a memory location. This is
     /// the unit that can be accessed. For example, `x` is a path as is
     /// `x.a.b`, but `foo()` is not (because that expression produces a
