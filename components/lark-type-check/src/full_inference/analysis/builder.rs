@@ -10,18 +10,37 @@ use crate::HirLocation;
 use lark_collections::map::Entry;
 use lark_collections::FxIndexMap;
 use lark_hir as hir;
+use lark_indices::IndexVec;
+use lark_indices::U32Index;
 use lark_ty as ty;
 use lark_unify::UnificationTable;
+use std::hash::Hash;
 
 crate struct AnalysisBuilder<'me> {
     analysis: Analysis,
     fn_body: &'me hir::FnBody,
     results: &'me TypeCheckResults<FullInference>,
     unify: &'me mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
-    path_datas: FxIndexMap<PathData, ()>,
+    reverse_path_datas: FxIndexMap<PathData, ()>,
 }
 
 impl AnalysisBuilder<'_> {
+    fn create<I: U32Index, D: Copy + Hash + Eq>(
+        data: D,
+        data_vec: &mut IndexVec<I, D>,
+        reverse_data_map: &mut FxIndexMap<D, ()>,
+    ) -> (I, bool) {
+        match reverse_data_map.entry(data) {
+            Entry::Occupied(entry) => (I::from_usize(entry.index()), false),
+            Entry::Vacant(entry) => {
+                let index = data_vec.push(data);
+                assert_eq!(entry.index(), index.as_usize());
+                entry.insert(());
+                (index, true)
+            }
+        }
+    }
+
     fn push_node(&mut self, data: HirLocation) -> Node {
         self.analysis.node_datas.push(data)
     }
@@ -59,20 +78,19 @@ impl AnalysisBuilder<'_> {
     }
 
     fn create_path(&mut self, path_data: PathData) -> Path {
-        match self.path_datas.entry(path_data) {
-            Entry::Occupied(entry) => Path::from(entry.index()),
-            Entry::Vacant(entry) => {
-                let path = self.analysis.path_datas.push(path_data);
-                assert_eq!(entry.index(), path.as_usize());
-                entry.insert(());
+        let (path, is_new) = Self::create(
+            path_data,
+            &mut self.analysis.path_datas,
+            &mut self.reverse_path_datas,
+        );
 
-                if let Some(owner) = path_data.owner() {
-                    self.analysis.owner_paths.push((owner, path));
-                }
-
-                path
+        if is_new {
+            if let Some(owner) = path_data.owner() {
+                self.analysis.owner_paths.push((owner, path));
             }
         }
+
+        path
     }
 
     fn access(&mut self, perm: Perm, path: Path, node: Node) {
