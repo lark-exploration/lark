@@ -22,11 +22,33 @@ crate struct AnalysisBuilder<'me> {
     results: &'me TypeCheckResults<FullInference>,
     unify: &'me mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
     reverse_path_datas: FxIndexMap<PathData, ()>,
-    reverse_node_datas: FxIndexMap<HirLocation, ()>,
 }
 
-impl AnalysisBuilder<'_> {
-    fn create<I: U32Index, D: Copy + Hash + Eq>(
+impl AnalysisBuilder<'me> {
+    crate fn analyze(
+        fn_body: &'me hir::FnBody,
+        results: &'me TypeCheckResults<FullInference>,
+        unify: &'me mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
+    ) -> Analysis {
+        let mut builder = AnalysisBuilder {
+            analysis: Analysis::default(),
+            fn_body,
+            results,
+            unify,
+            reverse_path_datas: Default::default(),
+        };
+
+        let start_node = builder.push_node(HirLocation::Start);
+        let root_node = builder.build_node(start_node, fn_body.root_expression);
+        let _return_node = builder.push_node_edge(root_node, HirLocation::Return);
+
+        builder.analysis
+    }
+
+    /// Helper for interning things and creating an index. `data_vec`
+    /// is the vector of data, and `reverse_data_map` is the map from
+    /// data to index.
+    fn intern<I: U32Index, D: Copy + Hash + Eq>(
         data: D,
         data_vec: &mut IndexVec<I, D>,
         reverse_data_map: &mut FxIndexMap<D, ()>,
@@ -42,49 +64,72 @@ impl AnalysisBuilder<'_> {
         }
     }
 
+    /// Creates a new CFG node from the given `HirLocation`. The CFG
+    /// node should not yet have been constructed.
     fn push_node(&mut self, data: HirLocation) -> Node {
-        let (index, _is_new) = Self::create(
+        let (index, is_new) = Self::intern(
             data,
             &mut self.analysis.node_datas,
-            &mut self.reverse_node_datas,
+            &mut self.analysis.reverse_node_datas,
         );
+
+        assert!(is_new);
+
         index
     }
 
+    /// Convenience function to create a CFG node and an initial
+    /// incoming edge (from `start_node`).
     fn push_node_edge(&mut self, start_node: Node, data: HirLocation) -> Node {
         let n = self.push_node(data);
         self.push_edge(start_node, n);
         n
     }
 
+    /// Lookups up the `HirLocation` to a `Node` -- the `Node` must
+    /// already have been built. This also acts as a kind of
+    /// *assertion* and should only be used after the CFG has been
+    /// constructed.
+    fn lookup_node(&self, data: HirLocation) -> Node {
+        self.analysis.lookup_node(data)
+    }
+
+    /// Pushes an edge `from -> to` into the graph.
     fn push_edge(&mut self, from: Node, to: Node) {
         self.analysis.cfg_edges.push((from, to));
     }
 
+    /// Builds the control-flow graph for `n`, starting from `start_node`.
+    ///
+    /// Really just dispatches using the `BuildCfgNode` trait.
     fn build_node(&mut self, start_node: Node, n: impl BuildCfgNode) -> Node {
         n.build_cfg_node(start_node, self)
     }
 
-    /// Converts a HIR "Place" into an analysis *path*
+    /// Converts a HIR "Place" into an analysis *path*. Note that the
+    /// result may not be *precise* -- e.g., a place like `foo[bar]`
+    /// will get translated to the path `foo[]`. You can use the
+    /// method `PathData::precise()` to check.
     fn path(&mut self, place: hir::Place) -> Path {
         match self.fn_body[place] {
-            hir::PlaceData::Variable(v) => self.create_path(PathData::Variable(v)),
-            hir::PlaceData::Entity(e) => self.create_path(PathData::Entity(e)),
-            hir::PlaceData::Temporary(e) => self.create_path(PathData::Temporary(e)),
+            hir::PlaceData::Variable(v) => self.intern_path(PathData::Variable(v)),
+            hir::PlaceData::Entity(e) => self.intern_path(PathData::Entity(e)),
+            hir::PlaceData::Temporary(e) => self.intern_path(PathData::Temporary(e)),
             hir::PlaceData::Field { owner, name } => {
                 let name = self.fn_body[name].text;
                 let owner = self.path(owner);
                 if false {
                     // dummy code to stop errors
-                    self.create_path(PathData::Index { owner });
+                    self.intern_path(PathData::Index { owner });
                 }
-                self.create_path(PathData::Field { owner, name })
+                self.intern_path(PathData::Field { owner, name })
             }
         }
     }
 
-    fn create_path(&mut self, path_data: PathData) -> Path {
-        let (path, is_new) = Self::create(
+    /// Interns `path_data` and returns the resulting `Path` index.
+    fn intern_path(&mut self, path_data: PathData) -> Path {
+        let (path, is_new) = Self::intern(
             path_data,
             &mut self.analysis.path_datas,
             &mut self.reverse_path_datas,
@@ -99,10 +144,13 @@ impl AnalysisBuilder<'_> {
         path
     }
 
+    /// Adds an access fact `(perm, path, node)`.
     fn access(&mut self, perm: Perm, path: Path, node: Node) {
         self.analysis.accesses.push((perm, path, node));
     }
 
+    /// Generates the appropriate facts for an assignment to `path` at
+    /// `node`.
     fn generate_assignment_facts(&mut self, path: Path, node: Node) {
         let path_data = self.analysis.path_datas[path];
 
@@ -115,11 +163,17 @@ impl AnalysisBuilder<'_> {
         }
     }
 
+    /// Indicates that the result of `expression` is used at `node` --
+    /// this will add `used` facts for all the permission variables in
+    /// the type of `expression`.
     fn use_result_of(&mut self, node: Node, expression: hir::Expression) {
         let expression_ty = self.results.ty(expression);
         self.use_ty(node, expression_ty);
     }
 
+    /// Indicates that a value with type `ty` was used at `node` --
+    /// this will add `used` facts for all the permission variables in
+    /// `ty`.
     fn use_ty(&mut self, node: Node, ty: ty::Ty<FullInference>) {
         let ty::Ty {
             repr: ty::Erased,

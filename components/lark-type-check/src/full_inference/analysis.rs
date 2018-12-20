@@ -1,17 +1,24 @@
 use crate::full_inference::Perm;
 use crate::HirLocation;
+use lark_collections::FxIndexMap;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_hir as hir;
 use lark_indices::IndexVec;
+use lark_indices::U32Index;
 use lark_string::GlobalIdentifier;
 
 mod builder;
 
+#[derive(Default)]
 crate struct Analysis {
     /// For each node, information about what it represents (the
     /// analysis itself doesn't care).
     crate node_datas: IndexVec<Node, HirLocation>,
+
+    /// Map from `HirLocation` to nodes -- the index in the map is
+    /// equal to the `Node`. Use `lookup_node` to access conveniently.
+    reverse_node_datas: FxIndexMap<HirLocation, ()>,
 
     /// For each path, information about what it represents (the
     /// analysis itself doesn't care).
@@ -45,6 +52,29 @@ crate struct Analysis {
     /// node for the call to `foo`, all permissions appearing in the
     /// type of `x` are "used".
     crate used: Vec<(Perm, Node)>,
+
+    /// `Pa <= Pb` -- the permission `Pb` must at least permit `Pa`
+    /// (written `Pb: Pa` in source)
+    crate perm_less_base: Vec<(Perm, Perm, Node)>,
+
+    /// `Pc[Pa <= Pb]` -- if `Pc` is borrow/own, then `Pb` must permit
+    /// `Pa` (occurs during subtyping)
+    crate perm_less_if_base: Vec<(Perm, Perm, Node)>,
+}
+
+impl Analysis {
+    crate fn start_node(&self) -> Node {
+        self.lookup_node(HirLocation::Start)
+    }
+
+    crate fn end_node(&self) -> Node {
+        self.lookup_node(HirLocation::Return)
+    }
+
+    crate fn lookup_node(&self, data: impl Into<HirLocation>) -> Node {
+        let data: HirLocation = data.into();
+        Node::from_usize(self.reverse_node_datas.get_full(&data).unwrap().0)
+    }
 }
 
 lark_indices::index_type! {
