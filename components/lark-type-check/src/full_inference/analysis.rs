@@ -98,7 +98,10 @@ impl Analysis {
 
     crate fn lookup_node(&self, data: impl Into<HirLocation>) -> Node {
         let data: HirLocation = data.into();
-        Node::from_usize(self.reverse_node_datas.get_full(&data).unwrap().0)
+        Node::from_usize(match self.reverse_node_datas.get_full(&data) {
+            Some((index, ..)) => index,
+            None => panic!("no node created for `{:?}`", data),
+        })
     }
 }
 

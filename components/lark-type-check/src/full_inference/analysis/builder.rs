@@ -392,7 +392,13 @@ impl BuildCfgNode for hir::Place {
 
             hir::PlaceData::Temporary(expression) => builder.build_node(start_node, expression),
 
-            hir::PlaceData::Field { owner, .. } => builder.build_node(start_node, owner),
+            hir::PlaceData::Field { owner, .. } => {
+                let owner_node = builder.build_node(start_node, owner);
+
+                // We need a control-flow node for "field" places,
+                // since there are relations to be added here.
+                builder.push_node_edge(owner_node, self.into())
+            }
         }
     }
 }
