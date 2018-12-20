@@ -11,6 +11,7 @@ pub type TaskId = usize;
 #[derive(Debug)]
 pub enum QueryRequest {
     TypeAtPosition(TaskId, Url, Position),
+    RenameAtPosition(TaskId, Url, Position, String),
     DefinitionAtPosition(TaskId, Url, Position),
     ReferencesAtPosition(TaskId, Url, Position, bool),
     OpenFile(Url, String),
@@ -24,6 +25,7 @@ impl QueryRequest {
         match self {
             QueryRequest::OpenFile(..)
             | QueryRequest::EditFile(..)
+            | QueryRequest::RenameAtPosition(..)
             | QueryRequest::Initialize(..) => true,
             QueryRequest::TypeAtPosition(..) => false,
             QueryRequest::DefinitionAtPosition(..) => false,
@@ -38,6 +40,7 @@ pub enum LspResponse {
     Type(TaskId, String),
     Range(TaskId, Url, Range),
     Ranges(TaskId, Vec<(Url, Range)>),
+    WorkspaceEdits(TaskId, Vec<(Url, Range, String)>),
     Completions(TaskId, Vec<(String, String)>),
     Initialized(TaskId),
     Nothing(TaskId),
