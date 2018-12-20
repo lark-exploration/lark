@@ -22,6 +22,7 @@ crate struct AnalysisBuilder<'me> {
     results: &'me TypeCheckResults<FullInference>,
     unify: &'me mut UnificationTable<FullInferenceTables, hir::MetaIndex>,
     reverse_path_datas: FxIndexMap<PathData, ()>,
+    reverse_node_datas: FxIndexMap<HirLocation, ()>,
 }
 
 impl AnalysisBuilder<'_> {
@@ -42,7 +43,12 @@ impl AnalysisBuilder<'_> {
     }
 
     fn push_node(&mut self, data: HirLocation) -> Node {
-        self.analysis.node_datas.push(data)
+        let (index, _is_new) = Self::create(
+            data,
+            &mut self.analysis.node_datas,
+            &mut self.reverse_node_datas,
+        );
+        index
     }
 
     fn push_node_edge(&mut self, start_node: Node, data: HirLocation) -> Node {
