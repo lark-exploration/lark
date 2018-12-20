@@ -88,14 +88,6 @@ impl Analysis {
         kind_inference::inference(tables, &self.perm_less_base, &self.perm_less_if_base)
     }
 
-    crate fn start_node(&self) -> Node {
-        self.lookup_node(HirLocation::Start)
-    }
-
-    crate fn end_node(&self) -> Node {
-        self.lookup_node(HirLocation::Return)
-    }
-
     crate fn lookup_node(&self, data: impl Into<HirLocation>) -> Node {
         let data: HirLocation = data.into();
         Node::from_usize(match self.reverse_node_datas.get_full(&data) {
