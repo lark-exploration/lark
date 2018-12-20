@@ -62,7 +62,7 @@ impl TypeFamily for BaseInference {
     }
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Base { .. }
 }
 

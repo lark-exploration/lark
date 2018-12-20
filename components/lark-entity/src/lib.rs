@@ -9,7 +9,7 @@ use lark_intern::{Intern, Untern};
 use lark_span::FileName;
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables};
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Entity { .. }
 }
 

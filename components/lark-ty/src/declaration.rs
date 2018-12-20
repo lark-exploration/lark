@@ -45,7 +45,7 @@ impl Declaration {
     }
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Base { .. }
 }
 
@@ -60,7 +60,7 @@ where
     }
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Perm { .. }
 }
 

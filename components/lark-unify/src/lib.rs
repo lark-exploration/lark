@@ -2,9 +2,9 @@
 #![feature(const_fn)]
 #![feature(specialization)]
 
-use lark_indices::{IndexVec, U32Index};
+use lark_collections::{IndexVec, U32Index};
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct InferVar {
         debug_name["?"],
         ..

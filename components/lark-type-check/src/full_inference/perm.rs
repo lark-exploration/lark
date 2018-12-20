@@ -7,13 +7,13 @@ use lark_ty::PermKind;
 use lark_ty::Placeholder;
 
 /// An intern'd permission.
-lark_indices::index_type! {
+lark_collections::index_type! {
     crate struct Perm { .. }
 }
 
 lark_debug_with::debug_fallback_impl!(Perm);
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     crate struct PermVar { .. }
 }
 

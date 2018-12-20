@@ -1,13 +1,9 @@
-#![feature(in_band_lifetimes)]
-
 use lark_debug_with::DebugWith;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::iter::{once, FromIterator, IntoIterator};
 use std::ops::{Deref, DerefMut, Range};
 use std::sync::Arc;
-
-mod test;
 
 pub struct Seq<T> {
     vec: Option<Arc<Vec<T>>>,

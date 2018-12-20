@@ -1,9 +1,9 @@
 use crate::parser::Parser;
 use crate::syntax::sigil::Comma;
 use crate::syntax::Syntax;
+use lark_collections::Seq;
 use lark_debug_derive::DebugWith;
 use lark_error::ErrorReported;
-use lark_seq::Seq;
 
 #[derive(DebugWith)]
 pub struct CommaList<T>(pub T);

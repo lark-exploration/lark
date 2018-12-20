@@ -8,11 +8,10 @@
 #![feature(uniform_paths)]
 
 use generational_arena::Arena;
-use lark_collections::FxIndexMap;
+use lark_collections::{FxIndexMap, IndexVec};
 use lark_entity::{Entity, EntityTables};
 use lark_error::{Diagnostic, WithError};
 use lark_hir as hir;
-use lark_indices::IndexVec;
 use lark_parser::ParserDatabase;
 use lark_pretty_print::PrettyPrintDatabase;
 use lark_ty::base_inferred::BaseInferred;

@@ -5,13 +5,12 @@
 #![feature(const_let)]
 #![warn(unused_imports)]
 
+use lark_collections::{IndexVec, Seq};
 use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
-use lark_indices::IndexVec;
-use lark_seq::Seq;
 use lark_string::GlobalIdentifier;
 use lark_unify::InferVar;
 use std::fmt::{self, Debug};
@@ -150,7 +149,7 @@ pub struct Placeholder {
 /// the "global names"; each time we traverse into a binder, we instantiate a
 /// new universe (e.g., U(1)) that can see all things from lower universes
 /// as well as some new placeholders.
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct Universe {
         debug_name["U"],
         ..
@@ -181,7 +180,7 @@ impl<T> BoundVarOr<T> {
     }
 }
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     pub struct BoundVar { .. }
 }
 

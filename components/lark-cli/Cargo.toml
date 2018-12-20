@@ -39,7 +39,6 @@ lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-eval = { path = "../lark-eval" }
 lark-hir = { path = "../lark-hir" }
-lark-indices = { path = "../lark-indices" }
 lark-intern = { path = "../lark-intern" }
 lark-language-server = { path = "../lark-language-server" }
 lark-parser = { path = "../lark-parser" }

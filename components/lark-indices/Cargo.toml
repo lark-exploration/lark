@@ -1,7 +1,0 @@
-[package]
-name = "lark-indices"
-version = "0.1.0"
-authors = ["Niko Matsakis <niko@alum.mit.edu>"]
-edition = "2018"
-
-[dependencies]

@@ -4,7 +4,7 @@ use crate::text::Text;
 use lark_debug_with::FmtWithSpecialized;
 use lark_intern::{Intern, Untern};
 
-lark_indices::index_type! {
+lark_collections::index_type! {
     /// A "global ident" is an identifier that is valid across files
     /// and contexts. These are interned globally and as a result are
     /// intended to be used "sparingly".

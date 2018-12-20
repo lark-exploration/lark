@@ -7,8 +7,5 @@ edition = "2018"
 [dependencies]
 lark-debug-with = { path = "../lark-debug-with" }
 lark-intern = { path = "../lark-intern" }
-lark-indices = { path = "../lark-indices" }
 parking_lot = "0.7"
-
-[dev-dependencies]
 lark-collections = { path = "../lark-collections" }

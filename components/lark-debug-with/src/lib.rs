@@ -8,8 +8,6 @@
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 
-use lark_indices as indices;
-
 /// A `Debug` trait that carries a context. Most types in Lark
 /// implement it, and you can use `derive(DebugWith)` to get
 /// Debug-like behavior (from the lark-debug-derive crate).
@@ -90,21 +88,6 @@ where
     }
 }
 
-impl<K, V> DebugWith for lark_collections::FxIndexMap<K, V>
-where
-    K: DebugWith + std::hash::Hash + Eq,
-    V: DebugWith,
-{
-    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt.debug_list()
-            .entries(
-                self.iter()
-                    .map(|elem| (elem.0.into_debug_with(cx), elem.1.into_debug_with(cx))),
-            )
-            .finish()
-    }
-}
-
 impl<A, B> DebugWith for (A, B)
 where
     A: DebugWith,
@@ -161,14 +144,18 @@ where
     }
 }
 
-impl<I, T> DebugWith for indices::IndexVec<I, T>
+impl<K, V, E> DebugWith for indexmap::IndexMap<K, V, E>
 where
-    I: indices::U32Index,
-    T: DebugWith,
+    K: DebugWith + std::hash::Hash + Eq,
+    V: DebugWith,
+    E: std::hash::BuildHasher,
 {
     fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fmt.debug_list()
-            .entries(self.iter().map(|elem| elem.debug_with(cx)))
+            .entries(
+                self.iter()
+                    .map(|elem| (elem.0.into_debug_with(cx), elem.1.into_debug_with(cx))),
+            )
             .finish()
     }
 }

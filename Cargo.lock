@@ -339,7 +339,6 @@ dependencies = [
  "lark-error 0.1.0",
  "lark-eval 0.1.0",
  "lark-hir 0.1.0",
- "lark-indices 0.1.0",
  "lark-intern 0.1.0",
  "lark-language-server 0.1.0",
  "lark-parser 0.1.0",
@@ -371,6 +370,7 @@ name = "lark-collections"
 version = "0.1.0"
 dependencies = [
  "indexmap 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lark-debug-with 0.1.0",
  "rustc-hash 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -387,18 +387,17 @@ dependencies = [
 name = "lark-debug-with"
 version = "0.1.0"
 dependencies = [
- "lark-collections 0.1.0",
- "lark-indices 0.1.0",
+ "indexmap 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "lark-entity"
 version = "0.1.0"
 dependencies = [
+ "lark-collections 0.1.0",
  "lark-debug-derive 0.1.0",
  "lark-debug-with 0.1.0",
  "lark-error 0.1.0",
- "lark-indices 0.1.0",
  "lark-intern 0.1.0",
  "lark-span 0.1.0",
  "lark-string 0.1.0",
@@ -412,7 +411,6 @@ dependencies = [
  "lark-collections 0.1.0",
  "lark-debug-derive 0.1.0",
  "lark-debug-with 0.1.0",
- "lark-seq 0.1.0",
  "lark-span 0.1.0",
 ]
 
@@ -442,7 +440,6 @@ dependencies = [
  "lark-debug-with 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
- "lark-indices 0.1.0",
  "lark-intern 0.1.0",
  "lark-span 0.1.0",
  "lark-string 0.1.0",
@@ -453,15 +450,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "lark-indices"
-version = "0.1.0"
-
-[[package]]
 name = "lark-intern"
 version = "0.1.0"
 dependencies = [
  "lark-collections 0.1.0",
- "lark-indices 0.1.0",
  "parking_lot 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -490,9 +482,7 @@ dependencies = [
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
  "lark-hir 0.1.0",
- "lark-indices 0.1.0",
  "lark-intern 0.1.0",
- "lark-seq 0.1.0",
  "lark-span 0.1.0",
  "lark-string 0.1.0",
  "lark-ty 0.1.0",
@@ -541,13 +531,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lark-seq"
-version = "0.1.0"
-dependencies = [
- "lark-debug-with 0.1.0",
-]
-
-[[package]]
 name = "lark-span"
 version = "0.1.0"
 dependencies = [
@@ -566,7 +549,6 @@ version = "0.1.0"
 dependencies = [
  "lark-collections 0.1.0",
  "lark-debug-with 0.1.0",
- "lark-indices 0.1.0",
  "lark-intern 0.1.0",
  "parking_lot 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -589,7 +571,6 @@ dependencies = [
  "lark-language-server 0.1.0",
  "lark-parser 0.1.0",
  "lark-query-system 0.1.0",
- "lark-seq 0.1.0",
  "lark-span 0.1.0",
  "lark-string 0.1.0",
  "lark-ty 0.1.0",
@@ -623,9 +604,7 @@ dependencies = [
  "lark-debug-with 0.1.0",
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
- "lark-indices 0.1.0",
  "lark-intern 0.1.0",
- "lark-seq 0.1.0",
  "lark-string 0.1.0",
  "lark-unify 0.1.0",
  "parking_lot 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -644,7 +623,6 @@ dependencies = [
  "lark-entity 0.1.0",
  "lark-error 0.1.0",
  "lark-hir 0.1.0",
- "lark-indices 0.1.0",
  "lark-intern 0.1.0",
  "lark-parser 0.1.0",
  "lark-pretty-print 0.1.0",
@@ -659,8 +637,8 @@ dependencies = [
 name = "lark-unify"
 version = "0.1.0"
 dependencies = [
+ "lark-collections 0.1.0",
  "lark-debug-with 0.1.0",
- "lark-indices 0.1.0",
 ]
 
 [[package]]

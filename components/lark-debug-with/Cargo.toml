@@ -5,5 +5,4 @@ authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
 
 [dependencies]
-lark-collections = { path = "../lark-collections" }
-lark-indices = { path = "../lark-indices" }
+indexmap = "1.0.2"
