@@ -1,12 +1,12 @@
 use crate::full_inference::analysis::Analysis;
 use crate::full_inference::analysis::Node;
-use crate::full_inference::analysis::NodeData;
 use crate::full_inference::analysis::Path;
 use crate::full_inference::analysis::PathData;
 use crate::full_inference::FullInference;
 use crate::full_inference::FullInferenceTables;
 use crate::full_inference::Perm;
 use crate::results::TypeCheckResults;
+use crate::HirLocation;
 use lark_collections::map::Entry;
 use lark_collections::FxIndexMap;
 use lark_hir as hir;
@@ -22,11 +22,11 @@ crate struct AnalysisBuilder<'me> {
 }
 
 impl AnalysisBuilder<'_> {
-    fn push_node(&mut self, data: NodeData) -> Node {
+    fn push_node(&mut self, data: HirLocation) -> Node {
         self.analysis.node_datas.push(data)
     }
 
-    fn push_node_edge(&mut self, start_node: Node, data: NodeData) -> Node {
+    fn push_node_edge(&mut self, start_node: Node, data: HirLocation) -> Node {
         let n = self.push_node(data);
         self.push_edge(start_node, n);
         n
@@ -141,8 +141,7 @@ impl IntoNode for hir::Expression {
 
                 // Next, the result of that is assigned into the
                 // variable `X`. This occurs at the node associated with the `let` itself.
-                let self_node =
-                    builder.push_node_edge(initializer_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(initializer_node, self.into());
                 if let Some(initializer) = initializer {
                     builder.use_result_of(self_node, *initializer);
                 }
@@ -153,7 +152,7 @@ impl IntoNode for hir::Expression {
 
             hir::ExpressionData::Place { place, .. } => {
                 let place_node = builder.node(start_node, place);
-                let self_node = builder.push_node_edge(place_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(place_node, self.into());
 
                 let perm = builder.results.access_permissions[&self];
                 let path = builder.path(*place);
@@ -165,7 +164,7 @@ impl IntoNode for hir::Expression {
             hir::ExpressionData::Assignment { place, value } => {
                 let place_node = builder.node(start_node, place);
                 let value_node = builder.node(place_node, value);
-                let self_node = builder.push_node_edge(value_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(value_node, self.into());
 
                 let path = builder.path(*place);
                 builder.generate_assignment_facts(path, self_node);
@@ -175,7 +174,7 @@ impl IntoNode for hir::Expression {
 
             hir::ExpressionData::MethodCall { arguments, .. } => {
                 let arguments_node = builder.node(start_node, arguments);
-                let self_node = builder.push_node_edge(arguments_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(arguments_node, self.into());
 
                 for argument in arguments.iter(builder.fn_body) {
                     builder.use_result_of(self_node, argument);
@@ -190,7 +189,7 @@ impl IntoNode for hir::Expression {
             } => {
                 let function_node = builder.node(start_node, function);
                 let arguments_node = builder.node(function_node, arguments);
-                let self_node = builder.push_node_edge(arguments_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(arguments_node, self.into());
 
                 for argument in arguments.iter(builder.fn_body) {
                     builder.use_result_of(self_node, argument);
@@ -207,7 +206,7 @@ impl IntoNode for hir::Expression {
                 let condition_node = builder.node(start_node, condition);
 
                 // We say that an `if` "executes" when the condition is tested:
-                let self_node = builder.push_node_edge(condition_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(condition_node, self.into());
                 builder.use_result_of(self_node, *condition);
 
                 // Then the arms come afterwards:
@@ -215,7 +214,7 @@ impl IntoNode for hir::Expression {
                 let if_false_node = builder.node(self_node, if_false);
 
                 // Create a node to rejoin the control-flows:
-                let join_node = builder.push_node(NodeData::Join(self));
+                let join_node = builder.push_node(HirLocation::AfterExpression(self));
                 builder.push_edge(if_true_node, join_node);
                 builder.push_edge(if_false_node, join_node);
 
@@ -225,7 +224,7 @@ impl IntoNode for hir::Expression {
             hir::ExpressionData::Binary { left, right, .. } => {
                 let left_node = builder.node(start_node, left);
                 let right_node = builder.node(left_node, right);
-                let self_node = builder.push_node_edge(right_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(right_node, self.into());
                 builder.use_result_of(self_node, *left);
                 builder.use_result_of(self_node, *right);
                 self_node
@@ -233,7 +232,7 @@ impl IntoNode for hir::Expression {
 
             hir::ExpressionData::Unary { value, .. } => {
                 let value_node = builder.node(start_node, value);
-                let self_node = builder.push_node_edge(value_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(value_node, self.into());
                 builder.use_result_of(self_node, *value);
                 self_node
             }
@@ -241,12 +240,12 @@ impl IntoNode for hir::Expression {
             hir::ExpressionData::Error { .. }
             | hir::ExpressionData::Unit {}
             | hir::ExpressionData::Literal { .. } => {
-                builder.push_node_edge(start_node, NodeData::Expression(self))
+                builder.push_node_edge(start_node, self.into())
             }
 
             hir::ExpressionData::Aggregate { fields, .. } => {
                 let field_node = builder.node(start_node, fields);
-                let self_node = builder.push_node_edge(field_node, NodeData::Expression(self));
+                let self_node = builder.push_node_edge(field_node, self.into());
                 for field in fields.iter(builder.fn_body) {
                     builder.use_result_of(self_node, builder.fn_body[field].expression);
                 }
@@ -255,8 +254,8 @@ impl IntoNode for hir::Expression {
 
             hir::ExpressionData::Sequence { first, second } => {
                 let first_node = builder.node(start_node, first);
-                let second_node = builder.node(first_node, second);
-                builder.push_node_edge(second_node, NodeData::Expression(self))
+                let self_node = builder.push_node_edge(first_node, self.into());
+                builder.node(self_node, second)
             }
         }
     }

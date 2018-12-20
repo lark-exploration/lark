@@ -2,6 +2,7 @@ use crate::full_inference::constraint::Constraint;
 use crate::full_inference::perm::Perm;
 use crate::full_inference::type_checker::FullInferenceStorage;
 use crate::full_inference::FullInference;
+use crate::HirLocation;
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use lark_hir as hir;
@@ -21,6 +22,7 @@ crate trait ApplyPerm {
     fn apply_access_perm(
         &mut self,
         cause: hir::MetaIndex,
+        location: HirLocation,
         perm_access: Perm,
         ty: Ty<FullInference>,
     ) -> Ty<FullInference>;
@@ -28,6 +30,7 @@ crate trait ApplyPerm {
     fn equate_ty(
         &mut self,
         cause: hir::MetaIndex,
+        location: HirLocation,
         perm_access: Perm,
         ty: Ty<FullInference>,
     ) -> Ty<FullInference>;
@@ -35,6 +38,7 @@ crate trait ApplyPerm {
     fn equate_generics(
         &mut self,
         cause: hir::MetaIndex,
+        location: HirLocation,
         perm_access: Perm,
         generics: Generics<FullInference>,
     ) -> Generics<FullInference>;
@@ -42,6 +46,7 @@ crate trait ApplyPerm {
     fn equate_generic(
         &mut self,
         cause: hir::MetaIndex,
+        location: HirLocation,
         perm_access: Perm,
         generics: Generic<FullInference>,
     ) -> Generic<FullInference>;
@@ -54,94 +59,112 @@ where
     fn apply_access_perm(
         &mut self,
         cause: hir::MetaIndex,
+        location: HirLocation,
         perm_access: Perm,
         ty: Ty<FullInference>,
     ) -> Ty<FullInference> {
-        self.with_base_data(cause, ty.base, move |this, BaseData { kind, generics }| {
-            // The resulting type will have the permission
-            // `perm_access`, so `perm_access` must be no more than
-            // what we started with.
-            this.storage.add_constraint(
-                cause,
-                Constraint::PermPermits {
-                    a: ty.perm,
-                    b: perm_access,
-                },
-            );
+        self.with_base_data(
+            cause,
+            location,
+            ty.base,
+            move |this, BaseData { kind, generics }| {
+                // The resulting type will have the permission
+                // `perm_access`, so `perm_access` must be no more than
+                // what we started with.
+                this.storage.add_constraint(
+                    cause,
+                    location,
+                    Constraint::PermPermits {
+                        a: ty.perm,
+                        b: perm_access,
+                    },
+                );
 
-            let generics1 = this.equate_generics(cause, perm_access, generics);
+                let generics1 = this.equate_generics(cause, location, perm_access, generics);
 
-            Ty {
-                perm: perm_access,
-                repr: Erased,
-                base: BaseData {
-                    kind,
-                    generics: generics1,
+                Ty {
+                    perm: perm_access,
+                    repr: Erased,
+                    base: BaseData {
+                        kind,
+                        generics: generics1,
+                    }
+                    .intern(this),
                 }
-                .intern(this),
-            }
-        })
+            },
+        )
     }
 
     fn equate_ty(
         &mut self,
         cause: hir::MetaIndex,
+        location: HirLocation,
         perm_access: Perm,
         ty: Ty<FullInference>,
     ) -> Ty<FullInference> {
-        self.with_base_data(cause, ty.base, move |this, BaseData { kind, generics }| {
-            // Create output perm `perm1` as an inference variable:
-            //
-            // If `perm_access` winds up being `Borrow` or `Own`, then
-            // `perm1` must be equal to the permission from the type.
-            //
-            // Otherwise, it doesn't matter, as perm-access will only
-            // grant shared permission to its contents.
-            let perm1 = this.storage.new_inferred_perm(&this.f_tables);
-            this.storage.add_constraint(
-                cause,
-                Constraint::PermEquateConditionally {
-                    condition: perm_access,
-                    a: ty.perm,
-                    b: perm1,
-                },
-            );
+        self.with_base_data(
+            cause,
+            location,
+            ty.base,
+            move |this, BaseData { kind, generics }| {
+                // Create output perm `perm1` as an inference variable:
+                //
+                // If `perm_access` winds up being `Borrow` or `Own`, then
+                // `perm1` must be equal to the permission from the type.
+                //
+                // Otherwise, it doesn't matter, as perm-access will only
+                // grant shared permission to its contents.
+                let perm1 = this.storage.new_inferred_perm(&this.f_tables);
+                this.storage.add_constraint(
+                    cause,
+                    location,
+                    Constraint::PermEquateConditionally {
+                        condition: perm_access,
+                        a: ty.perm,
+                        b: perm1,
+                    },
+                );
 
-            // Create `generics1` containing the (recursively) equated contents.
-            let generics1 = this.equate_generics(cause, perm_access, generics);
+                // Create `generics1` containing the (recursively) equated contents.
+                let generics1 = this.equate_generics(cause, location, perm_access, generics);
 
-            Ty {
-                perm: perm_access,
-                repr: Erased,
-                base: BaseData {
-                    kind,
-                    generics: generics1,
+                Ty {
+                    perm: perm_access,
+                    repr: Erased,
+                    base: BaseData {
+                        kind,
+                        generics: generics1,
+                    }
+                    .intern(this),
                 }
-                .intern(this),
-            }
-        })
+            },
+        )
     }
 
     fn equate_generics(
         &mut self,
         cause: hir::MetaIndex,
+        location: HirLocation,
         perm_access: Perm,
         generics: Generics<FullInference>,
     ) -> Generics<FullInference> {
         generics
             .iter()
-            .map(|generic| self.equate_generic(cause, perm_access, generic))
+            .map(|generic| self.equate_generic(cause, location, perm_access, generic))
             .collect()
     }
 
     fn equate_generic(
         &mut self,
         cause: hir::MetaIndex,
+        location: HirLocation,
         perm_access: Perm,
         generic: Generic<FullInference>,
     ) -> Generic<FullInference> {
         match generic {
-            GenericKind::Ty(ty) => GenericKind::Ty(self.equate_ty(cause, perm_access, ty)),
+            GenericKind::Ty(ty) => {
+                GenericKind::Ty(self.equate_ty(cause, location, perm_access, ty))
+            }
         }
     }
 }

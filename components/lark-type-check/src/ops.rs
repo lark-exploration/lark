@@ -1,3 +1,4 @@
+use crate::HirLocation;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
 use crate::TypeCheckerFamilyDependentExt;
@@ -114,7 +115,7 @@ where
         let error_type = self.error_type();
         for generic in generics.iter() {
             match generic {
-                GenericKind::Ty(ty) => self.equate(cause, error_type, ty),
+                GenericKind::Ty(ty) => self.equate(cause, HirLocation::Error, error_type, ty),
             }
         }
     }
@@ -192,14 +193,17 @@ where
         self.universe_binders.push(binder)
     }
 
-    /// If `base` can be mapped to a concrete `BaseData`, invokes `op`
-    /// and returns the resulting value.  Otherwise, creates an
-    /// inference variable and returns that; once `base` can be
-    /// mapped, the closure `op` will be invoked and the type variable
-    /// will be unified.
+    /// Conceptually, creates an inference variable `X` (of type `V`) which will be
+    /// returned. Once the concrete `BaseData` for `base` is known,
+    /// invokes `op` and unifies the result with `X`. This unification occurs
+    /// at the point `location` (due to `cause`).
+    ///
+    /// (In practice, we may skip creating the type variable if the base data is
+    /// immediately known.)
     crate fn with_base_data<V: 'static>(
         &mut self,
         cause: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
         base: F::Base,
         op: impl FnOnce(&mut Self, BaseData<F>) -> V + 'static,
     ) -> V
@@ -208,13 +212,14 @@ where
         Self: TypeCheckerVariableExt<F, V>,
     {
         let cause = cause.into();
+        let location = location.into();
         match self.unify.shallow_resolve_data(base) {
             Ok(data) => op(self, data),
 
             Err(_) => {
                 let var: V = self.new_variable();
                 self.with_base_data_equate(base, op, move |this, value| {
-                    this.equate(cause, var, value)
+                    this.equate(cause, location, var, value)
                 });
                 var
             }

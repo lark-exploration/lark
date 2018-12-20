@@ -1,4 +1,5 @@
 use crate::full_inference::Perm;
+use crate::HirLocation;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_hir as hir;
@@ -10,7 +11,7 @@ mod builder;
 crate struct Analysis {
     /// For each node, information about what it represents (the
     /// analysis itself doesn't care).
-    crate node_datas: IndexVec<Node, NodeData>,
+    crate node_datas: IndexVec<Node, HirLocation>,
 
     /// For each path, information about what it represents (the
     /// analysis itself doesn't care).
@@ -50,22 +51,6 @@ lark_indices::index_type! {
     /// A node in the control-flow graph. Typically represents a HIR
     /// expression, but may represent other sorts of events.
     crate struct Node { .. }
-}
-
-#[derive(Copy, Clone, Debug, DebugWith)]
-crate enum NodeData {
-    /// Start of the control-flow graph.
-    Start,
-
-    /// The point where an expression "executes" -- note that
-    /// subexpressions also have their own nodes. So e.g. if you have
-    /// the HIR expression `a + b`, then there will be a node for `a`
-    /// (corresponding to accessing `a`) and a node for `b`
-    /// (corresponding to accessing `b`) and then a node for `+`
-    /// (corresponding to adding those two values).
-    Expression(hir::Expression),
-
-    Join(hir::Expression),
 }
 
 lark_indices::index_type! {

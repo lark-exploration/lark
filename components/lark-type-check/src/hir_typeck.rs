@@ -1,3 +1,4 @@
+use crate::HirLocation;
 use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
@@ -22,7 +23,7 @@ use lark_unify::Inferable;
 #[derive(Copy, Clone, Debug, DebugWith)]
 enum Mode<F: TypeCheckerFamily> {
     Synthesize,
-    CheckType(Ty<F>),
+    CheckType(Ty<F>, HirLocation),
 }
 use self::Mode::*;
 
@@ -55,7 +56,10 @@ where
                 self.record_variable_ty(argument, input);
             }
         }
-        self.check_expression(CheckType(signature.output), self.hir.root_expression);
+        self.check_expression(
+            CheckType(signature.output, HirLocation::Return),
+            self.hir.root_expression,
+        );
 
         // Complete all deferred type operations; run to steady state.
         loop {
@@ -86,8 +90,8 @@ where
         self.record_expression_ty(expression, actual_ty);
         match mode {
             Synthesize => actual_ty,
-            CheckType(expected_ty) => {
-                self.require_assignable(expression, expected_ty);
+            CheckType(expected_ty, location) => {
+                self.require_assignable(location, expression, expected_ty);
                 expected_ty
             }
         }
@@ -96,7 +100,7 @@ where
     fn type_or_infer_variable(&mut self, mode: Mode<F>) -> Ty<F> {
         match mode {
             Synthesize => self.new_variable(),
-            CheckType(expected_ty) => expected_ty,
+            CheckType(expected_ty, _) => expected_ty,
         }
     }
 
@@ -118,7 +122,7 @@ where
             } => {
                 let variable_ty = self.request_variable_ty(variable);
                 if let Some(initializer) = initializer {
-                    self.check_expression(CheckType(variable_ty), initializer);
+                    self.check_expression(CheckType(variable_ty, expression.into()), initializer);
                 }
                 self.check_expression(mode, body)
             }
@@ -127,7 +131,7 @@ where
 
             hir::ExpressionData::Assignment { place, value } => {
                 let place_ty = self.check_place(place);
-                self.check_expression(CheckType(place_ty), value);
+                self.check_expression(CheckType(place_ty, expression.into()), value);
                 self.unit_type()
             }
 
@@ -150,7 +154,7 @@ where
             }
 
             hir::ExpressionData::Sequence { first, second } => {
-                self.check_expression(CheckType(self.unit_type()), first);
+                self.check_expression(CheckType(self.unit_type(), expression.into()), first);
                 self.check_expression(mode, second)
             }
 
@@ -159,11 +163,17 @@ where
                 if_true,
                 if_false,
             } => {
-                self.check_expression(CheckType(self.boolean_type()), condition);
+                self.check_expression(CheckType(self.boolean_type(), expression.into()), condition);
 
                 let ty = self.type_or_infer_variable(mode);
-                self.check_expression(CheckType(ty), if_true);
-                self.check_expression(CheckType(ty), if_false);
+                self.check_expression(
+                    CheckType(ty, HirLocation::AfterExpression(expression)),
+                    if_true,
+                );
+                self.check_expression(
+                    CheckType(ty, HirLocation::AfterExpression(expression)),
+                    if_false,
+                );
 
                 ty
             }
@@ -218,7 +228,7 @@ where
             hir::PlaceData::Field { owner, name } => {
                 let text = self.hir[name].text;
                 let owner_ty = self.check_place(owner);
-                self.with_base_data(place, owner_ty.base, move |this, base_data| {
+                self.with_base_data(place, place, owner_ty.base, move |this, base_data| {
                     let BaseData { kind, generics } = base_data;
                     match kind {
                         BaseKind::Named(def_id) => {
@@ -228,7 +238,7 @@ where
 
                                     let field_decl_ty = this.db.ty(field_entity).into_value();
                                     let field_ty = this.substitute(place, &generics, field_decl_ty);
-                                    this.apply_owner_perm(place, owner_ty.perm, field_ty)
+                                    this.apply_owner_perm(place, place, owner_ty.perm, field_ty)
                                 }
 
                                 None => {
@@ -258,9 +268,14 @@ where
         function_ty: Ty<F>,
         arguments: hir::List<hir::Expression>,
     ) -> Ty<F> {
-        self.with_base_data(expression, function_ty.base, move |this, base_data| {
-            this.check_fn_call(expression, function_ty, arguments, base_data)
-        })
+        self.with_base_data(
+            expression,
+            expression,
+            function_ty.base,
+            move |this, base_data| {
+                this.check_fn_call(expression, function_ty, arguments, base_data)
+            },
+        )
     }
 
     fn check_fn_call(
@@ -302,6 +317,7 @@ where
 
                 self.check_arguments_against_signature(
                     expression,
+                    expression,
                     &signature.inputs[..],
                     signature.output,
                     arguments,
@@ -327,9 +343,14 @@ where
         method_name: hir::Identifier,
         arguments: hir::List<hir::Expression>,
     ) -> Ty<F> {
-        self.with_base_data(expression, owner_ty.base, move |this, base_data| {
-            this.check_method_call(expression, method_name, arguments, base_data)
-        })
+        self.with_base_data(
+            expression,
+            expression,
+            owner_ty.base,
+            move |this, base_data| {
+                this.check_method_call(expression, method_name, arguments, base_data)
+            },
+        )
     }
 
     fn check_method_call(
@@ -363,10 +384,11 @@ where
 
                 // The 0th item in the signature is the self type, so check that
                 let owner_expression = arguments.first(&self.hir).unwrap();
-                self.require_assignable(owner_expression, signature.inputs[0]);
+                self.require_assignable(expression, owner_expression, signature.inputs[0]);
 
                 self.check_arguments_against_signature(
                     method_name,
+                    expression,
                     &signature.inputs,
                     signature.output,
                     arguments,
@@ -386,12 +408,16 @@ where
 
     fn check_arguments_against_signature(
         &mut self,
-        error_location: impl Into<hir::MetaIndex>,
+        cause: impl Into<hir::MetaIndex>,
+        location: impl Into<HirLocation>,
         inputs: &[Ty<F>],
         output: Ty<F>,
         arguments: hir::List<hir::Expression>,
         skip: usize,
     ) -> Ty<F> {
+        let cause: hir::MetaIndex = cause.into();
+        let location: HirLocation = location.into();
+
         log::debug!(
             "check_arguments_against_signature(inputs={:?}, output={:?}, arguments={:?})",
             inputs.debug_with(self),
@@ -399,13 +425,13 @@ where
             arguments.debug_with(self),
         );
         if inputs.len() != arguments.len() {
-            self.record_error("mismatched argument count", error_location);
+            self.record_error("mismatched argument count", cause);
             return self.check_arguments_in_case_of_error(arguments);
         }
 
         let hir = &self.hir.clone();
         for (&expected_ty, argument_expr) in inputs.iter().zip(arguments.iter(hir)).skip(skip) {
-            self.check_expression(CheckType(expected_ty), argument_expr);
+            self.check_expression(CheckType(expected_ty, location), argument_expr);
         }
 
         output
@@ -414,7 +440,10 @@ where
     fn check_arguments_in_case_of_error(&mut self, arguments: hir::List<hir::Expression>) -> Ty<F> {
         let hir = &self.hir.clone();
         for argument_expr in arguments.iter(hir) {
-            self.check_expression(CheckType(self.error_type()), argument_expr);
+            self.check_expression(
+                CheckType(self.error_type(), HirLocation::Error),
+                argument_expr,
+            );
         }
         self.error_type()
     }
@@ -448,7 +477,10 @@ where
                 for field in fields.iter(hir) {
                     let field_data = self.hir[field];
                     self.record_entity(field_data.identifier, entity);
-                    self.check_expression(CheckType(error_type), field_data.expression);
+                    self.check_expression(
+                        CheckType(error_type, HirLocation::Error),
+                        field_data.expression,
+                    );
                 }
                 return error_type;
             }
@@ -488,7 +520,10 @@ where
             };
 
             // Check the expression against the formal type of this field.
-            self.check_expression(CheckType(field_ty), field_data.expression);
+            self.check_expression(
+                CheckType(field_ty, expression.into()),
+                field_data.expression,
+            );
         }
 
         // If we are missing any members, that's an error.
@@ -519,17 +554,26 @@ where
         // known.
         let left_ty = self.check_expression(Synthesize, left);
         let right_ty = self.check_expression(Synthesize, right);
-        let result_ty =
-            self.with_base_data(expression, left_ty.base, move |this, left_base_data| {
-                this.with_base_data(expression, right_ty.base, move |this, right_base_data| {
-                    this.check_binary_with_both_inputs_known(
-                        expression,
-                        operator,
-                        left_base_data,
-                        right_base_data,
-                    )
-                })
-            });
+        let result_ty = self.with_base_data(
+            expression,
+            expression,
+            left_ty.base,
+            move |this, left_base_data| {
+                this.with_base_data(
+                    expression,
+                    expression,
+                    right_ty.base,
+                    move |this, right_base_data| {
+                        this.check_binary_with_both_inputs_known(
+                            expression,
+                            operator,
+                            left_base_data,
+                            right_base_data,
+                        )
+                    },
+                )
+            },
+        );
 
         match operator {
             hir::BinaryOperator::Equals | hir::BinaryOperator::NotEquals => {
@@ -538,7 +582,7 @@ where
                 // inference variable, we can unify it *now* rather
                 // than wait until the input types are known.
                 let boolean_type = self.boolean_type();
-                self.equate(expression, result_ty, boolean_type);
+                self.equate(expression, expression, result_ty, boolean_type);
                 boolean_type
             }
 
@@ -632,9 +676,14 @@ where
         // the type of the expression before we determine the type of
         // the output.
         let value_ty = self.check_expression(Synthesize, value);
-        self.with_base_data(expression, value_ty.base, move |this, value_base_data| {
-            this.check_unary_with_input_known(expression, operator, value_base_data)
-        })
+        self.with_base_data(
+            expression,
+            expression,
+            value_ty.base,
+            move |this, value_base_data| {
+                this.check_unary_with_input_known(expression, operator, value_base_data)
+            },
+        )
     }
 
     fn check_unary_with_input_known(
