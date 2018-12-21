@@ -47,6 +47,8 @@ crate struct AnalysisIr {
     /// would NOT be a pair `(foo, foo.bar.baz)`.
     crate owner_path: Vec<(Path, Path)>,
 
+    crate imprecise_path: Vec<Path>,
+
     /// An "access" of the given path with the given permission takes place
     /// at the given node.
     crate access: Vec<(Perm, Path, Node)>,

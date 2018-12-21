@@ -174,6 +174,9 @@ impl AnalysisBuilder<'_> {
             if let Some(owner) = path_data.owner() {
                 self.analysis.owner_path.push((owner, path));
             }
+
+            if !path_data.precise(&self.analysis.path_datas) {
+                self.analysis.imprecise_path.push(path);
             }
         }
 
