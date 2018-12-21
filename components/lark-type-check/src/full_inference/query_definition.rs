@@ -1,4 +1,5 @@
 use crate::full_inference::analysis::AnalysisIr;
+use crate::full_inference::analysis::AnalysisResults;
 use crate::full_inference::resolve_to_full_inferred::ResolveToFullInferred;
 use crate::full_inference::type_checker::FullInferenceStorage;
 use crate::full_inference::FullInference;
@@ -45,7 +46,10 @@ crate fn full_type_check(
         &mut type_checker.unify,
     );
 
-    let perm_kinds = analysis.infer(&type_checker);
+    let AnalysisResults {
+        perm_kinds,
+        mut errors,
+    } = analysis.infer(fn_entity, db, &fn_body, &type_checker);
 
     let mut unresolved_variables = vec![];
     let inferred_results = type_checker
@@ -59,7 +63,7 @@ crate fn full_type_check(
             &perm_kinds,
         ));
 
-    let mut errors = type_checker.errors;
+    errors.extend(type_checker.errors);
     for _ in unresolved_variables {
         // FIXME: Decent diagnostics for unresolved inference
         // variables.

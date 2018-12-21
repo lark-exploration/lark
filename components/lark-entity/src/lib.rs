@@ -8,9 +8,55 @@ use lark_error::{ErrorReported, ErrorSentinel};
 use lark_intern::{Intern, Untern};
 use lark_span::FileName;
 use lark_string::{GlobalIdentifier, GlobalIdentifierTables};
+use std::path::PathBuf;
 
 lark_collections::index_type! {
     pub struct Entity { .. }
+}
+
+impl Entity {
+    /// When we are dumping debug information about an entity, this
+    /// method gives the directory (a relative path) where such files
+    /// should be stored.
+    pub fn dump_dir(
+        &self,
+        db: &(impl AsRef<EntityTables> + AsRef<GlobalIdentifierTables>),
+    ) -> PathBuf {
+        match self.untern(db) {
+            EntityData::Error(err) => {
+                let mut dir = PathBuf::new();
+                dir.push("error");
+                dir.push(format!("{}", err.span().file().id.untern(db)));
+                dir
+            }
+
+            EntityData::LangItem(lang_item) => {
+                let mut dir = PathBuf::new();
+                dir.push(format!("{:?}", lang_item));
+                dir
+            }
+
+            EntityData::InputFile { file } => {
+                let mut dir = PathBuf::new();
+                dir.push(format!("{}", file.untern(db)));
+                dir
+            }
+
+            EntityData::ItemName { base, kind, id } => {
+                let mut dir = base.dump_dir(db);
+                dir.push(format!("{:?}", kind));
+                dir.push(format!("{}", id.untern(db)));
+                dir
+            }
+
+            EntityData::MemberName { base, kind, id } => {
+                let mut dir = base.dump_dir(db);
+                dir.push(format!("{:?}", kind));
+                dir.push(format!("{}", id.untern(db)));
+                dir
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq, Hash)]

@@ -66,6 +66,7 @@ pub struct Diagnostic {
     pub span: Span<FileName>,
     pub label: String,
 }
+
 impl Diagnostic {
     pub fn new(label: String, span: Span<FileName>) -> Self {
         Diagnostic { label, span }

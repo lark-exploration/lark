@@ -42,8 +42,18 @@ impl AnalysisBuilder<'_> {
         };
 
         let start_node = builder.push_node(HirLocation::Start);
+
+        if let Ok(arguments) = &fn_body.arguments {
+            for argument in arguments.iter(fn_body) {
+                let argument_path = builder.variable_path(argument);
+                builder.generate_assignment_facts(argument_path, start_node);
+            }
+        }
+
         let root_node = builder.build_node(start_node, fn_body.root_expression);
         let _return_node = builder.push_node_edge(root_node, HirLocation::Return);
+
+        let _error_node = builder.push_node(HirLocation::Error);
 
         builder.build_constraints();
 
@@ -167,6 +177,11 @@ impl AnalysisBuilder<'_> {
         self.intern_path(PathData::Variable(v))
     }
 
+    /// Creates a path referencing the temporary used to store the variable `v`.
+    fn temporary_path(&mut self, v: hir::Expression) -> Path {
+        self.intern_path(PathData::Temporary(v))
+    }
+
     /// Interns `path_data` and returns the resulting `Path` index.
     fn intern_path(&mut self, path_data: PathData) -> Path {
         let (path, is_new) = Self::intern(
@@ -178,6 +193,18 @@ impl AnalysisBuilder<'_> {
         if is_new {
             if let Some(owner) = path_data.owner() {
                 self.analysis.owner_path.push((owner, path));
+            }
+
+            match path_data {
+                PathData::Variable(_) | PathData::Temporary(_) => {
+                    self.analysis.local_path.push(path);
+                }
+
+                PathData::Entity(_) | PathData::Field { .. } | PathData::Index { .. } => {
+                    // These paths are either initialized from a base
+                    // path, or do not need to be initialized (e.g., a
+                    // global).
+                }
             }
 
             if !path_data.precise(&self.analysis.path_datas) {
@@ -400,7 +427,13 @@ impl BuildCfgNode for hir::Place {
 
             hir::PlaceData::Entity(_) => start_node,
 
-            hir::PlaceData::Temporary(expression) => builder.build_node(start_node, expression),
+            hir::PlaceData::Temporary(expression) => {
+                let expression_node = builder.build_node(start_node, expression);
+                let self_node = builder.push_node_edge(expression_node, self.into());
+                let path = builder.temporary_path(*expression);
+                builder.generate_assignment_facts(path, self_node);
+                self_node
+            }
 
             hir::PlaceData::Field { owner, .. } => {
                 let owner_node = builder.build_node(start_node, owner);
