@@ -15,6 +15,7 @@ use lark_unify::UnificationTable;
 
 mod builder;
 mod kind_inference;
+use kind_inference::KindInference;
 
 /// The "analysis IR" is a view onto a HIR fn body that adds a
 /// control-flow graph as well as a number of tuples that are used
@@ -89,7 +90,10 @@ impl AnalysisIr {
         self,
         tables: &impl AsRef<FullInferenceTables>,
     ) -> FxIndexMap<PermVar, PermKind> {
-        kind_inference::inference(tables, &self.perm_less_base, &self.perm_less_if_base)
+        let kind_inference =
+            KindInference::new(tables, &self.perm_less_base, &self.perm_less_if_base);
+
+        kind_inference.to_kind_map(tables)
     }
 
     crate fn lookup_node(&self, data: impl Into<HirLocation>) -> Node {
