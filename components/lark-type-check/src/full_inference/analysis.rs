@@ -39,17 +39,17 @@ crate struct AnalysisIr {
     crate path_datas: IndexVec<Path, PathData>,
 
     /// Edges in the control-flow graph.
-    crate cfg_edges: Vec<(Node, Node)>,
+    crate cfg_edge: Vec<(Node, Node)>,
 
     /// Contains pairs `(Path1, Path2)` where `Path1` is a "parent
     /// path" of `Path2` -- e.g., there would be a pair for `foo` and
     /// `foo.bar`. This contains *immediate* parents only, so there
     /// would NOT be a pair `(foo, foo.bar.baz)`.
-    crate owner_paths: Vec<(Path, Path)>,
+    crate owner_path: Vec<(Path, Path)>,
 
     /// An "access" of the given path with the given permission takes place
     /// at the given node.
-    crate accesses: Vec<(Perm, Path, Node)>,
+    crate access: Vec<(Perm, Path, Node)>,
 
     /// Indicates that the value of `Path` is overwritten at the given `Node`
     /// (e.g., `x = 5` overwrites `x`).

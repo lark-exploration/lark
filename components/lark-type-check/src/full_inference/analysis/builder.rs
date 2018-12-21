@@ -131,7 +131,7 @@ impl AnalysisBuilder<'_> {
 
     /// Pushes an edge `from -> to` into the graph.
     fn push_edge(&mut self, from: Node, to: Node) {
-        self.analysis.cfg_edges.push((from, to));
+        self.analysis.cfg_edge.push((from, to));
     }
 
     /// Builds the control-flow graph for `n`, starting from `start_node`.
@@ -172,7 +172,8 @@ impl AnalysisBuilder<'_> {
 
         if is_new {
             if let Some(owner) = path_data.owner() {
-                self.analysis.owner_paths.push((owner, path));
+                self.analysis.owner_path.push((owner, path));
+            }
             }
         }
 
@@ -181,7 +182,7 @@ impl AnalysisBuilder<'_> {
 
     /// Adds an access fact `(perm, path, node)`.
     fn access(&mut self, perm: Perm, path: Path, node: Node) {
-        self.analysis.accesses.push((perm, path, node));
+        self.analysis.access.push((perm, path, node));
     }
 
     /// Generates the appropriate facts for an assignment to `path` at
