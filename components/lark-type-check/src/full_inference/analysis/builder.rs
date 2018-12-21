@@ -162,6 +162,11 @@ impl AnalysisBuilder<'_> {
         }
     }
 
+    /// Creates a path referencing the variable `v`.
+    fn variable_path(&mut self, v: hir::Variable) -> Path {
+        self.intern_path(PathData::Variable(v))
+    }
+
     /// Interns `path_data` and returns the resulting `Path` index.
     fn intern_path(&mut self, path_data: PathData) -> Path {
         let (path, is_new) = Self::intern(
@@ -251,7 +256,9 @@ impl BuildCfgNode for hir::Expression {
     fn build_cfg_node(self, start_node: Node, builder: &mut AnalysisBuilder<'_>) -> Node {
         match &builder.fn_body[self] {
             hir::ExpressionData::Let {
-                initializer, body, ..
+                variable,
+                initializer,
+                body,
             } => {
                 // First, we evaluate `I`...
                 let initializer_node = builder.build_node(start_node, initializer);
@@ -261,6 +268,8 @@ impl BuildCfgNode for hir::Expression {
                 let self_node = builder.push_node_edge(initializer_node, self.into());
                 if let Some(initializer) = initializer {
                     builder.use_result_of(self_node, *initializer);
+                    let variable_path = builder.variable_path(*variable);
+                    builder.generate_assignment_facts(variable_path, self_node);
                 }
 
                 // Finally, the body `B` is evaluated.
