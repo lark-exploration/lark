@@ -16,7 +16,7 @@ FnBody {
                         }
                     }
                 },
-                ty: Ty {
+                max_types: Ty {
                     repr: Erased,
                     perm: Erased,
                     base: BaseData {
@@ -37,7 +37,7 @@ FnBody {
                         value: "22"
                     }
                 },
-                ty: Ty {
+                max_types: Ty {
                     repr: Erased,
                     perm: Erased,
                     base: BaseData {
@@ -48,7 +48,20 @@ FnBody {
                         ),
                         generics: []
                     }
-                }
+                },
+                access_types: Ty {
+                    repr: Erased,
+                    perm: Erased,
+                    base: BaseData {
+                        kind: Named(
+                            LangItem(
+                                Uint
+                            )
+                        ),
+                        generics: []
+                    }
+                },
+                access_permissions: Erased
             },
             body: Expression {
                 id: 11,
@@ -63,7 +76,7 @@ FnBody {
                                 }
                             }
                         },
-                        ty: Ty {
+                        max_types: Ty {
                             repr: Erased,
                             perm: Erased,
                             base: BaseData {
@@ -84,7 +97,7 @@ FnBody {
                                 value: "44"
                             }
                         },
-                        ty: Ty {
+                        max_types: Ty {
                             repr: Erased,
                             perm: Erased,
                             base: BaseData {
@@ -95,7 +108,20 @@ FnBody {
                                 ),
                                 generics: []
                             }
-                        }
+                        },
+                        access_types: Ty {
+                            repr: Erased,
+                            perm: Erased,
+                            base: BaseData {
+                                kind: Named(
+                                    LangItem(
+                                        Uint
+                                    )
+                                ),
+                                generics: []
+                            }
+                        },
+                        access_permissions: Erased
                     },
                     body: Expression {
                         id: 10,
@@ -110,7 +136,7 @@ FnBody {
                                         }
                                     }
                                 },
-                                ty: Ty {
+                                max_types: Ty {
                                     repr: Erased,
                                     perm: Erased,
                                     base: BaseData {
@@ -147,7 +173,7 @@ FnBody {
                                                                         }
                                                                     }
                                                                 },
-                                                                ty: Ty {
+                                                                max_types: Ty {
                                                                     repr: Erased,
                                                                     perm: Erased,
                                                                     base: BaseData {
@@ -161,7 +187,7 @@ FnBody {
                                                                 }
                                                             }
                                                         ),
-                                                        ty: Ty {
+                                                        max_types: Ty {
                                                             repr: Erased,
                                                             perm: Erased,
                                                             base: BaseData {
@@ -175,7 +201,7 @@ FnBody {
                                                         }
                                                     }
                                                 },
-                                                ty: Ty {
+                                                max_types: Ty {
                                                     repr: Erased,
                                                     perm: Erased,
                                                     base: BaseData {
@@ -186,7 +212,20 @@ FnBody {
                                                         ),
                                                         generics: []
                                                     }
-                                                }
+                                                },
+                                                access_types: Ty {
+                                                    repr: Erased,
+                                                    perm: Erased,
+                                                    base: BaseData {
+                                                        kind: Named(
+                                                            LangItem(
+                                                                Uint
+                                                            )
+                                                        ),
+                                                        generics: []
+                                                    }
+                                                },
+                                                access_permissions: Erased
                                             },
                                             right: Expression {
                                                 id: 5,
@@ -208,7 +247,7 @@ FnBody {
                                                                                 }
                                                                             }
                                                                         },
-                                                                        ty: Ty {
+                                                                        max_types: Ty {
                                                                             repr: Erased,
                                                                             perm: Erased,
                                                                             base: BaseData {
@@ -222,7 +261,7 @@ FnBody {
                                                                         }
                                                                     }
                                                                 ),
-                                                                ty: Ty {
+                                                                max_types: Ty {
                                                                     repr: Erased,
                                                                     perm: Erased,
                                                                     base: BaseData {
@@ -236,7 +275,7 @@ FnBody {
                                                                 }
                                                             }
                                                         },
-                                                        ty: Ty {
+                                                        max_types: Ty {
                                                             repr: Erased,
                                                             perm: Erased,
                                                             base: BaseData {
@@ -247,7 +286,20 @@ FnBody {
                                                                 ),
                                                                 generics: []
                                                             }
-                                                        }
+                                                        },
+                                                        access_types: Ty {
+                                                            repr: Erased,
+                                                            perm: Erased,
+                                                            base: BaseData {
+                                                                kind: Named(
+                                                                    LangItem(
+                                                                        Uint
+                                                                    )
+                                                                ),
+                                                                generics: []
+                                                            }
+                                                        },
+                                                        access_permissions: Erased
                                                     },
                                                     right: Expression {
                                                         id: 4,
@@ -265,7 +317,7 @@ FnBody {
                                                                                 }
                                                                             }
                                                                         },
-                                                                        ty: Ty {
+                                                                        max_types: Ty {
                                                                             repr: Erased,
                                                                             perm: Erased,
                                                                             base: BaseData {
@@ -279,7 +331,7 @@ FnBody {
                                                                         }
                                                                     }
                                                                 ),
-                                                                ty: Ty {
+                                                                max_types: Ty {
                                                                     repr: Erased,
                                                                     perm: Erased,
                                                                     base: BaseData {
@@ -293,7 +345,7 @@ FnBody {
                                                                 }
                                                             }
                                                         },
-                                                        ty: Ty {
+                                                        max_types: Ty {
                                                             repr: Erased,
                                                             perm: Erased,
                                                             base: BaseData {
@@ -304,10 +356,23 @@ FnBody {
                                                                 ),
                                                                 generics: []
                                                             }
-                                                        }
+                                                        },
+                                                        access_types: Ty {
+                                                            repr: Erased,
+                                                            perm: Erased,
+                                                            base: BaseData {
+                                                                kind: Named(
+                                                                    LangItem(
+                                                                        Uint
+                                                                    )
+                                                                ),
+                                                                generics: []
+                                                            }
+                                                        },
+                                                        access_permissions: Erased
                                                     }
                                                 },
-                                                ty: Ty {
+                                                max_types: Ty {
                                                     repr: Erased,
                                                     perm: Erased,
                                                     base: BaseData {
@@ -318,10 +383,23 @@ FnBody {
                                                         ),
                                                         generics: []
                                                     }
-                                                }
+                                                },
+                                                access_types: Ty {
+                                                    repr: Erased,
+                                                    perm: Erased,
+                                                    base: BaseData {
+                                                        kind: Named(
+                                                            LangItem(
+                                                                Uint
+                                                            )
+                                                        ),
+                                                        generics: []
+                                                    }
+                                                },
+                                                access_permissions: Erased
                                             }
                                         },
-                                        ty: Ty {
+                                        max_types: Ty {
                                             repr: Erased,
                                             perm: Erased,
                                             base: BaseData {
@@ -332,7 +410,20 @@ FnBody {
                                                 ),
                                                 generics: []
                                             }
-                                        }
+                                        },
+                                        access_types: Ty {
+                                            repr: Erased,
+                                            perm: Erased,
+                                            base: BaseData {
+                                                kind: Named(
+                                                    LangItem(
+                                                        Uint
+                                                    )
+                                                ),
+                                                generics: []
+                                            }
+                                        },
+                                        access_permissions: Erased
                                     },
                                     right: Expression {
                                         id: 7,
@@ -350,7 +441,7 @@ FnBody {
                                                                 }
                                                             }
                                                         },
-                                                        ty: Ty {
+                                                        max_types: Ty {
                                                             repr: Erased,
                                                             perm: Erased,
                                                             base: BaseData {
@@ -364,7 +455,7 @@ FnBody {
                                                         }
                                                     }
                                                 ),
-                                                ty: Ty {
+                                                max_types: Ty {
                                                     repr: Erased,
                                                     perm: Erased,
                                                     base: BaseData {
@@ -378,7 +469,7 @@ FnBody {
                                                 }
                                             }
                                         },
-                                        ty: Ty {
+                                        max_types: Ty {
                                             repr: Erased,
                                             perm: Erased,
                                             base: BaseData {
@@ -389,10 +480,23 @@ FnBody {
                                                 ),
                                                 generics: []
                                             }
-                                        }
+                                        },
+                                        access_types: Ty {
+                                            repr: Erased,
+                                            perm: Erased,
+                                            base: BaseData {
+                                                kind: Named(
+                                                    LangItem(
+                                                        Uint
+                                                    )
+                                                ),
+                                                generics: []
+                                            }
+                                        },
+                                        access_permissions: Erased
                                     }
                                 },
-                                ty: Ty {
+                                max_types: Ty {
                                     repr: Erased,
                                     perm: Erased,
                                     base: BaseData {
@@ -403,12 +507,25 @@ FnBody {
                                         ),
                                         generics: []
                                     }
-                                }
+                                },
+                                access_types: Ty {
+                                    repr: Erased,
+                                    perm: Erased,
+                                    base: BaseData {
+                                        kind: Named(
+                                            LangItem(
+                                                Uint
+                                            )
+                                        ),
+                                        generics: []
+                                    }
+                                },
+                                access_permissions: Erased
                             },
                             body: Expression {
                                 id: 9,
                                 data: Unit,
-                                ty: Ty {
+                                max_types: Ty {
                                     repr: Erased,
                                     perm: Erased,
                                     base: BaseData {
@@ -421,10 +538,25 @@ FnBody {
                                         ),
                                         generics: []
                                     }
-                                }
+                                },
+                                access_types: Ty {
+                                    repr: Erased,
+                                    perm: Erased,
+                                    base: BaseData {
+                                        kind: Named(
+                                            LangItem(
+                                                Tuple(
+                                                    0
+                                                )
+                                            )
+                                        ),
+                                        generics: []
+                                    }
+                                },
+                                access_permissions: Erased
                             }
                         },
-                        ty: Ty {
+                        max_types: Ty {
                             repr: Erased,
                             perm: Erased,
                             base: BaseData {
@@ -437,10 +569,25 @@ FnBody {
                                 ),
                                 generics: []
                             }
-                        }
+                        },
+                        access_types: Ty {
+                            repr: Erased,
+                            perm: Erased,
+                            base: BaseData {
+                                kind: Named(
+                                    LangItem(
+                                        Tuple(
+                                            0
+                                        )
+                                    )
+                                ),
+                                generics: []
+                            }
+                        },
+                        access_permissions: Erased
                     }
                 },
-                ty: Ty {
+                max_types: Ty {
                     repr: Erased,
                     perm: Erased,
                     base: BaseData {
@@ -453,10 +600,25 @@ FnBody {
                         ),
                         generics: []
                     }
-                }
+                },
+                access_types: Ty {
+                    repr: Erased,
+                    perm: Erased,
+                    base: BaseData {
+                        kind: Named(
+                            LangItem(
+                                Tuple(
+                                    0
+                                )
+                            )
+                        ),
+                        generics: []
+                    }
+                },
+                access_permissions: Erased
             }
         },
-        ty: Ty {
+        max_types: Ty {
             repr: Erased,
             perm: Erased,
             base: BaseData {
@@ -469,6 +631,21 @@ FnBody {
                 ),
                 generics: []
             }
-        }
+        },
+        access_types: Ty {
+            repr: Erased,
+            perm: Erased,
+            base: BaseData {
+                kind: Named(
+                    LangItem(
+                        Tuple(
+                            0
+                        )
+                    )
+                ),
+                generics: []
+            }
+        },
+        access_permissions: Erased
     }
 }

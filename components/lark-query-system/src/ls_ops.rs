@@ -484,7 +484,7 @@ pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
                             }
                         }
                         _ => {
-                            if let Some(ty) = fn_body_types.types.get(&mi) {
+                            if let Some(ty) = fn_body_types.opt_ty(mi) {
                                 Some(format!("{}", ty.pretty_print(self),))
                             } else {
                                 None

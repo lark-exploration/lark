@@ -122,19 +122,6 @@ where
     Self: TypeCheckerVariableExt<F, Ty<F>>,
     F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,
 {
-    /// Generates the constraint that the type of `expression` be
-    /// assignable to a place with the type `place_ty`. This may
-    /// induce coercions.
-    ///
-    /// The `location` is the point in the control-flow where the
-    /// assignment occurs.
-    fn require_assignable(
-        &mut self,
-        location: impl Into<HirLocation>,
-        expression: hir::Expression,
-        place_ty: Ty<F>,
-    );
-
     /// Substitute the given generics into the value `M`, which must
     /// be something in the `Declaration` type family (e.g., the type
     /// of a field).
@@ -165,9 +152,26 @@ where
     /// Records that the type of the variable `var` is `ty`.
     fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<F>);
 
-    /// Requests the type for a given HIR variable. Upon the first
-    /// request, the result may be a fresh inference variable.
-    fn record_expression_ty(&mut self, expr: hir::Expression, ty: Ty<F>) -> Ty<F>;
+    /// Records that the "max type" of the expression `expr` is
+    /// `ty`. Returns the "accessed type" for the expression. The "max
+    /// type" indicates the "full permissions" available from the
+    /// given expression; the accessed type includes variables to
+    /// figure out how many permissions are needed from this
+    /// particular access.
+    ///
+    /// Example:
+    ///
+    /// ```ignore
+    /// foo(bar.baz)
+    /// ```
+    ///
+    /// the expression `bar.baz` may have a type like `own String`,
+    /// but `foo` may only require `share String`. In full inference
+    /// mode, invoking `record_max_expression_ty(bar.bar, own String)`
+    /// would return a variable `P0 String`, where `P0` is a
+    /// permission variable. This variable `P0` would later be
+    /// inferred to only `share`.
+    fn record_max_expression_ty(&mut self, expr: hir::Expression, ty: Ty<F>) -> Ty<F>;
 
     /// Requests the type for a given HIR variable. Upon the first
     /// request, the result may be a fresh inference variable.
