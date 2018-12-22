@@ -147,7 +147,7 @@ where
                 function,
                 arguments,
             } => {
-                let function_ty = self.check_place(function);
+                let function_ty = self.check_expression(Mode::Synthesize, function);
                 self.compute_fn_call_ty(expression, function_ty, arguments)
             }
 

@@ -160,18 +160,23 @@ pub fn build_expression(
         } => {
             let mut output = String::new();
 
-            output.push_str(&build_place(db, fn_body, function));
+            output.push_str(&build_expression(db, fn_body, function));
 
             output.push_str("(");
 
             let mut first = true;
 
-            match fn_body.tables[function] {
-                hir::PlaceData::Entity(entity) => match entity.untern(db) {
-                    EntityData::LangItem(LangItem::Debug) => {
-                        output.push_str("\"{}\"");
-                        first = false;
-                    }
+            match fn_body[function] {
+                hir::ExpressionData::Place {
+                    place: function_place,
+                } => match fn_body[function_place] {
+                    hir::PlaceData::Entity(entity) => match entity.untern(db) {
+                        EntityData::LangItem(LangItem::Debug) => {
+                            output.push_str("\"{}\"");
+                            first = false;
+                        }
+                        _ => {}
+                    },
                     _ => {}
                 },
                 _ => {}
