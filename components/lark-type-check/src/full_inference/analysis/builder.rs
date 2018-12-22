@@ -11,6 +11,7 @@ use crate::results::TypeCheckResults;
 use crate::HirLocation;
 use lark_collections::map::Entry;
 use lark_collections::{FxIndexMap, FxIndexSet, IndexVec, U32Index};
+use lark_debug_with::DebugWith;
 use lark_hir as hir;
 use lark_ty as ty;
 use lark_unify::UnificationTable;
@@ -307,7 +308,13 @@ impl BuildCfgNode for hir::Expression {
                 let place_node = builder.build_node(start_node, place);
                 let self_node = builder.push_node_edge(place_node, self.into());
 
-                let perm = builder.results.access_permissions[&self];
+                let perm = match builder.results.access_permissions.get(&self) {
+                    Some(&p) => p,
+                    None => panic!(
+                        "no access permissions for {:?}",
+                        self.debug_with(builder.fn_body)
+                    ),
+                };
                 let path = builder.path(*place);
                 builder.access(perm, path, self_node);
 

@@ -333,7 +333,9 @@ where
                 return self.check_arguments_in_case_of_error(arguments);
             }
 
-            BaseKind::Error => self.error_type(),
+            BaseKind::Error => {
+                return self.check_arguments_in_case_of_error(arguments);
+            }
         }
     }
 
