@@ -680,7 +680,7 @@ impl Syntax<'parse> for Expression1<'me, 'parse> {
         // NB. This must be tested *after* the "identified" form.
         if let Some(arguments) = parser.parse_if_present(CallArguments::new(None, self.scope)) {
             let arguments = arguments?;
-            let function = expr.to_hir_place(self.scope);
+            let function = expr.to_hir_expression(self.scope);
             let span = self
                 .scope
                 .span(function)

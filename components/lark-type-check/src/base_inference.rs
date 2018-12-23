@@ -117,16 +117,6 @@ impl<DB> TypeCheckerFamilyDependentExt<BaseInference>
 where
     DB: TypeCheckDatabase,
 {
-    fn require_assignable(
-        &mut self,
-        location: impl Into<HirLocation>,
-        expression: hir::Expression,
-        place_ty: Ty<BaseInference>,
-    ) {
-        let value_ty = self.storage.ty(expression);
-        self.equate(expression, location, value_ty, place_ty)
-    }
-
     fn substitute<M>(
         &mut self,
         _location: impl Into<HirLocation>,
@@ -150,27 +140,29 @@ where
     }
 
     fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<BaseInference>) {
-        self.storage.record_ty(var, ty);
+        self.storage.record_max_ty(var, ty);
     }
 
-    fn record_expression_ty(
+    fn record_max_expression_ty(
         &mut self,
         expr: hir::Expression,
         ty: Ty<BaseInference>,
     ) -> Ty<BaseInference> {
-        self.storage.record_ty(expr, ty);
+        self.storage.record_max_ty(expr, ty);
+        self.storage.record_access_ty(expr, ty);
+        self.storage.record_access_permission(expr, Erased);
         ty
     }
 
     fn record_place_ty(&mut self, place: hir::Place, ty: Ty<BaseInference>) -> Ty<BaseInference> {
-        self.storage.record_ty(place, ty);
+        self.storage.record_max_ty(place, ty);
         ty
     }
 
     fn request_variable_ty(&mut self, var: hir::Variable) -> Ty<BaseInference> {
         self.storage.opt_ty(var).unwrap_or_else(|| {
             let ty = self.new_variable();
-            self.storage.record_ty(var, ty);
+            self.storage.record_max_ty(var, ty);
             ty
         })
     }

@@ -1,0 +1,4 @@
+error: access to uninitialized path
+- initialization_inference/move_part_use_whole:9:11
+9 |   take_bar(bar)
+  |            ^^^

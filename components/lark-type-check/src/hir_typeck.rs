@@ -86,15 +86,17 @@ where
     /// (either "check", which specifies the type the expression must
     /// have, or "synthesize").
     fn check_expression(&mut self, mode: Mode<F>, expression: hir::Expression) -> Ty<F> {
-        let actual_ty = self.compute_expression_ty(mode, expression);
-        self.record_expression_ty(expression, actual_ty);
+        let max_ty = self.compute_expression_ty(mode, expression);
+        let access_ty = self.record_max_expression_ty(expression, max_ty);
+
         match mode {
-            Synthesize => actual_ty,
+            Synthesize => (),
             CheckType(expected_ty, location) => {
-                self.require_assignable(location, expression, expected_ty);
-                expected_ty
+                self.equate(expression, location, access_ty, expected_ty);
             }
         }
+
+        access_ty
     }
 
     fn type_or_infer_variable(&mut self, mode: Mode<F>) -> Ty<F> {
@@ -145,7 +147,7 @@ where
                 function,
                 arguments,
             } => {
-                let function_ty = self.check_place(function);
+                let function_ty = self.check_expression(Mode::Synthesize, function);
                 self.compute_fn_call_ty(expression, function_ty, arguments)
             }
 
@@ -331,7 +333,9 @@ where
                 return self.check_arguments_in_case_of_error(arguments);
             }
 
-            BaseKind::Error => self.error_type(),
+            BaseKind::Error => {
+                return self.check_arguments_in_case_of_error(arguments);
+            }
         }
     }
 
@@ -339,16 +343,22 @@ where
     fn compute_method_call_ty(
         &mut self,
         expression: hir::Expression,
-        owner_ty: Ty<F>,
+        owner_access_ty: Ty<F>,
         method_name: hir::Identifier,
         arguments: hir::List<hir::Expression>,
     ) -> Ty<F> {
         self.with_base_data(
             expression,
             expression,
-            owner_ty.base,
+            owner_access_ty.base,
             move |this, base_data| {
-                this.check_method_call(expression, method_name, arguments, base_data)
+                this.check_method_call(
+                    expression,
+                    owner_access_ty,
+                    method_name,
+                    arguments,
+                    base_data,
+                )
             },
         )
     }
@@ -356,6 +366,7 @@ where
     fn check_method_call(
         &mut self,
         expression: hir::Expression,
+        owner_access_ty: Ty<F>,
         method_name: hir::Identifier,
         arguments: hir::List<hir::Expression>,
         base_data: BaseData<F>,
@@ -382,9 +393,8 @@ where
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
 
-                // The 0th item in the signature is the self type, so check that
-                let owner_expression = arguments.first(&self.hir).unwrap();
-                self.require_assignable(expression, owner_expression, signature.inputs[0]);
+                // Relate the owner type to the input
+                self.equate(expression, expression, owner_access_ty, signature.inputs[0]);
 
                 self.check_arguments_against_signature(
                     method_name,
