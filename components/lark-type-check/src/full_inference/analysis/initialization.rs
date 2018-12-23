@@ -45,7 +45,7 @@ impl Initialization {
         // Round 1: Compute `transitive_overwritten`
 
         let owner_path = Relation::from(analysis_ir.owner_path.iter().cloned());
-        let owner_path_child = Relation::from(
+        let owner_path_by_child = Relation::from(
             analysis_ir
                 .owner_path
                 .iter()
@@ -88,8 +88,8 @@ impl Initialization {
         // .input access
         //
         // Keyed based on the `perm`
-        let access_perm = iteration.variable::<(Perm, (Path, Node))>("access_perm");
-        access_perm.insert(Relation::from(
+        let access_by_perm = iteration.variable::<(Perm, (Path, Node))>("access_by_perm");
+        access_by_perm.insert(Relation::from(
             analysis_ir
                 .access
                 .iter()
@@ -103,7 +103,7 @@ impl Initialization {
         let access_path = iteration.variable::<(Path, Node)>("access_path");
 
         // Maintain an index of `access_path` with both `(path, node)` indexed.
-        let access_path_full = iteration.variable::<((Path, Node), ())>("access_path_full");
+        let access_path_by_all = iteration.variable::<((Path, Node), ())>("access_path_by_all");
 
         // .decl owned(Perm:perm)
         // .input owned
@@ -174,17 +174,19 @@ impl Initialization {
             //   owner_path(PathParent, PathChild).
             access_path.from_leapjoin(
                 &access_path,
-                &mut [&mut owner_path_child.extend_with(|&(path_child, _)| path_child)],
+                &mut [&mut owner_path_by_child.extend_with(|&(path_child, _)| path_child)],
                 |&(_, node), &path_parent| (path_parent, node),
             );
 
-            // `access_path_full` is just an index from `access_path`
-            access_path_full.from_map(&access_path, |&(path, node)| ((path, node), ()));
+            // `access_path_by_all` is just an index from `access_path`
+            access_path_by_all.from_map(&access_path, |&(path, node)| ((path, node), ()));
 
             // moved(Path, Node) :-
             //   access(Perm, Path, Node),
             //   owned(Perm),
-            moved.from_join(&access_perm, &owned, |&_, &(path, node), &_| (path, node));
+            moved.from_join(&access_by_perm, &owned, |&_, &(path, node), &_| {
+                (path, node)
+            });
 
             // uninitialized_path(Path, Node2) :-
             //   uninitialized_path(Path, Node1),
@@ -226,7 +228,7 @@ impl Initialization {
             //   access_path(Path, Node),
             error_access_to_uninitialized_path.from_join(
                 &uninitialized_path,
-                &access_path_full,
+                &access_path_by_all,
                 |&(path, node), &(), &()| (path, node),
             );
         }
