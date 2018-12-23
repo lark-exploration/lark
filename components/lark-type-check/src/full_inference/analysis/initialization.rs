@@ -20,27 +20,19 @@ impl Initialization {
     ///
     /// TL;DR:
     ///
-    /// - All paths start out **uninitialized**.
-    /// - When we see an `overwritten` fact, we mark the path as **initialized**.
-    /// - When we see a **move** of some path P:
-    ///   - If P is **imprecise**, that is an error.
-    ///   - Otherwise, we remove the **initialized** fact for P and all ancestor paths of P.
-    /// - When we see an access to some path P:
-    ///   - P (and all ancestor paths of P) must be initialized at
-    ///     that point or else you get an error.
-    ///
-    /// TL;DR:
-    ///
-    /// - All paths start out **uninitialized** on entry.
-    ///   - For this, need a relation with "all paths"?
-    ///   - Can we get by with **all root paths**? (root paths)
-    /// - Propagate `uninitialized(P)` from edge to edge, unless there exists an **overwritten(Q)**
-    ///   fact for some path Q where Q owns P.
-    /// - When we see a **move** of some path P:
-    ///   - If P is **imprecise**, that is an error.
-    ///   - Otherwise, we add the path `P` to the **uninitialized** set.
-    /// - When we see an access to some path P:
-    ///   - if P or any parent path of P is uninitialized, that is an error.
+    /// - We track the **uninitialized paths** at every point
+    ///   - Each local variable and temporary is **uninitialized** on entry
+    ///   - But we generate `overwritten` facts for parameters at the entry point
+    /// - We propagate `uninitialized(Path)` facts across edges, unless there exists an
+    ///   **overwritten(PathParent)** fact for some path `PathParent` where `PathParent` owns `Path`.
+    ///   - e.g., if `a.b` is uninitialized on entry to point P1, that is propagated to P2
+    ///   - but if there is an assignment of `a` at P2, then this fact is not propagated to P3
+    /// - When we see a **move** of some path `Path`:
+    ///   - If `Path` is **imprecise**, that is an error.
+    ///   - Otherwise, we add the path `Path` to the **uninitialized** set in successors.
+    /// - When we see an access to some path `Path`:
+    ///   - if any parent or child path of `Path` is uninitialized, that is an error.
+    ///   - so e.g. accessing `a.b` when `a`, `a.b`, or `a.b.c` is uninitialized is an error.
     ///
     /// Why track **uninitialized** and not **initialized**? Easier,
     /// because we can do **union** on joins.
