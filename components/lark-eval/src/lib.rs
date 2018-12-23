@@ -209,47 +209,52 @@ pub fn eval_expression(
         hir::ExpressionData::Call {
             function,
             arguments,
-        } => match &fn_body.tables[function] {
-            hir::PlaceData::Entity(entity) => match entity.untern(db) {
-                EntityData::LangItem(LangItem::Debug) => {
-                    for argument in arguments.iter(fn_body) {
-                        let result = eval_expression(db, fn_body, argument, state, io_handler);
+        } => match fn_body[function] {
+            hir::ExpressionData::Place {
+                place: function_place,
+            } => match fn_body[function_place] {
+                hir::PlaceData::Entity(entity) => match entity.untern(db) {
+                    EntityData::LangItem(LangItem::Debug) => {
+                        for argument in arguments.iter(fn_body) {
+                            let result = eval_expression(db, fn_body, argument, state, io_handler);
 
-                        if ready_to_execute {
-                            io_handler.println(format!("{}", result));
+                            if ready_to_execute {
+                                io_handler.println(format!("{}", result));
+                            }
                         }
+
+                        Value::Void
                     }
+                    EntityData::ItemName { .. } => {
+                        let target = db.fn_body(entity).value;
 
-                    Value::Void
-                }
-                EntityData::ItemName { .. } => {
-                    let target = db.fn_body(*entity).value;
+                        for (arg, param) in arguments
+                            .iter(fn_body)
+                            .zip(target.arguments.unwrap().iter(&target))
+                        {
+                            let arg_value = eval_expression(db, fn_body, arg, state, io_handler);
+                            state.create_variable(param);
+                            state.assign_to_variable(param, arg_value);
+                        }
 
-                    for (arg, param) in arguments
-                        .iter(fn_body)
-                        .zip(target.arguments.unwrap().iter(&target))
-                    {
-                        let arg_value = eval_expression(db, fn_body, arg, state, io_handler);
-                        state.create_variable(param);
-                        state.assign_to_variable(param, arg_value);
+                        let return_value = if ready_to_execute {
+                            eval_function(db, &target, state, io_handler)
+                        } else {
+                            Value::Skipped
+                        };
+
+                        for argument in target.arguments.unwrap().iter(&target) {
+                            state.pop_variable(argument);
+                        }
+
+                        return_value
                     }
-
-                    let return_value = if ready_to_execute {
-                        eval_function(db, &target, state, io_handler)
-                    } else {
-                        Value::Skipped
-                    };
-
-                    for argument in target.arguments.unwrap().iter(&target) {
-                        state.pop_variable(argument);
-                    }
-
-                    return_value
-                }
-                x => unimplemented!(
-                    "Call entity not yet supported in eval: {:#?}",
-                    x.debug_with(db)
-                ),
+                    x => unimplemented!(
+                        "Call entity not yet supported in eval: {:#?}",
+                        x.debug_with(db)
+                    ),
+                },
+                x => unimplemented!("Call not yet supported in eval: {:#?}", x.debug_with(db)),
             },
             x => unimplemented!("Call not yet supported in eval: {:#?}", x.debug_with(db)),
         },

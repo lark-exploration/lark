@@ -1,0 +1,4 @@
+error: access to uninitialized path
+- initialization_inference/move_twice:8:7
+8 |   take(x)
+  |        ^

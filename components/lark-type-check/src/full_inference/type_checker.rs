@@ -71,33 +71,6 @@ impl<DB> TypeCheckerFamilyDependentExt<FullInference>
 where
     DB: TypeCheckDatabase,
 {
-    fn require_assignable(
-        &mut self,
-        location: impl Into<HirLocation>,
-        expression: hir::Expression,
-        place_ty: Ty<FullInference>,
-    ) {
-        let location: HirLocation = location.into();
-
-        let value_ty = self.storage.results.ty(expression);
-
-        // When assigning a value into a place, we do not *have* to
-        // transfer the full permissions of that value into the
-        // place. So create a permission variable for the amount of
-        // access and use it to modify the value access ty.
-        let perm_access = self.storage.new_inferred_perm(&self.f_tables);
-        let value_access_ty =
-            self.apply_access_perm(expression.into(), location.into(), perm_access, value_ty);
-
-        // Record the permission used at `expression` for later.
-        self.storage
-            .results
-            .access_permissions
-            .insert(expression, perm_access);
-
-        self.equate(expression, location, value_access_ty, place_ty)
-    }
-
     fn substitute<M>(
         &mut self,
         _location: impl Into<HirLocation>,
@@ -121,27 +94,40 @@ where
     }
 
     fn record_variable_ty(&mut self, var: hir::Variable, ty: Ty<FullInference>) {
-        self.storage.results.record_ty(var, ty);
+        self.storage.results.record_max_ty(var, ty);
     }
 
-    fn record_expression_ty(
+    fn record_max_expression_ty(
         &mut self,
-        expr: hir::Expression,
-        ty: Ty<FullInference>,
+        expression: hir::Expression,
+        max_ty: Ty<FullInference>,
     ) -> Ty<FullInference> {
-        self.storage.results.record_ty(expr, ty);
-        ty
+        // When assigning a value into a place, we do not *have* to
+        // transfer the full permissions of that value into the
+        // place. So create a permission variable for the amount of
+        // access and use it to modify the value access ty.
+        let access_perm = self.storage.new_inferred_perm(&self.f_tables);
+        let access_ty =
+            self.apply_access_perm(expression.into(), expression.into(), access_perm, max_ty);
+
+        self.storage.results.record_max_ty(expression, max_ty);
+        self.storage.results.record_access_ty(expression, access_ty);
+        self.storage
+            .results
+            .record_access_permission(expression, access_perm);
+
+        access_ty
     }
 
     fn record_place_ty(&mut self, place: hir::Place, ty: Ty<FullInference>) -> Ty<FullInference> {
-        self.storage.results.record_ty(place, ty);
+        self.storage.results.record_max_ty(place, ty);
         ty
     }
 
     fn request_variable_ty(&mut self, var: hir::Variable) -> Ty<FullInference> {
         self.storage.results.opt_ty(var).unwrap_or_else(|| {
             let ty = self.new_variable();
-            self.storage.results.record_ty(var, ty);
+            self.storage.results.record_max_ty(var, ty);
             ty
         })
     }

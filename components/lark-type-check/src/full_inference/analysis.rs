@@ -5,16 +5,24 @@ use crate::full_inference::FullInferenceTables;
 use crate::full_inference::Perm;
 use crate::results::TypeCheckResults;
 use crate::HirLocation;
+use crate::TypeCheckDatabase;
 use lark_collections::{FxIndexMap, FxIndexSet, IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
+use lark_error::Diagnostic;
 use lark_hir as hir;
 use lark_string::GlobalIdentifier;
 use lark_ty::PermKind;
 use lark_unify::UnificationTable;
 
 mod builder;
+mod dump;
+mod initialization;
 mod kind_inference;
+
+use dump::DumpCx;
+use initialization::Initialization;
+use kind_inference::KindInference;
 
 /// The "analysis IR" is a view onto a HIR fn body that adds a
 /// control-flow graph as well as a number of tuples that are used
@@ -38,17 +46,24 @@ crate struct AnalysisIr {
     crate path_datas: IndexVec<Path, PathData>,
 
     /// Edges in the control-flow graph.
-    crate cfg_edges: Vec<(Node, Node)>,
+    crate cfg_edge: Vec<(Node, Node)>,
 
     /// Contains pairs `(Path1, Path2)` where `Path1` is a "parent
     /// path" of `Path2` -- e.g., there would be a pair for `foo` and
     /// `foo.bar`. This contains *immediate* parents only, so there
     /// would NOT be a pair `(foo, foo.bar.baz)`.
-    crate owner_paths: Vec<(Path, Path)>,
+    crate owner_path: Vec<(Path, Path)>,
+
+    /// Paths that represent a "local slot" in the fn, either a
+    /// user-declared variable or a temporary. These paths begin
+    /// in an uninitialized state.
+    crate local_path: Vec<Path>,
+
+    crate imprecise_path: Vec<Path>,
 
     /// An "access" of the given path with the given permission takes place
     /// at the given node.
-    crate accesses: Vec<(Perm, Path, Node)>,
+    crate access: Vec<(Perm, Path, Node)>,
 
     /// Indicates that the value of `Path` is overwritten at the given `Node`
     /// (e.g., `x = 5` overwrites `x`).
@@ -75,6 +90,11 @@ crate struct AnalysisIr {
     crate perm_less_if_base: Vec<(Perm, Perm, Perm, Node)>,
 }
 
+crate struct AnalysisResults {
+    crate perm_kinds: FxIndexMap<PermVar, PermKind>,
+    crate errors: Vec<Diagnostic>,
+}
+
 impl AnalysisIr {
     crate fn new(
         fn_body: &hir::FnBody,
@@ -85,11 +105,70 @@ impl AnalysisIr {
         builder::AnalysisBuilder::analyze(fn_body, results, constraints, unify)
     }
 
+    fn dump(&self, cx: &DumpCx<'_, impl TypeCheckDatabase>) {
+        cx.dump_facts("node_datas", self.node_datas.iter_enumerated())
+            .unwrap();
+        cx.dump_facts("path_datas", self.path_datas.iter_enumerated())
+            .unwrap();
+        cx.dump_facts("cfg_edge", self.cfg_edge.iter()).unwrap();
+        cx.dump_facts("owner_path", self.owner_path.iter()).unwrap();
+        cx.dump_facts("local_path", self.local_path.iter()).unwrap();
+        cx.dump_facts("imprecise_path", self.imprecise_path.iter())
+            .unwrap();
+        cx.dump_facts("access", self.access.iter()).unwrap();
+        cx.dump_facts("overwritten", self.overwritten.iter())
+            .unwrap();
+        cx.dump_facts("traverse", self.traverse.iter()).unwrap();
+        cx.dump_facts("used", self.used.iter()).unwrap();
+        cx.dump_facts("perm_less_base", self.perm_less_base.iter())
+            .unwrap();
+        cx.dump_facts("perm_less_if_base", self.perm_less_if_base.iter())
+            .unwrap();
+    }
+
     crate fn infer(
         self,
+        entity: Entity,
+        db: &impl TypeCheckDatabase,
+        fn_body: &hir::FnBody,
         tables: &impl AsRef<FullInferenceTables>,
-    ) -> FxIndexMap<PermVar, PermKind> {
-        kind_inference::inference(tables, &self.perm_less_base, &self.perm_less_if_base)
+    ) -> AnalysisResults {
+        let cx = &DumpCx::new(db, fn_body, tables.as_ref(), entity);
+
+        self.dump(cx);
+
+        let kind_inference =
+            KindInference::new(tables, &self.perm_less_base, &self.perm_less_if_base);
+
+        let initialization = Initialization::new(cx, &self, &kind_inference);
+
+        let perm_kinds = kind_inference.to_kind_map(tables);
+
+        let mut errors = vec![];
+
+        for &(node, ()) in initialization.error_move_of_imprecise_path.iter() {
+            let span = match self.node_datas[node] {
+                HirLocation::Expression(e) => fn_body.span(e),
+                l => panic!("move of imprecise path at `{:?}`", l),
+            };
+
+            errors.push(Diagnostic::new(format!("move of imprecise path"), span));
+        }
+
+        for &(_path, node) in initialization.error_access_to_uninitialized_path.iter() {
+            let span = match self.node_datas[node] {
+                HirLocation::Expression(e) => fn_body.span(e),
+                HirLocation::Place(p) => fn_body.span(p),
+                l => panic!("move of imprecise path at `{:?}`", l),
+            };
+
+            errors.push(Diagnostic::new(
+                format!("access to uninitialized path"),
+                span,
+            ));
+        }
+
+        AnalysisResults { perm_kinds, errors }
     }
 
     crate fn lookup_node(&self, data: impl Into<HirLocation>) -> Node {
@@ -106,6 +185,8 @@ lark_collections::index_type! {
     /// expression, but may represent other sorts of events.
     crate struct Node { .. }
 }
+
+lark_debug_with::debug_fallback_impl!(Node);
 
 lark_collections::index_type! {
     /// A "path" is an expression that leads to a memory location. This is

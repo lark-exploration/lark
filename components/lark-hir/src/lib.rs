@@ -7,7 +7,7 @@
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]
 
-use lark_collections::{IndexVec, U32Index, FxIndexMap};
+use lark_collections::{FxIndexMap, IndexVec, U32Index};
 use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;
 use lark_entity::Entity;
@@ -447,7 +447,7 @@ pub enum ExpressionData {
 
     /// `function(<args>)`
     Call {
-        function: Place,
+        function: Expression,
         arguments: List<Expression>,
     },
 

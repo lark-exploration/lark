@@ -11,6 +11,7 @@ use crate::results::TypeCheckResults;
 use crate::HirLocation;
 use lark_collections::map::Entry;
 use lark_collections::{FxIndexMap, FxIndexSet, IndexVec, U32Index};
+use lark_debug_with::DebugWith;
 use lark_hir as hir;
 use lark_ty as ty;
 use lark_unify::UnificationTable;
@@ -42,8 +43,18 @@ impl AnalysisBuilder<'_> {
         };
 
         let start_node = builder.push_node(HirLocation::Start);
+
+        if let Ok(arguments) = &fn_body.arguments {
+            for argument in arguments.iter(fn_body) {
+                let argument_path = builder.variable_path(argument);
+                builder.generate_assignment_facts(argument_path, start_node);
+            }
+        }
+
         let root_node = builder.build_node(start_node, fn_body.root_expression);
         let _return_node = builder.push_node_edge(root_node, HirLocation::Return);
+
+        let _error_node = builder.push_node(HirLocation::Error);
 
         builder.build_constraints();
 
@@ -131,7 +142,7 @@ impl AnalysisBuilder<'_> {
 
     /// Pushes an edge `from -> to` into the graph.
     fn push_edge(&mut self, from: Node, to: Node) {
-        self.analysis.cfg_edges.push((from, to));
+        self.analysis.cfg_edge.push((from, to));
     }
 
     /// Builds the control-flow graph for `n`, starting from `start_node`.
@@ -162,6 +173,16 @@ impl AnalysisBuilder<'_> {
         }
     }
 
+    /// Creates a path referencing the variable `v`.
+    fn variable_path(&mut self, v: hir::Variable) -> Path {
+        self.intern_path(PathData::Variable(v))
+    }
+
+    /// Creates a path referencing the temporary used to store the variable `v`.
+    fn temporary_path(&mut self, v: hir::Expression) -> Path {
+        self.intern_path(PathData::Temporary(v))
+    }
+
     /// Interns `path_data` and returns the resulting `Path` index.
     fn intern_path(&mut self, path_data: PathData) -> Path {
         let (path, is_new) = Self::intern(
@@ -172,7 +193,23 @@ impl AnalysisBuilder<'_> {
 
         if is_new {
             if let Some(owner) = path_data.owner() {
-                self.analysis.owner_paths.push((owner, path));
+                self.analysis.owner_path.push((owner, path));
+            }
+
+            match path_data {
+                PathData::Variable(_) | PathData::Temporary(_) => {
+                    self.analysis.local_path.push(path);
+                }
+
+                PathData::Entity(_) | PathData::Field { .. } | PathData::Index { .. } => {
+                    // These paths are either initialized from a base
+                    // path, or do not need to be initialized (e.g., a
+                    // global).
+                }
+            }
+
+            if !path_data.precise(&self.analysis.path_datas) {
+                self.analysis.imprecise_path.push(path);
             }
         }
 
@@ -181,7 +218,7 @@ impl AnalysisBuilder<'_> {
 
     /// Adds an access fact `(perm, path, node)`.
     fn access(&mut self, perm: Perm, path: Path, node: Node) {
-        self.analysis.accesses.push((perm, path, node));
+        self.analysis.access.push((perm, path, node));
     }
 
     /// Generates the appropriate facts for an assignment to `path` at
@@ -247,7 +284,9 @@ impl BuildCfgNode for hir::Expression {
     fn build_cfg_node(self, start_node: Node, builder: &mut AnalysisBuilder<'_>) -> Node {
         match &builder.fn_body[self] {
             hir::ExpressionData::Let {
-                initializer, body, ..
+                variable,
+                initializer,
+                body,
             } => {
                 // First, we evaluate `I`...
                 let initializer_node = builder.build_node(start_node, initializer);
@@ -257,6 +296,8 @@ impl BuildCfgNode for hir::Expression {
                 let self_node = builder.push_node_edge(initializer_node, self.into());
                 if let Some(initializer) = initializer {
                     builder.use_result_of(self_node, *initializer);
+                    let variable_path = builder.variable_path(*variable);
+                    builder.generate_assignment_facts(variable_path, self_node);
                 }
 
                 // Finally, the body `B` is evaluated.
@@ -267,7 +308,13 @@ impl BuildCfgNode for hir::Expression {
                 let place_node = builder.build_node(start_node, place);
                 let self_node = builder.push_node_edge(place_node, self.into());
 
-                let perm = builder.results.access_permissions[&self];
+                let perm = match builder.results.access_permissions.get(&self) {
+                    Some(&p) => p,
+                    None => panic!(
+                        "no access permissions for {:?}",
+                        self.debug_with(builder.fn_body)
+                    ),
+                };
                 let path = builder.path(*place);
                 builder.access(perm, path, self_node);
 
@@ -387,7 +434,13 @@ impl BuildCfgNode for hir::Place {
 
             hir::PlaceData::Entity(_) => start_node,
 
-            hir::PlaceData::Temporary(expression) => builder.build_node(start_node, expression),
+            hir::PlaceData::Temporary(expression) => {
+                let expression_node = builder.build_node(start_node, expression);
+                let self_node = builder.push_node_edge(expression_node, self.into());
+                let path = builder.temporary_path(*expression);
+                builder.generate_assignment_facts(path, self_node);
+                self_node
+            }
 
             hir::PlaceData::Field { owner, .. } => {
                 let owner_node = builder.build_node(start_node, owner);

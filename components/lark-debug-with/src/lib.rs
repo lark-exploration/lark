@@ -88,6 +88,16 @@ where
     }
 }
 
+impl DebugWith for () {
+    fn fmt_with<Cx: ?Sized>(
+        &self,
+        _cx: &Cx,
+        fmt: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        <() as std::fmt::Debug>::fmt(self, fmt)
+    }
+}
+
 impl<A, B> DebugWith for (A, B)
 where
     A: DebugWith,
@@ -97,6 +107,38 @@ where
         fmt.debug_tuple("")
             .field(&self.0.debug_with(cx))
             .field(&self.1.debug_with(cx))
+            .finish()
+    }
+}
+
+impl<A, B, C> DebugWith for (A, B, C)
+where
+    A: DebugWith,
+    B: DebugWith,
+    C: DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_tuple("")
+            .field(&self.0.debug_with(cx))
+            .field(&self.1.debug_with(cx))
+            .field(&self.2.debug_with(cx))
+            .finish()
+    }
+}
+
+impl<A, B, C, D> DebugWith for (A, B, C, D)
+where
+    A: DebugWith,
+    B: DebugWith,
+    C: DebugWith,
+    D: DebugWith,
+{
+    fn fmt_with<Cx: ?Sized>(&self, cx: &Cx, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.debug_tuple("")
+            .field(&self.0.debug_with(cx))
+            .field(&self.1.debug_with(cx))
+            .field(&self.2.debug_with(cx))
+            .field(&self.3.debug_with(cx))
             .finish()
     }
 }

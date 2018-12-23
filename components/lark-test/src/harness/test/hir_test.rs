@@ -147,8 +147,8 @@ where
         index: hir::MetaIndex,
         debug: &mut std::fmt::DebugStruct<'_, '_>,
     ) -> std::fmt::Result {
-        if let Some(v) = self.results.types.get(&index) {
-            debug.field("ty", &v.debug_with(self.db));
+        if let Some(v) = self.results.max_types.get(&index) {
+            debug.field("max_types", &v.debug_with(self.db));
         }
 
         if let Some(v) = self.results.generics.get(&index) {
@@ -160,6 +160,10 @@ where
         }
 
         if let hir::MetaIndex::Expression(e) = index {
+            if let Some(v) = self.results.access_types.get(&e) {
+                debug.field("access_types", &v.debug_with(self.db));
+            }
+
             if let Some(v) = self.results.access_permissions.get(&e) {
                 debug.field("access_permissions", &v.debug_with(self.db));
             }
