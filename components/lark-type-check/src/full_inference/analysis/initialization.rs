@@ -42,15 +42,39 @@ impl Initialization {
         kind_inference: &KindInference,
     ) -> Self {
         ///////////////////////////////////////////////////////////////////////////
-        // Round 1: Compute `transitive_overwritten`
+        // Round 0: Compute `transitive_owner_path`
 
         let owner_path = Relation::from(analysis_ir.owner_path.iter().cloned());
-        let owner_path_by_child = Relation::from(
-            analysis_ir
-                .owner_path
-                .iter()
-                .map(|&(path_owner, path_child)| (path_child, path_owner)),
-        );
+
+        // .decl transitive_owner_path(Path1:path, Path2:node)
+        //
+        // Transitive version of `owner_path`.
+        let transitive_owner_path: Relation<(Path, Path)> = {
+            let mut iteration = Iteration::new();
+
+            // .decl transitive_owner_path(Path, Path)
+            let transitive_owner_path = iteration.variable::<(Path, Path)>("transitive_owner_path");
+
+            // transitive_owner_path(Path1, Path2) :-
+            //   owner_path(Path1, Path2).
+            transitive_owner_path.insert(owner_path.clone());
+
+            while iteration.changed() {
+                // transitive_owner_path(Path1, Path3) :-
+                //   transitive_owner_path(Path1, Path2),
+                //   owner_path(Path2, Path3).
+                transitive_owner_path.from_leapjoin(
+                    &transitive_owner_path,
+                    &mut [&mut owner_path.extend_with(|&(path1, _)| path1)],
+                    |&(path1, _), &path3| (path1, path3),
+                );
+            }
+
+            transitive_owner_path.complete()
+        };
+
+        ///////////////////////////////////////////////////////////////////////////
+        // Round 1: Compute `transitive_overwritten`
 
         let transitive_overwritten = {
             let mut iteration = Iteration::new();
@@ -83,6 +107,13 @@ impl Initialization {
         // Round 2
 
         let mut iteration = Iteration::new();
+
+        // Variant of `transitive_owner_path` keyed by the child
+        let transitive_owner_path_by_child = Relation::from(
+            transitive_owner_path
+                .iter()
+                .map(|&(path_parent, path_child)| (path_child, path_parent)),
+        );
 
         // .decl access(Perm:perm, Path:path, Node:node)
         // .input access
@@ -161,21 +192,22 @@ impl Initialization {
 
         while iteration.changed() {
             // access_path(PathChild, Node) :-
-            //   access_path(PathParent, Node),
-            //   owner_path(PathParent, PathChild).
+            //   access(_, PathParent, Node),
+            //   transitive_owner_path(PathParent, PathChild).
             access_path.from_leapjoin(
-                &access_path,
-                &mut [&mut owner_path.extend_with(|&(path_parent, _)| path_parent)],
-                |&(_, node), &path_child| (path_child, node),
+                &access_by_perm,
+                &mut [&mut transitive_owner_path.extend_with(|&(_, (path_parent, _))| path_parent)],
+                |&(_, (_, node)), &path_child| (path_child, node),
             );
 
             // access_path(PathParent, Node) :-
-            //   access_path(PathChild, Node),
-            //   owner_path(PathParent, PathChild).
+            //   access(_, PathChild, Node),
+            //   transitive_owner_path(PathParent, PathChild).
             access_path.from_leapjoin(
-                &access_path,
-                &mut [&mut owner_path_by_child.extend_with(|&(path_child, _)| path_child)],
-                |&(_, node), &path_parent| (path_parent, node),
+                &access_by_perm,
+                &mut [&mut transitive_owner_path_by_child
+                    .extend_with(|&(_, (path_child, _))| path_child)],
+                |&(_, (_, node)), &path_parent| (path_parent, node),
             );
 
             // `access_path_by_all` is just an index from `access_path`

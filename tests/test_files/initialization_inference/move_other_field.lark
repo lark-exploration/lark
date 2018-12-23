@@ -1,0 +1,14 @@
+//~ execute:no
+
+struct Foo { x: uint }
+struct Bar { foo1: Foo, foo2: Foo }
+
+def main() {
+  let bar = Bar(foo1: Foo(x: 22), foo2: Foo(x: 44))
+  take_foo(bar.foo1)
+  take_foo(bar.foo2)
+}
+
+def take_bar(v: Bar) { }
+
+def take_foo(v: Foo) { }
