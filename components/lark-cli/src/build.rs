@@ -11,7 +11,6 @@ use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::LarkDatabase;
 use lark_query_system::QuerySystem;
 use lark_span::{ByteIndex, FileName, IntoFileName, Span};
-use salsa::Database;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs::File;

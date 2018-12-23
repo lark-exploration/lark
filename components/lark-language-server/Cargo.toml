@@ -6,8 +6,7 @@ edition = "2018"
 
 [dependencies]
 serde_json = "1.0"
-serde = "1.0"
-serde_derive = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 languageserver-types = "0.53"
 url = "1.7"
 lark-actor = { path = "../lark-actor" }
