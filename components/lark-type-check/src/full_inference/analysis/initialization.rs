@@ -52,7 +52,13 @@ impl Initialization {
         ///////////////////////////////////////////////////////////////////////////
         // Round 1: Compute `transitive_overwritten`
 
-        let owner_path_rel = Relation::from(analysis_ir.owner_path.iter().cloned());
+        let owner_path = Relation::from(analysis_ir.owner_path.iter().cloned());
+        let owner_path_child = Relation::from(
+            analysis_ir
+                .owner_path
+                .iter()
+                .map(|&(path_owner, path_child)| (path_child, path_owner)),
+        );
 
         let transitive_overwritten = {
             let mut iteration = Iteration::new();
@@ -66,11 +72,11 @@ impl Initialization {
 
             while iteration.changed() {
                 // transitive_overwritten(PathChild, Node) :-
-                //   transitive_overwritten(Path, Node),
-                //   owner_path(Path, PathChild).
+                //   transitive_overwritten(PathParent, Node),
+                //   owner_path(PathParent, PathChild).
                 transitive_overwritten.from_leapjoin(
                     &transitive_overwritten,
-                    &mut [&mut owner_path_rel.extend_with(|&(path, _)| path)],
+                    &mut [&mut owner_path.extend_with(|&(path_parent, _)| path_parent)],
                     |&(_, node), &path_child| (path_child, node),
                 );
             }
@@ -153,22 +159,31 @@ impl Initialization {
         let error_access_to_uninitialized_path =
             iteration.variable::<(Path, Node)>("error_access_to_uninitialized_path");
 
-        while iteration.changed() {
-            // access_path(Path, Node) :- access(_, Path, Node).
-            access_path.insert(Relation::from(
-                analysis_ir
-                    .access
-                    .iter()
-                    .map(|&(_, path, node)| (path, node)),
-            ));
+        // access_path(Path, Node) :- access(_, Path, Node).
+        access_path.insert(Relation::from(
+            analysis_ir
+                .access
+                .iter()
+                .map(|&(_, path, node)| (path, node)),
+        ));
 
+        while iteration.changed() {
             // access_path(PathChild, Node) :-
-            //   access_path(Path, Node),
-            //   owner_path(Path, PathChild).
+            //   access_path(PathParent, Node),
+            //   owner_path(PathParent, PathChild).
             access_path.from_leapjoin(
                 &access_path,
-                &mut [&mut owner_path_rel.extend_with(|&(path, _)| path)],
+                &mut [&mut owner_path.extend_with(|&(path_parent, _)| path_parent)],
                 |&(_, node), &path_child| (path_child, node),
+            );
+
+            // access_path(PathParent, Node) :-
+            //   access_path(PathChild, Node),
+            //   owner_path(PathParent, PathChild).
+            access_path.from_leapjoin(
+                &access_path,
+                &mut [&mut owner_path_child.extend_with(|&(path_child, _)| path_child)],
+                |&(_, node), &path_parent| (path_parent, node),
             );
 
             // `access_path_full` is just an index from `access_path`
