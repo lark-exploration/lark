@@ -1,6 +1,5 @@
 use lark_actor::{self, Actor, LspResponse, QueryRequest};
-use serde::Serialize;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::io;

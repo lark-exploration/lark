@@ -9,31 +9,12 @@ authors = [
 edition = "2018"
 
 [dependencies]
-derive-new = "0.5.6"
-derive_more = "0.13.0"
-lazy_static = "1.2.0"
-log = "0.4.6"
-generational-arena = "0.2.0"
-parking_lot = "0.7"
-seahash = "3.0.5"
-smart-default = "0.3.0"
-typed-arena = "1.4"
-unicode-xid = "0.1.0"
-itertools = "0.8"
-text-diff = "0.4.0"
 languageserver-types = "0.53"
 flexi_logger = "0.10.3"
-pretty_env_logger = "0.3"
-salsa = "0.8"
-serde_json = "1.0"
-serde = "1.0"
-serde_derive = "1.0"
-url = "1.7"
+termcolor = "1.0.4"
 
 lark-actor = { path = "../lark-actor" }
 lark-build = { path = "../lark-build" }
-lark-collections = { path = "../lark-collections" }
-lark-debug-derive = { path = "../lark-debug-derive" }
 lark-debug-with = { path = "../lark-debug-with" }
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
@@ -49,5 +30,3 @@ lark-ty = { path = "../lark-ty" }
 lark-type-check = { path = "../lark-type-check" }
 lark-unify = { path = "../lark-unify" }
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
-
-termcolor = "1.0.4"
