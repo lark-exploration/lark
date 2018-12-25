@@ -44,7 +44,7 @@ impl Initialization {
         ///////////////////////////////////////////////////////////////////////////
         // Round 0: Compute `transitive_owner_path`
 
-        let owner_path = Relation::from(analysis_ir.owner_path.iter().cloned());
+        let owner_path: Relation<_> = analysis_ir.owner_path.iter().collect();
 
         // .decl transitive_owner_path(Path1:path, Path2:node)
         //
@@ -65,7 +65,7 @@ impl Initialization {
                 //   owner_path(Path2, Path3).
                 transitive_owner_path.from_leapjoin(
                     &transitive_owner_path,
-                    &mut [&mut owner_path.extend_with(|&(path1, _)| path1)],
+                    owner_path.extend_with(|&(path1, _)| path1),
                     |&(path1, _), &path3| (path1, path3),
                 );
             }
@@ -84,7 +84,7 @@ impl Initialization {
                 iteration.variable::<(Path, Node)>("transitive_overwritten");
 
             // transitive_overwritten(Path, Node) :- overwritten(Path, Node).
-            transitive_overwritten.insert(Relation::from(analysis_ir.overwritten.iter().cloned()));
+            transitive_overwritten.extend(&analysis_ir.overwritten);
 
             while iteration.changed() {
                 // transitive_overwritten(PathChild, Node) :-
@@ -92,7 +92,7 @@ impl Initialization {
                 //   owner_path(PathParent, PathChild).
                 transitive_overwritten.from_leapjoin(
                     &transitive_overwritten,
-                    &mut [&mut owner_path.extend_with(|&(path_parent, _)| path_parent)],
+                    owner_path.extend_with(|&(path_parent, _)| path_parent),
                     |&(_, node), &path_child| (path_child, node),
                 );
             }
@@ -106,54 +106,83 @@ impl Initialization {
         ///////////////////////////////////////////////////////////////////////////
         // Round 2
 
-        let mut iteration = Iteration::new();
-
-        // Variant of `transitive_owner_path` keyed by the child
-        let transitive_owner_path_by_child = Relation::from(
-            transitive_owner_path
-                .iter()
-                .map(|&(path_parent, path_child)| (path_child, path_parent)),
-        );
-
         // .decl access(Perm:perm, Path:path, Node:node)
         // .input access
         //
         // Keyed based on the `perm`
-        let access_by_perm = iteration.variable::<(Perm, (Path, Node))>("access_by_perm");
-        access_by_perm.insert(Relation::from(
-            analysis_ir
-                .access
-                .iter()
-                .map(|&(perm, path, node)| (perm, (path, node))),
-        ));
+        let access_by_perm: Relation<(Perm, (Path, Node))> = analysis_ir
+            .access
+            .iter()
+            .map(|&(perm, path, node)| (perm, (path, node)))
+            .collect();
+
+        let mut iteration = Iteration::new();
+
+        // Variant of `transitive_owner_path` keyed by the child
+        let transitive_owner_path_by_child: Relation<_> = transitive_owner_path
+            .iter()
+            .map(|&(path_parent, path_child)| (path_child, path_parent))
+            .collect();
 
         // .decl access_path(Path:path, Node:node)
         //
         // The path `Path` is accessed sometime during the node `Node`
         // -- in particular, its value on entry to `Node` is accessed.
-        let access_path = iteration.variable::<(Path, Node)>("access_path");
-
-        // Maintain an index of `access_path` with both `(path, node)` indexed.
-        let access_path_by_all = iteration.variable::<((Path, Node), ())>("access_path_by_all");
+        let access_path = Relation::from_iter(
+            // access_path(Path, Node) :- access(_, Path, Node).
+            analysis_ir
+                .access
+                .iter()
+                .map(|&(_, path, node)| ((path, node), ())),
+        )
+        .merge(
+            // access_path(PathChild, Node) :-
+            //   access(_, PathParent, Node),
+            //   transitive_owner_path(PathParent, PathChild).
+            Relation::from_leapjoin(
+                &access_by_perm,
+                transitive_owner_path.extend_with(|&(_, (path_parent, _))| path_parent),
+                |&(_, (_, node)), &path_child| ((path_child, node), ()),
+            ),
+        )
+        .merge(
+            // access_path(PathParent, Node) :-
+            //   access(_, PathChild, Node),
+            //   transitive_owner_path(PathParent, PathChild).
+            Relation::from_leapjoin(
+                &access_by_perm,
+                transitive_owner_path_by_child.extend_with(|&(_, (path_child, _))| path_child),
+                |&(_, (_, node)), &path_parent| ((path_parent, node), ()),
+            ),
+        );
+        cx.dump_facts("access_path", access_path.iter()).unwrap();
 
         // .decl owned(Perm:perm)
         // .input owned
-        let owned = iteration.variable::<(Perm, ())>("owned");
-        owned.insert(kind_inference.owned.clone());
-
-        // .decl cfg_edge(Node1:node, Node2:node)
-        // .input cfg_edge
-        let cfg_edge = Relation::from(analysis_ir.cfg_edge.iter().cloned());
-
-        // .decl imprecise_path(Path:path)
-        // .input cfg_edge
-        let imprecise_path: Relation<(Path, ())> =
-            Relation::from(analysis_ir.imprecise_path.iter().map(|&path| (path, ())));
+        let owned = &kind_inference.owned;
 
         // .decl moved(Path:Path, Node:node)
         //
         // Indicates that the path `Path` is **moved** at the given node.
-        let moved = iteration.variable::<(Path, Node)>("entry_node");
+        //
+        // moved(Path, Node) :-
+        //   access(Perm, Path, Node),
+        //   owned(Perm),
+        let moved =
+            Relation::from_join(&access_by_perm, owned, |&_, &(path, node), &_| (path, node));
+        cx.dump_facts("moved", moved.iter()).unwrap();
+
+        // .decl cfg_edge(Node1:node, Node2:node)
+        // .input cfg_edge
+        let cfg_edge: Relation<_> = analysis_ir.cfg_edge.iter().collect();
+
+        // .decl imprecise_path(Path:path)
+        // .input cfg_edge
+        let imprecise_path: Relation<(Path, ())> = analysis_ir
+            .imprecise_path
+            .iter()
+            .map(|&path| (path, ()))
+            .collect();
 
         // .decl uninitialized_path(Path:path, Node:node)
         //
@@ -165,12 +194,12 @@ impl Initialization {
         //   entry_node(Node),
         //   local_path(Path).
         let entry_node = analysis_ir.lookup_node(HirLocation::Start);
-        uninitialized_path.insert(Relation::from(
+        uninitialized_path.extend(
             analysis_ir
                 .local_path
                 .iter()
                 .map(|&path| ((path, entry_node), ())),
-        ));
+        );
 
         // .decl error_move_of_imprecise_path(Node:node)
         //
@@ -182,77 +211,40 @@ impl Initialization {
         let error_access_to_uninitialized_path =
             iteration.variable::<(Path, Node)>("error_access_to_uninitialized_path");
 
-        // access_path(Path, Node) :- access(_, Path, Node).
-        access_path.insert(Relation::from(
-            analysis_ir
-                .access
-                .iter()
-                .map(|&(_, path, node)| (path, node)),
+        // uninitialized_path(Path, Node2) :-
+        //   moved(Path, Node1),
+        //   !transitive_overwritten(Path, Node1),
+        //   cfg_edge(Node1, Node2).
+        uninitialized_path.insert(Relation::from_leapjoin(
+            &moved,
+            (
+                transitive_overwritten.filter_anti(|&(path, node1)| (path, node1)),
+                cfg_edge.extend_with(|&(_, node1)| node1),
+            ),
+            |&(path, _), &node2| ((path, node2), ()),
+        ));
+
+        // error_move_of_imprecise_path(Node) :-
+        //   moved(Path, Node),
+        //   imprecise_path(Path).
+        error_move_of_imprecise_path.insert(Relation::from_leapjoin(
+            &moved,
+            imprecise_path.filter_with(|&(path, _)| (path, ())),
+            |&(_, node), &()| (node, ()),
         ));
 
         while iteration.changed() {
-            // access_path(PathChild, Node) :-
-            //   access(_, PathParent, Node),
-            //   transitive_owner_path(PathParent, PathChild).
-            access_path.from_leapjoin(
-                &access_by_perm,
-                &mut [&mut transitive_owner_path.extend_with(|&(_, (path_parent, _))| path_parent)],
-                |&(_, (_, node)), &path_child| (path_child, node),
-            );
-
-            // access_path(PathParent, Node) :-
-            //   access(_, PathChild, Node),
-            //   transitive_owner_path(PathParent, PathChild).
-            access_path.from_leapjoin(
-                &access_by_perm,
-                &mut [&mut transitive_owner_path_by_child
-                    .extend_with(|&(_, (path_child, _))| path_child)],
-                |&(_, (_, node)), &path_parent| (path_parent, node),
-            );
-
-            // `access_path_by_all` is just an index from `access_path`
-            access_path_by_all.from_map(&access_path, |&(path, node)| ((path, node), ()));
-
-            // moved(Path, Node) :-
-            //   access(Perm, Path, Node),
-            //   owned(Perm),
-            moved.from_join(&access_by_perm, &owned, |&_, &(path, node), &_| {
-                (path, node)
-            });
-
             // uninitialized_path(Path, Node2) :-
             //   uninitialized_path(Path, Node1),
             //   !transitive_overwritten(Path, Node1),
             //   cfg_edge(Node1, Node2).
             uninitialized_path.from_leapjoin(
                 &uninitialized_path,
-                &mut [
-                    &mut transitive_overwritten.filter_anti(|&((path, node1), ())| (path, node1)),
-                    &mut cfg_edge.extend_with(|&((_, node1), ())| node1),
-                ],
+                (
+                    transitive_overwritten.filter_anti(|&((path, node1), ())| (path, node1)),
+                    cfg_edge.extend_with(|&((_, node1), ())| node1),
+                ),
                 |&((path, _), ()), &node2| ((path, node2), ()),
-            );
-
-            // uninitialized_path(Path, Node2) :-
-            //   moved(Path, Node1),
-            //   !transitive_overwritten(Path, Node1),
-            //   cfg_edge(Node1, Node2).
-            uninitialized_path.from_leapjoin(
-                &moved,
-                &mut [
-                    &mut transitive_overwritten.filter_anti(|&(path, node1)| (path, node1)),
-                    &mut cfg_edge.extend_with(|&(_, node1)| node1),
-                ],
-                |&(path, _), &node2| ((path, node2), ()),
-            );
-
-            // error_move_of_imprecise_path(Node) :-
-            //   moved(Path, Node),
-            //   imprecise_path(Path).
-            error_move_of_imprecise_path.from_leapjoin(
-                &moved,
-                &mut [&mut imprecise_path.filter_with(|&(path, _)| (path, ()))],
-                |&(_, node), &()| (node, ()),
             );
 
             // error_access_to_uninitialized_path(Path, Node) :-
@@ -260,18 +252,13 @@ impl Initialization {
             //   access_path(Path, Node),
             error_access_to_uninitialized_path.from_join(
                 &uninitialized_path,
-                &access_path_by_all,
+                &access_path,
                 |&(path, node), &(), &()| (path, node),
             );
         }
 
         if cx.dump_enabled() {
-            cx.dump_facts("moved", moved.complete().iter()).unwrap();
-
             cx.dump_facts("uninitialized_path", uninitialized_path.complete().iter())
-                .unwrap();
-
-            cx.dump_facts("access_path", access_path.complete().iter())
                 .unwrap();
         }
 
