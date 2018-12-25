@@ -1,0 +1,17 @@
+//~ execute:no
+
+// FIXME: this should not be considered an unresolved variable,
+// rather we should get an error about use of an initialize variable
+
+struct Bar { x: uint }
+
+def main() {
+  let x
+  //~ ERROR: Unresolved variable
+  //~ ERROR: Unresolved variable
+  //~ ERROR: Unresolved variable
+  take(x)
+  //~ ERROR: access to uninitialized path
+}
+
+def take(v: Bar) { }

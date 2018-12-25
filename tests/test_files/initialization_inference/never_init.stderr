@@ -1,0 +1,19 @@
+error: access to uninitialized path
+- initialization_inference/never_init:13:7
+13 |   take(x)
+   |        ^
+error: Unresolved variable
+- initialization_inference/never_init:9:2
+9 |   let x
+
+  |   ^^^^^^
+error: Unresolved variable
+- initialization_inference/never_init:9:2
+9 |   let x
+
+  |   ^^^^^^
+error: Unresolved variable
+- initialization_inference/never_init:9:2
+9 |   let x
+
+  |   ^^^^^^
