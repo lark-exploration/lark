@@ -15,6 +15,7 @@ pub mod matched;
 pub mod sigil;
 pub mod skip_newline;
 pub mod type_reference;
+pub mod expression;
 
 pub trait Syntax<'parse>: DebugWith {
     /// The value that is produced (often, but not always, `Self`) by the
