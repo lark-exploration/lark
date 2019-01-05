@@ -124,21 +124,52 @@ impl Initialization {
             .map(|&(path_parent, path_child)| (path_child, path_parent))
             .collect();
 
+        let traverse: Relation<((Path, Node), ())> = Relation::from_iter(
+            analysis_ir
+                .traverse
+                .iter()
+                .map(|&(path, node)| ((path, node), ())),
+        );
+
         // .decl access_path(Path:path, Node:node)
         //
         // The path `Path` is accessed sometime during the node `Node`
         // -- in particular, its value on entry to `Node` is accessed.
         let access_path = Relation::from_iter(
             // access_path(Path, Node) :- access(_, Path, Node).
+            //
+            // Accessing `a.b` accesses `a.b` (!)
             analysis_ir
                 .access
                 .iter()
                 .map(|&(_, path, node)| ((path, node), ())),
         )
         .merge(
+            // access_path(PathParent, Node) :-
+            //   traverse(_, PathChild, Node),
+            //   transitive_owner_path(PathParent, PathChild).
+            //
+            // Traversing `a.b` also requires parent paths like `a` to be
+            // initialized.
+            Relation::from_leapjoin(
+                &traverse,
+                transitive_owner_path_by_child.extend_with(|&((path_child, _), ())| path_child),
+                |&((_, node), ()), &path_parent| ((path_parent, node), ()),
+            ),
+        )
+        .merge(
+            // access_path(Path, Node) :- traverse(_, Path, Node).
+            //
+            // Traversing `a.b` accesses `a.b` -- so, for example,
+            // `a.b.c = 5` requires `a.b` to be initialized.
+            traverse,
+        )
+        .merge(
             // access_path(PathChild, Node) :-
             //   access(_, PathParent, Node),
             //   transitive_owner_path(PathParent, PathChild).
+            //
+            // Accessing `a.b` also accesses subpaths like `a.b.c`
             Relation::from_leapjoin(
                 &access_by_perm,
                 transitive_owner_path.extend_with(|&(_, (path_parent, _))| path_parent),
@@ -149,6 +180,8 @@ impl Initialization {
             // access_path(PathParent, Node) :-
             //   access(_, PathChild, Node),
             //   transitive_owner_path(PathParent, PathChild).
+            //
+            // Accessing `a.b.c` also accesses parent paths like `a.b`
             Relation::from_leapjoin(
                 &access_by_perm,
                 transitive_owner_path_by_child.extend_with(|&(_, (path_child, _))| path_child),

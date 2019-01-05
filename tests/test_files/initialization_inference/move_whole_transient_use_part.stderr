@@ -1,0 +1,4 @@
+error: access to uninitialized path
+- initialization_inference/move_whole_transient_use_part:9:2
+9 |   bar.foo = Foo(x: 44)
+  |   ^^^^^^^^^^^^^^^^^^^^
