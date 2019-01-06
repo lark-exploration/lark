@@ -1,0 +1,13 @@
+//~ execute:no
+
+struct Foo { x: uint }
+struct Bar { foo: Foo }
+
+def main() {
+  let bar = Bar(foo: Foo(x: 22))
+  take_bar(bar)
+  bar.foo.x = 44
+  //~ ERROR: access to uninitialized path
+}
+
+def take_bar(v: Bar) { }

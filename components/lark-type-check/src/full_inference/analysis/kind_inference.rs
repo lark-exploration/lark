@@ -32,16 +32,12 @@ impl KindInference {
         // .decl perm_less(Pa, Pb)
         // perm_less(Pa, Pb) :- perm_less_base(Pa, Pb, _).
         let perm_less = iteration.variable::<(Perm, Perm)>("perm_less");
-        perm_less.insert(Relation::from(
-            perm_less_base.iter().map(|&(a, b, _n)| (a, b)),
-        ));
+        perm_less.extend(perm_less_base.iter().map(|&(a, b, _n)| (a, b)));
 
         // .decl perm_condition(Pc, Pa, Pb)
         // perm_condition(Pc, Pa, Pb) :- perm_less_if_base(Pc, Pa, Pb, _).
         let perm_condition = iteration.variable::<(Perm, (Perm, Perm))>("perm_condition");
-        perm_condition.insert(Relation::from(
-            perm_less_if_base.iter().map(|&(c, a, b, _n)| (c, (a, b))),
-        ));
+        perm_condition.extend(perm_less_if_base.iter().map(|&(c, a, b, _n)| (c, (a, b))));
 
         let perm_borrow: Perm = PermKind::Borrow.intern(tables);
         let perm_own: Perm = PermKind::Own.intern(tables);
@@ -50,15 +46,13 @@ impl KindInference {
         //
         // True if `Pa` is at least borrow.
         let borrow = iteration.variable::<(Perm, ())>("borrow");
-        borrow.insert(Relation::from(
-            std::iter::once((perm_borrow, ())).chain(std::iter::once((perm_own, ()))),
-        ));
+        borrow.extend(std::iter::once((perm_borrow, ())).chain(std::iter::once((perm_own, ()))));
 
         // .decl owned(Pa)
         //
         // True if `Pa` is at least own.
         let owned = iteration.variable::<(Perm, ())>("borrow");
-        owned.insert(Relation::from(std::iter::once((perm_own, ()))));
+        owned.extend(std::iter::once((perm_own, ())));
 
         while iteration.changed() {
             // perm_less(Pa, Pb) :- perm_condition(Pc, Pa, Pb), borrow(Pc).
