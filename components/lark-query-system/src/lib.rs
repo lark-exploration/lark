@@ -381,7 +381,7 @@ impl QuerySystem {
                     move || {
                         let _killme = KillTheProcess;
 
-                        match db.definition_range_at_position(url.as_str(), position, false) {
+                        match db.definition_range_at_position(url.as_str(), position, true) {
                             Ok(Some(v)) => {
                                 send(
                                     send_channel,
