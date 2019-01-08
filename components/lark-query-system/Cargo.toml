@@ -8,8 +8,6 @@ edition = "2018"
 languageserver-types = "0.53"
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
 lark-actor = { path = "../lark-actor" }
-lark-collections = { path = "../lark-collections" }
-lark-debug-with = { path = "../lark-debug-with" }
 lark-entity = { path = "../lark-entity" }
 lark-error = { path = "../lark-error" }
 lark-hir = { path = "../lark-hir" }
