@@ -76,7 +76,7 @@
 	"devDependencies": {
 		"@types/mocha": "^5.2.0",
 		"@types/node": "^8.0.0",
-		"typescript": "2.8.3",
-		"shelljs": "^0.8.2"
+		"shelljs": "^0.8.2",
+		"typescript": "2.8.3"
 	}
 }
