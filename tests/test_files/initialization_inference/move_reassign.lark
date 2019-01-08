@@ -1,0 +1,12 @@
+//~ execute:no
+
+struct Bar { x: uint }
+
+def main() {
+  let x = Bar(x: 22)
+  take(x)
+  x = Bar(x: 44)
+  take(x)
+}
+
+def take(v: Bar) { }

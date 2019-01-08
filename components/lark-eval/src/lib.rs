@@ -197,7 +197,6 @@ pub fn eval_expression(
             match &fn_body.tables[place] {
                 hir::PlaceData::Variable(variable) => {
                     if ready_to_execute {
-                        println!("Assigning {:?} to variable", rhs);
                         state.assign_to_variable(*variable, rhs);
                     }
                 }

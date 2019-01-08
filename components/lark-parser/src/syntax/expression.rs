@@ -6,7 +6,7 @@ use crate::syntax::fn_body::Statement;
 use crate::syntax::identifier::{SpannedGlobalIdentifier, SpannedLocalIdentifier};
 use crate::syntax::list::{CommaList, SeparatedList};
 use crate::syntax::sigil::{
-    Colon, Curlies, Dot, ExclamationPoint, OpenParenthesis, Parentheses, Semicolon,
+    Colon, Curlies, Dot, ExclamationPoint, OpenParenthesis, Parentheses, Semicolon, Equals
 };
 use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::Syntax;
@@ -217,7 +217,29 @@ impl Syntax<'parse> for Expression<'me, 'parse> {
     }
 
     fn expect(&mut self, parser: &mut Parser<'parse>) -> Result<Self::Data, ErrorReported> {
-        parser.expect(Expression5::new(self.scope))
+            // Parse `Expression5`
+        let expression = parser.expect(Expression5::new(self.scope))?;
+
+        // Check for `Expression5 = Expression5`
+        if let Some(_operator) = parser.parse_if_present(Equals) {
+            let place = expression.to_hir_place(self.scope);
+
+            let value = parser
+                .expect(SkipNewline(Expression5::new(self.scope)))?
+                .to_hir_expression(self.scope);
+
+            let span = self
+                .scope
+                .span(place)
+                .extended_until_end_of(parser.last_span());
+
+            Ok(ParsedExpression::Expression(self.scope.add(
+                span,
+                hir::ExpressionData::Assignment { place, value },
+            )))
+        } else {
+            Ok(expression)
+        }
     }
 }
 

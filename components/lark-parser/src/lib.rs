@@ -35,7 +35,6 @@ use lark_ty::declaration::DeclarationTables;
 use std::sync::Arc;
 
 pub mod current_file;
-mod fn_body;
 mod ir;
 mod lexer;
 pub mod macros;

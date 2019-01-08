@@ -25,24 +25,27 @@ use std::sync::Arc;
 // Expression = Place | Value
 //
 // Value = Block
-//    | Expression "(" (Expression),* ")"
+//    | Expression `(` (Expression),* `)`
 //    | Expression BinaryOp Expression
 //    | UnaryOp Expression
-//    | Place "=" Expression
+//    | Place `=` Expression
 //    | Literal
 //
 // Place = Identifier
 //    | Value // temporary
-//    | Place "." Identifier // field
+//    | Place `.` Identifier // field
 //
 // # Factored into "almost LL" form:
 //
-// Expression = Expression5
+// Expression = {
+//   Expression5,
+//   Expression5 `=` Expression5,
+// }
 //
 // Expression5 = {
 //   Expression4,
-//   Expression5 \n* `==` Expression4,
-//   Expression5 \n* `!=` Expression4,
+//   Expression4 \n* `==` Expression4,
+//   Expression4 \n* `!=` Expression4,
 // }
 //
 // Expression4 = {
@@ -63,20 +66,20 @@ use std::sync::Arc;
 // }
 //
 // Expression1 = {
-//   Expression0 "(" Comma(Expression) ")"
-//   Expression0 "(" Comma(Field) ")"
+//   Expression0 `(` Comma(Expression) `)`
+//   Expression0 `(` Comma(Field) `)`
 //   Expression0 MemberAccess*
 // }
 //
 // MemberAccess = {
-//   \n* "." Identifier,
-//   "(" Comma(Expression) ")",
+//   \n* `.` Identifier,
+//   `(` Comma(Expression) `)`,
 // }
 //
 // Expression0 = {
 //   Literal
 //   Identifier,
-//   "(" \n* Expression \n* ")",  // Should we allow newlines *anywhere* here?
+//   `(` \n* Expression \n* `)`,  // Should we allow newlines *anywhere* here?
 //   Block,
 //   "if" Expression Block [ "else" Block ]
 // }
