@@ -19,7 +19,7 @@ impl<D> Matched<D> {
 
 /// Returns the token range of the matched block (including
 /// the delimiters).
-#[derive(DebugWith)]
+#[derive(Copy, DebugWith, Clone)]
 pub struct ParsedMatch {
     /// Index of the first token to be included
     pub start_token: usize,

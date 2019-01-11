@@ -6,18 +6,19 @@ use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::entity::ParsedEntityThunk;
-use crate::syntax::field::Field;
-use crate::syntax::field::ParsedField;
 use crate::syntax::fn_body;
 use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::matched::{Matched, ParsedMatch};
+use crate::syntax::member::Field;
+use crate::syntax::member::ParsedField;
 use crate::syntax::sigil::{Curlies, Parentheses, RightArrow};
 use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::type_reference::ParsedTypeReference;
 use crate::syntax::type_reference::TypeReference;
 use lark_collections::Seq;
+use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
@@ -94,10 +95,11 @@ impl EntityMacroDefinition for FunctionDeclaration {
     }
 }
 
-struct ParsedFunctionDeclaration {
-    parameters: Seq<Spanned<ParsedField, FileName>>,
-    return_type: ParsedTypeReference,
-    body: Result<Spanned<ParsedMatch, FileName>, ErrorReported>,
+#[derive(Clone, DebugWith)]
+pub struct ParsedFunctionDeclaration {
+    pub parameters: Seq<Spanned<ParsedField, FileName>>,
+    pub return_type: ParsedTypeReference,
+    pub body: Result<Spanned<ParsedMatch, FileName>, ErrorReported>,
 }
 
 impl LazyParsedEntity for ParsedFunctionDeclaration {
