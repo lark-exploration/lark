@@ -394,7 +394,7 @@ where
                 let signature = self.substitute(expression, &generics, signature_decl);
 
                 // Relate the owner type to the input
-                self.equate(expression, expression, owner_access_ty, signature.inputs[0]);
+                self.equate(expression, expression, owner_access_ty, owner_access_ty);
 
                 self.check_arguments_against_signature(
                     method_name,
@@ -434,13 +434,13 @@ where
             output.debug_with(self),
             arguments.debug_with(self),
         );
-        if inputs.len() != arguments.len() {
+        if inputs.len() != (arguments.len() - skip) {
             self.record_error("mismatched argument count", cause);
             return self.check_arguments_in_case_of_error(arguments, skip);
         }
 
         let hir = &self.hir.clone();
-        for (&expected_ty, argument_expr) in inputs.iter().zip(arguments.iter(hir)).skip(skip) {
+        for (&expected_ty, argument_expr) in inputs.iter().zip(arguments.iter(hir).skip(skip)) {
             self.check_expression(CheckType(expected_ty, location), argument_expr);
         }
 
