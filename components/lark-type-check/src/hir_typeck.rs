@@ -393,13 +393,8 @@ where
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
 
-                println!("{:#?}", signature.debug_with(self.db));
-                println!("{:#?}", owner_access_ty.debug_with(self.db));
-
                 // Relate the owner type to the input
                 self.equate(expression, expression, owner_access_ty, signature.inputs[0]);
-
-                println!("done");
 
                 self.check_arguments_against_signature(
                     method_name,

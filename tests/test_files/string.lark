@@ -1,0 +1,14 @@
+//~ execute:all
+
+def name() -> String {
+    "Bob"
+}
+
+def greet(name: String) {
+    debug("Hello")
+    debug(name)
+}
+
+def main() {
+    greet(name())
+}

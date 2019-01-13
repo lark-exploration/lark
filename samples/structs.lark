@@ -1,0 +1,14 @@
+struct Adder {
+    x: uint
+    y: uint
+
+    sum() -> uint {
+        self.x + self.y
+    }
+}
+
+def main() {
+    let adder = Adder(x: 4, y: 7)
+
+    debug(adder.sum())
+}
