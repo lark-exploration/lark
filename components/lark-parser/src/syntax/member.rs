@@ -1,10 +1,10 @@
-use crate::macros::function_declaration::ParsedFunctionDeclaration;
 use crate::parser::Parser;
 use crate::syntax::entity::InvalidParsedEntity;
 use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::fn_signature::FunctionSignature;
+use crate::syntax::fn_signature::ParsedFunctionSignature;
 use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::sigil::Colon;
@@ -15,6 +15,7 @@ use lark_collections::Seq;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::ErrorReported;
+use lark_error::ErrorSentinel;
 use lark_error::ResultExt;
 use lark_error::WithError;
 use lark_hir as hir;
@@ -95,7 +96,7 @@ pub enum ParsedMember {
 #[derive(Clone, DebugWith)]
 pub struct ParsedMethod {
     pub name: Spanned<GlobalIdentifier, FileName>,
-    pub signature: ParsedFunctionDeclaration,
+    pub signature: ParsedFunctionSignature,
 }
 
 impl LazyParsedEntity for ParsedMethod {
@@ -120,7 +121,22 @@ impl LazyParsedEntity for ParsedMethod {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
-        self.signature.parse_type(entity, db)
+        // For each method `foo`, create a unique type `foo` as in
+        // Rust.
+        match db.generic_declarations(entity).into_value() {
+            Ok(generic_declarations) => {
+                assert!(generic_declarations.is_empty());
+                let ty = crate::type_conversion::declaration_ty_named(
+                    &db,
+                    entity,
+                    ty::declaration::DeclaredPermKind::Own,
+                    ty::ReprKind::Direct,
+                    ty::Generics::empty(),
+                );
+                WithError::ok(ty)
+            }
+            Err(err) => WithError::error_sentinel(&db, err),
+        }
     }
 
     fn parse_signature(
