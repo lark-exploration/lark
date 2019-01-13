@@ -1,0 +1,4 @@
+error: access to uninitialized path
+- initialization_inference/method_move:19:2
+19 |   foo.take()
+   |   ^^^

@@ -1,0 +1,18 @@
+//~ execute:no
+
+// Test that we can move from `bar.foo` and then reinitialize `bar`
+// and the code still compiles.
+
+struct Foo {
+    x: uint
+
+    take() {
+    }
+}
+
+def main() {
+  let foo = Foo(x: 22)
+  foo.take()
+  foo.take()
+  //~ ERROR
+}
