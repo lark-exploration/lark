@@ -408,7 +408,19 @@ pub fn eval_expression(
                     Value::Skipped
                 }
             }
-            _ => unimplemented!("Unsupported literal value"),
+            hir::LiteralData {
+                kind: hir::LiteralKind::String,
+                value,
+            } => {
+                if ready_to_execute {
+                    let text = value.untern(db);
+                    let string = text.to_string();
+                    let string = string[1..string.len()-1].to_string();
+                    Value::Str(string)
+                } else {
+                    Value::Skipped
+                }
+            }
         },
 
         hir::ExpressionData::Aggregate { entity, fields } => {

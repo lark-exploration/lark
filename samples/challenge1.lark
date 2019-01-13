@@ -1,13 +1,16 @@
 struct Diagnostic {
-  msg: own String,
+  msg: String,
   level: String
 }
 
-def new(msg: own String, level: String) -> Diagnostic {
-  Diagnostic { msg, level }
+def new(msg: String, level: String) -> Diagnostic {
+  Diagnostic(msg: msg, level: level)
 }
 
 def main() {
   let msg = "variable is unused"
-  new(msg, "warning")
+  let diag = new(msg, "warning")
+
+  debug(diag.msg)
+  debug(diag.level)
 }
