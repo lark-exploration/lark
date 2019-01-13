@@ -53,6 +53,7 @@ pub fn build_type(db: &LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>)
     let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(db);
     let uint_entity = EntityData::LangItem(LangItem::Uint).intern(db);
     let int_entity = EntityData::LangItem(LangItem::Int).intern(db);
+    let string_entity = EntityData::LangItem(LangItem::String).intern(db);
     let void_entity = EntityData::LangItem(LangItem::Tuple(0)).intern(db);
 
     match ty.base.untern(db) {
@@ -65,6 +66,8 @@ pub fn build_type(db: &LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>)
                     "u32".into()
                 } else if entity == int_entity {
                     "i32".into()
+                } else if entity == string_entity {
+                    "String".into()
                 } else if entity == void_entity {
                     "()".into()
                 } else {
@@ -282,7 +285,7 @@ pub fn build_expression(
             hir::LiteralData {
                 kind: hir::LiteralKind::String,
                 value,
-            } => format!("\"{}\"", value.untern(db)),
+            } => format!("{}.to_string()", value.untern(db)),
             hir::LiteralData {
                 kind: hir::LiteralKind::UnsignedInteger,
                 value,
@@ -296,7 +299,14 @@ pub fn build_expression(
 
             output.push_str(&build_entity_name(db, entity));
             output.push_str("{");
+            let mut first = true;
+
             for field in fields.iter(fn_body) {
+                if !first {
+                    output.push_str(", ");
+                } else {
+                    first = false;
+                }
                 let identified_expression = fn_body.tables[field];
                 output.push_str(&format!(
                     "{}: {}",
@@ -406,8 +416,6 @@ pub fn codegen_rust(db: &LarkDatabase) -> WithError<String> {
             }
         }
     }
-
-    println!("{}", output);
 
     WithError {
         value: output,

@@ -52,6 +52,7 @@ impl PrettyPrint for Entity {
             EntityData::LangItem(LangItem::Boolean) => "bool".into(),
             EntityData::LangItem(LangItem::Uint) => "uint".into(),
             EntityData::LangItem(LangItem::Int) => "int".into(),
+            EntityData::LangItem(LangItem::String) => "String".into(),
             EntityData::LangItem(LangItem::Tuple(0)) => "void".into(),
             EntityData::LangItem(LangItem::Debug) => "<debug>".into(),
             EntityData::MemberName {

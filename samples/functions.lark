@@ -1,0 +1,8 @@
+def add(x: uint, y: uint) -> uint {
+  x+y
+}
+
+def main() {
+  let result = add(4, 5)
+  debug(result)
+}

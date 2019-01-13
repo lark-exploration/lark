@@ -34,6 +34,8 @@ crate fn resolve_name(
                     let false_id = "false".intern(db);
                     let true_id = "true".intern(db);
                     let debug_id = "debug".intern(db);
+                    let string_id = "String".intern(db);
+
                     if name == bool_id {
                         Some(EntityData::LangItem(LangItem::Boolean).intern(db))
                     } else if name == int_id {
@@ -44,6 +46,8 @@ crate fn resolve_name(
                         Some(EntityData::LangItem(LangItem::False).intern(db))
                     } else if name == true_id {
                         Some(EntityData::LangItem(LangItem::True).intern(db))
+                    } else if name == string_id {
+                        Some(EntityData::LangItem(LangItem::String).intern(db))
                     } else if name == debug_id {
                         Some(EntityData::LangItem(LangItem::Debug).intern(db))
                     } else {
