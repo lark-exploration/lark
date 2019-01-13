@@ -1,5 +1,5 @@
 use lark_debug_with::DebugWith;
-use lark_entity::{EntityData, ItemKind, LangItem};
+use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_hir as hir;
 use lark_intern::{Intern, Untern};
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
@@ -87,7 +87,7 @@ pub enum Value {
     Bool(bool),
     U32(u32),
     Str(String),
-    Struct(HashMap<lark_string::GlobalIdentifier, Value>),
+    Struct(Entity, HashMap<lark_string::GlobalIdentifier, Value>),
     Reference(usize), // a reference into the value stack
 
     // REPL: placeholder value to denote we're currently skipping eval
@@ -105,7 +105,7 @@ impl fmt::Display for Value {
                 Value::Bool(b) => b.to_string(),
                 Value::Reference(r) => format!("reference to {}", r),
                 Value::Void => "<void>".into(),
-                Value::Struct(s) => format!("{:?}", s),
+                Value::Struct(_, s) => format!("{:?}", s),
                 Value::Skipped => "<repl placeholder>".into(),
             }
         )
@@ -133,7 +133,7 @@ pub fn eval_place(
         hir::PlaceData::Field { owner, name } => {
             let target = eval_place(db, fn_body, *owner, state);
             match target {
-                Value::Struct(s) => match fn_body.tables[*name] {
+                Value::Struct(_, s) => match fn_body.tables[*name] {
                     hir::IdentifierData { text } => s.get(&text).unwrap().clone(),
                 },
                 _ => panic!("Member access (.) into value that is not a struct"),
@@ -141,6 +141,39 @@ pub fn eval_place(
         }
         hir::PlaceData::Temporary { .. } => unimplemented!("Can't yet eval temporary places"),
     }
+}
+
+fn eval_fn_call(
+    db: &LarkDatabase,
+    fn_body: &hir::FnBody,
+    entity: Entity,
+    arguments: hir::List<hir::Expression>,
+    state: &mut EvalState,
+    ready_to_execute: bool,
+    io_handler: &mut IOHandler,
+) -> Value {
+    let target = db.fn_body(entity).value;
+
+    for (arg, param) in arguments
+        .iter(fn_body)
+        .zip(target.arguments.unwrap().iter(&target))
+    {
+        let arg_value = eval_expression(db, fn_body, arg, state, io_handler);
+        state.create_variable(param);
+        state.assign_to_variable(param, arg_value);
+    }
+
+    let return_value = if ready_to_execute {
+        eval_function(db, &target, state, io_handler)
+    } else {
+        Value::Skipped
+    };
+
+    for argument in target.arguments.unwrap().iter(&target) {
+        state.pop_variable(argument);
+    }
+
+    return_value
 }
 
 pub fn eval_expression(
@@ -205,6 +238,95 @@ pub fn eval_expression(
             Value::Void
         }
 
+        hir::ExpressionData::MethodCall { method, arguments } => {
+            match fn_body[arguments.first(fn_body).unwrap()] {
+                hir::ExpressionData::Place {
+                    place: function_place,
+                } => match fn_body[function_place] {
+                    hir::PlaceData::Entity(entity) => {
+                        match db.member_entity(entity, MemberKind::Method, fn_body[method].text) {
+                            Some(entity) => match entity.untern(db) {
+                                EntityData::ItemName { .. } => eval_fn_call(
+                                    db,
+                                    fn_body,
+                                    entity,
+                                    arguments,
+                                    state,
+                                    ready_to_execute,
+                                    io_handler,
+                                ),
+
+                                x => unimplemented!(
+                                    "Method not yet supported in eval: {:#?}",
+                                    x.debug_with(db)
+                                ),
+                            },
+                            x => unimplemented!(
+                                "Method not yet supported in eval: {:#?}",
+                                x.debug_with(db)
+                            ),
+                        }
+                    }
+                    hir::PlaceData::Variable(variable) => {
+                        let stack = state.variables.get(&variable).unwrap();
+                        let object = stack.last().unwrap().clone();
+
+                        match object {
+                            Value::Struct(entity, _) => {
+                                match db.member_entity(
+                                    entity,
+                                    MemberKind::Method,
+                                    fn_body[method].text,
+                                ) {
+                                    Some(entity) => match entity.untern(db) {
+                                        EntityData::ItemName { .. } => eval_fn_call(
+                                            db,
+                                            fn_body,
+                                            entity,
+                                            arguments,
+                                            state,
+                                            ready_to_execute,
+                                            io_handler,
+                                        ),
+
+                                        EntityData::MemberName {
+                                            kind: MemberKind::Method,
+                                            ..
+                                        } => eval_fn_call(
+                                            db,
+                                            fn_body,
+                                            entity,
+                                            arguments,
+                                            state,
+                                            ready_to_execute,
+                                            io_handler,
+                                        ),
+
+                                        x => unimplemented!(
+                                            "Method not yet supported in eval: {:#?}",
+                                            x.debug_with(db)
+                                        ),
+                                    },
+                                    x => unimplemented!(
+                                        "Method not yet supported in eval: {:#?}",
+                                        x.debug_with(db)
+                                    ),
+                                }
+                            }
+                            x => unimplemented!(
+                                "Invoking method not yet support on non-struct: {:#?}",
+                                x
+                            ),
+                        }
+                    }
+                    x => {
+                        unimplemented!("Method not yet supported in eval: {:#?}", x.debug_with(db))
+                    }
+                },
+                x => unimplemented!("Method not yet supported in eval: {:#?}", x.debug_with(db)),
+            }
+        }
+
         hir::ExpressionData::Call {
             function,
             arguments,
@@ -224,30 +346,15 @@ pub fn eval_expression(
 
                         Value::Void
                     }
-                    EntityData::ItemName { .. } => {
-                        let target = db.fn_body(entity).value;
-
-                        for (arg, param) in arguments
-                            .iter(fn_body)
-                            .zip(target.arguments.unwrap().iter(&target))
-                        {
-                            let arg_value = eval_expression(db, fn_body, arg, state, io_handler);
-                            state.create_variable(param);
-                            state.assign_to_variable(param, arg_value);
-                        }
-
-                        let return_value = if ready_to_execute {
-                            eval_function(db, &target, state, io_handler)
-                        } else {
-                            Value::Skipped
-                        };
-
-                        for argument in target.arguments.unwrap().iter(&target) {
-                            state.pop_variable(argument);
-                        }
-
-                        return_value
-                    }
+                    EntityData::ItemName { .. } => eval_fn_call(
+                        db,
+                        fn_body,
+                        entity,
+                        arguments,
+                        state,
+                        ready_to_execute,
+                        io_handler,
+                    ),
                     x => unimplemented!(
                         "Call entity not yet supported in eval: {:#?}",
                         x.debug_with(db)
@@ -304,7 +411,7 @@ pub fn eval_expression(
             _ => unimplemented!("Unsupported literal value"),
         },
 
-        hir::ExpressionData::Aggregate { fields, .. } => {
+        hir::ExpressionData::Aggregate { entity, fields } => {
             let mut result_struct = HashMap::new();
 
             for identified_expression in fields.iter(fn_body) {
@@ -318,7 +425,7 @@ pub fn eval_expression(
             }
 
             if ready_to_execute {
-                Value::Struct(result_struct)
+                Value::Struct(entity, result_struct)
             } else {
                 Value::Skipped
             }

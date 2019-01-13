@@ -1,5 +1,5 @@
 use lark_debug_with::DebugWith;
-use lark_entity::{Entity, EntityData, ItemKind, LangItem};
+use lark_entity::{Entity, EntityData, ItemKind, LangItem, MemberKind};
 use lark_error::{Diagnostic, WithError};
 use lark_hir as hir;
 use lark_intern::{Intern, Untern};
@@ -52,6 +52,7 @@ pub fn build_place(
 pub fn build_type(db: &LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>) -> String {
     let boolean_entity = EntityData::LangItem(LangItem::Boolean).intern(db);
     let uint_entity = EntityData::LangItem(LangItem::Uint).intern(db);
+    let int_entity = EntityData::LangItem(LangItem::Int).intern(db);
     let void_entity = EntityData::LangItem(LangItem::Tuple(0)).intern(db);
 
     match ty.base.untern(db) {
@@ -62,10 +63,19 @@ pub fn build_type(db: &LarkDatabase, ty: &Ty<lark_ty::declaration::Declaration>)
                     "bool".into()
                 } else if entity == uint_entity {
                     "u32".into()
+                } else if entity == int_entity {
+                    "i32".into()
                 } else if entity == void_entity {
                     "()".into()
                 } else {
-                    unimplemented!("Unknown type: {:#?}", entity)
+                    match entity.untern(db) {
+                        EntityData::ItemName {
+                            kind: ItemKind::Struct,
+                            id,
+                            ..
+                        } => id.untern(db).to_string(),
+                        _ => unimplemented!("Unknown type: {:#?}", entity.debug_with(db)),
+                    }
                 }
             }
             _ => unimplemented!("Unknown base kind"),
@@ -85,16 +95,46 @@ pub fn codegen_struct(
 
     output.push_str(&format!("struct {} {{\n", name));
 
+    // for Rust output, output the fields first between the curlies
     for member in members.iter() {
         let member_name = member.name.untern(db);
-        let member_ty = db.ty(member.entity).accumulate_errors_into(&mut errors);
-        output.push_str(&format!(
-            "{}: {},\n",
-            member_name,
-            build_type(db, &member_ty)
-        ));
-    }
+        let member_entity = member.entity.untern(db);
 
+        match member_entity {
+            EntityData::MemberName {
+                kind: MemberKind::Field,
+                ..
+            } => {
+                let member_ty = db.ty(member.entity).accumulate_errors_into(&mut errors);
+                output.push_str(&format!(
+                    "{}: {},\n",
+                    member_name,
+                    build_type(db, &member_ty)
+                ));
+            }
+            _ => {}
+        }
+    }
+    output.push_str("}\n");
+
+    // output the methods in a separate impl
+    output.push_str(&format!("impl {} {{\n", name));
+    for member in members.iter() {
+        match member.entity.untern(db) {
+            EntityData::MemberName {
+                kind: MemberKind::Method,
+                ..
+            } => {
+                let mut result = codegen_function(db, member.entity, member.name);
+                if result.errors.len() > 0 {
+                    errors.append(&mut result.errors);
+                } else {
+                    output.push_str(&result.value);
+                }
+            }
+            _ => {}
+        }
+    }
     output.push_str("}\n");
 
     WithError {
@@ -366,6 +406,8 @@ pub fn codegen_rust(db: &LarkDatabase) -> WithError<String> {
             }
         }
     }
+
+    println!("{}", output);
 
     WithError {
         value: output,

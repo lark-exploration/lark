@@ -1,0 +1,14 @@
+//~ execute:all
+
+struct Foo {
+    bar: bool,
+    baz(x: uint) -> uint {
+        debug(self.bar)
+        x+1
+    }
+}
+
+def main() {
+    let foo = Foo(bar: true)
+    debug(foo.baz(10))
+}
