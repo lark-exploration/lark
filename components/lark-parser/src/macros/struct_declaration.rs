@@ -5,9 +5,9 @@ use crate::syntax::entity::{
     InvalidParsedEntity, LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity,
     ParsedEntityThunk,
 };
-use crate::syntax::field::{Field, ParsedField};
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
+use crate::syntax::member::{Member, ParsedMember};
 use crate::syntax::sigil::Curlies;
 use crate::syntax::skip_newline::SkipNewline;
 use lark_collections::Seq;
@@ -54,7 +54,7 @@ impl EntityMacroDefinition for StructDeclaration {
 
         log::trace!("StructDeclaration::parse: parsing fields");
         let fields = parser
-            .expect(SkipNewline(Delimited(Curlies, CommaList(Field))))
+            .expect(SkipNewline(Delimited(Curlies, CommaList(Member))))
             .unwrap_or_else(|ErrorReported(_)| Seq::default());
 
         log::trace!("StructDeclaration::parse: done");
@@ -78,7 +78,7 @@ impl EntityMacroDefinition for StructDeclaration {
 }
 
 struct ParsedStructDeclaration {
-    fields: Seq<Spanned<ParsedField, FileName>>,
+    fields: Seq<Spanned<ParsedMember, FileName>>,
 }
 
 impl LazyParsedEntity for ParsedStructDeclaration {
@@ -90,21 +90,45 @@ impl LazyParsedEntity for ParsedStructDeclaration {
         WithError::ok(
             self.fields
                 .iter()
-                .map(|Spanned { value: field, span }| {
-                    let field_entity = EntityData::MemberName {
-                        base: entity,
-                        kind: MemberKind::Field,
-                        id: field.name.value,
-                    }
-                    .intern(&db);
+                .map(
+                    |Spanned {
+                         value: member,
+                         span,
+                     }| {
+                        match member {
+                            ParsedMember::ParsedField(field) => {
+                                let field_entity = EntityData::MemberName {
+                                    base: entity,
+                                    kind: MemberKind::Field,
+                                    id: field.name.value,
+                                }
+                                .intern(&db);
 
-                    ParsedEntity::new(
-                        field_entity,
-                        *span,
-                        field.name.span,
-                        ParsedEntityThunk::new(field.clone()),
-                    )
-                })
+                                ParsedEntity::new(
+                                    field_entity,
+                                    *span,
+                                    field.name.span,
+                                    ParsedEntityThunk::new(field.clone()),
+                                )
+                            }
+                            ParsedMember::ParsedMethod(method) => {
+                                let method_entity = EntityData::MemberName {
+                                    base: entity,
+                                    kind: MemberKind::Method,
+                                    id: method.name.value,
+                                }
+                                .intern(&db);
+
+                                ParsedEntity::new(
+                                    method_entity,
+                                    *span,
+                                    method.name.span,
+                                    ParsedEntityThunk::new(method.clone()),
+                                )
+                            }
+                        }
+                    },
+                )
                 .collect(),
         )
     }

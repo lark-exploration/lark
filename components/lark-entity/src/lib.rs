@@ -83,14 +83,24 @@ pub enum EntityData {
 }
 
 impl EntityData {
+    /// Returns the parent entity, if any. This will be `Some` for
+    /// items, members, etc.
+    pub fn parent(&self) -> Option<Entity> {
+        match self {
+            EntityData::Error(_) | EntityData::LangItem(_) | EntityData::InputFile { .. } => None,
+            EntityData::ItemName { base, .. } | EntityData::MemberName { base, .. } => Some(*base),
+        }
+    }
+
+    /// Returns the file in which this entity is located (if
+    /// any). This is none for lang items, errors.
     pub fn file_name(&self, db: &dyn AsRef<EntityTables>) -> Option<FileName> {
         match self {
-            EntityData::Error(_) => None, // FIXME
-            EntityData::LangItem(_) => None,
             EntityData::InputFile { file } => Some(*file),
-            EntityData::ItemName { base, .. } | EntityData::MemberName { base, .. } => {
-                base.untern(db).file_name(db)
-            }
+            _ => match self.parent() {
+                None => None,
+                Some(base) => base.untern(db).file_name(db),
+            },
         }
     }
 

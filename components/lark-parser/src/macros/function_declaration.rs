@@ -1,34 +1,24 @@
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
-use crate::syntax::delimited::Delimited;
-use crate::syntax::entity::ErrorParsedEntity;
 use crate::syntax::entity::LazyParsedEntity;
 use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::entity::ParsedEntityThunk;
-use crate::syntax::field::Field;
-use crate::syntax::field::ParsedField;
-use crate::syntax::fn_body;
-use crate::syntax::guard::Guard;
+use crate::syntax::fn_signature::FunctionSignature;
+use crate::syntax::fn_signature::ParsedFunctionSignature;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
-use crate::syntax::list::CommaList;
-use crate::syntax::matched::{Matched, ParsedMatch};
-use crate::syntax::sigil::{Curlies, Parentheses, RightArrow};
 use crate::syntax::skip_newline::SkipNewline;
-use crate::syntax::type_reference::ParsedTypeReference;
-use crate::syntax::type_reference::TypeReference;
 use lark_collections::Seq;
+use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;
 use lark_entity::Entity;
 use lark_entity::EntityData;
 use lark_entity::ItemKind;
 use lark_error::ErrorReported;
 use lark_error::ErrorSentinel;
-use lark_error::ResultExt;
 use lark_error::WithError;
 use lark_hir as hir;
 use lark_intern::Intern;
-use lark_intern::Untern;
 use lark_span::FileName;
 use lark_span::Spanned;
 use lark_string::GlobalIdentifier;
@@ -58,18 +48,7 @@ impl EntityMacroDefinition for FunctionDeclaration {
 
         let function_name = parser.expect(SkipNewline(SpannedGlobalIdentifier))?;
 
-        let parameters = parser
-            .expect(SkipNewline(Delimited(Parentheses, CommaList(Field))))
-            .unwrap_or_else(|ErrorReported(_)| Seq::default());
-
-        let return_type = match parser
-            .parse_if_present(SkipNewline(Guard(RightArrow, SkipNewline(TypeReference))))
-        {
-            Some(ty) => ty.unwrap_or_error_sentinel(&*parser),
-            None => ParsedTypeReference::Elided(parser.elided_span()),
-        };
-
-        let body = parser.expect(SkipNewline(Matched(Curlies)));
+        let signature = parser.expect(FunctionSignature)?;
 
         let entity = EntityData::ItemName {
             base,
@@ -85,19 +64,14 @@ impl EntityMacroDefinition for FunctionDeclaration {
             entity,
             full_span,
             characteristic_span,
-            ParsedEntityThunk::new(ParsedFunctionDeclaration {
-                parameters,
-                return_type,
-                body,
-            }),
+            ParsedEntityThunk::new(ParsedFunctionDeclaration { signature }),
         ))
     }
 }
 
-struct ParsedFunctionDeclaration {
-    parameters: Seq<Spanned<ParsedField, FileName>>,
-    return_type: ParsedTypeReference,
-    body: Result<Spanned<ParsedMatch, FileName>, ErrorReported>,
+#[derive(Clone, DebugWith)]
+pub struct ParsedFunctionDeclaration {
+    pub signature: ParsedFunctionSignature,
 }
 
 impl LazyParsedEntity for ParsedFunctionDeclaration {
@@ -146,26 +120,7 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
-        let mut errors = vec![];
-
-        let inputs: Seq<_> = self
-            .parameters
-            .iter()
-            .map(|p| {
-                p.ty.parse_type(entity, db)
-                    .accumulate_errors_into(&mut errors)
-            })
-            .collect();
-
-        let output = self
-            .return_type
-            .parse_type(entity, db)
-            .accumulate_errors_into(&mut errors);
-
-        WithError {
-            value: Ok(ty::Signature { inputs, output }),
-            errors,
-        }
+        self.signature.parse_signature(entity, db, None)
     }
 
     fn parse_fn_body(
@@ -173,34 +128,6 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<hir::FnBody> {
-        match self.body {
-            Err(err) => ErrorParsedEntity { err }.parse_fn_body(entity, db),
-
-            Ok(Spanned {
-                span: _,
-                value:
-                    ParsedMatch {
-                        start_token,
-                        end_token,
-                    },
-            }) => {
-                let file_name = entity.untern(&db).file_name(&db).unwrap();
-                let input = db.file_text(file_name);
-                let tokens = db
-                    .file_tokens(file_name)
-                    .into_value()
-                    .extract(start_token..end_token);
-                let entity_macro_definitions = crate::macro_definitions(&db, entity);
-                let arguments: Seq<_> = self.parameters.iter().map(|f| f.value.name).collect();
-                fn_body::parse_fn_body(
-                    entity,
-                    db,
-                    &entity_macro_definitions,
-                    &input,
-                    &tokens,
-                    arguments,
-                )
-            }
-        }
+        self.signature.parse_fn_body(entity, db, None)
     }
 }

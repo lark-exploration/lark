@@ -1,0 +1,21 @@
+//~ execute:no
+
+// Test that we can move from `bar.foo` and then reinitialize `bar`
+// and the code still compiles.
+
+struct Foo {
+    x: uint
+
+    // FIXME: Eventually, this should probably be `own take()` or something,
+    // because it will take ownership of the self argument. But right now
+    // we make all arguments be "own" mode.
+    take() {
+    }
+}
+
+def main() {
+  let foo = Foo(x: 22)
+  foo.take()
+  foo.take()
+  //~ ERROR
+}

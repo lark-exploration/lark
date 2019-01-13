@@ -300,12 +300,12 @@ where
 
                     EntityData::LangItem(LangItem::Debug) => {
                         // You can call into the debug function
-                        return self.check_arguments_in_case_of_error(arguments);
+                        return self.check_arguments_in_case_of_error(arguments, 0);
                     }
 
                     _ => {
                         self.record_error("cannot call value of this type", expression);
-                        return self.check_arguments_in_case_of_error(arguments);
+                        return self.check_arguments_in_case_of_error(arguments, 0);
                     }
                 }
 
@@ -330,11 +330,11 @@ where
             BaseKind::Placeholder(_placeholder) => {
                 // Cannot presently invoke generic types.
                 self.record_error("cannot call a generic type (yet)", expression);
-                return self.check_arguments_in_case_of_error(arguments);
+                return self.check_arguments_in_case_of_error(arguments, 0);
             }
 
             BaseKind::Error => {
-                return self.check_arguments_in_case_of_error(arguments);
+                return self.check_arguments_in_case_of_error(arguments, 0);
             }
         }
     }
@@ -393,8 +393,13 @@ where
                 };
                 let signature = self.substitute(expression, &generics, signature_decl);
 
+                println!("{:#?}", signature.debug_with(self.db));
+                println!("{:#?}", owner_access_ty.debug_with(self.db));
+
                 // Relate the owner type to the input
                 self.equate(expression, expression, owner_access_ty, signature.inputs[0]);
+
+                println!("done");
 
                 self.check_arguments_against_signature(
                     method_name,
@@ -409,7 +414,7 @@ where
             BaseKind::Placeholder(_placeholder) => {
                 // Cannot presently invoke methods on generic types.
                 self.record_error("cannot invoke methods on generic types(yet)", method_name);
-                return self.check_arguments_in_case_of_error(arguments);
+                return self.check_arguments_in_case_of_error(arguments, 0);
             }
 
             BaseKind::Error => self.error_type(),
@@ -436,20 +441,26 @@ where
         );
         if inputs.len() != arguments.len() {
             self.record_error("mismatched argument count", cause);
-            return self.check_arguments_in_case_of_error(arguments);
+            return self.check_arguments_in_case_of_error(arguments, skip);
         }
 
         let hir = &self.hir.clone();
-        for (&expected_ty, argument_expr) in inputs.iter().zip(arguments.iter(hir)).skip(skip) {
+        for (&expected_ty, argument_expr) in
+            inputs.iter().skip(skip).zip(arguments.iter(hir).skip(skip))
+        {
             self.check_expression(CheckType(expected_ty, location), argument_expr);
         }
 
         output
     }
 
-    fn check_arguments_in_case_of_error(&mut self, arguments: hir::List<hir::Expression>) -> Ty<F> {
+    fn check_arguments_in_case_of_error(
+        &mut self,
+        arguments: hir::List<hir::Expression>,
+        skip: usize,
+    ) -> Ty<F> {
         let hir = &self.hir.clone();
-        for argument_expr in arguments.iter(hir) {
+        for argument_expr in arguments.iter(hir).skip(skip) {
             self.check_expression(
                 CheckType(self.error_type(), HirLocation::Error),
                 argument_expr,
@@ -505,7 +516,14 @@ where
 
         // Get a vector of **all** the fields.
         let mut missing_members: FxIndexSet<Entity> = match self.db.members(entity) {
-            Ok(members) => members.iter().map(|m| m.entity).collect(),
+            Ok(members) => members
+                .iter()
+                .filter(|f| match f.kind {
+                    MemberKind::Field => true,
+                    MemberKind::Method => false,
+                })
+                .map(|m| m.entity)
+                .collect(),
             Err(err) => return Ty::error_sentinel(self, err),
         };
 
