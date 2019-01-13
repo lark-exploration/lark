@@ -120,7 +120,7 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
-        self.signature.parse_signature(entity, db)
+        self.signature.parse_signature(entity, db, None)
     }
 
     fn parse_fn_body(
@@ -128,6 +128,6 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
     ) -> WithError<hir::FnBody> {
-        self.signature.parse_fn_body(entity, db)
+        self.signature.parse_fn_body(entity, db, None)
     }
 }

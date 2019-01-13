@@ -25,6 +25,7 @@ use lark_hir as hir;
 use lark_intern::Untern;
 use lark_span::FileName;
 use lark_span::Spanned;
+use lark_string::GlobalIdentifier;
 use lark_ty as ty;
 use lark_ty::declaration::Declaration;
 
@@ -72,16 +73,16 @@ impl ParsedFunctionSignature {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
+        self_ty: Option<ty::Ty<Declaration>>,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
         let mut errors = vec![];
 
-        let inputs: Seq<_> = self
-            .parameters
-            .iter()
-            .map(|p| {
+        let inputs: Seq<_> = self_ty
+            .into_iter()
+            .chain(self.parameters.iter().map(|p| {
                 p.ty.parse_type(entity, db)
                     .accumulate_errors_into(&mut errors)
-            })
+            }))
             .collect();
 
         let output = self
@@ -99,6 +100,7 @@ impl ParsedFunctionSignature {
         &self,
         entity: Entity,
         db: &dyn LazyParsedEntityDatabase,
+        self_argument: Option<Spanned<GlobalIdentifier, FileName>>,
     ) -> WithError<hir::FnBody> {
         match self.body {
             Err(err) => ErrorParsedEntity { err }.parse_fn_body(entity, db),
@@ -125,6 +127,7 @@ impl ParsedFunctionSignature {
                     &entity_macro_definitions,
                     &input,
                     &tokens,
+                    self_argument,
                     arguments,
                 )
             }

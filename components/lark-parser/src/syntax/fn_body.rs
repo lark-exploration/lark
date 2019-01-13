@@ -108,8 +108,9 @@ crate fn parse_fn_body(
     item_entity: Entity,
     db: &dyn LazyParsedEntityDatabase,
     entity_macro_definitions: &FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
-    input: &Text,                                        // complete Text of file
+    input: &Text,                              // complete Text of file
     tokens: &Seq<Spanned<LexToken, FileName>>, // subset of Token corresponding to this expression
+    self_argument: Option<Spanned<GlobalIdentifier, FileName>>,
     arguments: Seq<Spanned<GlobalIdentifier, FileName>>, // names of the arguments
 ) -> WithError<hir::FnBody> {
     let mut scope = ExpressionScope {
@@ -119,8 +120,9 @@ crate fn parse_fn_body(
         fn_body_tables: Default::default(),
     };
 
-    let arguments: Vec<_> = arguments
+    let arguments: Vec<_> = self_argument
         .iter()
+        .chain(arguments.iter())
         .map(|&argument| {
             let name = scope.add(
                 argument.span,

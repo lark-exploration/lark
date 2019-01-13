@@ -6,6 +6,9 @@
 struct Foo {
     x: uint
 
+    // FIXME: Eventually, this should probably be `own take()` or something,
+    // because it will take ownership of the self argument. But right now
+    // we make all arguments be "own" mode.
     take() {
     }
 }

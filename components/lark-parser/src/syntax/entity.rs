@@ -256,6 +256,9 @@ pub trait LazyParsedEntityDatabase:
         &self,
         entity: Entity,
     ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>>;
+
+    /// The `ty` query
+    fn ty(&self, key: Entity) -> WithError<ty::Ty<Declaration>>;
 }
 
 impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
@@ -276,6 +279,10 @@ impl<T: ParserDatabase> LazyParsedEntityDatabase for T {
         entity: Entity,
     ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         ParserDatabase::generic_declarations(self, entity)
+    }
+
+    fn ty(&self, entity: Entity) -> WithError<ty::Ty<Declaration>> {
+        ParserDatabase::ty(self, entity)
     }
 }
 
