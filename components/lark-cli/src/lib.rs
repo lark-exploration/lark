@@ -7,7 +7,6 @@
 #![feature(never_type)]
 #![feature(nll)]
 #![feature(const_fn)]
-#![feature(const_let)]
 #![feature(try_from)]
 #![feature(trace_macros)]
 #![allow(dead_code)]

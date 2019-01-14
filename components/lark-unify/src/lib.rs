@@ -1,4 +1,3 @@
-#![feature(const_let)]
 #![feature(const_fn)]
 #![feature(specialization)]
 

@@ -1,5 +1,4 @@
 #![feature(const_fn)]
-#![feature(const_let)]
 #![feature(specialization)]
 
 mod global;
