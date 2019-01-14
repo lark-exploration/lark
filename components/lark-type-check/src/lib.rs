@@ -1,11 +1,9 @@
 #![feature(const_fn)]
-#![feature(const_let)]
 #![feature(crate_visibility_modifier)]
 #![feature(in_band_lifetimes)]
 #![feature(never_type)]
 #![feature(specialization)]
 #![feature(trait_alias)]
-#![feature(uniform_paths)]
 
 use generational_arena::Arena;
 use lark_collections::{FxIndexMap, IndexVec};

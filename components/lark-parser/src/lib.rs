@@ -1,5 +1,4 @@
 #![feature(const_fn)]
-#![feature(const_let)]
 #![feature(crate_visibility_modifier)]
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]

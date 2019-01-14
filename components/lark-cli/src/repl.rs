@@ -7,6 +7,8 @@ use lark_intern::{Intern, Untern};
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::LsDatabase;
 use lark_query_system::LarkDatabase;
+use lark_span::IntoFileName;
+use salsa::Database;
 use std::collections::HashMap;
 use std::io::{stdin, stdout, Write};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
@@ -47,6 +49,8 @@ pub fn repl() {
         format!("def main() {{\n{}\n}}", virtual_fn.join("\n")),
     );
 
+    let repl_filename = REPL_FILENAME.into_file_name(&db);
+
     let mut eval_state = lark_eval::EvalState::new();
     eval_state.is_repl = true;
 
@@ -83,9 +87,9 @@ pub fn repl() {
 
         virtual_fn.push(input);
 
-        let _ = db.add_file(
-            REPL_FILENAME,
-            format!("def main() {{\n{}\n}}", virtual_fn.join("\n")),
+        db.query_mut(lark_parser::FileTextQuery).set(
+            repl_filename,
+            format!("def main() {{\n{}\n}}", virtual_fn.join("\n")).into(),
         );
 
         let writer = StandardStream::stderr(ColorChoice::Auto);

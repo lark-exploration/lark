@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 log = "0.4.6"
 parking_lot = "0.7"
-salsa = "0.8"
+salsa = "0.9"
 
 lark-collections = { path = "../lark-collections" }
 lark-debug-derive = { path = "../lark-debug-derive" }

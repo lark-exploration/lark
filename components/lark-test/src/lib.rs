@@ -1,12 +1,11 @@
 #![feature(crate_visibility_modifier)]
 #![feature(specialization)]
-#![feature(uniform_paths)]
 
+use lark_collections::seq;
 use lark_intern::Intern;
 use lark_parser::{ParserDatabase, ParserDatabaseExt};
 use lark_query_system::ls_ops::{Cancelled, LsDatabase, RangedDiagnostic};
 use lark_query_system::LarkDatabase;
-use lark_collections::seq;
 use lark_span::FileName;
 use lark_string::Text;
 use salsa::Database;

@@ -12,6 +12,7 @@ edition = "2018"
 languageserver-types = "0.53"
 flexi_logger = "0.10.3"
 termcolor = "1.0.4"
+salsa = "0.9"
 
 lark-actor = { path = "../lark-actor" }
 lark-build = { path = "../lark-build" }

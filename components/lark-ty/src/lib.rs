@@ -2,7 +2,6 @@
 #![feature(never_type)]
 #![feature(specialization)]
 #![feature(const_fn)]
-#![feature(const_let)]
 #![warn(unused_imports)]
 
 use lark_collections::{IndexVec, Seq};
