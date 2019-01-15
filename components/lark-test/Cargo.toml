@@ -3,6 +3,12 @@ name = "lark-test"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
+description = "Testing framework for running tests against the Lark compiler."
+readme = "readme.md"
+keywords = ["lark"]
+license = "MIT License OR Apache License 2.0"
+license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
+repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-test"
 
 [dependencies]
 diff = "0.1.11"

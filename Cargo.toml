@@ -7,12 +7,21 @@ authors = [
     "Niko Matsakis <niko@alum.mit.edu>"
 ]
 edition = '2018'
+description = "Lark programming language, a Salsa-based compiler experiment."
+readme = "readme.md"
+keywords = ["lark"]
+license = "MIT License OR Apache License 2.0"
+license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
+repository = "https://github.com/lark-exploration/lark"
 
 [profile.dev]
 opt-level = 1
 
 [workspace]
-members = ["components/lark-parser", "components/lark-span"]
+members = ["components/lark-actor", "components/lark-build", "components/lark-cli", "components/lark-collections", "components/lark-debug-derive", 
+           "components/lark-debug-with", "components/lark-entity", "components/lark-error", "components/lark-eval", "components/lark-hir", "components/lark-intern", 
+           "components/lark-language-server", "components/lark-parser", "components/lark-pretty-print", "components/lark-query-system", "components/lark-span", 
+           "components/lark-string", "components/lark-test", "components/lark-test-generate", "components/lark-ty", "components/lark-type-check", "components/lark-unify"]
 
 [dependencies]
 lark-cli = { path = "components/lark-cli" }

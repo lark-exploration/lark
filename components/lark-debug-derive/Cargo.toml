@@ -3,6 +3,12 @@ name = "lark-debug-derive"
 version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
 edition = "2018"
+description = "Additional debug printing capability used in the Lark compiler."
+readme = "readme.md"
+keywords = ["lark"]
+license = "MIT License OR Apache License 2.0"
+license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
+repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-debug-derive"
 
 [lib]
 proc-macro = true
