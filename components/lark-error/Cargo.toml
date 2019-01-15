@@ -11,7 +11,7 @@ license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
 repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-error"
 
 [dependencies]
-lark-debug-derive = { path = "../lark-debug-derive" }
-lark-debug-with = { path = "../lark-debug-with" }
-lark-collections = { path = "../lark-collections" }
-lark-span = { path = "../lark-span" }
+lark-debug-derive = { path = "../lark-debug-derive", version = "0.1.0" }
+lark-debug-with = { path = "../lark-debug-with", version = "0.1.0" }
+lark-collections = { path = "../lark-collections", version = "0.1.0" }
+lark-span = { path = "../lark-span", version = "0.1.0" }

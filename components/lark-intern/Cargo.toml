@@ -11,5 +11,5 @@ license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
 repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-intern"
 
 [dependencies]
-lark-collections = { path = "../lark-collections" }
+lark-collections = { path = "../lark-collections", version = "0.1.0" }
 parking_lot = "0.7"

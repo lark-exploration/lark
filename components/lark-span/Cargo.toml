@@ -12,9 +12,9 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 
 [dependencies]
 derive-new = "0.5.6"
-lark-debug-derive = { path = "../lark-debug-derive" }
-lark-string = { path = "../lark-string" }
-lark-debug-with = { path = "../lark-debug-with" }
-lark-intern = { path = "../lark-intern" }
+lark-debug-derive = { path = "../lark-debug-derive", version = "0.1.0" }
+lark-string = { path = "../lark-string", version = "0.1.0" }
+lark-debug-with = { path = "../lark-debug-with", version = "0.1.0" }
+lark-intern = { path = "../lark-intern", version = "0.1.0" }
 languageserver-types = "0.53"
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }

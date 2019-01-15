@@ -14,5 +14,5 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 proc-macro = true
 
 [dependencies]
-lark-test = { path = "../lark-test" }
+lark-test = { path = "../lark-test", version = "0.1.0" }
 unindent = "0.1.3"

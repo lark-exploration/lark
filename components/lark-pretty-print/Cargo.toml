@@ -11,8 +11,8 @@ license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
 repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-pretty-print"
 
 [dependencies]
-lark-entity = { path = "../lark-entity" }
-lark-intern = { path = "../lark-intern" }
-lark-parser = { path = "../lark-parser" }
-lark-string = { path = "../lark-string" }
+lark-entity = { path = "../lark-entity", version = "0.1.0" }
+lark-intern = { path = "../lark-intern", version = "0.1.0" }
+lark-parser = { path = "../lark-parser", version = "0.1.0" }
+lark-string = { path = "../lark-string", version = "0.1.0" }
 lark-ty = { path = "../lark-ty" }
