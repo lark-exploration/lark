@@ -6,7 +6,7 @@ edition = "2018"
 description = "The type unification functionality of the Lark compiler."
 readme = "readme.md"
 keywords = ["lark"]
-license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
+license-file = "../../LICENSE-APACHE OR ../../LICENSE-MIT"
 repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-unify"
 
 [dependencies]
