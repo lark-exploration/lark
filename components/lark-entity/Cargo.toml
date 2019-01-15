@@ -7,7 +7,7 @@ description = "Representation of an entity in the Lark compiler."
 readme = "readme.md"
 keywords = ["lark"]
 license = "MIT License OR Apache License 2.0"
-license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
+license-file = "../../LICENSE-APACHE OR ../../LICENSE-MIT"
 repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-entity"
 
 [dependencies]
