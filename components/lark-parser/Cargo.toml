@@ -1,8 +1,14 @@
 [package]
 name = "lark-parser"
 version = "0.1.0"
-authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+authors = ["Niko Matsakis <niko@alum.mit.edu>", "Yehuda Katz <wycats@gmail.com>"]
 edition = "2018"
+description = "Parser for the Lark language."
+readme = "readme.md"
+keywords = ["lark"]
+license = "MIT License OR Apache License 2.0"
+license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
+repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-parser"
 
 [dependencies]
 derive-new = "0.5.6"
