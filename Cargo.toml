@@ -23,7 +23,7 @@ members = ["components/lark-actor", "components/lark-build", "components/lark-cl
            "components/lark-string", "components/lark-test", "components/lark-test-generate", "components/lark-ty", "components/lark-type-check", "components/lark-unify"]
 
 [dependencies]
-lark-cli = { path = "components/lark-cli" }
+lark-cli = { path = "components/lark-cli", version = "0.1.0" }
 
 [dev-dependencies]
 env_logger = "0.6"
