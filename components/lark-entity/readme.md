@@ -1,0 +1,1 @@
+Representation of an entity in the Lark compiler.

@@ -1,0 +1,1 @@
+Representation of a type in the Lark compiler.

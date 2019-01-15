@@ -1,0 +1,1 @@
+String handling functionality for the Lark compiler.

@@ -1,0 +1,1 @@
+Represents spans of Lark code in the Lark compiler.

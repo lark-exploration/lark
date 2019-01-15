@@ -1,0 +1,1 @@
+Interning capabilities for the Lark compiler. Interning is the process of taking a complex structure, storing it in a storage, and referring to it by a simpler data value.

@@ -1,0 +1,1 @@
+The Language Server Protocol (or LSP) implementation for the Lark compiler.

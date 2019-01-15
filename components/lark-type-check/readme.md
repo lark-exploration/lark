@@ -1,0 +1,1 @@
+The type checking functionality of the Lark compiler.

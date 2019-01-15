@@ -1,0 +1,1 @@
+Representation of an error in the Lark compiler.

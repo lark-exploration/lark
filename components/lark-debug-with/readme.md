@@ -1,0 +1,1 @@
+Extended debug info that does a deep print of Lark compiler internal structures.
