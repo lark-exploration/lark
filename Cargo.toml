@@ -28,18 +28,18 @@ lark-cli = { path = "components/lark-cli" }
 [dev-dependencies]
 env_logger = "0.6"
 languageserver-types = "0.53.0"
-lark-debug-derive = { path = "components/lark-debug-derive" }
-lark-debug-with = { path = "components/lark-debug-with" }
-lark-entity = { path = "components/lark-entity" }
-lark-hir = { path = "components/lark-hir" }
-lark-intern = { path = "components/lark-intern" }
-lark-language-server = { path = "components/lark-language-server" }
-lark-query-system = { path = "components/lark-query-system" }
-lark-parser = { path = "components/lark-parser" }
-lark-span = { path = "components/lark-span" }
-lark-string = { path = "components/lark-string" }
-lark-test = { path = "components/lark-test" }
-lark-test-generate = { path = "components/lark-test-generate" }
+lark-debug-derive = { path = "components/lark-debug-derive", version = "0.1.0" }
+lark-debug-with = { path = "components/lark-debug-with", version = "0.1.0" }
+lark-entity = { path = "components/lark-entity", version = "0.1.0" }
+lark-hir = { path = "components/lark-hir", version = "0.1.0" }
+lark-intern = { path = "components/lark-intern", version = "0.1.0" }
+lark-language-server = { path = "components/lark-language-server", version = "0.1.0" }
+lark-query-system = { path = "components/lark-query-system", version = "0.1.0" }
+lark-parser = { path = "components/lark-parser", version = "0.1.0" }
+lark-span = { path = "components/lark-span", version = "0.1.0" }
+lark-string = { path = "components/lark-string", version = "0.1.0" }
+lark-test = { path = "components/lark-test", version = "0.1.0" }
+lark-test-generate = { path = "components/lark-test-generate", version = "0.1.0" }
 lazy_static = "1.2.0"
 serde = "1.0"
 serde_json = "1.0"

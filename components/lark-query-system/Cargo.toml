@@ -11,7 +11,7 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 
 [dependencies]
 languageserver-types = "0.53"
-language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
+language-reporting = "0.3.0"
 lark-actor = { path = "../lark-actor", version = "0.1.0" }
 lark-entity = { path = "../lark-entity", version = "0.1.0" }
 lark-error = { path = "../lark-error", version = "0.1.0" }
