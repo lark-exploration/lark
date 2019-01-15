@@ -11,11 +11,11 @@ license-file = "../LICENSE-APACHE OR ../LICENSE-MIT"
 repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-entity"
 
 [dependencies]
-lark-collections = { path = "../lark-collections" }
-lark-debug-derive = { path = "../lark-debug-derive" }
-lark-debug-with = { path = "../lark-debug-with" }
-lark-error = { path = "../lark-error" }
-lark-intern = { path = "../lark-intern" }
-lark-string = { path = "../lark-string" }
-lark-span = { path = "../lark-span" }
+lark-collections = { path = "../lark-collections", version = "0.1.0" }
+lark-debug-derive = { path = "../lark-debug-derive", version = "0.1.0" }
+lark-debug-with = { path = "../lark-debug-with", version = "0.1.0" }
+lark-error = { path = "../lark-error", version = "0.1.0" }
+lark-intern = { path = "../lark-intern", version = "0.1.0" }
+lark-string = { path = "../lark-string", version = "0.1.0" }
+lark-span = { path = "../lark-span", version = "0.1.0" }
 parking_lot = "0.7"

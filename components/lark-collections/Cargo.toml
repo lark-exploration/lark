@@ -13,4 +13,4 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 [dependencies]
 rustc-hash = "1.0"
 indexmap = "1.0.2"
-lark-debug-with = { path = "../lark-debug-with" }
+lark-debug-with = { path = "../lark-debug-with", version = "0.1.0"  }

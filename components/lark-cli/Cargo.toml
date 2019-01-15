@@ -20,19 +20,19 @@ flexi_logger = "0.10.3"
 termcolor = "1.0.4"
 salsa = "0.9"
 
-lark-actor = { path = "../lark-actor" }
-lark-build = { path = "../lark-build" }
-lark-debug-with = { path = "../lark-debug-with" }
-lark-entity = { path = "../lark-entity" }
-lark-error = { path = "../lark-error" }
-lark-eval = { path = "../lark-eval" }
-lark-hir = { path = "../lark-hir" }
-lark-intern = { path = "../lark-intern" }
-lark-language-server = { path = "../lark-language-server" }
-lark-parser = { path = "../lark-parser" }
-lark-query-system = { path = "../lark-query-system" }
-lark-span = { path = "../lark-span" }
-lark-string = { path = "../lark-string" } 
-lark-type-check = { path = "../lark-type-check" }
-lark-unify = { path = "../lark-unify" }
+lark-actor = { path = "../lark-actor", version = "0.1.0" }
+lark-build = { path = "../lark-build", version = "0.1.0" }
+lark-debug-with = { path = "../lark-debug-with", version = "0.1.0" }
+lark-entity = { path = "../lark-entity", version = "0.1.0" }
+lark-error = { path = "../lark-error", version = "0.1.0" }
+lark-eval = { path = "../lark-eval", version = "0.1.0" }
+lark-hir = { path = "../lark-hir", version = "0.1.0" }
+lark-intern = { path = "../lark-intern", version = "0.1.0" }
+lark-language-server = { path = "../lark-language-server", version = "0.1.0" }
+lark-parser = { path = "../lark-parser", version = "0.1.0" }
+lark-query-system = { path = "../lark-query-system", version = "0.1.0" }
+lark-span = { path = "../lark-span", version = "0.1.0" }
+lark-string = { path = "../lark-string", version = "0.1.0" } 
+lark-type-check = { path = "../lark-type-check", version = "0.1.0" }
+lark-unify = { path = "../lark-unify", version = "0.1.0" }
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }

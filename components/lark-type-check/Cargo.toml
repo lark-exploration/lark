@@ -15,17 +15,17 @@ datafrog = "2.0.1"
 derive-new = "0.5.6"
 parking_lot = "0.7"
 generational-arena = "0.2.0"
-lark-collections = { path = "../lark-collections" }
-lark-debug-derive = { path = "../lark-debug-derive" }
-lark-debug-with = { path = "../lark-debug-with" }
-lark-intern = { path = "../lark-intern" }
-lark-error = { path = "../lark-error" }
-lark-entity = { path = "../lark-entity" }
-lark-hir = { path = "../lark-hir" }
-lark-parser = { path = "../lark-parser" }
-lark-pretty-print = { path = "../lark-pretty-print" }
-lark-string = { path = "../lark-string" }
-lark-ty = { path = "../lark-ty" }
-lark-unify = { path = "../lark-unify" }
+lark-collections = { path = "../lark-collections", version = "0.1.0"  }
+lark-debug-derive = { path = "../lark-debug-derive", version = "0.1.0"  }
+lark-debug-with = { path = "../lark-debug-with", version = "0.1.0"  }
+lark-intern = { path = "../lark-intern", version = "0.1.0"  }
+lark-error = { path = "../lark-error", version = "0.1.0"  }
+lark-entity = { path = "../lark-entity", version = "0.1.0"  }
+lark-hir = { path = "../lark-hir", version = "0.1.0"  }
+lark-parser = { path = "../lark-parser", version = "0.1.0"  }
+lark-pretty-print = { path = "../lark-pretty-print", version = "0.1.0"  }
+lark-string = { path = "../lark-string", version = "0.1.0"  }
+lark-ty = { path = "../lark-ty", version = "0.1.0"  }
+lark-unify = { path = "../lark-unify", version = "0.1.0"  }
 log = "0.4.6"
 salsa = "0.9"
