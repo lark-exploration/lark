@@ -12,6 +12,6 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-languageserver-types = "0.53"
+languageserver-types = "0.54"
 url = "1.7"
 lark-actor = { path = "../lark-actor", version = "0.1.0" }

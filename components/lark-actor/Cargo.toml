@@ -11,4 +11,4 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 
 [dependencies]
 url = "1.7"
-languageserver-types = "0.53"
+languageserver-types = "0.54"

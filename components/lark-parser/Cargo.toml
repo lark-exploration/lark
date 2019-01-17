@@ -12,7 +12,7 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 [dependencies]
 derive-new = "0.5.6"
 itertools = "0.8"
-languageserver-types = "0.53"
+languageserver-types = "0.54"
 lark-collections = { path = "../lark-collections", version = "0.1.0" }
 lark-debug-derive = { path = "../lark-debug-derive", version = "0.1.0" }
 lark-debug-with = { path = "../lark-debug-with", version = "0.1.0" }
