@@ -12,7 +12,7 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 [dependencies]
 diff = "0.1.11"
 env_logger = "0.6"
-languageserver-types = "0.53"
+languageserver-types = "0.54"
 lark-collections = { path = "../lark-collections", version = "0.1.0" }
 lark-debug-with = { path = "../lark-debug-with", version = "0.1.0" }
 lark-cli = { path = "../lark-cli", version = "0.1.0" }

@@ -27,7 +27,7 @@ lark-cli = { path = "components/lark-cli", version = "0.1.0" }
 
 [dev-dependencies]
 env_logger = "0.6"
-languageserver-types = "0.53.0"
+languageserver-types = "0.54.0"
 lark-debug-derive = { path = "components/lark-debug-derive", version = "0.1.0" }
 lark-debug-with = { path = "components/lark-debug-with", version = "0.1.0" }
 lark-entity = { path = "components/lark-entity", version = "0.1.0" }

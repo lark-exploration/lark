@@ -15,5 +15,5 @@ lark-debug-derive = { path = "../lark-debug-derive", version = "0.1.0" }
 lark-string = { path = "../lark-string", version = "0.1.0" }
 lark-debug-with = { path = "../lark-debug-with", version = "0.1.0" }
 lark-intern = { path = "../lark-intern", version = "0.1.0" }
-languageserver-types = "0.53"
+languageserver-types = "0.54"
 language-reporting = "0.3.0"

@@ -14,11 +14,11 @@ pub fn build(
 /// Create a temporary file we can write the source into for compilation
 fn create_src_file(codegen_type: CodegenType) -> tempfile::NamedTempFile {
     let temp_file = match codegen_type {
-        CodegenType::Rust => tempfile::NamedTempFileOptions::new()
-            .prefix("lark")
-            .suffix(".rs")
-            .rand_bytes(6)
-            .create()
+        CodegenType::Rust => tempfile::Builder::new()
+            .prefix("tmp")
+            .suffix(&".rs".to_string())
+            .rand_bytes(8)
+            .tempfile()
             .unwrap(),
         /*
         CodegenType::C => tempfile::NamedTempFileOptions::new()

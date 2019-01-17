@@ -10,7 +10,7 @@ license-file = "../../LICENSE-APACHE OR ../../LICENSE-MIT"
 repository = "https://github.com/lark-exploration/lark/tree/master/components/lark-query-system"
 
 [dependencies]
-languageserver-types = "0.53"
+languageserver-types = "0.54"
 language-reporting = "0.3.0"
 lark-actor = { path = "../lark-actor", version = "0.1.0" }
 lark-entity = { path = "../lark-entity", version = "0.1.0" }
