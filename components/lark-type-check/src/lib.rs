@@ -38,26 +38,19 @@ mod ops;
 mod results;
 mod substitute;
 
-salsa::query_group! {
-    pub trait TypeCheckDatabase: ParserDatabase
-        + AsRef<BaseInferredTables>
-        + AsRef<FullInferredTables>
-        + PrettyPrintDatabase
-    {
-        /// Compute the "base type information" for a given fn body.
-        /// This is the type information excluding permissions.
-        fn base_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
-            type BaseTypeCheckQuery;
-            use fn base_inference::query_definition::base_type_check;
-        }
+#[salsa::query_group]
+pub trait TypeCheckDatabase:
+    ParserDatabase + AsRef<BaseInferredTables> + AsRef<FullInferredTables> + PrettyPrintDatabase
+{
+    /// Compute the "base type information" for a given fn body.
+    /// This is the type information excluding permissions.
+    #[salsa::invoke(base_inference::query_definition::base_type_check)]
+    fn base_type_check(&self, key: Entity) -> WithError<Arc<TypeCheckResults<BaseInferred>>>;
 
-        /// Compute the "base type information" for a given fn body.
-        /// This is the type information excluding permissions.
-        fn full_type_check(key: Entity) -> WithError<Arc<TypeCheckResults<FullInferred>>> {
-            type FullTypeCheckQuery;
-            use fn full_inference::query_definition::full_type_check;
-        }
-    }
+    /// Compute the "base type information" for a given fn body.
+    /// This is the type information excluding permissions.
+    #[salsa::invoke(full_inference::query_definition::full_type_check)]
+    fn full_type_check(&self, key: Entity) -> WithError<Arc<TypeCheckResults<FullInferred>>>;
 }
 
 pub use results::TypeCheckResults;
