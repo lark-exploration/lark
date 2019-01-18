@@ -25,5 +25,5 @@ lark-ty = { path = "../lark-ty", version = "0.1.0" }
 lark-type-check = { path = "../lark-type-check", version = "0.1.0" }
 log = "0.4.6"
 parking_lot = "0.7"
-salsa = "0.9"
+salsa = "0.10.0-alpha1"
 url = "1.7"

@@ -45,138 +45,104 @@ mod type_conversion;
 
 pub use self::ir::ParsedFile;
 
-salsa::query_group! {
-    pub trait ParserDatabase: AsRef<GlobalIdentifierTables>
-        + AsRef<EntityTables>
-        + AsRef<DeclarationTables>
-        + salsa::Database
-    {
-        fn file_names() -> Seq<FileName> {
-            type FileNamesQuery;
-            storage input;
-        }
+#[salsa::query_group]
+pub trait ParserDatabase:
+    AsRef<GlobalIdentifierTables> + AsRef<EntityTables> + AsRef<DeclarationTables> + salsa::Database
+{
+    #[salsa::input]
+    fn file_names(&self) -> Seq<FileName>;
 
-        fn file_text(id: FileName) -> Text {
-            type FileTextQuery;
-            storage input;
-        }
+    #[salsa::input]
+    fn file_text(&self, id: FileName) -> Text;
 
-        fn entity_span(entity: Entity) -> Span<FileName> {
-            type EntitySpanQuery;
-            use fn query_definitions::entity_span;
-        }
+    #[salsa::invoke(query_definitions::entity_span)]
+    fn entity_span(&self, entity: Entity) -> Span<FileName>;
 
-        fn characteristic_entity_span(entity: Entity) -> Span<FileName> {
-            type CharacteristicEntitySpanQuery;
-            use fn query_definitions::characteristic_entity_span;
-        }
+    #[salsa::invoke(query_definitions::characteristic_entity_span)]
+    fn characteristic_entity_span(&self, entity: Entity) -> Span<FileName>;
 
-        /// Returns, for each line in the given file, the start index
-        /// -- the final element is the length of the file (there is
-        /// kind of a "pseudo-empty line" at the end, so to speak). So
-        /// for the input "a\nb\r\nc" you would get `[0, 2, 5, 6]`.
-        fn line_offsets(id: FileName) -> Seq<usize> {
-            type LineOffsetsQuery;
-            use fn query_definitions::line_offsets;
-        }
+    /// Returns, for each line in the given file, the start index
+    /// -- the final element is the length of the file (there is
+    /// kind of a "pseudo-empty line" at the end, so to speak). So
+    /// for the input "a\nb\r\nc" you would get `[0, 2, 5, 6]`.
+    #[salsa::invoke(query_definitions::line_offsets)]
+    fn line_offsets(&self, id: FileName) -> Seq<usize>;
 
-        fn location(id: FileName, index: ByteIndex) -> Location {
-            type LocationQuery;
-            use fn query_definitions::location;
-        }
+    #[salsa::invoke(query_definitions::location)]
+    fn location(&self, id: FileName, index: ByteIndex) -> Location;
 
-        /// Given a (zero-based) line number `line` and column within
-        /// the line, gives a byte-index into the file's text.
-        fn byte_index(id: FileName, line: u64, column: u64) -> ByteIndex {
-            type ByteIndexQuery;
-            use fn query_definitions::byte_index;
-        }
+    /// Given a (zero-based) line number `line` and column within
+    /// the line, gives a byte-index into the file's text.
+    #[salsa::invoke(query_definitions::byte_index)]
+    fn byte_index(&self, id: FileName, line: u64, column: u64) -> ByteIndex;
 
-        // FIXME: In general, this is wasteful of space, and not
-        // esp. incremental friendly. It would be better store
-        // e.g. the length of each token only, so that we can adjust
-        // the previous value (not to mention perhaps using a rope or
-        // some other similar data structure that permits insertions).
-        fn file_tokens(id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>> {
-            type FileTokensQuery;
-            use fn query_definitions::file_tokens;
-        }
+    // FIXME: In general, this is wasteful of space, and not
+    // esp. incremental friendly. It would be better store
+    // e.g. the length of each token only, so that we can adjust
+    // the previous value (not to mention perhaps using a rope or
+    // some other similar data structure that permits insertions).
+    #[salsa::invoke(query_definitions::file_tokens)]
+    fn file_tokens(&self, id: FileName) -> WithError<Seq<Spanned<LexToken, FileName>>>;
 
-        fn parsed_file(id: FileName) -> WithError<ParsedFile> {
-            type ParsedFileQuery;
-            use fn query_definitions::parsed_file;
-        }
+    #[salsa::invoke(query_definitions::parsed_file)]
+    fn parsed_file(&self, id: FileName) -> WithError<ParsedFile>;
 
-        fn child_parsed_entities(entity: Entity) -> WithError<Seq<ParsedEntity>> {
-            type ChildParsedEntitiesQuery;
-            use fn query_definitions::child_parsed_entities;
-        }
+    #[salsa::invoke(query_definitions::child_parsed_entities)]
+    fn child_parsed_entities(&self, entity: Entity) -> WithError<Seq<ParsedEntity>>;
 
-        fn parsed_entity(entity: Entity) -> ParsedEntity {
-            type ParsedEntityQuery;
-            use fn query_definitions::parsed_entity;
-        }
+    #[salsa::invoke(query_definitions::parsed_entity)]
+    fn parsed_entity(&self, entity: Entity) -> ParsedEntity;
 
-        /// Returns the immediate children of `entity` in the entity tree.
-        fn child_entities(entity: Entity) -> Seq<Entity> {
-            type ChildEntitiesQuery;
-            use fn query_definitions::child_entities;
-        }
+    /// Returns the immediate children of `entity` in the entity tree.
+    #[salsa::invoke(query_definitions::child_entities)]
+    fn child_entities(&self, entity: Entity) -> Seq<Entity>;
 
-        /// Transitive closure of `child_entities`.
-        fn descendant_entities(entity: Entity) -> Seq<Entity> {
-            type DescendantEntitiesQuery;
-            use fn query_definitions::descendant_entities;
-        }
+    /// Transitive closure of `child_entities`.
+    #[salsa::invoke(query_definitions::descendant_entities)]
+    fn descendant_entities(&self, entity: Entity) -> Seq<Entity>;
 
-        /// Get the fn-body for a given def-id.
-        fn fn_body(key: Entity) -> WithError<Arc<hir::FnBody>> {
-            type FnBodyQuery;
-            use fn query_definitions::fn_body;
-        }
+    /// Get the fn-body for a given def-id.
+    #[salsa::invoke(query_definitions::fn_body)]
+    fn fn_body(&self, key: Entity) -> WithError<Arc<hir::FnBody>>;
 
-        /// Given a span, find the things that it may have been referring to.
-        fn hover_targets(file: FileName, index: ByteIndex) -> Seq<HoverTarget> {
-            type HoverTargetsQuery;
-            use fn query_definitions::hover_targets;
-        }
+    /// Given a span, find the things that it may have been referring to.
+    #[salsa::invoke(query_definitions::hover_targets)]
+    fn hover_targets(&self, file: FileName, index: ByteIndex) -> Seq<HoverTarget>;
 
-        /// Get the list of member names and their def-ids for a given struct.
-        fn members(key: Entity) -> Result<Seq<hir::Member>, ErrorReported> {
-            type MembersQuery;
-            use fn query_definitions::members;
-        }
+    /// Get the list of member names and their def-ids for a given struct.
+    #[salsa::invoke(query_definitions::members)]
+    fn members(&self, key: Entity) -> Result<Seq<hir::Member>, ErrorReported>;
 
-        /// Gets the def-id for a field of a given class.
-        fn member_entity(entity: Entity, kind: MemberKind, id: GlobalIdentifier) -> Option<Entity> {
-            type MemberEntityQuery;
-            use fn query_definitions::member_entity;
-        }
+    /// Gets the def-id for a field of a given class.
+    #[salsa::invoke(query_definitions::member_entity)]
+    fn member_entity(
+        &self,
+        entity: Entity,
+        kind: MemberKind,
+        id: GlobalIdentifier,
+    ) -> Option<Entity>;
 
-        /// Get the type of something.
-        fn ty(key: Entity) -> WithError<ty::Ty<Declaration>> {
-            type TyQuery;
-            use fn type_conversion::ty;
-        }
+    /// Get the type of something.
+    #[salsa::invoke(type_conversion::ty)]
+    fn ty(&self, key: Entity) -> WithError<ty::Ty<Declaration>>;
 
-        /// Get the signature of a function.
-        fn signature(key: Entity) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
-            type SignatureQuery;
-            use fn type_conversion::signature;
-        }
+    /// Get the signature of a function.
+    #[salsa::invoke(type_conversion::signature)]
+    fn signature(
+        &self,
+        key: Entity,
+    ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>>;
 
-        /// Get the generic declarations from a particular item.
-        fn generic_declarations(key: Entity) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
-            type GenericDeclarationsQuery;
-            use fn type_conversion::generic_declarations;
-        }
+    /// Get the generic declarations from a particular item.
+    #[salsa::invoke(type_conversion::generic_declarations)]
+    fn generic_declarations(
+        &self,
+        key: Entity,
+    ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>>;
 
-        /// Resolve a type name that appears in the given entity.
-        fn resolve_name(scope: Entity, name: GlobalIdentifier) -> Option<Entity> {
-            type ResolveNameQuery;
-            use fn scope::resolve_name;
-        }
-    }
+    /// Resolve a type name that appears in the given entity.
+    #[salsa::invoke(scope::resolve_name)]
+    fn resolve_name(&self, scope: Entity, name: GlobalIdentifier) -> Option<Entity>;
 }
 
 #[derive(Clone, Debug, DebugWith, PartialEq, Eq)]

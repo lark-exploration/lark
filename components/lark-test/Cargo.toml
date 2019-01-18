@@ -31,7 +31,7 @@ lark-type-check = { path = "../lark-type-check", version = "0.1.0" }
 lazy_static = "1.2.0"
 rayon = "1.0.3"
 regex = "1"
-salsa = "0.9"
+salsa = "0.10.0-alpha1"
 serde = "1"
 serde_json = "1"
 termcolor = "1.0.4"
