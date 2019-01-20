@@ -1,8 +1,15 @@
 # Lark VSCode support
 
-- Run `npm install` in this folder. This installs all necessary npm modules in both the client and server folder
-- Open VS Code on this folder.
-- Run this project in debug mode after compiling Lark
+- To build:
+
+```
+> <build Lark in debug mode>
+> <cd to this directory>
+> npm install
+> npm run compile
+```
+
+- Once build successfully, open this project and run it (Debug->Start Debugging)
 - A new VS Code instance will open
 - Open a Lark file, and in the Output for the Lark LSP interactions, you should see
   LSP messages
