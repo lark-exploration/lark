@@ -12,12 +12,9 @@
 		"strict": true, /* enable all strict type-checking options */
 		/* Additional Checks */
 		"noUnusedLocals": true, /* Report errors on unused locals. */
-		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
-		"noImplicitAny": true,
-		"noImplicitReturns": true,
-		"noUnusedParameters": true
+		"noImplicitAny": true, /* Report on any implicit any types. */
+		"noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
+		"noUnusedParameters": true /* Report errors on unused parameters. */
 	},
 	"exclude": [
 		"node_modules",
