@@ -20,7 +20,7 @@ crate fn base_type_check(
 ) -> WithError<Arc<TypeCheckResults<BaseInferred>>> {
     let fn_body = db.fn_body(fn_entity).into_value();
     let interners = BaseInferenceTables::default();
-    let mut base_type_checker: TypeChecker<'_, _, BaseInference, _> = TypeChecker {
+    let mut base_type_checker: TypeChecker<'_, BaseInference, _> = TypeChecker {
         db,
         fn_entity,
         f_tables: interners.clone(),

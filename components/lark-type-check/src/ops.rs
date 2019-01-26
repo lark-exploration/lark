@@ -44,9 +44,8 @@ where
     }
 }
 
-impl<DB, F, S> TypeChecker<'_, DB, F, S>
+impl<F, S> TypeChecker<'_, F, S>
 where
-    DB: crate::TypeCheckDatabase,
     F: TypeCheckerFamily,
     Self: TypeCheckerFamilyDependentExt<F>,
     F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,

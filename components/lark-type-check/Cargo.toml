@@ -27,4 +27,4 @@ lark-string = { path = "../lark-string", version = "0.1.0"  }
 lark-ty = { path = "../lark-ty", version = "0.1.0"  }
 lark-unify = { path = "../lark-unify", version = "0.1.0"  }
 log = "0.4.6"
-salsa = "0.10.0-alpha1"
+salsa = "0.10.0-alpha5"

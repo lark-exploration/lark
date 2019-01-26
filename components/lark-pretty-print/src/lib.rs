@@ -8,17 +8,17 @@ use lark_ty::{BaseData, BaseKind, BoundVarOr, PermKind, Ty, TypeFamily};
 pub trait PrettyPrintDatabase: ParserDatabase + AsRef<FullInferredTables> {}
 
 pub trait PrettyPrint {
-    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String;
+    fn pretty_print(&self, db: &(impl PrettyPrintDatabase + ?Sized)) -> String;
 }
 
 impl PrettyPrint for Ty<Declaration> {
-    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
+    fn pretty_print(&self, db: &(impl PrettyPrintDatabase + ?Sized)) -> String {
         format!(
             "{}{}",
-            match self.perm.untern(db) {
+            match self.perm.untern(&db) {
                 DeclaredPermKind::Own => "",
             },
-            match self.base.untern(db) {
+            match self.base.untern(&db) {
                 BoundVarOr::BoundVar(var) => format!("{:?}", var),
                 BoundVarOr::Known(base_data) => base_data.pretty_print(db),
             }
@@ -27,7 +27,7 @@ impl PrettyPrint for Ty<Declaration> {
 }
 
 impl PrettyPrint for Ty<FullInferred> {
-    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
+    fn pretty_print(&self, db: &(impl PrettyPrintDatabase + ?Sized)) -> String {
         format!(
             "{}{}",
             match self.perm {
@@ -35,20 +35,20 @@ impl PrettyPrint for Ty<FullInferred> {
                 PermKind::Share => "shared ",
                 PermKind::Borrow => "borrowed ",
             },
-            self.base.untern(db).pretty_print(db),
+            self.base.untern(&db).pretty_print(db),
         )
     }
 }
 
 impl<T: TypeFamily> PrettyPrint for BaseData<T> {
-    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
+    fn pretty_print(&self, db: &(impl PrettyPrintDatabase + ?Sized)) -> String {
         self.kind.pretty_print(db)
     }
 }
 
 impl PrettyPrint for Entity {
-    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
-        match self.untern(db) {
+    fn pretty_print(&self, db: &(impl PrettyPrintDatabase + ?Sized)) -> String {
+        match self.untern(&db) {
             EntityData::LangItem(LangItem::Boolean) => "bool".into(),
             EntityData::LangItem(LangItem::Uint) => "uint".into(),
             EntityData::LangItem(LangItem::Int) => "int".into(),
@@ -85,13 +85,13 @@ impl PrettyPrint for Entity {
                 output_sig.push_str(") -> ");
                 output_sig.push_str(&sig.output.pretty_print(db));
 
-                format!("{}{}", id.untern(db).to_string(), output_sig)
+                format!("{}{}", id.untern(&db).to_string(), output_sig)
             }
             EntityData::ItemName {
                 kind: ItemKind::Struct,
                 id,
                 ..
-            } => format!("{}", id.untern(db)),
+            } => format!("{}", id.untern(&db)),
             EntityData::ItemName {
                 kind: ItemKind::Function,
                 id,
@@ -115,7 +115,7 @@ impl PrettyPrint for Entity {
                 output_sig.push_str(") -> ");
                 output_sig.push_str(&sig.output.pretty_print(db));
 
-                format!("{}{}", id.untern(db).to_string(), output_sig)
+                format!("{}{}", id.untern(&db).to_string(), output_sig)
             }
             x => format!("{:?}", x),
         }
@@ -123,7 +123,7 @@ impl PrettyPrint for Entity {
 }
 
 impl<T: TypeFamily> PrettyPrint for BaseKind<T> {
-    fn pretty_print(&self, db: &impl PrettyPrintDatabase) -> String {
+    fn pretty_print(&self, db: &(impl PrettyPrintDatabase + ?Sized)) -> String {
         match self {
             BaseKind::Named(entity) => entity.pretty_print(db),
             BaseKind::Placeholder(..) => "<placeholder>".into(),
