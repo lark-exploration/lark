@@ -2,7 +2,6 @@ use crate::parser::Parser;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::ErrorParsedEntity;
 use crate::syntax::entity::LazyParsedEntity;
-use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::fn_body;
 use crate::syntax::guard::Guard;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
@@ -15,6 +14,7 @@ use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::type_reference::ParsedTypeReference;
 use crate::syntax::type_reference::TypeReference;
 use crate::syntax::Syntax;
+use crate::ParserDatabase;
 use lark_collections::Seq;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
@@ -72,7 +72,7 @@ impl ParsedFunctionSignature {
     pub fn parse_signature(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
         self_ty: Option<ty::Ty<Declaration>>,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
         let mut errors = vec![];
@@ -99,7 +99,7 @@ impl ParsedFunctionSignature {
     pub fn parse_fn_body(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
         self_argument: Option<Spanned<GlobalIdentifier, FileName>>,
     ) -> WithError<hir::FnBody> {
         match self.body {

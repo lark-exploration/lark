@@ -1,7 +1,7 @@
 use crate::syntax::entity::InvalidParsedEntity;
 use crate::syntax::entity::LazyParsedEntity;
-use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
+use crate::ParserDatabase;
 
 use derive_new::new;
 use lark_collections::Seq;
@@ -32,7 +32,7 @@ impl LazyParsedEntity for ParsedFile {
     fn parse_children(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        _db: &dyn ParserDatabase,
     ) -> WithError<Seq<ParsedEntity>> {
         WithError::ok(self.entities.clone())
     }
@@ -40,7 +40,7 @@ impl LazyParsedEntity for ParsedFile {
     fn parse_generic_declarations(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         InvalidParsedEntity.parse_generic_declarations(entity, db)
     }
@@ -48,7 +48,7 @@ impl LazyParsedEntity for ParsedFile {
     fn parse_type(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
         InvalidParsedEntity.parse_type(entity, db)
     }
@@ -56,16 +56,12 @@ impl LazyParsedEntity for ParsedFile {
     fn parse_signature(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
         InvalidParsedEntity.parse_signature(entity, db)
     }
 
-    fn parse_fn_body(
-        &self,
-        entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<hir::FnBody> {
+    fn parse_fn_body(&self, entity: Entity, db: &dyn ParserDatabase) -> WithError<hir::FnBody> {
         InvalidParsedEntity.parse_fn_body(entity, db)
     }
 }

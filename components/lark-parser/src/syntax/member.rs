@@ -1,7 +1,6 @@
 use crate::parser::Parser;
 use crate::syntax::entity::InvalidParsedEntity;
 use crate::syntax::entity::LazyParsedEntity;
-use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::fn_signature::FunctionSignature;
 use crate::syntax::fn_signature::ParsedFunctionSignature;
@@ -11,6 +10,7 @@ use crate::syntax::sigil::Colon;
 use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::type_reference::{ParsedTypeReference, TypeReference};
 use crate::syntax::Syntax;
+use crate::ParserDatabase;
 use lark_collections::Seq;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
@@ -105,7 +105,7 @@ impl LazyParsedEntity for ParsedMethod {
     fn parse_children(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        _db: &dyn ParserDatabase,
     ) -> WithError<Seq<ParsedEntity>> {
         WithError::ok(Seq::default())
     }
@@ -113,7 +113,7 @@ impl LazyParsedEntity for ParsedMethod {
     fn parse_generic_declarations(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        _db: &dyn ParserDatabase,
     ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         WithError::ok(Ok(ty::GenericDeclarations::empty(None)))
     }
@@ -121,7 +121,7 @@ impl LazyParsedEntity for ParsedMethod {
     fn parse_type(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
         // For each method `foo`, create a unique type `foo` as in
         // Rust.
@@ -144,18 +144,14 @@ impl LazyParsedEntity for ParsedMethod {
     fn parse_signature(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
         let parent_entity = entity.untern(&db).parent().unwrap();
         let parent_ty = db.ty(parent_entity).into_value();
         self.signature.parse_signature(entity, db, Some(parent_ty))
     }
 
-    fn parse_fn_body(
-        &self,
-        entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<hir::FnBody> {
+    fn parse_fn_body(&self, entity: Entity, db: &dyn ParserDatabase) -> WithError<hir::FnBody> {
         let self_argument: GlobalIdentifier = "self".intern(&db);
         let spanned_self_argument = Spanned {
             value: self_argument,
@@ -177,7 +173,7 @@ impl LazyParsedEntity for ParsedField {
     fn parse_children(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        _db: &dyn ParserDatabase,
     ) -> WithError<Seq<ParsedEntity>> {
         WithError::ok(Seq::default())
     }
@@ -185,7 +181,7 @@ impl LazyParsedEntity for ParsedField {
     fn parse_generic_declarations(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        _db: &dyn ParserDatabase,
     ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         WithError::ok(Ok(ty::GenericDeclarations::empty(None)))
     }
@@ -193,7 +189,7 @@ impl LazyParsedEntity for ParsedField {
     fn parse_type(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
         self.ty.parse_type(entity, db)
     }
@@ -201,16 +197,12 @@ impl LazyParsedEntity for ParsedField {
     fn parse_signature(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
         InvalidParsedEntity.parse_signature(entity, db)
     }
 
-    fn parse_fn_body(
-        &self,
-        entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<hir::FnBody> {
+    fn parse_fn_body(&self, entity: Entity, db: &dyn ParserDatabase) -> WithError<hir::FnBody> {
         InvalidParsedEntity.parse_fn_body(entity, db)
     }
 }

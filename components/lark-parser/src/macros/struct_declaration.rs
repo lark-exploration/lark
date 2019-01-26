@@ -2,14 +2,14 @@ use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
 use crate::syntax::delimited::Delimited;
 use crate::syntax::entity::{
-    InvalidParsedEntity, LazyParsedEntity, LazyParsedEntityDatabase, ParsedEntity,
-    ParsedEntityThunk,
+    InvalidParsedEntity, LazyParsedEntity, ParsedEntity, ParsedEntityThunk,
 };
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::list::CommaList;
 use crate::syntax::member::{Member, ParsedMember};
 use crate::syntax::sigil::Curlies;
 use crate::syntax::skip_newline::SkipNewline;
+use crate::ParserDatabase;
 use lark_collections::Seq;
 use lark_debug_with::DebugWith;
 use lark_entity::Entity;
@@ -85,7 +85,7 @@ impl LazyParsedEntity for ParsedStructDeclaration {
     fn parse_children(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<Seq<ParsedEntity>> {
         WithError::ok(
             self.fields
@@ -136,7 +136,7 @@ impl LazyParsedEntity for ParsedStructDeclaration {
     fn parse_generic_declarations(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        _db: &dyn ParserDatabase,
     ) -> WithError<Result<Arc<ty::GenericDeclarations>, ErrorReported>> {
         // FIXME -- no support for generics yet
         WithError::ok(Ok(ty::GenericDeclarations::empty(None)))
@@ -145,7 +145,7 @@ impl LazyParsedEntity for ParsedStructDeclaration {
     fn parse_signature(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
         InvalidParsedEntity.parse_signature(entity, db)
     }
@@ -153,7 +153,7 @@ impl LazyParsedEntity for ParsedStructDeclaration {
     fn parse_type(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
         // For each struct `Foo`, the "type" is just `own Foo`
         match db.generic_declarations(entity).into_value() {
@@ -172,11 +172,7 @@ impl LazyParsedEntity for ParsedStructDeclaration {
         }
     }
 
-    fn parse_fn_body(
-        &self,
-        entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<hir::FnBody> {
+    fn parse_fn_body(&self, entity: Entity, db: &dyn ParserDatabase) -> WithError<hir::FnBody> {
         panic!(
             "cannot parse fn body of a struct: {:?}",
             entity.debug_with(db)

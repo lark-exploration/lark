@@ -1,7 +1,6 @@
 use crate::lexer::token::LexToken;
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
-use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::expression::ident::HirIdentifier;
 use crate::syntax::expression::scope::ExpressionScope;
 use crate::syntax::expression::{HirExpression, ParsedStatement};
@@ -9,6 +8,7 @@ use crate::syntax::guard::Guard;
 use crate::syntax::sigil::{Equals, Let};
 use crate::syntax::skip_newline::SkipNewline;
 use crate::syntax::Syntax;
+use crate::ParserDatabase;
 use derive_new::new;
 use lark_collections::{FxIndexMap, Seq};
 use lark_debug_derive::DebugWith;
@@ -106,7 +106,7 @@ use std::sync::Arc;
 /// value of a `const` and so forth.
 crate fn parse_fn_body(
     item_entity: Entity,
-    db: &dyn LazyParsedEntityDatabase,
+    db: &dyn ParserDatabase,
     entity_macro_definitions: &FxIndexMap<GlobalIdentifier, Arc<dyn EntityMacroDefinition>>,
     input: &Text,                              // complete Text of file
     tokens: &Seq<Spanned<LexToken, FileName>>, // subset of Token corresponding to this expression

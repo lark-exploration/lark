@@ -1,4 +1,3 @@
-use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::ParserDatabase;
 use lark_debug_with::DebugWith;
 use lark_entity::{Entity, EntityData, LangItem};
@@ -123,7 +122,7 @@ crate fn signature(
     }
 }
 
-crate fn unit_ty(db: &dyn LazyParsedEntityDatabase) -> ty::Ty<Declaration> {
+crate fn unit_ty(db: &dyn ParserDatabase) -> ty::Ty<Declaration> {
     declaration_ty_named(
         &db,
         EntityData::LangItem(LangItem::Tuple(0)).intern(&db),

@@ -1,5 +1,5 @@
 use crate::parser::Parser;
-use crate::syntax::entity::LazyParsedEntityDatabase;
+use crate::ParserDatabase;
 use lark_collections::FxIndexMap;
 use lark_debug_with::DebugWith;
 use lark_entity::Entity;
@@ -11,7 +11,7 @@ use lark_string::{GlobalIdentifier, GlobalIdentifierTables};
 use std::rc::Rc;
 
 crate struct ExpressionScope<'parse> {
-    crate db: &'parse dyn LazyParsedEntityDatabase,
+    crate db: &'parse dyn ParserDatabase,
     crate item_entity: Entity,
 
     // FIXME -- we should not need to make *global identifiers* here,

@@ -1,7 +1,7 @@
 use crate::parser::Parser;
-use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::Syntax;
+use crate::ParserDatabase;
 use lark_debug_derive::DebugWith;
 use lark_entity::Entity;
 use lark_error::{ErrorReported, ErrorSentinel, WithError};
@@ -45,7 +45,7 @@ impl ParsedTypeReference {
     pub fn parse_type(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
         match self {
             ParsedTypeReference::Named(named) => named.parse_type(entity, db),
@@ -73,7 +73,7 @@ impl NamedTypeReference {
     pub fn parse_type(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
         match db.resolve_name(entity, self.identifier.value) {
             Some(entity) => {
