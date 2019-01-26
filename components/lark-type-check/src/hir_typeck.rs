@@ -1,5 +1,4 @@
 use crate::HirLocation;
-use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamily;
 use crate::TypeCheckerFamilyDependentExt;
@@ -27,9 +26,8 @@ enum Mode<F: TypeCheckerFamily> {
 }
 use self::Mode::*;
 
-impl<DB, F, S> TypeChecker<'_, DB, F, S>
+impl<F, S> TypeChecker<'_, F, S>
 where
-    DB: TypeCheckDatabase,
     F: TypeCheckerFamily,
     Self: TypeCheckerFamilyDependentExt<F>,
     F::Base: Inferable<F::InternTables, KnownData = BaseData<F>>,

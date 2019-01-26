@@ -15,6 +15,7 @@ use url::Url;
 pub mod ls_ops;
 use self::ls_ops::{Cancelled, LsDatabase};
 
+#[salsa::database(lark_parser::ParserStorage, lark_type_check::TypeCheckStorage)]
 pub struct LarkDatabase {
     runtime: salsa::Runtime<LarkDatabase>,
     item_id_tables: Arc<EntityTables>,
@@ -79,38 +80,6 @@ impl ParallelDatabase for LarkDatabase {
 impl PrettyPrintDatabase for LarkDatabase {}
 
 impl LsDatabase for LarkDatabase {}
-
-salsa::database_storage! {
-    pub struct LarkDatabaseStorage for LarkDatabase {
-        impl lark_parser::ParserDatabase {
-            fn file_names() for lark_parser::FileNamesQuery;
-            fn file_text() for lark_parser::FileTextQuery;
-            fn line_offsets() for lark_parser::LineOffsetsQuery;
-            fn location() for lark_parser::LocationQuery;
-            fn byte_index() for lark_parser::ByteIndexQuery;
-            fn file_tokens() for lark_parser::FileTokensQuery;
-            fn parsed_file() for lark_parser::ParsedFileQuery;
-            fn child_parsed_entities() for lark_parser::ChildParsedEntitiesQuery;
-            fn parsed_entity() for lark_parser::ParsedEntityQuery;
-            fn child_entities() for lark_parser::ChildEntitiesQuery;
-            fn fn_body() for lark_parser::FnBodyQuery;
-            fn hover_targets() for lark_parser::HoverTargetsQuery;
-            fn members() for lark_parser::MembersQuery;
-            fn member_entity() for lark_parser::MemberEntityQuery;
-            fn descendant_entities() for lark_parser::DescendantEntitiesQuery;
-            fn entity_span() for lark_parser::EntitySpanQuery;
-            fn characteristic_entity_span() for lark_parser::CharacteristicEntitySpanQuery;
-            fn ty() for lark_parser::TyQuery;
-            fn signature() for lark_parser::SignatureQuery;
-            fn generic_declarations() for lark_parser::GenericDeclarationsQuery;
-            fn resolve_name() for lark_parser::ResolveNameQuery;
-        }
-        impl lark_type_check::TypeCheckDatabase {
-            fn base_type_check() for lark_type_check::BaseTypeCheckQuery;
-            fn full_type_check() for lark_type_check::FullTypeCheckQuery;
-        }
-    }
-}
 
 impl AsRef<EntityTables> for LarkDatabase {
     fn as_ref(&self) -> &EntityTables {

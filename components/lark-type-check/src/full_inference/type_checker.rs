@@ -10,7 +10,6 @@ use crate::results::TypeCheckResults;
 use crate::substitute::Substitution;
 use crate::substitute::SubstitutionDelegate;
 use crate::HirLocation;
-use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
 use crate::TypeCheckerVariableExt;
@@ -66,10 +65,8 @@ impl FullInferenceStorage {
     }
 }
 
-impl<DB> TypeCheckerFamilyDependentExt<FullInference>
-    for TypeChecker<'me, DB, FullInference, FullInferenceStorage>
-where
-    DB: TypeCheckDatabase,
+impl TypeCheckerFamilyDependentExt<FullInference>
+    for TypeChecker<'me, FullInference, FullInferenceStorage>
 {
     fn substitute<M>(
         &mut self,
@@ -149,10 +146,8 @@ where
     }
 }
 
-impl<DB> TypeCheckerVariableExt<FullInference, Ty<FullInference>>
-    for TypeChecker<'me, DB, FullInference, FullInferenceStorage>
-where
-    DB: TypeCheckDatabase,
+impl TypeCheckerVariableExt<FullInference, Ty<FullInference>>
+    for TypeChecker<'me, FullInference, FullInferenceStorage>
 {
     fn new_variable(&mut self) -> Ty<FullInference> {
         Ty {
@@ -229,20 +224,13 @@ where
     }
 }
 
-impl<DB, S> AsRef<FullInferenceTables> for TypeChecker<'_, DB, FullInference, S>
-where
-    DB: TypeCheckDatabase,
-{
+impl<S> AsRef<FullInferenceTables> for TypeChecker<'_, FullInference, S> {
     fn as_ref(&self) -> &FullInferenceTables {
         &self.f_tables
     }
 }
 
-impl<DB> SubstitutionDelegate<FullInference>
-    for TypeChecker<'me, DB, FullInference, FullInferenceStorage>
-where
-    DB: TypeCheckDatabase,
-{
+impl SubstitutionDelegate<FullInference> for TypeChecker<'me, FullInference, FullInferenceStorage> {
     fn as_f_tables(&self) -> &FullInferenceTables {
         self.as_ref()
     }

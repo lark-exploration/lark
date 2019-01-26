@@ -3,7 +3,6 @@ use crate::full_inference::perm::Perm;
 use crate::full_inference::type_checker::FullInferenceStorage;
 use crate::full_inference::FullInference;
 use crate::HirLocation;
-use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use lark_hir as hir;
 use lark_intern::Intern;
@@ -52,10 +51,7 @@ crate trait ApplyPerm {
     ) -> Generic<FullInference>;
 }
 
-impl<DB> ApplyPerm for TypeChecker<'_, DB, FullInference, FullInferenceStorage>
-where
-    DB: TypeCheckDatabase,
-{
+impl ApplyPerm for TypeChecker<'_, FullInference, FullInferenceStorage> {
     fn apply_access_perm(
         &mut self,
         cause: hir::MetaIndex,

@@ -1,3 +1,4 @@
+#![allow(non_camel_case_types)]
 #![feature(const_fn)]
 #![feature(crate_visibility_modifier)]
 #![feature(in_band_lifetimes)]
@@ -38,7 +39,7 @@ mod ops;
 mod results;
 mod substitute;
 
-#[salsa::query_group]
+#[salsa::query_group(TypeCheckStorage)]
 pub trait TypeCheckDatabase:
     ParserDatabase + AsRef<BaseInferredTables> + AsRef<FullInferredTables> + PrettyPrintDatabase
 {
@@ -55,9 +56,9 @@ pub trait TypeCheckDatabase:
 
 pub use results::TypeCheckResults;
 
-struct TypeChecker<'me, DB: TypeCheckDatabase, F: TypeCheckerFamily, S> {
+struct TypeChecker<'me, F: TypeCheckerFamily, S> {
     /// Salsa database.
-    db: &'me DB,
+    db: &'me dyn TypeCheckDatabase,
 
     /// Intern tables for the family `F`. These are typically local to
     /// the type-check itself.
@@ -201,9 +202,8 @@ trait TypeCheckerVariableExt<F: TypeCheckerFamily, V> {
     );
 }
 
-impl<DB, F, S> AsRef<DeclarationTables> for TypeChecker<'_, DB, F, S>
+impl<F, S> AsRef<DeclarationTables> for TypeChecker<'_, F, S>
 where
-    DB: TypeCheckDatabase,
     F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &DeclarationTables {
@@ -211,9 +211,8 @@ where
     }
 }
 
-impl<DB, F, S> AsRef<BaseInferredTables> for TypeChecker<'_, DB, F, S>
+impl<F, S> AsRef<BaseInferredTables> for TypeChecker<'_, F, S>
 where
-    DB: TypeCheckDatabase,
     F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &BaseInferredTables {
@@ -221,9 +220,8 @@ where
     }
 }
 
-impl<DB, F, S> AsRef<EntityTables> for TypeChecker<'_, DB, F, S>
+impl<F, S> AsRef<EntityTables> for TypeChecker<'_, F, S>
 where
-    DB: TypeCheckDatabase,
     F: TypeCheckerFamily,
 {
     fn as_ref(&self) -> &EntityTables {

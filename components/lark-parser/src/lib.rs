@@ -1,3 +1,4 @@
+#![allow(non_camel_case_types)] // FIXME
 #![feature(const_fn)]
 #![feature(crate_visibility_modifier)]
 #![feature(in_band_lifetimes)]
@@ -45,9 +46,9 @@ mod type_conversion;
 
 pub use self::ir::ParsedFile;
 
-#[salsa::query_group]
+#[salsa::query_group(ParserStorage)]
 pub trait ParserDatabase:
-    AsRef<GlobalIdentifierTables> + AsRef<EntityTables> + AsRef<DeclarationTables> + salsa::Database
+    AsRef<GlobalIdentifierTables> + AsRef<EntityTables> + AsRef<DeclarationTables>
 {
     #[salsa::input]
     fn file_names(&self) -> Seq<FileName>;
@@ -159,25 +160,24 @@ pub enum HoverTargetKind {
 
 pub trait ParserDatabaseExt: ParserDatabase {
     fn init_parser_db(&mut self) {
-        self.query_mut(FileNamesQuery).set((), Default::default());
+        self.set_file_names(Default::default());
     }
 
     fn add_file(&mut self, path: impl IntoFileName, contents: impl Into<Text>) {
-        let file_name = path.into_file_name(self);
+        let file_name = path.into_file_name(&self);
 
         let mut file_names = self.file_names();
         file_names.extend(Some(file_name));
 
-        self.query_mut(FileNamesQuery).set((), file_names);
-        self.query_mut(FileTextQuery)
-            .set(file_name, contents.into());
+        self.set_file_names(file_names);
+        self.set_file_text(file_name, contents.into());
     }
 
     /// Returns the "top-level" entities defined in the given file --
     /// does not descend to visit the children of those entities etc.
     fn top_level_entities_in_file(&self, file: impl IntoFileName) -> Seq<Entity> {
-        let file = file.into_file_name(self);
-        let file_entity = EntityData::InputFile { file }.intern(self);
+        let file = file.into_file_name(&self);
+        let file_entity = EntityData::InputFile { file }.intern(&self);
         self.child_entities(file_entity)
     }
 }

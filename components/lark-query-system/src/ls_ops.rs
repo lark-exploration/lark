@@ -29,7 +29,7 @@ pub struct Cancelled;
 
 pub type Cancelable<T> = Result<T, Cancelled>;
 
-pub trait LsDatabase: lark_type_check::TypeCheckDatabase {
+pub trait LsDatabase: lark_type_check::TypeCheckDatabase + salsa::Database {
     fn check_for_cancellation(&self) -> Cancelable<()> {
         if self.salsa_runtime().is_current_revision_canceled() {
             Err(Cancelled)

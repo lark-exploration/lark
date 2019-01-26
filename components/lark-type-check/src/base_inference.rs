@@ -6,7 +6,6 @@ use crate::results::TypeCheckResults;
 use crate::substitute::Substitution;
 use crate::substitute::SubstitutionDelegate;
 use crate::HirLocation;
-use crate::TypeCheckDatabase;
 use crate::TypeChecker;
 use crate::TypeCheckerFamilyDependentExt;
 use crate::TypeCheckerVariableExt;
@@ -112,10 +111,8 @@ lark_intern::intern_tables! {
     }
 }
 
-impl<DB> TypeCheckerFamilyDependentExt<BaseInference>
-    for TypeChecker<'_, DB, BaseInference, TypeCheckResults<BaseInference>>
-where
-    DB: TypeCheckDatabase,
+impl TypeCheckerFamilyDependentExt<BaseInference>
+    for TypeChecker<'_, BaseInference, TypeCheckResults<BaseInference>>
 {
     fn substitute<M>(
         &mut self,
@@ -184,10 +181,8 @@ where
     }
 }
 
-impl<DB> TypeCheckerVariableExt<BaseInference, Ty<BaseInference>>
-    for TypeChecker<'_, DB, BaseInference, TypeCheckResults<BaseInference>>
-where
-    DB: TypeCheckDatabase,
+impl TypeCheckerVariableExt<BaseInference, Ty<BaseInference>>
+    for TypeChecker<'_, BaseInference, TypeCheckResults<BaseInference>>
 {
     fn new_variable(&mut self) -> Ty<BaseInference> {
         Ty {
@@ -258,19 +253,14 @@ where
     }
 }
 
-impl<DB, S> AsRef<BaseInferenceTables> for TypeChecker<'_, DB, BaseInference, S>
-where
-    DB: TypeCheckDatabase,
-{
+impl<S> AsRef<BaseInferenceTables> for TypeChecker<'_, BaseInference, S> {
     fn as_ref(&self) -> &BaseInferenceTables {
         &self.f_tables
     }
 }
 
-impl<DB> SubstitutionDelegate<BaseInference>
-    for TypeChecker<'_, DB, BaseInference, TypeCheckResults<BaseInference>>
-where
-    DB: TypeCheckDatabase,
+impl SubstitutionDelegate<BaseInference>
+    for TypeChecker<'_, BaseInference, TypeCheckResults<BaseInference>>
 {
     fn as_f_tables(&self) -> &BaseInferenceTables {
         self.as_ref()

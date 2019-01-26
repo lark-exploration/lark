@@ -24,7 +24,7 @@ crate fn full_type_check(
 ) -> WithError<Arc<TypeCheckResults<FullInferred>>> {
     let fn_body = db.fn_body(fn_entity).into_value();
     let interners = FullInferenceTables::default();
-    let mut type_checker: TypeChecker<'_, _, FullInference, _> = TypeChecker {
+    let mut type_checker: TypeChecker<'_, FullInference, _> = TypeChecker {
         db,
         fn_entity,
         f_tables: interners.clone(),
