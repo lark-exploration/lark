@@ -1,13 +1,13 @@
 use crate::macros::EntityMacroDefinition;
 use crate::parser::Parser;
 use crate::syntax::entity::LazyParsedEntity;
-use crate::syntax::entity::LazyParsedEntityDatabase;
 use crate::syntax::entity::ParsedEntity;
 use crate::syntax::entity::ParsedEntityThunk;
 use crate::syntax::fn_signature::FunctionSignature;
 use crate::syntax::fn_signature::ParsedFunctionSignature;
 use crate::syntax::identifier::SpannedGlobalIdentifier;
 use crate::syntax::skip_newline::SkipNewline;
+use crate::ParserDatabase;
 use lark_collections::Seq;
 use lark_debug_derive::DebugWith;
 use lark_debug_with::DebugWith;
@@ -78,7 +78,7 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
     fn parse_children(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        _db: &dyn ParserDatabase,
     ) -> WithError<Seq<ParsedEntity>> {
         WithError::ok(Seq::default())
     }
@@ -86,7 +86,7 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
     fn parse_generic_declarations(
         &self,
         _entity: Entity,
-        _db: &dyn LazyParsedEntityDatabase,
+        _db: &dyn ParserDatabase,
     ) -> WithError<Result<Arc<GenericDeclarations>, ErrorReported>> {
         // FIXME -- no support for generics yet
         WithError::ok(Ok(GenericDeclarations::empty(None)))
@@ -95,7 +95,7 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
     fn parse_type(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<ty::Ty<Declaration>> {
         // For each function `foo`, create a unique type `foo` as in
         // Rust.
@@ -118,16 +118,12 @@ impl LazyParsedEntity for ParsedFunctionDeclaration {
     fn parse_signature(
         &self,
         entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
+        db: &dyn ParserDatabase,
     ) -> WithError<Result<ty::Signature<Declaration>, ErrorReported>> {
         self.signature.parse_signature(entity, db, None)
     }
 
-    fn parse_fn_body(
-        &self,
-        entity: Entity,
-        db: &dyn LazyParsedEntityDatabase,
-    ) -> WithError<hir::FnBody> {
+    fn parse_fn_body(&self, entity: Entity, db: &dyn ParserDatabase) -> WithError<hir::FnBody> {
         self.signature.parse_fn_body(entity, db, None)
     }
 }
