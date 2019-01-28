@@ -1,4 +1,3 @@
-#![allow(non_camel_case_types)] // FIXME
 #![feature(const_fn)]
 #![feature(crate_visibility_modifier)]
 #![feature(in_band_lifetimes)]
