@@ -17,7 +17,7 @@ repository = "https://github.com/lark-exploration/lark/tree/master/components/la
 languageserver-types = "0.54"
 flexi_logger = "0.10.3"
 termcolor = "1.0.4"
-salsa = "0.10.0-alpha5"
+salsa = "0.10.0"
 language-reporting = "0.3.0"
 
 lark-actor = { path = "../lark-actor", version = "0.1.0" }
