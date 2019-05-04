@@ -6,8 +6,8 @@ use lark_intern::Intern;
 use lark_ty::PermKind;
 use lark_ty::Placeholder;
 
-/// An intern'd permission.
 lark_collections::index_type! {
+    /// An intern'd permission.
     crate struct Perm { .. }
 }
 

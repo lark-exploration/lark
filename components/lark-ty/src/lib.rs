@@ -144,11 +144,11 @@ pub struct Placeholder {
     pub bound_var: BoundVar,
 }
 
-/// A "universe" is a set of names -- the root universe (U(0)) contains all
-/// the "global names"; each time we traverse into a binder, we instantiate a
-/// new universe (e.g., U(1)) that can see all things from lower universes
-/// as well as some new placeholders.
 lark_collections::index_type! {
+    /// A "universe" is a set of names -- the root universe (U(0)) contains all
+    /// the "global names"; each time we traverse into a binder, we instantiate a
+    /// new universe (e.g., U(1)) that can see all things from lower universes
+    /// as well as some new placeholders.
     pub struct Universe {
         debug_name["U"],
         ..
