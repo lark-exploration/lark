@@ -1,7 +1,7 @@
 ItemName { base: InputFile { file: FileName { id: "binary_expressions_precedence" } }, kind: Function, id: "main" }
 FnBody {
     arguments: Ok(
-        []
+        [],
     ),
     root_expression: Expression {
         id: 12,
@@ -12,9 +12,9 @@ FnBody {
                     name: Identifier {
                         id: 0,
                         data: IdentifierData {
-                            text: "bar"
-                        }
-                    }
+                            text: "bar",
+                        },
+                    },
                 },
                 max_types: Ty {
                     repr: Erased,
@@ -22,20 +22,20 @@ FnBody {
                     base: BaseData {
                         kind: Named(
                             LangItem(
-                                Uint
-                            )
+                                Uint,
+                            ),
                         ),
-                        generics: []
-                    }
-                }
+                        generics: [],
+                    },
+                },
             },
             initializer: Expression {
                 id: 0,
                 data: Literal {
                     data: LiteralData {
                         kind: UnsignedInteger,
-                        value: "22"
-                    }
+                        value: "22",
+                    },
                 },
                 max_types: Ty {
                     repr: Erased,
@@ -43,11 +43,11 @@ FnBody {
                     base: BaseData {
                         kind: Named(
                             LangItem(
-                                Uint
-                            )
+                                Uint,
+                            ),
                         ),
-                        generics: []
-                    }
+                        generics: [],
+                    },
                 },
                 access_types: Ty {
                     repr: Erased,
@@ -55,13 +55,13 @@ FnBody {
                     base: BaseData {
                         kind: Named(
                             LangItem(
-                                Uint
-                            )
+                                Uint,
+                            ),
                         ),
-                        generics: []
-                    }
+                        generics: [],
+                    },
                 },
-                access_permissions: Erased
+                access_permissions: Erased,
             },
             body: Expression {
                 id: 11,
@@ -72,9 +72,9 @@ FnBody {
                             name: Identifier {
                                 id: 1,
                                 data: IdentifierData {
-                                    text: "baz"
-                                }
-                            }
+                                    text: "baz",
+                                },
+                            },
                         },
                         max_types: Ty {
                             repr: Erased,
@@ -82,20 +82,20 @@ FnBody {
                             base: BaseData {
                                 kind: Named(
                                     LangItem(
-                                        Uint
-                                    )
+                                        Uint,
+                                    ),
                                 ),
-                                generics: []
-                            }
-                        }
+                                generics: [],
+                            },
+                        },
                     },
                     initializer: Expression {
                         id: 1,
                         data: Literal {
                             data: LiteralData {
                                 kind: UnsignedInteger,
-                                value: "44"
-                            }
+                                value: "44",
+                            },
                         },
                         max_types: Ty {
                             repr: Erased,
@@ -103,11 +103,11 @@ FnBody {
                             base: BaseData {
                                 kind: Named(
                                     LangItem(
-                                        Uint
-                                    )
+                                        Uint,
+                                    ),
                                 ),
-                                generics: []
-                            }
+                                generics: [],
+                            },
                         },
                         access_types: Ty {
                             repr: Erased,
@@ -115,13 +115,13 @@ FnBody {
                             base: BaseData {
                                 kind: Named(
                                     LangItem(
-                                        Uint
-                                    )
+                                        Uint,
+                                    ),
                                 ),
-                                generics: []
-                            }
+                                generics: [],
+                            },
                         },
-                        access_permissions: Erased
+                        access_permissions: Erased,
                     },
                     body: Expression {
                         id: 10,
@@ -132,9 +132,9 @@ FnBody {
                                     name: Identifier {
                                         id: 2,
                                         data: IdentifierData {
-                                            text: "v"
-                                        }
-                                    }
+                                            text: "v",
+                                        },
+                                    },
                                 },
                                 max_types: Ty {
                                     repr: Erased,
@@ -142,12 +142,12 @@ FnBody {
                                     base: BaseData {
                                         kind: Named(
                                             LangItem(
-                                                Uint
-                                            )
+                                                Uint,
+                                            ),
                                         ),
-                                        generics: []
-                                    }
-                                }
+                                        generics: [],
+                                    },
+                                },
                             },
                             initializer: Expression {
                                 id: 8,
@@ -169,9 +169,9 @@ FnBody {
                                                                     name: Identifier {
                                                                         id: 0,
                                                                         data: IdentifierData {
-                                                                            text: "bar"
-                                                                        }
-                                                                    }
+                                                                            text: "bar",
+                                                                        },
+                                                                    },
                                                                 },
                                                                 max_types: Ty {
                                                                     repr: Erased,
@@ -179,13 +179,13 @@ FnBody {
                                                                     base: BaseData {
                                                                         kind: Named(
                                                                             LangItem(
-                                                                                Uint
-                                                                            )
+                                                                                Uint,
+                                                                            ),
                                                                         ),
-                                                                        generics: []
-                                                                    }
-                                                                }
-                                                            }
+                                                                        generics: [],
+                                                                    },
+                                                                },
+                                                            },
                                                         ),
                                                         max_types: Ty {
                                                             repr: Erased,
@@ -193,13 +193,13 @@ FnBody {
                                                             base: BaseData {
                                                                 kind: Named(
                                                                     LangItem(
-                                                                        Uint
-                                                                    )
+                                                                        Uint,
+                                                                    ),
                                                                 ),
-                                                                generics: []
-                                                            }
-                                                        }
-                                                    }
+                                                                generics: [],
+                                                            },
+                                                        },
+                                                    },
                                                 },
                                                 max_types: Ty {
                                                     repr: Erased,
@@ -207,11 +207,11 @@ FnBody {
                                                     base: BaseData {
                                                         kind: Named(
                                                             LangItem(
-                                                                Uint
-                                                            )
+                                                                Uint,
+                                                            ),
                                                         ),
-                                                        generics: []
-                                                    }
+                                                        generics: [],
+                                                    },
                                                 },
                                                 access_types: Ty {
                                                     repr: Erased,
@@ -219,13 +219,13 @@ FnBody {
                                                     base: BaseData {
                                                         kind: Named(
                                                             LangItem(
-                                                                Uint
-                                                            )
+                                                                Uint,
+                                                            ),
                                                         ),
-                                                        generics: []
-                                                    }
+                                                        generics: [],
+                                                    },
                                                 },
-                                                access_permissions: Erased
+                                                access_permissions: Erased,
                                             },
                                             right: Expression {
                                                 id: 5,
@@ -243,9 +243,9 @@ FnBody {
                                                                             name: Identifier {
                                                                                 id: 1,
                                                                                 data: IdentifierData {
-                                                                                    text: "baz"
-                                                                                }
-                                                                            }
+                                                                                    text: "baz",
+                                                                                },
+                                                                            },
                                                                         },
                                                                         max_types: Ty {
                                                                             repr: Erased,
@@ -253,13 +253,13 @@ FnBody {
                                                                             base: BaseData {
                                                                                 kind: Named(
                                                                                     LangItem(
-                                                                                        Uint
-                                                                                    )
+                                                                                        Uint,
+                                                                                    ),
                                                                                 ),
-                                                                                generics: []
-                                                                            }
-                                                                        }
-                                                                    }
+                                                                                generics: [],
+                                                                            },
+                                                                        },
+                                                                    },
                                                                 ),
                                                                 max_types: Ty {
                                                                     repr: Erased,
@@ -267,13 +267,13 @@ FnBody {
                                                                     base: BaseData {
                                                                         kind: Named(
                                                                             LangItem(
-                                                                                Uint
-                                                                            )
+                                                                                Uint,
+                                                                            ),
                                                                         ),
-                                                                        generics: []
-                                                                    }
-                                                                }
-                                                            }
+                                                                        generics: [],
+                                                                    },
+                                                                },
+                                                            },
                                                         },
                                                         max_types: Ty {
                                                             repr: Erased,
@@ -281,11 +281,11 @@ FnBody {
                                                             base: BaseData {
                                                                 kind: Named(
                                                                     LangItem(
-                                                                        Uint
-                                                                    )
+                                                                        Uint,
+                                                                    ),
                                                                 ),
-                                                                generics: []
-                                                            }
+                                                                generics: [],
+                                                            },
                                                         },
                                                         access_types: Ty {
                                                             repr: Erased,
@@ -293,13 +293,13 @@ FnBody {
                                                             base: BaseData {
                                                                 kind: Named(
                                                                     LangItem(
-                                                                        Uint
-                                                                    )
+                                                                        Uint,
+                                                                    ),
                                                                 ),
-                                                                generics: []
-                                                            }
+                                                                generics: [],
+                                                            },
                                                         },
-                                                        access_permissions: Erased
+                                                        access_permissions: Erased,
                                                     },
                                                     right: Expression {
                                                         id: 4,
@@ -313,9 +313,9 @@ FnBody {
                                                                             name: Identifier {
                                                                                 id: 1,
                                                                                 data: IdentifierData {
-                                                                                    text: "baz"
-                                                                                }
-                                                                            }
+                                                                                    text: "baz",
+                                                                                },
+                                                                            },
                                                                         },
                                                                         max_types: Ty {
                                                                             repr: Erased,
@@ -323,13 +323,13 @@ FnBody {
                                                                             base: BaseData {
                                                                                 kind: Named(
                                                                                     LangItem(
-                                                                                        Uint
-                                                                                    )
+                                                                                        Uint,
+                                                                                    ),
                                                                                 ),
-                                                                                generics: []
-                                                                            }
-                                                                        }
-                                                                    }
+                                                                                generics: [],
+                                                                            },
+                                                                        },
+                                                                    },
                                                                 ),
                                                                 max_types: Ty {
                                                                     repr: Erased,
@@ -337,13 +337,13 @@ FnBody {
                                                                     base: BaseData {
                                                                         kind: Named(
                                                                             LangItem(
-                                                                                Uint
-                                                                            )
+                                                                                Uint,
+                                                                            ),
                                                                         ),
-                                                                        generics: []
-                                                                    }
-                                                                }
-                                                            }
+                                                                        generics: [],
+                                                                    },
+                                                                },
+                                                            },
                                                         },
                                                         max_types: Ty {
                                                             repr: Erased,
@@ -351,11 +351,11 @@ FnBody {
                                                             base: BaseData {
                                                                 kind: Named(
                                                                     LangItem(
-                                                                        Uint
-                                                                    )
+                                                                        Uint,
+                                                                    ),
                                                                 ),
-                                                                generics: []
-                                                            }
+                                                                generics: [],
+                                                            },
                                                         },
                                                         access_types: Ty {
                                                             repr: Erased,
@@ -363,14 +363,14 @@ FnBody {
                                                             base: BaseData {
                                                                 kind: Named(
                                                                     LangItem(
-                                                                        Uint
-                                                                    )
+                                                                        Uint,
+                                                                    ),
                                                                 ),
-                                                                generics: []
-                                                            }
+                                                                generics: [],
+                                                            },
                                                         },
-                                                        access_permissions: Erased
-                                                    }
+                                                        access_permissions: Erased,
+                                                    },
                                                 },
                                                 max_types: Ty {
                                                     repr: Erased,
@@ -378,11 +378,11 @@ FnBody {
                                                     base: BaseData {
                                                         kind: Named(
                                                             LangItem(
-                                                                Uint
-                                                            )
+                                                                Uint,
+                                                            ),
                                                         ),
-                                                        generics: []
-                                                    }
+                                                        generics: [],
+                                                    },
                                                 },
                                                 access_types: Ty {
                                                     repr: Erased,
@@ -390,14 +390,14 @@ FnBody {
                                                     base: BaseData {
                                                         kind: Named(
                                                             LangItem(
-                                                                Uint
-                                                            )
+                                                                Uint,
+                                                            ),
                                                         ),
-                                                        generics: []
-                                                    }
+                                                        generics: [],
+                                                    },
                                                 },
-                                                access_permissions: Erased
-                                            }
+                                                access_permissions: Erased,
+                                            },
                                         },
                                         max_types: Ty {
                                             repr: Erased,
@@ -405,11 +405,11 @@ FnBody {
                                             base: BaseData {
                                                 kind: Named(
                                                     LangItem(
-                                                        Uint
-                                                    )
+                                                        Uint,
+                                                    ),
                                                 ),
-                                                generics: []
-                                            }
+                                                generics: [],
+                                            },
                                         },
                                         access_types: Ty {
                                             repr: Erased,
@@ -417,13 +417,13 @@ FnBody {
                                             base: BaseData {
                                                 kind: Named(
                                                     LangItem(
-                                                        Uint
-                                                    )
+                                                        Uint,
+                                                    ),
                                                 ),
-                                                generics: []
-                                            }
+                                                generics: [],
+                                            },
                                         },
-                                        access_permissions: Erased
+                                        access_permissions: Erased,
                                     },
                                     right: Expression {
                                         id: 7,
@@ -437,9 +437,9 @@ FnBody {
                                                             name: Identifier {
                                                                 id: 0,
                                                                 data: IdentifierData {
-                                                                    text: "bar"
-                                                                }
-                                                            }
+                                                                    text: "bar",
+                                                                },
+                                                            },
                                                         },
                                                         max_types: Ty {
                                                             repr: Erased,
@@ -447,13 +447,13 @@ FnBody {
                                                             base: BaseData {
                                                                 kind: Named(
                                                                     LangItem(
-                                                                        Uint
-                                                                    )
+                                                                        Uint,
+                                                                    ),
                                                                 ),
-                                                                generics: []
-                                                            }
-                                                        }
-                                                    }
+                                                                generics: [],
+                                                            },
+                                                        },
+                                                    },
                                                 ),
                                                 max_types: Ty {
                                                     repr: Erased,
@@ -461,13 +461,13 @@ FnBody {
                                                     base: BaseData {
                                                         kind: Named(
                                                             LangItem(
-                                                                Uint
-                                                            )
+                                                                Uint,
+                                                            ),
                                                         ),
-                                                        generics: []
-                                                    }
-                                                }
-                                            }
+                                                        generics: [],
+                                                    },
+                                                },
+                                            },
                                         },
                                         max_types: Ty {
                                             repr: Erased,
@@ -475,11 +475,11 @@ FnBody {
                                             base: BaseData {
                                                 kind: Named(
                                                     LangItem(
-                                                        Uint
-                                                    )
+                                                        Uint,
+                                                    ),
                                                 ),
-                                                generics: []
-                                            }
+                                                generics: [],
+                                            },
                                         },
                                         access_types: Ty {
                                             repr: Erased,
@@ -487,14 +487,14 @@ FnBody {
                                             base: BaseData {
                                                 kind: Named(
                                                     LangItem(
-                                                        Uint
-                                                    )
+                                                        Uint,
+                                                    ),
                                                 ),
-                                                generics: []
-                                            }
+                                                generics: [],
+                                            },
                                         },
-                                        access_permissions: Erased
-                                    }
+                                        access_permissions: Erased,
+                                    },
                                 },
                                 max_types: Ty {
                                     repr: Erased,
@@ -502,11 +502,11 @@ FnBody {
                                     base: BaseData {
                                         kind: Named(
                                             LangItem(
-                                                Uint
-                                            )
+                                                Uint,
+                                            ),
                                         ),
-                                        generics: []
-                                    }
+                                        generics: [],
+                                    },
                                 },
                                 access_types: Ty {
                                     repr: Erased,
@@ -514,13 +514,13 @@ FnBody {
                                     base: BaseData {
                                         kind: Named(
                                             LangItem(
-                                                Uint
-                                            )
+                                                Uint,
+                                            ),
                                         ),
-                                        generics: []
-                                    }
+                                        generics: [],
+                                    },
                                 },
-                                access_permissions: Erased
+                                access_permissions: Erased,
                             },
                             body: Expression {
                                 id: 9,
@@ -532,12 +532,12 @@ FnBody {
                                         kind: Named(
                                             LangItem(
                                                 Tuple(
-                                                    0
-                                                )
-                                            )
+                                                    0,
+                                                ),
+                                            ),
                                         ),
-                                        generics: []
-                                    }
+                                        generics: [],
+                                    },
                                 },
                                 access_types: Ty {
                                     repr: Erased,
@@ -546,15 +546,15 @@ FnBody {
                                         kind: Named(
                                             LangItem(
                                                 Tuple(
-                                                    0
-                                                )
-                                            )
+                                                    0,
+                                                ),
+                                            ),
                                         ),
-                                        generics: []
-                                    }
+                                        generics: [],
+                                    },
                                 },
-                                access_permissions: Erased
-                            }
+                                access_permissions: Erased,
+                            },
                         },
                         max_types: Ty {
                             repr: Erased,
@@ -563,12 +563,12 @@ FnBody {
                                 kind: Named(
                                     LangItem(
                                         Tuple(
-                                            0
-                                        )
-                                    )
+                                            0,
+                                        ),
+                                    ),
                                 ),
-                                generics: []
-                            }
+                                generics: [],
+                            },
                         },
                         access_types: Ty {
                             repr: Erased,
@@ -577,15 +577,15 @@ FnBody {
                                 kind: Named(
                                     LangItem(
                                         Tuple(
-                                            0
-                                        )
-                                    )
+                                            0,
+                                        ),
+                                    ),
                                 ),
-                                generics: []
-                            }
+                                generics: [],
+                            },
                         },
-                        access_permissions: Erased
-                    }
+                        access_permissions: Erased,
+                    },
                 },
                 max_types: Ty {
                     repr: Erased,
@@ -594,12 +594,12 @@ FnBody {
                         kind: Named(
                             LangItem(
                                 Tuple(
-                                    0
-                                )
-                            )
+                                    0,
+                                ),
+                            ),
                         ),
-                        generics: []
-                    }
+                        generics: [],
+                    },
                 },
                 access_types: Ty {
                     repr: Erased,
@@ -608,15 +608,15 @@ FnBody {
                         kind: Named(
                             LangItem(
                                 Tuple(
-                                    0
-                                )
-                            )
+                                    0,
+                                ),
+                            ),
                         ),
-                        generics: []
-                    }
+                        generics: [],
+                    },
                 },
-                access_permissions: Erased
-            }
+                access_permissions: Erased,
+            },
         },
         max_types: Ty {
             repr: Erased,
@@ -625,12 +625,12 @@ FnBody {
                 kind: Named(
                     LangItem(
                         Tuple(
-                            0
-                        )
-                    )
+                            0,
+                        ),
+                    ),
                 ),
-                generics: []
-            }
+                generics: [],
+            },
         },
         access_types: Ty {
             repr: Erased,
@@ -639,13 +639,13 @@ FnBody {
                 kind: Named(
                     LangItem(
                         Tuple(
-                            0
-                        )
-                    )
+                            0,
+                        ),
+                    ),
                 ),
-                generics: []
-            }
+                generics: [],
+            },
         },
-        access_permissions: Erased
-    }
+        access_permissions: Erased,
+    },
 }
