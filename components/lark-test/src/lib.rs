@@ -132,11 +132,15 @@ where
 
 /// Test that the debug output of `actual_value` is as expected. Gives
 /// a nice diff if things fail.
+///
+/// Also, does some light normalization:
+/// - Strips trailing commas.
 pub fn assert_expected_debug<Cx, A>(cx: &Cx, expected_text: &str, actual_value: &A)
 where
     A: ?Sized + DebugWith,
 {
-    let actual_text = format!("{:#?}", actual_value.debug_with(cx));
+    let expected_text = expected_text.replace(",\n", "\n");
+    let actual_text = format!("{:#?}", actual_value.debug_with(cx)).replace(",\n", "\n");
 
     if expected_text == actual_text {
         return;

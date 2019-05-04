@@ -15,8 +15,8 @@ fn location() {
         &(),
         &unindent::unindent(
             "Location {
-                 line: 1,
-                 column: 0,
+                 line: 1
+                 column: 0
                  byte: ByteIndex(
                      4
                  )
@@ -32,11 +32,11 @@ fn location() {
         &(),
         &unindent::unindent(
             "Location {
-                 line: 1,
-                 column: 1,
+                 line: 1
+                 column: 1
                  byte: ByteIndex(
                      5
-                 )
+                 ),
              }",
         ),
         &loc_4,
