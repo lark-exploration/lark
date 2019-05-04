@@ -141,7 +141,7 @@ fn debug_with_struct(type_name: &syn::Ident, data: &syn::DataStruct) -> TokenStr
             // Expands to an expression like
             //
             //     fmt.debug_tuple("foo").field(self.0.debug_with(cx)).finish()
-            let indices = 0..fields.unnamed.len();
+            let indices = (0..fields.unnamed.len()).map(|i| syn::Index::from(i));
             quote! {
                 fmt.debug_tuple(stringify!(#type_name))
                 #(
