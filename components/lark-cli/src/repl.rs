@@ -105,7 +105,7 @@ pub fn repl() {
         db.query_mut(lark_parser::FileTextQuery).set(
             repl_filename,
             // This is something of a hack so that the last expression in the function has type `void`
-            format!("def void_() {}\ndef main() {{\n{}\nvoid_()\n}}", "{}", virtual_fn.join("\n")).into(),
+            format!("def void_() {{}}\ndef main() {{\n{}\nvoid_()\n}}", virtual_fn.join("\n")).into(),
         );
 
         let writer = StandardStream::stderr(ColorChoice::Auto);
