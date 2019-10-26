@@ -154,7 +154,8 @@ where
             }
 
             hir::ExpressionData::Sequence { first, second } => {
-                self.check_expression(CheckType(self.unit_type(), expression.into()), first);
+                // We don't care what type the first value has
+                self.check_expression(Synthesize, first);
                 self.check_expression(mode, second)
             }
 
