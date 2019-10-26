@@ -3,7 +3,6 @@
 #![feature(box_patterns)]
 #![feature(box_syntax)]
 #![feature(crate_visibility_modifier)]
-#![feature(existential_type)]
 #![feature(never_type)]
 #![feature(nll)]
 #![feature(const_fn)]
