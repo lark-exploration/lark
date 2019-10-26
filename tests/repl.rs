@@ -82,4 +82,24 @@ mod tests {
 
         assert_eq!(result, " true\n>");
     }
+
+    #[test]
+    fn repl_test_print() {
+        let mut child_session = ChildSession::spawn();
+
+        let _ = child_session.receive();
+
+        child_session.send("let x = 12\n").unwrap();
+        let _result = child_session.receive().unwrap();
+
+        child_session.send("let y = 18\n").unwrap();
+        let _result = child_session.receive().unwrap();
+
+        child_session.send("x + y\n").unwrap();
+        // Get two lines
+        let mut result = child_session.receive().unwrap();
+        result.push_str(&child_session.receive().unwrap());
+
+        assert_eq!(result, " -> 30\n>");
+    }
 }

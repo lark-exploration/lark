@@ -42,11 +42,9 @@ impl EvalState {
     pub fn set_current_expression(&mut self, expression: hir::Expression) {
         self.current_expression = Some(expression);
 
-        if self.skip_until.is_some() {
-            if let Some(skip_until_expr) = self.skip_until {
-                if skip_until_expr == expression {
-                    self.skip_until = None;
-                }
+        if let Some(skip_until_expr) = self.skip_until {
+            if skip_until_expr == expression {
+                self.skip_until = None;
             }
         }
     }
@@ -183,12 +181,14 @@ pub fn eval_expression(
     state: &mut EvalState,
     io_handler: &mut IOHandler,
 ) -> Value {
+    // We execute everything after skip_until, not including it
+    // so we get this before updating the current expression
+    let ready_to_execute = state.ready_to_execute();
+
     match fn_body.tables[expression] {
         hir::ExpressionData::Unit { .. } => {}
         _ => state.set_current_expression(expression),
     }
-
-    let ready_to_execute = state.ready_to_execute();
 
     match fn_body.tables[expression] {
         hir::ExpressionData::Let {
@@ -366,7 +366,16 @@ pub fn eval_expression(
         },
 
         hir::ExpressionData::Sequence { first, second } => {
-            eval_expression(db, fn_body, first, state, io_handler);
+            let result = eval_expression(db, fn_body, first, state, io_handler);
+
+            // Print out the result of whatever the user typed in the REPL, but don't print the `void_()` call
+            if state.is_repl && ready_to_execute {
+                match result {
+                    Value::Void => (),
+                    x => io_handler.println(format!("-> {}", x)),
+                }
+            }
+
             eval_expression(db, fn_body, second, state, io_handler)
         }
 

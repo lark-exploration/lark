@@ -39,6 +39,21 @@ pub fn get_body(db: &LarkDatabase) -> lark_error::WithError<std::sync::Arc<lark_
     panic!("Internal error: Lost track of function bytecode")
 }
 
+/// Get the second-to-last expression in a function
+pub fn second_to_last(tb: &hir::FnBodyTables, expr: hir::Expression) -> hir::Expression {
+    match tb[expr] {
+        hir::ExpressionData::Let { body, initializer, .. } => match tb[body] {
+            hir::ExpressionData::Sequence { .. } | hir::ExpressionData::Let { .. } => second_to_last(tb, body),
+            _ => initializer.unwrap_or(expr),
+        }
+        hir::ExpressionData::Sequence { first, second } => match tb[second] {
+            hir::ExpressionData::Sequence { .. } | hir::ExpressionData::Let { .. } => second_to_last(tb, second),
+            _ => first,
+        },
+        _ => expr,
+    }
+}
+
 pub fn repl() {
     let mut virtual_fn: Vec<String> = vec![];
     let mut io_handler = lark_eval::IOHandler::new(false);
@@ -89,7 +104,8 @@ pub fn repl() {
 
         db.query_mut(lark_parser::FileTextQuery).set(
             repl_filename,
-            format!("def main() {{\n{}\n}}", virtual_fn.join("\n")).into(),
+            // This is something of a hack so that the last expression in the function has type `void`
+            format!("def void_() {{}}\ndef main() {{\n{}\nvoid_()\n}}", virtual_fn.join("\n")).into(),
         );
 
         let writer = StandardStream::stderr(ColorChoice::Auto);
@@ -112,7 +128,8 @@ pub fn repl() {
                 &mut io_handler,
             );
 
-            eval_state.skip_until = eval_state.current_expression;
+            // Skip until the second-to-last expression in the function - right before the `void_()` call
+            eval_state.skip_until = Some(second_to_last(&fn_body.tables, fn_body.root_expression));
 
             match output {
                 Value::Void => {}
