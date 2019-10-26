@@ -39,19 +39,16 @@ pub fn get_body(db: &LarkDatabase) -> lark_error::WithError<std::sync::Arc<lark_
     panic!("Internal error: Lost track of function bytecode")
 }
 
-/// Get the second-to-last expression in a function whose last expression is a call to `void_()`
-fn second_to_last(tb: &hir::FnBodyTables, expr: hir::Expression) -> hir::Expression {
+/// Get the second-to-last expression in a function
+pub fn second_to_last(tb: &hir::FnBodyTables, expr: hir::Expression) -> hir::Expression {
     match tb[expr] {
         hir::ExpressionData::Let { body, initializer, .. } => match tb[body] {
             hir::ExpressionData::Sequence { .. } | hir::ExpressionData::Let { .. } => second_to_last(tb, body),
-            hir::ExpressionData::Call { .. } => initializer.unwrap_or(expr),
-            // If we get this, the `void_()` call isn't there and/or we forgot a case
-            x => panic!("Got let {:?}", x),
+            _ => initializer.unwrap_or(expr),
         }
         hir::ExpressionData::Sequence { first, second } => match tb[second] {
             hir::ExpressionData::Sequence { .. } | hir::ExpressionData::Let { .. } => second_to_last(tb, second),
-            hir::ExpressionData::Call { .. } => first,
-            x => panic!("Got sequence {:?}", x),
+            _ => first,
         },
         _ => expr,
     }
