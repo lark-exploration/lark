@@ -1,3 +1,5 @@
+> **Status**: Some ideas from Lark are incorporated into [rust-analyzer](https://github.com/rust-analyzer/rust-analyzer) and [chalk](https://github.com/rust-lang/chalk). Lark itself is no longer active.
+
 # Lark
 
 Lark is an experimental programming system which includes a programming language, a compiler, a build system, IDE support, and a VSCode plugin. As Lark is both experimental and very much in its early stages, you’ll find varying levels of completeness.
