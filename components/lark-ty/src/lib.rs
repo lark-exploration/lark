@@ -1,7 +1,7 @@
 #![feature(in_band_lifetimes)]
 #![feature(never_type)]
 #![feature(specialization)]
-#![feature(const_fn)]
+#![feature(const_mut_refs)]
 #![warn(unused_imports)]
 
 use lark_collections::{IndexVec, Seq};

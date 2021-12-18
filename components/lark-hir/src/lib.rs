@@ -1,7 +1,7 @@
 //! The `Hir` is the "high-level IR". It is a simpified, somewhat resolved version of the bare AST.
 
 #![feature(crate_visibility_modifier)]
-#![feature(const_fn)]
+#![feature(const_mut_refs)]
 #![feature(decl_macro)]
 #![feature(in_band_lifetimes)]
 #![feature(specialization)]

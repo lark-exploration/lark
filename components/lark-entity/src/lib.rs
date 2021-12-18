@@ -1,5 +1,5 @@
 #![feature(specialization)]
-#![feature(const_fn)]
+#![feature(const_mut_refs)]
 
 use lark_debug_derive::DebugWith;
 use lark_debug_with::{DebugWith, FmtWithSpecialized};

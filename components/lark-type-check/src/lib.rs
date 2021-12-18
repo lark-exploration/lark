@@ -1,4 +1,4 @@
-#![feature(const_fn)]
+#![feature(const_mut_refs)]
 #![feature(crate_visibility_modifier)]
 #![feature(in_band_lifetimes)]
 #![feature(never_type)]

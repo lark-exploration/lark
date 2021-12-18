@@ -1,4 +1,4 @@
-#![feature(const_fn)]
+#![feature(const_mut_refs)]
 #![feature(specialization)]
 
 use lark_collections::{IndexVec, U32Index};
